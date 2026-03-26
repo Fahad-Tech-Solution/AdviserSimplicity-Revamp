@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Alert, Button, Form, Input, Typography } from "antd";
+import { Alert, Button, Form, Input, Typography, message } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
+import { loginApi } from "../../services/authApi";
 
 const { Title, Text } = Typography;
 
@@ -23,23 +24,42 @@ export default function LoginForm() {
       setSubmitting(true);
       setError("");
 
-      // Placeholder auth flow: replace with real API call.
-      localStorage.setItem("token", "sample-token");
-      localStorage.setItem(
-        "permissions",
-        JSON.stringify(["fact find", "prospects"]),
-      );
-      localStorage.setItem("loggedInEmail", values.email.toLowerCase());
+      const payload = {
+        email: values.email.toLowerCase().trim(),
+        passwordHash: values.passwordHash.trim(),
+      };
+      const res = await loginApi(payload);
+      const user = res?.user ?? null;
+      const token = res?.token ?? "";
+
+      if (!user || !token) {
+        throw new Error("Invalid login response.");
+      }
+
+      const permissions = user?.roleID?.permissions ?? [];
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("loggedInEmail", payload.email);
+      localStorage.setItem("permissions", JSON.stringify(permissions));
+      localStorage.setItem("loggedUser", JSON.stringify(user));
 
       if (isAdminLogin) {
-        localStorage.setItem("permissions", JSON.stringify(["superAdmin"]));
+        if (!permissions.includes("superAdmin")) {
+          throw new Error("Access denied. Admin role required.");
+        }
         navigate("/super/admin", { replace: true });
         return;
       }
 
+      if (permissions.includes("superAdmin")) {
+        throw new Error("Use admin login for this account.");
+      }
+
       navigate("/user", { replace: true });
-    } catch {
-      setError("Login failed. Please try again.");
+      message.success("Login successful.");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Login failed.";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
