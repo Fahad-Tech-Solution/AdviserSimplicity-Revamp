@@ -3,8 +3,10 @@ import { Spin } from "antd";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { useAtomValue } from "jotai";
 import AuthPage from "./Components/Auth/AuthPage";
+import PricingTable from "./Components/SuperAdminComponent/PricingTable";
 import http from "./services/http";
 import { loggedInUser } from "./store/authState";
+import Unauthorized from "./Components/Auth/Unauthorized";
 
 /**
  * Best-practice pattern:
@@ -38,11 +40,11 @@ function ProtectedLayout({ requiredPermissions = [] }) {
 const publicRoutes = [
   { path: "/user/verify-email", element: <></> },
   { path: "/change-password", element: <></> },
-  { path: "/pricing-table", element: <></> },
+  { path: "/pricing-table", element: <PricingTable /> },
   { path: "/buy-adviser-link", element: <></> },
   { path: "/stripe-redirect", element: <></> },
   { path: "/user/warning", element: <></> },
-  { path: "/unauthorized", element: <></> },
+  { path: "/unauthorized", element: <Unauthorized /> },
 ];
 
 export default function App() {
