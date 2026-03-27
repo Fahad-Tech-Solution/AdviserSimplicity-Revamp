@@ -2,16 +2,13 @@ import { useMemo, useState } from "react";
 import { Button, Form, Input, Typography, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
-import {
-  forgotPasswordApi,
-  resetPasswordApi,
-  verifyOtpApi,
-} from "../../services/authApi";
+import useApi from "../../hooks/useApi";
 
 const { Title, Text } = Typography;
 
 export default function ForgetPasswordForm() {
   const navigate = useNavigate();
+  const api = useApi();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -33,7 +30,7 @@ export default function ForgetPasswordForm() {
     try {
       setSubmitting(true);
       const cleanedEmail = values.email?.toLowerCase().trim();
-      await forgotPasswordApi(cleanedEmail);
+      await api.patch("/api/auth/forgot-password", { email: cleanedEmail });
       setEmail(cleanedEmail);
       setStep(2);
       message.success("OTP sent to your email.");
@@ -48,7 +45,7 @@ export default function ForgetPasswordForm() {
     try {
       setSubmitting(true);
       const cleanedOtp = values.otp?.trim();
-      await verifyOtpApi({ email, otp: cleanedOtp });
+      await api.post("/api/auth/verify-otp", { email, otp: cleanedOtp });
       setOtp(cleanedOtp);
       setStep(3);
       message.success("OTP verified.");
@@ -62,7 +59,7 @@ export default function ForgetPasswordForm() {
   const handleReset = async (values) => {
     try {
       setSubmitting(true);
-      await resetPasswordApi({
+      await api.patch("/api/auth/reset-password", {
         email,
         otp,
         newPassword: values.newPassword,

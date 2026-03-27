@@ -8,13 +8,9 @@ const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("jwt");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Authorization header is centrally synced from Recoil in App.jsx
+  if (http.defaults.headers.common.Authorization) {
+    config.headers.Authorization = http.defaults.headers.common.Authorization;
   }
 
   return config;

@@ -1,7 +1,10 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Spin } from "antd";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { useRecoilValue } from "recoil";
 import AuthPage from "./Components/Auth/AuthPage";
+import http from "./services/http";
+import { loggedInUser } from "./store/authState";
 
 /**
  * Best-practice pattern:
@@ -12,30 +15,14 @@ import AuthPage from "./Components/Auth/AuthPage";
  * Per your request: all route elements are empty fragments (<></>).
  */
 
-function useAuth() {
-  // Replace with your real logic (Recoil/Context/API) later.
-  const token =
-    localStorage.getItem("token") ??
-    localStorage.getItem("accessToken") ??
-    localStorage.getItem("jwt");
-
-  // Optional permissions shape: stored as JSON array, e.g. ["cashflow","superAdmin"]
-  let permissions = [];
-  try {
-    const raw = localStorage.getItem("permissions");
-    permissions = raw ? JSON.parse(raw) : [];
-  } catch {
-    permissions = [];
-  }
-
-  return {
-    isAuthenticated: Boolean(token),
-    permissions: Array.isArray(permissions) ? permissions : [],
-  };
-}
-
 function ProtectedLayout({ requiredPermissions = [] }) {
-  const { isAuthenticated, permissions } = useAuth();
+  const session = useRecoilValue(loggedInUser);
+  const token = session?.token || "";
+  const user = session?.user || null;
+  const permissions = Array.isArray(session?.permissions)
+    ? session.permissions
+    : [];
+  const isAuthenticated = Boolean(token && user);
 
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
 
@@ -59,6 +46,17 @@ const publicRoutes = [
 ];
 
 export default function App() {
+  const session = useRecoilValue(loggedInUser);
+  const token = session?.token || "";
+
+  useEffect(() => {
+    if (token) {
+      http.defaults.headers.common.Authorization = `Bearer ${token}`;
+      return;
+    }
+    delete http.defaults.headers.common.Authorization;
+  }, [token]);
+
   return (
     <Suspense
       fallback={

@@ -2,15 +2,19 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Form, Input, Typography, message } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { useSetRecoilState } from "recoil";
 import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
-import { loginApi } from "../../services/authApi";
+import useApi from "../../hooks/useApi";
+import { loggedInUser } from "../../store/authState";
 
 const { Title, Text } = Typography;
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const location = useLocation();
+  const api = useApi();
+  const setLoggedInUser = useSetRecoilState(loggedInUser);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,7 +32,7 @@ export default function LoginForm() {
         email: values.email.toLowerCase().trim(),
         passwordHash: values.passwordHash.trim(),
       };
-      const res = await loginApi(payload);
+      const res = await api.post("/api/auth/login", payload);
       const user = res?.user ?? null;
       const token = res?.token ?? "";
 
@@ -38,10 +42,12 @@ export default function LoginForm() {
 
       const permissions = user?.roleID?.permissions ?? [];
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("loggedInEmail", payload.email);
-      localStorage.setItem("permissions", JSON.stringify(permissions));
-      localStorage.setItem("loggedUser", JSON.stringify(user));
+      setLoggedInUser({
+        token,
+        email: payload.email,
+        user,
+        permissions,
+      });
 
       if (isAdminLogin) {
         if (!permissions.includes("superAdmin")) {
@@ -58,7 +64,8 @@ export default function LoginForm() {
       navigate("/user", { replace: true });
       message.success("Login successful.");
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Login failed.";
+      const msg =
+        err?.response?.data?.message || err?.message || "Login failed.";
       setError(msg);
     } finally {
       setSubmitting(false);

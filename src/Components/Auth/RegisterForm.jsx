@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button, Form, Input, Typography, message } from "antd";
 import { Link } from "react-router-dom";
 import logo from "../../assets/svg/Privacy policy-rafiki.svg";
-import { registerApi } from "../../services/authApi";
+import useApi from "../../hooks/useApi";
 
 const { Title, Text } = Typography;
 
 export default function RegisterForm() {
+  const api = useApi();
   const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = async (values) => {
@@ -17,7 +18,7 @@ export default function RegisterForm() {
         email: values.email?.toLowerCase().trim(),
         password: values.password,
       };
-      await registerApi(payload);
+      await api.post("/api/auth/register", payload);
       message.success("Account created successfully. Please login.");
     } catch (err) {
       const msg = err?.response?.data?.message || "Registration failed.";
