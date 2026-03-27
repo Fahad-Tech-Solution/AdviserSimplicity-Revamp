@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Form, Input, Typography, message } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { useSetRecoilState } from "recoil";
+import { useSetAtom } from "jotai";
 import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
 import useApi from "../../hooks/useApi";
@@ -14,7 +14,7 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const api = useApi();
-  const setLoggedInUser = useSetRecoilState(loggedInUser);
+  const setLoggedInUser = useSetAtom(loggedInUser);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 

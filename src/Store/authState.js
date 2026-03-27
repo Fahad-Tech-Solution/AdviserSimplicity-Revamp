@@ -1,18 +1,8 @@
-import { atom } from "recoil";
-import { recoilPersist } from "recoil-persist";
+import { atomWithStorage } from "jotai/utils";
 
-const { persistAtom } = recoilPersist({
-  key: "advisor-auth",
-  storage: localStorage,
-});
-
-export const loggedInUser = atom({
-  key: "loggedInUser",
-  default: {
+export const loggedInUser = atomWithStorage("loggedInUser", {
     token: "",
     email: "",
     user: null,
     permissions: [],
-  },
-  effects_UNSTABLE: [persistAtom],
 });

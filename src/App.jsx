@@ -1,7 +1,7 @@
 import { Suspense, useEffect } from "react";
 import { Spin } from "antd";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { useRecoilValue } from "recoil";
+import { useAtomValue } from "jotai";
 import AuthPage from "./Components/Auth/AuthPage";
 import http from "./services/http";
 import { loggedInUser } from "./store/authState";
@@ -16,7 +16,7 @@ import { loggedInUser } from "./store/authState";
  */
 
 function ProtectedLayout({ requiredPermissions = [] }) {
-  const session = useRecoilValue(loggedInUser);
+  const session = useAtomValue(loggedInUser);
   const token = session?.token || "";
   const user = session?.user || null;
   const permissions = Array.isArray(session?.permissions)
@@ -46,7 +46,7 @@ const publicRoutes = [
 ];
 
 export default function App() {
-  const session = useRecoilValue(loggedInUser);
+  const session = useAtomValue(loggedInUser);
   const token = session?.token || "";
 
   useEffect(() => {
