@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
 import useApi from "../../hooks/useApi";
@@ -16,6 +16,7 @@ export default function LoginForm() {
   const api = useApi();
   const { message } = AntdApp.useApp();
   const setLoggedInUser = useSetAtom(loggedInUser);
+  const loggedInUserValue = useAtomValue(loggedInUser);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -80,6 +81,9 @@ export default function LoginForm() {
           level={3}
           style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}
           className="text-center"
+          onClick={() => {
+            console.log(loggedInUserValue);
+          }}
         >
           {isAdminLogin ? "Admin Login" : "Login"}
         </Title>

@@ -9,130 +9,29 @@ import {
 import { Drawer, Layout, Menu, Typography, Grid } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../assets/image/Adviser-Simpilicity1.png";
+import {
+  discoveryRoutes,
+  strategyRoutes,
+  userRoutes,
+} from "../Routes/User.Routes.jsx";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 
 const navItems = [
-  { key: "/user", icon: "🏠", label: <Link to="/user">Dashboard</Link> },
-  {
-    key: "/user/clients",
-    icon: "👥",
-    label: <Link to="/user/clients">My Clients</Link>,
-  },
-  {
-    key: "/user/prospects",
-    icon: "📊",
-    label: <Link to="/user/prospects">Prospects</Link>,
-  },
-  {
-    key: "/user/my-team",
-    icon: "👤",
-    label: <Link to="/user/my-team">My Team</Link>,
-  },
+  ...userRoutes,
   {
     key: "discovery",
     icon: "⚙️",
-    label: "Discovery",
-    children: [
-      {
-        key: "/discovery/client-summary",
-        icon: "📄",
-        label: <Link to="/discovery/client-summary">Client Summary</Link>,
-      },
-      {
-        key: "/discovery/personal-details",
-        icon: "👤",
-        label: <Link to="/discovery/personal-details">Personal Details</Link>,
-      },
-      {
-        key: "/discovery/income-expenses",
-        icon: "💲",
-        label: <Link to="/discovery/income-expenses">Income & Expenses</Link>,
-      },
-      {
-        key: "/discovery/assets-debt",
-        icon: "🏡",
-        label: <Link to="/discovery/assets-debt">Assets & Debt</Link>,
-      },
-      {
-        key: "/discovery/financial-investments",
-        icon: "📈",
-        label: (
-          <Link to="/discovery/financial-investments">
-            Financial Investments
-          </Link>
-        ),
-      },
-      {
-        key: "/discovery/estate-planning",
-        icon: "📋",
-        label: <Link to="/discovery/estate-planning">Estate Planning</Link>,
-      },
-      {
-        key: "/discovery/goals-objectives",
-        icon: "🎯",
-        label: <Link to="/discovery/goals-objectives">Goals & Objectives</Link>,
-      },
-      {
-        key: "/discovery/risk-profile",
-        icon: "🌐",
-        label: <Link to="/discovery/risk-profile">Risk Profile</Link>,
-      },
-      {
-        key: "/discovery/add-section",
-        icon: "＋",
-        label: <Link to="/discovery/add-section">Add Section</Link>,
-      },
-    ],
+    label: " Discovery",
+    children: [...discoveryRoutes],
   },
   {
     key: "strategy",
     icon: "📋",
-    label: "Strategy",
-    children: [
-      {
-        key: "/strategy/denaro-deck",
-        icon: "🃏",
-        label: <Link to="/strategy/denaro-deck">Denaro Deck</Link>,
-      },
-      {
-        key: "/strategy/scenarios",
-        icon: "📍",
-        label: <Link to="/strategy/scenarios">Scenarios</Link>,
-      },
-      {
-        key: "/strategy/inputs",
-        icon: "⬛",
-        label: <Link to="/strategy/inputs">Inputs</Link>,
-      },
-      {
-        key: "/strategy/cashflow",
-        icon: "$",
-        label: <Link to="/strategy/cashflow">Cashflow</Link>,
-      },
-      {
-        key: "/strategy/networth",
-        icon: "↗",
-        label: <Link to="/strategy/networth">Networth</Link>,
-      },
-      {
-        key: "/strategy/reports",
-        icon: "📄",
-        label: <Link to="/strategy/reports">Reports</Link>,
-      },
-      {
-        key: "/strategy/compare",
-        icon: "⚖️",
-        label: <Link to="/strategy/compare">Compare</Link>,
-      },
-      {
-        key: "/strategy/advice",
-        icon: "✍️",
-        label: <Link to="/strategy/advice">Advice</Link>,
-      },
-    ],
+    label: " Strategy",
+    children: [...strategyRoutes],
   },
 ];
 
@@ -148,12 +47,16 @@ export default function UserLayout() {
     "/user";
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ height: "100vh" }}>
       {/* Desktop sidebar */}
       {!isMobile && (
         <Sider
           width={220}
-          style={{ background: "#fff", borderRight: "1px solid #f0f0f0" }}
+          height="100vh"
+          style={{
+            background: "#fff",
+            borderRight: "1px solid #f0f0f0",
+          }}
         >
           <div
             className="d-flex justify-content-center align-items-center"
@@ -166,12 +69,16 @@ export default function UserLayout() {
               style={{ width: "75%", height: "auto", objectFit: "contain" }}
             />
           </div>
-          <Menu
-            mode="inline"
-            selectedKeys={[selectedKey]}
-            items={navItems}
-            style={{ borderRight: 0 }}
-          />
+          <div
+            style={{ maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedKey]}
+              items={navItems}
+              style={{ borderRight: 0 }}
+            />
+          </div>
         </Sider>
       )}
 
@@ -185,10 +92,9 @@ export default function UserLayout() {
             placement="left"
             onClose={() => setDrawerOpen(false)}
             open={drawerOpen}
-            bodyStyle={{ padding: 0 }}
           >
             <Menu
-              mode="inline"
+              mode="vertical"
               selectedKeys={[selectedKey]}
               items={navItems}
               onClick={() => setDrawerOpen(false)}

@@ -1,0 +1,198 @@
+import {
+  AppstoreOutlined,
+  AuditOutlined,
+  BarChartOutlined,
+  ClusterOutlined,
+  DashboardOutlined,
+  FileTextOutlined,
+  HomeOutlined,
+  LineChartOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+
+// Central registry for all /user/* routes used in the app.
+// Fill in the `component` fields as you implement actual pages.
+
+export const userRoutes = [
+  {
+    key: "/user",
+    path: "/user",
+    icon: "🏠",
+    label: "Dashboard",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/user/clients",
+    path: "/user/clients",
+    icon: "👥",
+    label: "My Clients",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/user/prospects",
+    path: "/user/prospects",
+    icon: "📊",
+    label: "Prospects",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/user/my-team",
+    path: "/user/my-team",
+    icon: "👤",
+    label: "My Team",
+    component: null,
+    condition: () => true,
+  },
+];
+
+export const discoveryRoutes = [
+  {
+    key: "/discovery/client-summary",
+    path: "/discovery/client-summary",
+    icon: "📄",
+    label: "Client Summary",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/personal-details",
+    path: "/discovery/personal-details",
+    icon: "👤",
+    label: "Personal Details",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/income-expenses",
+    path: "/discovery/income-expenses",
+    icon: "💲",
+    label: "Income & Expenses",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/assets-debt",
+    path: "/discovery/assets-debt",
+    icon: "🏡",
+    label: "Assets & Debt",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/financial-investments",
+    path: "/discovery/financial-investments",
+    icon: "📈",
+    label: "Financial Investments",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/estate-planning",
+    path: "/discovery/estate-planning",
+    icon: "📋",
+    label: "Estate Planning",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/goals-objectives",
+    path: "/discovery/goals-objectives",
+    icon: "🎯",
+    label: "Goals & Objectives",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/risk-profile",
+    path: "/discovery/risk-profile",
+    icon: "🌐",
+    label: "Risk Profile",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/discovery/add-section",
+    path: "/discovery/add-section",
+    icon: "＋",
+    label: "Add Section",
+    component: null,
+    condition: () => true,
+  },
+];
+
+export const strategyRoutes = [
+  {
+    key: "/strategy/denaro-deck",
+    path: "/strategy/denaro-deck",
+    icon: "🃏",
+    label: "Denaro Deck",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/scenarios",
+    path: "/strategy/scenarios",
+    icon: "📍",
+    label: "Scenarios",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/inputs",
+    path: "/strategy/inputs",
+    icon: "⬛",
+    label: "Inputs",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/cashflow",
+    path: "/strategy/cashflow",
+    icon: "$",
+    label: "Cashflow",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/networth",
+    path: "/strategy/networth",
+    icon: "↗",
+    label: "Networth",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/reports",
+    path: "/strategy/reports",
+    icon: "📄",
+    label: "Reports",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/compare",
+    path: "/strategy/compare",
+    icon: "⚖️",
+    label: "Compare",
+    component: null,
+    condition: () => true,
+  },
+  {
+    key: "/strategy/advice",
+    path: "/strategy/advice",
+    icon: "✍️",
+    label: "Advice",
+    component: null, 
+    condition: () => true,
+  },
+];
+
+export const allUserRoutes = [
+  ...userRoutes,
+  ...discoveryRoutes,
+  ...strategyRoutes,
+];
