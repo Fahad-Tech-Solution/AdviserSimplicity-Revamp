@@ -1,64 +1,25 @@
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { Spin } from "antd";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { useAtomValue } from "jotai";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AuthPage from "./Components/Auth/AuthPage";
 import PricingTable from "./Components/SuperAdminComponent/PricingTable";
-import http from "./services/http";
-import { loggedInUser } from "./store/authState";
+import StripeRedirect from "./Components/SuperAdminComponent/StripeRedirect";
+import Warning from "./Components/SuperAdminComponent/Warning";
 import Unauthorized from "./Components/Auth/Unauthorized";
-
-/**
- * Best-practice pattern:
- * - Public routes in one list
- * - Protected route "groups" using <Outlet />
- * - Auth/permission logic isolated in one place (replace later with your real auth store)
- *
- * Per your request: all route elements are empty fragments (<></>).
- */
-
-function ProtectedLayout({ requiredPermissions = [] }) {
-  const session = useAtomValue(loggedInUser);
-  const token = session?.token || "";
-  const user = session?.user || null;
-  const permissions = Array.isArray(session?.permissions)
-    ? session.permissions
-    : [];
-  const isAuthenticated = Boolean(token && user);
-
-  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
-
-  const ok =
-    requiredPermissions.length === 0 ||
-    requiredPermissions.some((p) => permissions.includes(p));
-
-  if (!ok) return <Navigate to="/unauthorized" replace />;
-
-  return <Outlet />;
-}
+import UserLayout from "./Components/Layout/UserLayout";
+import ProtectedRoute from "./Components/Routes/ProtectedRoute";
 
 const publicRoutes = [
   { path: "/user/verify-email", element: <></> },
   { path: "/change-password", element: <></> },
   { path: "/pricing-table", element: <PricingTable /> },
   { path: "/buy-adviser-link", element: <></> },
-  { path: "/stripe-redirect", element: <></> },
-  { path: "/user/warning", element: <></> },
+  { path: "/stripe-redirect", element: <StripeRedirect /> },
+  { path: "/user/warning", element: <Warning /> },
   { path: "/unauthorized", element: <Unauthorized /> },
 ];
 
 export default function App() {
-  const session = useAtomValue(loggedInUser);
-  const token = session?.token || "";
-
-  useEffect(() => {
-    if (token) {
-      http.defaults.headers.common.Authorization = `Bearer ${token}`;
-      return;
-    }
-    delete http.defaults.headers.common.Authorization;
-  }, [token]);
-
   return (
     <Suspense
       fallback={
@@ -75,7 +36,7 @@ export default function App() {
       }
     >
       <Routes>
-        {/* Auth shell routes (motion + theme + form switching) */}
+        {/* Auth */}
         <Route path="/auth/*" element={<AuthPage />} />
 
         {/* Public */}
@@ -86,31 +47,35 @@ export default function App() {
         {/* Protected: Super Admin */}
         <Route
           path="/super/admin"
-          element={<ProtectedLayout requiredPermissions={["superAdmin"]} />}
-        >
-          <Route index element={<></>} />
-          <Route path="*" element={<></>} />
-        </Route>
+          element={
+            <ProtectedRoute
+              element={<></>} // your super admin page
+              requiredPermissions={["superAdmin"]}
+            />
+          }
+        />
 
         {/* Protected: Cashflow */}
         <Route
           path="/user/cashflow"
-          element={<ProtectedLayout requiredPermissions={["cashflow"]} />}
-        >
-          <Route index element={<></>} />
-          <Route path="*" element={<></>} />
-        </Route>
+          element={
+            <ProtectedRoute
+              element={<></>} // your cashflow page
+              requiredPermissions={["cashflow"]}
+            />
+          }
+        />
 
         {/* Protected: Main user area */}
         <Route
-          path="/user"
+          path="/user/*"
           element={
-            <ProtectedLayout requiredPermissions={["fact find", "prospects"]} />
+            <ProtectedRoute
+              element={<UserLayout />}
+              requiredPermissions={["fact find", "prospects"]}
+            />
           }
-        >
-          <Route index element={<></>} />
-          <Route path="*" element={<></>} />
-        </Route>
+        />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/auth/login" replace />} />

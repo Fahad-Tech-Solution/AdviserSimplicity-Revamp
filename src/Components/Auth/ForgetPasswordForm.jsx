@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Form, Input, Typography, message } from "antd";
+import { App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
 import useApi from "../../hooks/useApi";
@@ -7,6 +7,7 @@ import useApi from "../../hooks/useApi";
 const { Title, Text } = Typography;
 
 export default function ForgetPasswordForm() {
+  const { message } = AntdApp.useApp();
   const navigate = useNavigate();
   const api = useApi();
   const [step, setStep] = useState(1);
@@ -75,7 +76,7 @@ export default function ForgetPasswordForm() {
 
   return (
     <div className="row g-0 h-100 ">
-      <div className="text-center col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
+      <div className="col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
         <Title
           level={3}
           style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}

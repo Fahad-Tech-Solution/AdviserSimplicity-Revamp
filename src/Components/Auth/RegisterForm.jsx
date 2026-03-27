@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Form, Input, Typography, message } from "antd";
+import { App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { Link } from "react-router-dom";
 import logo from "../../assets/svg/Privacy policy-rafiki.svg";
 import useApi from "../../hooks/useApi";
@@ -7,6 +7,7 @@ import useApi from "../../hooks/useApi";
 const { Title, Text } = Typography;
 
 export default function RegisterForm() {
+  const { message } = AntdApp.useApp();
   const api = useApi();
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,7 +31,7 @@ export default function RegisterForm() {
 
   return (
     <div className="row g-0 h-100">
-      <div className="text-center col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
+      <div className="col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
         <Title
           level={3}
           style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}
@@ -89,7 +90,13 @@ export default function RegisterForm() {
           >
             <Input.Password size="large" placeholder="Confirm password" />
           </Form.Item>
-          <Button type="primary" size="large" block htmlType="submit" loading={submitting}>
+          <Button
+            type="primary"
+            size="large"
+            block
+            htmlType="submit"
+            loading={submitting}
+          >
             Create Account
           </Button>
         </Form>
@@ -105,7 +112,12 @@ export default function RegisterForm() {
         <img
           src={logo}
           alt="Register illustration"
-          style={{ width: "100%", maxHeight: 420, objectFit: "contain", padding: 18 }}
+          style={{
+            width: "100%",
+            maxHeight: 420,
+            objectFit: "contain",
+            padding: 18,
+          }}
         />
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Alert, Button, Form, Input, Typography, message } from "antd";
+import { Alert, App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useSetAtom } from "jotai";
 import logo from "../../assets/svg/Mobile login-pana.svg";
@@ -14,6 +14,7 @@ export default function LoginForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const api = useApi();
+  const { message } = AntdApp.useApp();
   const setLoggedInUser = useSetAtom(loggedInUser);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

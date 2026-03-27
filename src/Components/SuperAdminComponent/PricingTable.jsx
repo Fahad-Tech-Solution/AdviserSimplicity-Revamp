@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography, message } from "antd";
+import { App as AntdApp, Button, Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography } from "antd";
 import { ArrowRightOutlined, CheckOutlined } from "@ant-design/icons";
 import { useAtomValue } from "jotai";
 import { useLocation } from "react-router-dom";
@@ -17,6 +17,7 @@ function toCurrency(value) {
 }
 
 export default function PricingTable() {
+  const { message } = AntdApp.useApp();
   const api = useApi();
   const location = useLocation();
   const session = useAtomValue(loggedInUser);

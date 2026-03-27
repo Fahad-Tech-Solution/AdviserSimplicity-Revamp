@@ -2,10 +2,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import { ConfigProvider } from "antd";
+import { App as AntdApp, ConfigProvider } from "antd";
 import { Provider as JotaiProvider } from "jotai";
 import { BrowserRouter } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { appStore } from "./store/jotaiStore";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -17,10 +18,12 @@ createRoot(document.getElementById("root")).render(
         },
       }}
     >
-      <JotaiProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+      <JotaiProvider store={appStore}>
+        <AntdApp>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AntdApp>
       </JotaiProvider>
     </ConfigProvider>
   </StrictMode>,
