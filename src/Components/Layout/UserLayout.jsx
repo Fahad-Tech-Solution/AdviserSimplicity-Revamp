@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AppstoreOutlined,
   DollarOutlined,
@@ -6,14 +6,25 @@ import {
   MenuOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Drawer, Layout, Menu, Typography, Grid } from "antd";
-import { Link, useLocation } from "react-router-dom";
+import { Drawer, Layout, Menu, Typography, Grid, Avatar } from "antd";
+import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import logo from "../../assets/image/Adviser-Simpilicity1.png";
 import {
+  allUserRoutes,
   discoveryRoutes,
   strategyRoutes,
   userRoutes,
+  withSpacing,
 } from "../Routes/User.Routes.jsx";
+import { useAtomValue } from "jotai";
+import { loggedInUser } from "../../store/authState.js";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -23,14 +34,12 @@ const navItems = [
   ...userRoutes,
   {
     key: "discovery",
-    icon: "⚙️",
-    label: " Discovery",
+    ...withSpacing("⚙️", "Discovery", 12),
     children: [...discoveryRoutes],
   },
   {
     key: "strategy",
-    icon: "📋",
-    label: " Strategy",
+    ...withSpacing("📋", "Strategy", 14),
     children: [...strategyRoutes],
   },
 ];
@@ -39,12 +48,34 @@ export default function UserLayout() {
   const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
+  const session = useAtomValue(loggedInUser);
+  const navigate = useNavigate();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const selectedKey =
-    navItems.find((item) => location.pathname.startsWith(item.key))?.key ||
-    "/user";
+  const selectedKey = useMemo(() => {
+    const all = [
+      ...navItems.flatMap((item) => [item, ...(item.children || [])]),
+    ];
+    const found =
+      all.find((item) => location.pathname === item.key) ||
+      all.find((item) => location.pathname.startsWith(item.key));
+    return found?.key || "/user";
+  }, [location.pathname]);
+
+  const visibleRoutes = useMemo(() => {
+    // For now, render only routes that belong to /user and are already mounted by App.jsx (`/user/*`).
+    // You can expand this later to include /discovery and /strategy once those routes exist in App.jsx.
+    return allUserRoutes;
+  }, []);
+
+  const handleMenuClick = (info) => {
+    console.log("Clicked menu item:", info);
+    // Example navigation
+    if (info.key.startsWith("/")) {
+      navigate(info.key); // if using react-router
+    }
+  };
 
   return (
     <Layout style={{ height: "100vh" }}>
@@ -58,26 +89,60 @@ export default function UserLayout() {
             borderRight: "1px solid #f0f0f0",
           }}
         >
-          <div
-            className="d-flex justify-content-center align-items-center"
-            style={{ height: "100px" }}
-          >
-            <img
-              src={logo}
-              alt="logo"
-              className="img-fluid"
-              style={{ width: "75%", height: "auto", objectFit: "contain" }}
-            />
-          </div>
-          <div
-            style={{ maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}
-          >
-            <Menu
-              mode="inline"
-              selectedKeys={[selectedKey]}
-              items={navItems}
-              style={{ borderRight: 0 }}
-            />
+          <div className="d-flex flex-column h-100">
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ height: "100px" }}
+            >
+              <img
+                src={logo}
+                alt="logo"
+                className="img-fluid"
+                style={{ width: "75%", height: "auto", objectFit: "contain" }}
+              />
+            </div>
+            <div
+              style={{ maxHeight: "calc(100vh - 28vh)", overflowY: "auto" }}
+              // style={{ flex: 1, overflowY: "auto" }}
+            >
+              <Menu
+                mode="inline"
+                selectedKeys={[selectedKey]}
+                items={navItems}
+                style={{ borderRight: 0 }}
+                onClick={(info) => handleMenuClick(info)}
+              />
+            </div>
+
+            {/* User Profile Section */}
+            <div
+              style={{
+                marginTop: "auto",
+                padding: "15px",
+                borderTop: "1px solid #f0f0f0",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                cursor: "pointer",
+              }}
+              onClick={() => console.log("Profile clicked", session)}
+            >
+              <Avatar size={35} src={session?.user?.profileImage}>
+                {!session?.user?.profileImage &&
+                  session?.user?.firstName?.charAt(0) +
+                    session?.user?.lastName?.charAt(0)}
+              </Avatar>
+
+              <div style={{ lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 500 }}>
+                  {session?.user?.firstName + " " + session?.user?.lastName ||
+                    "John Doe"}
+                </div>
+                <div style={{ fontSize: "12px", color: "#888" }}>
+                  {session?.user?.email || "john.doe@example.com"}
+                </div>
+              </div>
+            </div>
           </div>
         </Sider>
       )}
@@ -127,31 +192,26 @@ export default function UserLayout() {
           <div
             style={{
               background: "#fff",
-              minHeight: "100vh",
+              height: "100vh",
               border: "1px solid #f0f0f0",
-              padding: 16,
+              padding: 8,
               overflowX: "hidden",
               overflowY: "auto",
+              maxWidth: screens.lg ? "1440px" : "100%",
+              justifyContent: "center",
+              alignItems: "center",
+              margin: "0 auto",
             }}
           >
-            {/* You can render nested routes or any component here */}
-            {location.pathname === "/user" ? (
-              <>
-                <Title level={4} style={{ fontFamily: "Georgia, serif" }}>
-                  Dashboard
-                </Title>
-                <Text type="secondary">
-                  Welcome! Your main user content will appear here. Navigate
-                  using the sidebar.
-                </Text>
-              </>
-            ) : (
-              <div>
-                <Text>
-                  {/* You can use react-router <Outlet /> if you want nested pages */}
-                </Text>
-              </div>
-            )}
+            <Routes>
+              {visibleRoutes.map((r) => (
+                <Route
+                  key={r.key}
+                  path={r.path}
+                  element={r.component ?? <Navigate to="/user" replace />}
+                />
+              ))}
+            </Routes>
           </div>
         </Content>
       </Layout>

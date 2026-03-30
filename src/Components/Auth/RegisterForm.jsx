@@ -57,9 +57,11 @@ export default function RegisterForm() {
           >
             <Input size="large" placeholder="Your name" />
           </Form.Item>
+
           <Form.Item label="Email" name="email" className="mb-0 mt-2">
             <Input size="large" placeholder="someone@example.com" />
           </Form.Item>
+          
           <Form.Item
             label="Password"
             name="password"

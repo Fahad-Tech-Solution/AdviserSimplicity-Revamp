@@ -1,0 +1,49 @@
+.yes-no-switch {
+  display: inline-flex;
+  align-items: stretch;
+  width: 84px;
+  min-width: 84px;
+  height: 30px;
+  background: #fff;
+  border: 1px solid #36b446;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.yes-no-switch input[type="radio"] {
+  display: none;
+}
+
+.yes-no-switch__label {
+  width: 50%;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+  background: #fff;
+  color: #6b7280;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.yes-no-switch__label span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.yes-no-switch input[type="radio"]:checked + .yes-no-switch__label {
+  background: #36b446;
+  color: #fff;
+}
+
+.yes-no-switch.is-disabled {
+  opacity: 0.6;
+}
+
+.yes-no-switch.is-disabled .yes-no-switch__label {
+  cursor: not-allowed;
+}

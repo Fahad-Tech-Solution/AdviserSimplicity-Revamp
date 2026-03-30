@@ -1,0 +1,180 @@
+import { Card, Table, Typography } from "antd";
+import { useMemo, useState } from "react";
+
+const { Text } = Typography;
+const PRIMARY_GREEN = "#36b446";
+
+export default function DynamicDataTable({
+  columns = [],
+  data = [],
+  title,
+  pageSize = 10,
+  total,
+  bordered = true,
+  size = "small",
+  primaryColor = PRIMARY_GREEN,
+  className = "",
+  cardStyle = {},
+  cardBodyStyle = {},
+  tableStyle = {},
+  tableProps = {},
+  pagination = {},
+  showCount = true,
+}) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const computedTotal = Number.isFinite(total) ? total : data.length;
+  const totalPages = Math.max(1, Math.ceil(computedTotal / pageSize));
+
+  const resolvedColumns = useMemo(
+    () =>
+      (columns || []).map((col) => ({
+        ...col,
+        onHeaderCell: () => ({
+          style: {
+            background: primaryColor,
+            color: "#fff",
+            fontWeight: 600,
+            borderInlineColor: "#ffffff",
+          },
+        }),
+      })),
+    [columns, primaryColor],
+  );
+
+  return (
+    <>
+      {showCount && (
+        <div style={{ padding: "12px 20px" }}>
+          <Text strong>{title || `Showing ${data.length} records`}</Text>
+        </div>
+      )}
+
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
+          overflowX: "auto",
+          paddingInline: 10,
+        }}
+      >
+        <Table
+          columns={resolvedColumns}
+          dataSource={data}
+          className={className}
+          rowClassName={() => "dynamic-table-row"}
+          scroll={{ x: "max-content" }}
+          size={size}
+          bordered={bordered}
+          style={{ borderRadius: 0, ...tableStyle }}
+          pagination={{
+            current: currentPage,
+            total: computedTotal,
+            pageSize,
+            showSizeChanger: false,
+            showQuickJumper: false,
+            position: ["bottomRight"],
+            showTotal: () => `Page ${currentPage} of ${totalPages}`,
+            onChange: (page) => setCurrentPage(page),
+            ...pagination,
+          }}
+          styles={{
+            root: {
+              borderColor: "red",
+            },
+            header: {
+              wrapper: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+              },
+              row: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+              },
+              cell: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+                borderInlineColor: "#fff",
+              },
+            },
+            body: {
+              wrapper: {
+                border: "none",
+              },
+              row: {
+                border: "none",
+                borderBottom: "1px solid #e0e0e0",
+              },
+              cell: {
+                border: "none",
+                borderBottom: "1px solid #e0e0e0",
+              },
+            },
+            section: {
+              border: "none",
+            },
+          }}
+          {...tableProps}
+        />
+
+        {/* 
+<Table
+          columns={columns}
+          dataSource={data}
+          pagination={{
+            current: 1,
+            total: 16,
+            pageSize: 10,
+            showTotal: (total) => `Page 1 of ${Math.ceil(total / 10)}`,
+            showSizeChanger: false,
+            showQuickJumper: false,
+            position: ["bottomRight"],
+          }}
+          rowClassName={() => "household-table-row"}
+          className="household-table"
+          scroll={{ x: "max-content" }}
+          style={{
+            borderRadius: 0,
+          }}
+          styles={{
+            root: {
+              borderColor: "red",
+            },
+            header: {
+              wrapper: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+              },
+              row: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+              },
+              cell: {
+                background: "#36b446",
+                color: "#fff",
+                fontWeight: 600,
+                borderInlineColor: "#fff",
+              },
+            },
+            body: {
+              row: {
+                border: "none",
+              },
+              cell: {
+                border: "none",
+              },
+            },
+          }}
+          size="small"
+          bordered
+        /> */}
+      </div>
+    </>
+  );
+}

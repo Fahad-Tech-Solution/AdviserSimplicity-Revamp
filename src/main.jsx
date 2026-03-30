@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { App as AntdApp, ConfigProvider } from "antd";
 import { Provider as JotaiProvider } from "jotai";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { appStore } from "./store/jotaiStore";
 
@@ -20,9 +20,9 @@ createRoot(document.getElementById("root")).render(
     >
       <JotaiProvider store={appStore}>
         <AntdApp>
-          <BrowserRouter>
+          <HashRouter>
             <App />
-          </BrowserRouter>
+          </HashRouter>
         </AntdApp>
       </JotaiProvider>
     </ConfigProvider>
