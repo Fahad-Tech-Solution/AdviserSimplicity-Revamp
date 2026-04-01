@@ -28,17 +28,43 @@ export default function DynamicDataTable({
 
   const resolvedColumns = useMemo(
     () =>
-      (columns || []).map((col) => ({
-        ...col,
-        onHeaderCell: () => ({
-          style: {
-            background: primaryColor,
-            color: "#fff",
-            fontWeight: 600,
-            borderInlineColor: "#ffffff",
+      (columns || []).map((col) => {
+        const userOnCell = col.onCell;
+        const userOnHeaderCell = col.onHeaderCell;
+        const shouldEllipsis = Boolean(col.ellipsis);
+
+        return {
+          ...col,
+          ellipsis: shouldEllipsis,
+          onCell: (record, rowIndex) => {
+            const userCellProps = userOnCell?.(record, rowIndex) || {};
+
+            return {
+              ...userCellProps,
+              style: {
+                wordBreak: shouldEllipsis ? "normal" : "break-word",
+                overflowWrap: shouldEllipsis ? "normal" : "anywhere",
+                whiteSpace: shouldEllipsis ? "nowrap" : "normal",
+                ...userCellProps.style,
+              },
+            };
           },
-        }),
-      })),
+          onHeaderCell: (column) => {
+            const userHeaderProps = userOnHeaderCell?.(column) || {};
+
+            return {
+              ...userHeaderProps,
+              style: {
+                background: primaryColor,
+                color: "#fff",
+                fontWeight: 600,
+                borderInlineColor: "#ffffff",
+                ...userHeaderProps.style,
+              },
+            };
+          },
+        };
+      }),
     [columns, primaryColor],
   );
 
@@ -63,7 +89,8 @@ export default function DynamicDataTable({
           dataSource={data}
           className={className}
           rowClassName={() => "dynamic-table-row"}
-          scroll={{ x: "max-content" }}
+          tableLayout="fixed"
+          scroll={{ x: true }}
           size={size}
           bordered={bordered}
           style={{ ...tableStyle }}
@@ -119,60 +146,6 @@ export default function DynamicDataTable({
           }}
           {...tableProps}
         />
-
-        {/* 
-<Table
-          columns={columns}
-          dataSource={data}
-          pagination={{
-            current: 1,
-            total: 16,
-            pageSize: 10,
-            showTotal: (total) => `Page 1 of ${Math.ceil(total / 10)}`,
-            showSizeChanger: false,
-            showQuickJumper: false,
-            position: ["bottomRight"],
-          }}
-          rowClassName={() => "household-table-row"}
-          className="household-table"
-          scroll={{ x: "max-content" }}
-          style={{
-            borderRadius: 0,
-          }}
-          styles={{
-            root: {
-              borderColor: "red",
-            },
-            header: {
-              wrapper: {
-                background: "#22c55e",
-                color: "#fff",
-                fontWeight: 600,
-              },
-              row: {
-                background: "#22c55e",
-                color: "#fff",
-                fontWeight: 600,
-              },
-              cell: {
-                background: "#22c55e",
-                color: "#fff",
-                fontWeight: 600,
-                borderInlineColor: "#fff",
-              },
-            },
-            body: {
-              row: {
-                border: "none",
-              },
-              cell: {
-                border: "none",
-              },
-            },
-          }}
-          size="small"
-          bordered
-        /> */}
       </div>
     </>
   );

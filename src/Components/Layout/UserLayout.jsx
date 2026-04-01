@@ -24,7 +24,8 @@ import {
   withSpacing,
 } from "../Routes/User.Routes.jsx";
 import { useAtomValue } from "jotai";
-import { loggedInUser } from "../../store/authState.js";
+import { loggedInUser } from "../../Store/authState.js";
+import useUserDashboardData from "../../hooks/useUserDashboardData";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -50,6 +51,10 @@ export default function UserLayout() {
   const isMobile = !screens.lg;
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
+
+  useUserDashboardData({
+    enabled: Boolean(session?.token),
+  });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 

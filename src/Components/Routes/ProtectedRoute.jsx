@@ -39,11 +39,8 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   }
 
   const { token, user, permissions = [] } = session;
-  console.log("session", session);
 
   const isAuthenticated = Boolean(token && user);
-
-  console.log("isAuthenticated", isAuthenticated);
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />;
@@ -52,9 +49,6 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   const hasPermission =
     requiredPermissions.length === 0 ||
     requiredPermissions.some((p) => permissions.includes(p));
-
-  console.log("hasPermission", hasPermission);
- 
 
   if (!hasPermission) {
     return <Navigate to="/unauthorized" replace />;
