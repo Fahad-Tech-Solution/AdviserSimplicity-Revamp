@@ -122,11 +122,11 @@ export default function PricingTable() {
       </div>
 
       <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-        <Text style={{ marginRight: 8, color: !isYearly ? "#36b446" : undefined }}>
+        <Text style={{ marginRight: 8, color: !isYearly ? "#22c55e" : undefined }}>
           Monthly
         </Text>
         <Switch checked={isYearly} onChange={setIsYearly} />
-        <Text style={{ marginLeft: 8, color: isYearly ? "#36b446" : undefined }}>
+        <Text style={{ marginLeft: 8, color: isYearly ? "#22c55e" : undefined }}>
           Yearly
         </Text>
       </div>
@@ -167,7 +167,7 @@ export default function PricingTable() {
 
                   {hasDiscount && (
                     <div style={{ textAlign: "center", marginBottom: 12 }}>
-                      <Tag color="green">
+                      <Tag color="#22c55e">
                         Save {toCurrency(monthlyTotal - yearlyTotal)} vs monthly
                       </Tag>
                     </div>
@@ -178,7 +178,7 @@ export default function PricingTable() {
                     <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8 }}>
                       {(plan?.marketing_features || []).map((feature, index) => (
                         <li key={`${plan?.id}-${index}`} style={{ marginBottom: 8 }}>
-                          <CheckOutlined style={{ color: "#36b446", marginRight: 8 }} />
+                          <CheckOutlined style={{ color: "#22c55e", marginRight: 8 }} />
                           <Text type="secondary">{feature}</Text>
                         </li>
                       ))}

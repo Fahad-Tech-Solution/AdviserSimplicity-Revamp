@@ -1,12 +1,24 @@
 // Central registry for all /user/* routes used in the app.
 // Fill in the `component` fields as you implement actual pages.
 
-import DashboardPage from "../Layout/DashboardPage";
-import HouseholdTable from "../Layout/MyClients/HouseholdTable";
+import HouseholdTable from "../Pages/User/Clients/HouseholdTable";
+import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
+import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 
-export const withSpacing = (icon, label, marginLeft = 5) => ({
-  icon: <span>{icon}</span>,
-  label: <span style={{ marginLeft: marginLeft + "px" }}>{label}</span>,
+export const withSpacing = (icon, label, marginLeft = 0) => ({
+  label: (
+    <span
+      style={{
+        marginLeft: marginLeft + "px",
+        fontWeight: "400",
+        fontSize: "13px",
+        color: label == "Add Section" ? "#22c55e" : "inherit",
+        // color: "red",
+      }}
+    >
+      <span>{icon}</span> {label}
+    </span>
+  ),
 });
 
 export const userRoutes = [
@@ -28,7 +40,7 @@ export const userRoutes = [
     key: "/user/prospects",
     path: "/prospects",
     ...withSpacing("📊", "Prospects"),
-    component: null,
+    component: <CDFProspects />,
     condition: () => true,
   },
   {

@@ -1,7 +1,7 @@
 import { Avatar, Button } from "antd";
-import DynamicDataTable from "../../Common/DynamicDataTable";
+import DynamicDataTable from "../../../Common/DynamicDataTable";
 
-const PRIMARY_GREEN = "#36b446";
+const PRIMARY_GREEN = "#22c55e";
 
 const getInitials = (name = "") => {
   const parts = name.trim().split(/\s+/);
@@ -24,18 +24,16 @@ const HouseholdTable = () => {
       lastUpdated: "01/01/2026",
     },
     {
-      key: "1",
-      no: 1,
+      key: "2",
+      no: 2,
       household: "ANKRAVS",
       status: "",
-      members:
-        "PETER - Primary, 71\nRhonda - Partner",
+      members: "PETER - Primary, 71\nRhonda - Partner",
       contact: "0427202033",
       email: "ankrav11@bigpond.com",
       address: "10 Federation Court",
       lastUpdated: "01/01/2026",
     },
-    // You can add more rows here following the same shape
   ];
 
   const columns = [
@@ -62,8 +60,7 @@ const HouseholdTable = () => {
           <Avatar
             size={36}
             style={{
-              background:
-                "linear-gradient(135deg, rgb(34, 197, 94), rgb(22, 163, 74))",
+              background: "linear-gradient(135deg, #22c55e, #22c55e)",
               color: "#fff",
               fontWeight: 600,
               fontSize: 14,

@@ -34,12 +34,12 @@ const navItems = [
   ...userRoutes,
   {
     key: "discovery",
-    ...withSpacing("⚙️", "Discovery", 12),
+    ...withSpacing("⚙️", "Discovery", 0),
     children: [...discoveryRoutes],
   },
   {
     key: "strategy",
-    ...withSpacing("📋", "Strategy", 14),
+    ...withSpacing("📋", "Strategy", 0),
     children: [...strategyRoutes],
   },
 ];
@@ -102,7 +102,7 @@ export default function UserLayout() {
               />
             </div>
             <div
-              style={{ maxHeight: "calc(100vh - 28vh)", overflowY: "auto" }}
+              style={{ maxHeight: screens.xl? "calc(100vh - 16.9vh)" : "calc(100vh - 27vh)", overflowY: "auto" }}
               // style={{ flex: 1, overflowY: "auto" }}
             >
               <Menu
@@ -110,6 +110,12 @@ export default function UserLayout() {
                 selectedKeys={[selectedKey]}
                 items={navItems}
                 style={{ borderRight: 0 }}
+                styles={{
+                  // item: { paddingInline: 0 },
+                  subMenu: {
+                    item: { paddingLeft: "25px" },
+                  },
+                }}
                 onClick={(info) => handleMenuClick(info)}
               />
             </div>
@@ -188,16 +194,15 @@ export default function UserLayout() {
 
       {/* Content */}
       <Layout>
-        <Content style={{ background: "#fafafa" }}>
+        <Content style={{ background: "#fff" }}>
           <div
             style={{
               background: "#fff",
               height: "100vh",
-              border: "1px solid #f0f0f0",
               padding: 8,
               overflowX: "hidden",
               overflowY: "auto",
-              maxWidth: screens.lg ? "1440px" : "100%",
+              maxWidth: screens.lg ? "1100px" : "100%",
               justifyContent: "center",
               alignItems: "center",
               margin: "0 auto",

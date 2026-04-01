@@ -105,7 +105,7 @@ export default function RegisterForm() {
 
         <div style={{ textAlign: "center", marginTop: 14 }}>
           <Text type="secondary">Already have an account? </Text>
-          <Link to="/auth/login" style={{ color: "#36b446" }}>
+          <Link to="/auth/login" style={{ color: "#22c55e" }}>
             Login
           </Link>
         </div>

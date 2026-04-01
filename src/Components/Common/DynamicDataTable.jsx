@@ -2,7 +2,7 @@ import { Card, Table, Typography } from "antd";
 import { useMemo, useState } from "react";
 
 const { Text } = Typography;
-const PRIMARY_GREEN = "#36b446";
+const PRIMARY_GREEN = "#22c55e";
 
 export default function DynamicDataTable({
   columns = [],
@@ -56,7 +56,6 @@ export default function DynamicDataTable({
           minHeight: 0,
           width: "100%",
           overflowX: "auto",
-          paddingInline: 10,
         }}
       >
         <Table
@@ -67,51 +66,51 @@ export default function DynamicDataTable({
           scroll={{ x: "max-content" }}
           size={size}
           bordered={bordered}
-          style={{ borderRadius: 0, ...tableStyle }}
+          style={{ ...tableStyle }}
           pagination={{
             current: currentPage,
             total: computedTotal,
             pageSize,
             showSizeChanger: false,
             showQuickJumper: false,
-            position: ["bottomRight"],
+            placement: ["bottomRight"],
             showTotal: () => `Page ${currentPage} of ${totalPages}`,
             onChange: (page) => setCurrentPage(page),
             ...pagination,
           }}
           styles={{
-            root: {
-              borderColor: "red",
+            content: {
+              border: "1px solid #e0e0e0",
+              borderRadius: 0,
             },
             header: {
               wrapper: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
               },
               row: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
               },
               cell: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
                 borderInlineColor: "#fff",
+                borderRadius: 0,
+                fontSize: 12,
               },
             },
             body: {
-              wrapper: {
-                border: "none",
-              },
               row: {
                 border: "none",
-                borderBottom: "1px solid #e0e0e0",
+                borderBottom: "0.5px solid #f3f3f3",
               },
               cell: {
                 border: "none",
-                borderBottom: "1px solid #e0e0e0",
+                borderBottom: "0.5px solid #f3f3f3",
               },
             },
             section: {
@@ -146,17 +145,17 @@ export default function DynamicDataTable({
             },
             header: {
               wrapper: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
               },
               row: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
               },
               cell: {
-                background: "#36b446",
+                background: "#22c55e",
                 color: "#fff",
                 fontWeight: 600,
                 borderInlineColor: "#fff",

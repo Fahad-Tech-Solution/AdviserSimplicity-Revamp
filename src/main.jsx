@@ -14,7 +14,7 @@ createRoot(document.getElementById("root")).render(
       theme={{
         token: {
           /* here is your global tokens */
-          colorPrimary: "#36b446",
+          colorPrimary: "#22c55e",
         },
       }}
     >

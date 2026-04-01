@@ -135,7 +135,7 @@ export default function LoginForm() {
           </Form.Item>
 
           <div style={{ textAlign: "right", marginBottom: 14 }}>
-            <Link to="/auth/forget-password" style={{ color: "#36b446" }}>
+            <Link to="/auth/forget-password" style={{ color: "#22c55e" }}>
               Forgot Password?
             </Link>
           </div>
@@ -154,7 +154,7 @@ export default function LoginForm() {
         {!isAdminLogin && (
           <div style={{ marginTop: 14, textAlign: "center" }}>
             <Text type="secondary">Don&apos;t have an account? </Text>
-            <Link to="/auth/register" style={{ color: "#36b446" }}>
+            <Link to="/auth/register" style={{ color: "#22c55e" }}>
               Register
             </Link>
           </div>

@@ -108,13 +108,13 @@ export default function Warning() {
           place-items: center;
           overflow: hidden;
           padding: 16px;
-          background: linear-gradient(135deg, #f4fff4 0%, #d7f2dd 100%);
+          background: linear-gradient(135deg, #22c55e 0%, #22c55e 100%);
         }
 
         .animated-bg {
           position: absolute;
           inset: 0;
-          background: linear-gradient(40deg, #36b446, #2f9c40, #1f7d31);
+          background: linear-gradient(40deg, #22c55e, #22c55e, #22c55e);
           background-size: 300% 300%;
           animation: gradientMove 10s ease infinite;
           opacity: 0.92;
