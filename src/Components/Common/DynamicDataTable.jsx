@@ -71,8 +71,17 @@ export default function DynamicDataTable({
   return (
     <>
       {showCount && (
-        <div style={{ padding: "12px 20px" }}>
-          <Text strong>{title || `Showing ${data.length} records`}</Text>
+        <div style={{ padding: "12px 0px" }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontFamily: "Arial,serif",
+              color: "rgb(107, 114, 128)",
+            }}
+          >
+            Showing <strong style={{ color: "#000" }}>{data.length}</strong>{" "}
+            records
+          </Text>
         </div>
       )}
 
@@ -108,7 +117,7 @@ export default function DynamicDataTable({
           styles={{
             content: {
               border: "1px solid #e0e0e0",
-              borderRadius: 0,
+              borderRadius: tableStyle.borderRadius || 0,
             },
             header: {
               wrapper: {

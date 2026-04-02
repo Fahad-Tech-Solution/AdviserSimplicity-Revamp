@@ -3,6 +3,7 @@ import { useState } from "react";
 import AppModal from "../../../Common/AppModal";
 import useTitleBlock from "../../../../hooks/useTitleBlock";
 import SuperFund from "./components/SuperFund";
+import YesNoSwitch from "../../../Common/YesNoSwitch";
 
 const { Title, Text } = Typography;
 
@@ -270,72 +271,70 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {false && (
-        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-          <Col xs={24} lg={12}>
-            <Card
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card
+            style={{
+              borderRadius: 14,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+            }}
+            title={
+              <span style={{ ...headingStyle, fontWeight: 700 }}>
+                CLIENTS BY GENDER
+              </span>
+            }
+          >
+            <ClientGenderRow {...genders[0]} />
+            <ClientGenderRow {...genders[1]} />
+            <div
               style={{
-                borderRadius: 14,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 10,
               }}
-              title={
-                <span style={{ ...headingStyle, fontWeight: 700 }}>
-                  CLIENTS BY GENDER
-                </span>
-              }
             >
-              <ClientGenderRow {...genders[0]} />
-              <ClientGenderRow {...genders[1]} />
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginTop: 10,
-                }}
+              <Text
+                type="secondary"
+                style={{ fontFamily: "Georgia,serif", fontWeight: 600 }}
               >
-                <Text
-                  type="secondary"
-                  style={{ fontFamily: "Georgia,serif", fontWeight: 600 }}
-                >
-                  Total Clients
-                </Text>
-                <Title
-                  level={4}
-                  style={{ margin: 0, fontFamily: "Georgia,serif" }}
-                >
-                  {totalClients}
-                </Title>
-              </div>
-            </Card>
-          </Col>
+                Total Clients
+              </Text>
+              <Title
+                level={4}
+                style={{ margin: 0, fontFamily: "Georgia,serif" }}
+              >
+                {totalClients}
+              </Title>
+            </div>
+          </Card>
+        </Col>
 
-          <Col xs={24} lg={12}>
-            <Card
-              style={{
-                borderRadius: 14,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
-              }}
-              title={
-                <span style={{ ...headingStyle, fontWeight: 700 }}>
-                  RISK PROFILES
-                </span>
-              }
-            >
-              <div style={{ display: "grid", gap: 14 }}>
-                {riskProfiles.map((r) => (
-                  <ProgressRow
-                    key={r.label}
-                    label={r.label}
-                    value={r.value}
-                    color={r.color}
-                  />
-                ))}
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      )}
+        <Col xs={24} lg={12}>
+          <Card
+            style={{
+              borderRadius: 14,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
+            }}
+            title={
+              <span style={{ ...headingStyle, fontWeight: 700 }}>
+                RISK PROFILES
+              </span>
+            }
+          >
+            <div style={{ display: "grid", gap: 14 }}>
+              {riskProfiles.map((r) => (
+                <ProgressRow
+                  key={r.label}
+                  label={r.label}
+                  value={r.value}
+                  color={r.color}
+                />
+              ))}
+            </div>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

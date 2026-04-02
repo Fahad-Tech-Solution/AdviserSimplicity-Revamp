@@ -2,6 +2,7 @@
 // Fill in the `component` fields as you implement actual pages.
 
 import HouseholdTable from "../Pages/User/Clients/HouseholdTable";
+import MyClients from "../Pages/User/Clients/MyClients";
 import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
 import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 
@@ -33,7 +34,7 @@ export const userRoutes = [
     key: "/user/clients",
     path: "/clients",
     ...withSpacing("👥", "My Clients"),
-    component: <HouseholdTable />,
+    component: <MyClients />,
     condition: () => true,
   },
   {

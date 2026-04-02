@@ -1,5 +1,24 @@
-import { Avatar, Button } from "antd";
+import { useMemo } from "react";
+import { Avatar, Button, Dropdown, Tag, Tooltip } from "antd";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
+import {
+  loggedInUser,
+  MyClientsData,
+  SelectedClient,
+} from "../../../../Store/authState";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  CheckOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  FileTextOutlined,
+  MailOutlined,
+  SettingOutlined,
+  SwapOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 
 const PRIMARY_GREEN = "#22c55e";
 
@@ -10,159 +29,474 @@ const getInitials = (name = "") => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-const HouseholdTable = () => {
-  const data = [
-    {
-      key: "1",
-      no: 1,
-      household: "ANKRAVS",
-      status: "ACTIVE",
-      members: "PETER - Primary, 71\nRhonda - Partner, 71",
-      contact: "0427202033",
-      email: "ankrav11@bigpond.com",
-      address: "10 Federation Court",
-      lastUpdated: "01/01/2026",
-    },
-    {
-      key: "2",
-      no: 2,
-      household: "ANKRAVS",
-      status: "",
-      members: "PETER - Primary, 71\nRhonda - Partner",
-      contact: "0427202033",
-      email: "ankrav11@bigpond.com",
-      address: "10 Federation Court",
-      lastUpdated: "01/01/2026",
-    },
+const formatDate = (value) => {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  // Invalid date
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-AU");
+};
+
+const getClientName = (client = {}) =>
+  client.clientPreferredName ||
+  client.clientGivenName ||
+  client.firstName ||
+  client.name ||
+  "";
+
+const getPartnerName = (partner = {}) =>
+  partner.partnerPreferredName ||
+  partner.partnerGivenName ||
+  partner.firstName ||
+  partner.name ||
+  "";
+
+const getClientLastName = (client = {}) =>
+  client.clientLastName || client.lastName || "";
+
+const getClientEmail = (client = {}) => client.Email || client.email || "";
+
+const getPartnerEmail = (partner = {}) =>
+  partner.partnerEmail || partner.email || "";
+
+const getClientPhone = (client = {}) =>
+  client.clientWorkPhone || client.clientPhone || client.phone || "";
+
+const getPartnerPhone = (partner = {}) =>
+  partner.partnerWorkPhone || partner.partnerPhone || partner.phone || "";
+
+const getClientAddress = (client = {}) =>
+  client.clientHomeAddress || client.clientAddress || client.address || "";
+
+const getPartnerAddress = (partner = {}) =>
+  partner.partnerHomeAddress || partner.partnerAddress || partner.address || "";
+
+const MEMBER_NAME_STYLE = {
+  fontFamily: "Arial",
+  fontSize: 12,
+  color: "rgb(55, 65, 81)",
+  fontWeight: 600,
+};
+
+const buildMembersNode = (client = {}, partner = {}) => {
+  const clientName = getClientName(client) || "—";
+  const partnerName = getPartnerName(partner);
+
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      <div>
+        <span style={MEMBER_NAME_STYLE}>{clientName}</span>
+        <span>
+          {` - Primary${client.clientAge ? `, ${client.clientAge}` : ""}`}
+        </span>
+      </div>
+
+      {partnerName ? (
+        <div>
+          <span style={MEMBER_NAME_STYLE}>{partnerName}</span>
+          <span>
+            {` - Partner${partner.partnerAge ? `, ${partner.partnerAge}` : ""}`}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+/** Lowercase single string used for substring search across household, names, #, phones, emails. */
+function buildRowSearchHaystack(row) {
+  const client = row?.client || {};
+  const partner = row?.partner || {};
+  const parts = [
+    row.household,
+    getClientLastName(client),
+    client.clientTitle,
+    client.clientGivenName,
+    client.clientMiddleName,
+    client.clientLastName,
+    client.clientPreferredName,
+    getClientName(client),
+    String(client.clientAge ?? ""),
+    partner.partnerTitle,
+    partner.partnerGivenName,
+    partner.partnerMiddleName,
+    partner.partnerLastName,
+    partner.partnerPreferredName,
+    getPartnerName(partner),
+    String(partner.partnerAge ?? ""),
+    String(row.no ?? ""),
+    getClientPhone(client),
+    getPartnerPhone(partner),
+    getClientEmail(client),
+    getPartnerEmail(partner),
+    row.assignID?.email,
+    row._id ? String(row._id) : "",
   ];
+  return parts
+    .filter((p) => p !== undefined && p !== null && p !== "")
+    .join(" ")
+    .toLowerCase();
+}
+
+function rowMatchesSearch(row, queryRaw) {
+  const q = String(queryRaw ?? "").trim().toLowerCase();
+  if (!q) return true;
+  const hay = buildRowSearchHaystack(row);
+  if (hay.includes(q)) return true;
+  const digitsQuery = q.replace(/\D/g, "");
+  if (digitsQuery.length >= 2) {
+    const phones = `${getClientPhone(row.client)} ${getPartnerPhone(row.partner)}`.replace(
+      /\D/g,
+      "",
+    );
+    if (phones.includes(digitsQuery)) return true;
+  }
+  return false;
+}
+
+const HouseholdTable = ({ onAction, searchText = "" }) => {
+  const session = useAtomValue(loggedInUser);
+  const selectedClient = useAtomValue(SelectedClient);
+  const setSelectedClient = useSetAtom(SelectedClient);
+  const permissions =
+    session?.user?.roleID?.permissions ?? session?.permissions ?? [];
+
+  const menuGenerator = (row, selectedClient) => {
+    const rowId = row?._id ?? row?.key;
+    const selectedId = selectedClient?._id ?? selectedClient?.key;
+    const isRowSelected =
+      Boolean(selectedId) && Boolean(rowId) && selectedId === rowId;
+
+    const items = [
+      { key: "view", label: "View", icon: <FileTextOutlined /> },
+      {
+        key: "downloadReport",
+        label: "Download Report",
+        icon: <DownloadOutlined />,
+      },
+      {
+        key: "pushToAdviser",
+        label: "Push to Adviser-link",
+        icon: <UploadOutlined />,
+      },
+      { key: "assign", label: "Assign", icon: <SwapOutlined /> },
+      {
+        // Must differ by key so AntD `onClick({ key })` can distinguish Select vs Deselect
+        key: isRowSelected ? "deselect" : "select",
+        label: isRowSelected ? "Deselect" : "Select",
+        icon: isRowSelected ? <CloseOutlined /> : <CheckOutlined />,
+      },
+      { type: "divider" },
+      {
+        key: "delete",
+        label: "Delete",
+        icon: <DeleteOutlined />,
+        danger: true,
+      },
+    ];
+
+    // Adviser: show Unassign instead of Assign when assigned to someone else
+    if (
+      permissions.includes("adviser") &&
+      row?.assignID?.email &&
+      session?.email &&
+      row.assignID.email !== session.email
+    ) {
+      const assignIndex = items.findIndex((item) => item?.key === "assign");
+      if (assignIndex !== -1) {
+        items[assignIndex] = {
+          ...items[assignIndex],
+          key: "unAssign",
+          label: "Unassign",
+        };
+      }
+    }
+
+    // Prospects + Fact Find: insert risk profile send/view after assign/unassign
+    if (
+      permissions.includes("prospects") &&
+      permissions.includes("fact find")
+    ) {
+      const anchorIndex = items.findIndex(
+        (item) => item?.key === "assign" || item?.key === "unAssign",
+      );
+      if (anchorIndex !== -1) {
+        items.splice(anchorIndex + 1, 0, {
+          key: row?.isRiskProfileCompleted
+            ? "viewRiskProfile"
+            : "sendRiskProfile",
+          label: row?.isRiskProfileCompleted
+            ? "View Risk Profile"
+            : "Send Risk Profile",
+          icon: row?.isRiskProfileCompleted ? (
+            <FileTextOutlined />
+          ) : (
+            <MailOutlined />
+          ),
+        });
+      }
+    }
+
+    const keyToAction = {
+      view: "View",
+      discovery: "Edit",
+      downloadReport: "Download-Report",
+      pushToAdviser: "Push-to-Adviser-link",
+      assign: "Assign",
+      unAssign: "Unassign",
+      select: "Select",
+      deselect: "Deselect",
+      delete: "Delete",
+      sendRiskProfile: "sendRiskProfile",
+      viewRiskProfile: "viewRiskProfile",
+    };
+
+    return {
+      items,
+      onClick: ({ key }) => {
+        const action = keyToAction[key] || key;
+        if (action === "Select") {
+          setSelectedClient(row);
+        } else if (action === "Deselect") {
+          setSelectedClient(null);
+        }
+        onAction?.(action, row);
+      },
+    };
+  };
 
   const columns = [
     {
-      title: "No#",
-      dataIndex: "no",
-      key: "no",
-      width: 70,
-      render: (text) => <strong>{text}</strong>,
+      title: <div style={{ textAlign: "center", width: "100%" }}>#</div>,
+      dataIndex: "number",
+      key: "number",
+      width: 50,
+      onCell: (record) => ({
+        style: {
+          textAlign: "center",
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#7ea897",
+        },
+      }),
+      render: (_, __, index) => index + 1,
     },
     {
       title: "Household",
-      dataIndex: "household",
+      dataIndex: "client",
       key: "household",
-      width: 150,
-      render: (_, record) => (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <Avatar
-            size={36}
-            style={{
-              background: "linear-gradient(135deg, #22c55e, #22c55e)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 14,
-            }}
-          >
-            {getInitials(record.household)}
-          </Avatar>
+      render: (_, record) =>
+        (() => {
+          const client = record?.client || {};
+          const household = (
+            getClientLastName(client) || "Unknown"
+          ).toUpperCase();
+          const rowId = record?._id ?? record?.key;
+          const selectedId = selectedClient?._id ?? selectedClient?.key;
+          const isRowSelected =
+            Boolean(selectedId) && Boolean(rowId) && selectedId === rowId;
 
-          <div style={{ lineHeight: 1.2 }}>
+          return (
             <div
               style={{
-                fontWeight: 600,
-                textTransform: "uppercase",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
               }}
             >
-              {record.household}
-            </div>
-            {record.status && (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: PRIMARY_GREEN,
-                  fontWeight: 600,
-                  letterSpacing: 0.3,
-                }}
-              >
-                {record.status}
+              <div style={{ width: 36, height: 36 }}>
+                <Avatar
+                  size={36}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #22c55e, rgb(22, 163, 74))",
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  {getInitials(household)}
+                </Avatar>
               </div>
-            )}
-          </div>
-        </div>
-      ),
+
+              <div style={{ lineHeight: 1.2 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    fontSize: 13,
+                    fontFamily: "Arial,serif",
+                  }}
+                >
+                  {household}
+                </div>
+
+                {isRowSelected && (
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontFamily: "Arial",
+                      fontWeight: 700,
+                      color: "#22c55e",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    ACTIVE
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })(),
     },
     {
       title: "Members",
-      dataIndex: "members",
+      dataIndex: "client",
       key: "members",
-      width: 150,
-      render: (text) => <div style={{ whiteSpace: "pre-line" }}>{text}</div>,
+      onCell: (record) => ({
+        style: { fontSize: 11, color: "#4b5563" },
+      }),
+      render: (_, record) => {
+        const client = record?.client || {};
+        const partner = record?.partner || {};
+        return (
+          <div style={{ color: "#4b5563", fontSize: 11 }}>
+            {buildMembersNode(client, partner)}
+          </div>
+        );
+      },
     },
     {
       title: "Contact",
-      dataIndex: "contact",
+      dataIndex: "client",
       key: "contact",
-      width: 100,
+      onCell: (record) => ({
+        style: { fontSize: 11, color: "#4b5563" },
+      }),
+      render: (_, record) => {
+        const client = record?.client || {};
+        const partner = record?.partner || {};
+        const lines = [getClientPhone(client), getPartnerPhone(partner)].filter(
+          Boolean,
+        );
+        return (
+          <div style={{ whiteSpace: "pre-line" }}>
+            {lines.join("\n") || "—"}
+          </div>
+        );
+      },
     },
     {
       title: "Email",
-      dataIndex: "email",
+      dataIndex: "client",
       key: "email",
-      width: 100,
-      ellipsis: true,
+      onCell: (record) => ({
+        style: { fontSize: 11, color: "#4b5563" },
+      }),
+      render: (_, record) => {
+        const client = record?.client || {};
+        const partner = record?.partner || {};
+        const lines = [getClientEmail(client), getPartnerEmail(partner)].filter(
+          Boolean,
+        );
+        return (
+          <div style={{ whiteSpace: "pre-line" }}>
+            {lines.join("\n") || "—"}
+          </div>
+        );
+      },
     },
     {
       title: "Address",
-      dataIndex: "address",
+      dataIndex: "client",
       key: "address",
-      width: 100,
-      ellipsis: true,
+      onCell: (record) => ({
+        style: { fontSize: 11, color: "#4b5563" },
+      }),
+      render: (_, record) => {
+        const client = record?.client || {};
+        const partner = record?.partner || {};
+        const address = getClientAddress(client) || getPartnerAddress(partner);
+        return address || "—";
+      },
     },
     {
       title: "Last Updated",
       dataIndex: "lastUpdated",
       key: "lastUpdated",
-      width: 140,
+      onCell: (record) => ({
+        style: { fontSize: 11, color: "#4b5563" },
+      }),
+      render: (_, record) => formatDate(record?.updatedAt),
     },
     {
       title: "Actions",
       key: "actions",
-      width: 120,
-      render: () => (
-        <Button
-          type="default"
-          style={{
-            padding: "0 10px",
-            borderRadius: 5,
-            borderColor: PRIMARY_GREEN,
-            color: PRIMARY_GREEN,
-            fontWeight: 500,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-          size="small"
-        >
-          <span>View</span>
-          <span>→</span>
-        </Button>
-      ),
+      render: (_, row) => {
+        return (
+          <Dropdown
+            trigger={["click"]}
+            menu={menuGenerator(row, selectedClient)}
+            styles={{
+              item: {
+                fontWeight: 700,
+              },
+            }}
+          >
+            <Tooltip title="Settings">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                }
+              />
+            </Tooltip>
+          </Dropdown>
+        );
+      },
     },
   ];
+
+  const myClientsData = useAtomValue(MyClientsData);
+
+  const clients = Array.isArray(myClientsData?.clients)
+    ? myClientsData.clients
+    : [];
+
+  const tableData = useMemo(
+    () =>
+      clients.map((item, index) => ({
+        ...item,
+        key: item?._id || String(index + 1),
+        no: index + 1,
+        household: getClientLastName(item?.client || {}) || "Unknown",
+      })),
+    [clients],
+  );
+
+  const filteredTableData = useMemo(() => {
+    const q = String(searchText ?? "").trim();
+    if (!q) return tableData;
+    return tableData.filter((row) => rowMatchesSearch(row, q));
+  }, [tableData, searchText]);
+
+  const titleText =
+    searchText.trim() && filteredTableData.length !== tableData.length
+      ? `Showing ${filteredTableData.length} of ${tableData.length} households`
+      : `Showing ${filteredTableData.length} households`;
 
   return (
     <DynamicDataTable
       columns={columns}
-      data={data}
-      title={`Showing ${data.length} households`}
-      total={16}
+      data={filteredTableData}
+      title={titleText}
+      total={filteredTableData.length}
       pageSize={10}
       className="household-table"
       bordered
       size="small"
+      tableStyle={{ borderRadius: 12 }}
     />
   );
 };

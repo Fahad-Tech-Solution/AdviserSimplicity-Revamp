@@ -442,7 +442,7 @@ export default function CDFProspects() {
               fontSize: 28,
             }}
           >
-            Cdf Prospects
+            CDF Prospects
           </Title>
         </div>
         <div className="">

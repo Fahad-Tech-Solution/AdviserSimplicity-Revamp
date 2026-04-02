@@ -3,6 +3,7 @@ import { useSetAtom } from "jotai";
 import useApi from "./useApi";
 import {
   CDFProspectsData,
+  MyClientsData,
   userDashboardError,
   userDashboardLoading,
 } from "../Store/authState";
@@ -15,10 +16,7 @@ const getDisplayName = (person = {}) =>
   "";
 
 const getAddress = (person = {}) =>
-  person?.address ||
-  person?.residentialAddress ||
-  person?.postalAddress ||
-  "";
+  person?.address || person?.residentialAddress || person?.postalAddress || "";
 
 export function normalizeCDFProspect(item, index) {
   const client = item?.client || {};
@@ -63,6 +61,8 @@ export function normalizeCDFProspect(item, index) {
 export default function useUserDashboardData({ enabled = true } = {}) {
   const { get } = useApi();
   const setCDFProspectsData = useSetAtom(CDFProspectsData);
+  const setMyClientsData = useSetAtom(MyClientsData);
+
   const setDashboardLoading = useSetAtom(userDashboardLoading);
   const setDashboardError = useSetAtom(userDashboardError);
 
@@ -84,18 +84,57 @@ export default function useUserDashboardData({ enabled = true } = {}) {
       setDashboardError(null);
 
       try {
-        const [cdfResponse] = await Promise.all([
-          get("/api/CDF/", { signal: abortController.signal }),
-        ]);
+        const userApis = [
+          {
+            call: () => get("/api/CDF/", { signal: abortController.signal }),
+            setter: setCDFProspectsData,
+            normalize: (cdfResponse) =>
+              Array.isArray(cdfResponse)
+                ? cdfResponse.map(normalizeCDFProspect)
+                : [],
+          },
+          {
+            call: () =>
+              get("/api/user/Clients", { signal: abortController.signal }),
+            setter: setMyClientsData,
+          },
+        ];
+
+        const results = await Promise.allSettled(
+          userApis.map((api) => api.call()),
+        );
+
+        console.log("results", results); // these needs to be removed later in production
 
         if (!mounted) return;
 
-        const normalizedCDFData = Array.isArray(cdfResponse)
-          ? cdfResponse.map(normalizeCDFProspect)
-          : [];
+        const errors = [];
 
-        setCDFProspectsData(normalizedCDFData);
-        fetchedRef.current = true;
+        results.forEach((result, index) => {
+          const api = userApis[index];
+
+          if (result.status === "fulfilled") {
+            const value = api.normalize
+              ? api.normalize(result.value)
+              : result.value;
+            api.setter?.(value);
+            return;
+          }
+
+          const error = result.reason;
+          if (error?.name === "AbortError" || error?.code === "ERR_CANCELED") {
+            return;
+          }
+          errors.push(error);
+        });
+
+        if (errors.length) {
+          console.error("User dashboard bootstrap error", errors[0]);
+          setDashboardError(errors[0]);
+          fetchedRef.current = false;
+        } else {
+          fetchedRef.current = true;
+        }
       } catch (error) {
         if (error?.name === "AbortError" || error?.code === "ERR_CANCELED") {
           return;
@@ -126,6 +165,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
     setCDFProspectsData,
     setDashboardError,
     setDashboardLoading,
+    setMyClientsData,
   ]);
 
   const refetch = () => {
