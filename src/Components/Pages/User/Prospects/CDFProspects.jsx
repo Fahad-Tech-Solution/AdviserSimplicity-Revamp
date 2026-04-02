@@ -5,7 +5,6 @@ import {
   Dropdown,
   Input,
   Space,
-  Tag,
   Tooltip,
   Typography,
 } from "antd";
@@ -17,12 +16,15 @@ import {
 } from "@ant-design/icons";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
 import AppModal from "../../../Common/AppModal";
+import ProspectStatusTag from "../../../Common/ProspectStatusTag";
 import ViewProspects from "./components/ViewProspects";
+import ViewGoals from "./components/ViewGoals";
 import { SlReload } from "react-icons/sl";
-import { CDFProspectsData } from "../../../../Store/authState";
-import { useAtom } from "jotai";
+import { CDFProspectsData, loggedInUser } from "../../../../Store/authState";
+import { useAtom, useAtomValue } from "jotai";
 import useApi from "../../../../hooks/useApi";
 import { normalizeCDFProspect } from "../../../../hooks/useUserDashboardData";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
@@ -47,10 +49,13 @@ export default function CDFProspects() {
   const api = useApi();
   const { message } = AntdApp.useApp();
   const [prospects, setProspects] = useAtom(CDFProspectsData);
+  const session = useAtomValue(loggedInUser);
   const [activeTab, setActiveTab] = useState("new");
   const [searchText, setSearchText] = useState("");
   const [selectedProspect, setSelectedProspect] = useState(null);
-  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalInfoOpen, setIsModalInfoOpen] = useState(false);
+  const navigate = useNavigate();
 
   const filteredData = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
@@ -154,7 +159,44 @@ export default function CDFProspects() {
   const handleProspectAction = (actionKey, record) => {
     if (actionKey === "view") {
       setSelectedProspect(record);
-      setIsViewOpen(true);
+      setIsModalOpen(true);
+      setIsModalInfoOpen({
+        modalkey: "ViewProspects",
+        modalTitle: "CDF View Details",
+        width: 680,
+        footer: (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            {record.status?.toLowerCase() === "successful" && (
+              <Button
+                style={{ background: "rgb(75, 85, 99)", color: "#fff" }}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSelectedProspect(null);
+                  setIsModalInfoOpen(null);
+                  navigate(
+                    `/user/discovery/personal-details/?prospectId=${record.key}`,
+                    {
+                      replace: true,
+                    },
+                  );
+                }}
+                type="seondary"
+              >
+                Open Discovery
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setIsModalOpen(false);
+                setSelectedProspect(null);
+              }}
+              type="primary"
+            >
+              Close
+            </Button>
+          </div>
+        ),
+      });
       return;
     }
 
@@ -185,10 +227,35 @@ export default function CDFProspects() {
       title: "HouseHold",
       dataIndex: "household",
       key: "household",
-      render: (value) => (
+      render: (value, record) => (
         <Space size={8}>
           <span style={{ fontWeight: 700, fontSize: 12 }}>{value}</span>
-          <InfoCircleFilled style={{ color: "#374151", fontSize: 14 }} />
+          <InfoCircleFilled
+            role="button"
+            style={{ color: "#374151", fontSize: 14 }}
+            onClick={() => {
+              setIsModalInfoOpen({
+                modalkey: "ViewGoals",
+                modalTitle: "CDF View Goals",
+                width: 760,
+                footer: (
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      onClick={() => {
+                        setIsModalOpen(false);
+                        setSelectedProspect(null);
+                      }}
+                      type="primary"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                ),
+              });
+              setSelectedProspect(record);
+              setIsModalOpen(true);
+            }}
+          />
         </Space>
       ),
     },
@@ -230,6 +297,7 @@ export default function CDFProspects() {
       title: "Contact",
       dataIndex: "contacts",
       key: "contacts",
+      width: 80,
       render: (contacts) => stackText(contacts),
       onCell: (record) => ({
         style: { fontSize: 11 },
@@ -263,7 +331,7 @@ export default function CDFProspects() {
       }),
     },
     {
-      title: "updated at",
+      title: "Last updated at",
       dataIndex: "lastUpdated",
       key: "lastUpdated",
       onCell: (record) => ({
@@ -274,53 +342,7 @@ export default function CDFProspects() {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag
-          bordered
-          style={{
-            borderRadius: 5,
-            paddingInline: 12,
-            paddingBlock: 3,
-            background:
-              status === "Successful"
-                ? "#f0fdf4"
-                : status === "Unsuccessful"
-                  ? "#fef2f2"
-                  : "#fffaf0",
-            borderColor:
-              status === "Successful"
-                ? "#86efac"
-                : status === "Unsuccessful"
-                  ? "#fca5a5"
-                  : "#f7d587",
-            color:
-              status === "Successful"
-                ? "#166534"
-                : status === "Unsuccessful"
-                  ? "#b91c1c"
-                  : "#b7791f",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span
-            style={{
-              color:
-                status === "Successful"
-                  ? "#22c55e"
-                  : status === "Unsuccessful"
-                    ? "#ef4444"
-                    : "#f4b400",
-              marginRight: 6,
-            }}
-          >
-            •
-          </span>
-          {status}
-        </Tag>
-      ),
+      render: (status) => <ProspectStatusTag status={status} />,
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
@@ -368,29 +390,23 @@ export default function CDFProspects() {
   return (
     <div>
       <AppModal
-        width={760}
-        open={isViewOpen}
+        width={isModalInfoOpen.width}
+        titleWeight={700}
+        titleSize={18}
+        open={isModalOpen}
         onClose={() => {
-          setIsViewOpen(false);
+          setIsModalOpen(false);
           setSelectedProspect(null);
         }}
-        title="CDF View Details"
-        footer={
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              color="default"
-              variant="filled"
-              onClick={() => {
-                setIsViewOpen(false);
-                setSelectedProspect(null);
-              }}
-            >
-              Close
-            </Button>
-          </div>
-        }
+        title={isModalInfoOpen.modalTitle}
+        footer={isModalInfoOpen.footer}
       >
-        <ViewProspects record={selectedProspect} />
+        {isModalInfoOpen.modalkey === "ViewProspects" && (
+          <ViewProspects record={selectedProspect} />
+        )}
+        {isModalInfoOpen.modalkey === "ViewGoals" && (
+          <ViewGoals record={selectedProspect} />
+        )}
       </AppModal>
 
       <div
@@ -439,6 +455,13 @@ export default function CDFProspects() {
               fontSize: 13,
               boxShadow: "0 8px 20px rgba(34,197,94,0.18)",
             }}
+            onClick={() =>
+              window.open(
+                "https://cdf.denarowealth.com.au/?referralId=" +
+                  session.user.referralID,
+                "_blank",
+              )
+            }
           >
             + New Prospect
           </Button>
@@ -451,9 +474,6 @@ export default function CDFProspects() {
           borderRadius: 18,
           border: "1px solid #ebedf0",
           boxShadow: "0 10px 35px rgba(15,23,42,0.05)",
-          overflow: "hidden",
-          maxHeight: "calc(100vh - 150px)",
-          overflowY: "auto",
         }}
       >
         <div
@@ -464,7 +484,7 @@ export default function CDFProspects() {
             gap: 16,
             padding: "12px 20px 2px",
             flexWrap: "wrap",
-            marginBottom: 12,
+            marginBottom: 4,
           }}
         >
           <div
@@ -527,9 +547,6 @@ export default function CDFProspects() {
           bordered={true}
           size="small"
           tableStyle={{ borderRadius: 0, overflow: "hidden" }}
-          tableProps={{
-            pagination: false,
-          }}
         />
       </div>
     </div>

@@ -9,6 +9,8 @@ export default function AppModal({
   subtitle,
   icon,
   width = 1100,
+  titleWeight = 600,
+  titleSize = 20,
   children,
   footer = null,
   className = "",
@@ -33,12 +35,12 @@ export default function AppModal({
         },
         title: {
           fontFamily: "Georgia,serif",
-          fontWeight: 600,
-          fontSize: 20,
+          fontWeight: titleWeight,
+          fontSize: titleSize,
         },
       }}
     >
-      <Divider />
+      <Divider style={{ margin: 0 }} />
       {children}
     </Modal>
   );

@@ -107,7 +107,12 @@ export default function UserLayout() {
               />
             </div>
             <div
-              style={{ maxHeight: screens.xl? "calc(100vh - 16.9vh)" : "calc(100vh - 27vh)", overflowY: "auto" }}
+              style={{
+                maxHeight: screens.xl
+                  ? "calc(100vh - 16.9vh)"
+                  : "calc(100vh - 27vh)",
+                overflowY: "auto",
+              }}
               // style={{ flex: 1, overflowY: "auto" }}
             >
               <Menu
@@ -199,14 +204,18 @@ export default function UserLayout() {
 
       {/* Content */}
       <Layout>
-        <Content style={{ background: "#fff" }}>
+        <Content
+          style={{
+            background: "#fff",
+            height: "100vh",
+            overflowX: "hidden",
+            overflowY: "auto",
+          }}
+        >
           <div
             style={{
               background: "#fff",
-              height: "100vh",
               padding: 8,
-              overflowX: "hidden",
-              overflowY: "auto",
               maxWidth: screens.lg ? "1100px" : "100%",
               justifyContent: "center",
               alignItems: "center",
