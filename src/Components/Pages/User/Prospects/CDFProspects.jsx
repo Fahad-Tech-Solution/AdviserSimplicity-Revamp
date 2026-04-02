@@ -378,8 +378,10 @@ export default function CDFProspects() {
               type="text"
               shape="circle"
               icon={
-                <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                // <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                "⚙️"
               }
+              style={{ fontSize: 18 }}
             />
           </Tooltip>
         </Dropdown>
@@ -528,7 +530,8 @@ export default function CDFProspects() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search..."
-              prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
+              // prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
+              prefix={"🔍"}
               style={{ width: 210, borderRadius: 7 }}
             />
             <Button

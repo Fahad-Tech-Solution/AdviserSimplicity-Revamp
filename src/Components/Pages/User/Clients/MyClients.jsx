@@ -52,7 +52,8 @@ const MyClients = () => {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search..."
-              prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
+              //   prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
+              prefix={"🔍"}
               style={{ width: 210, borderRadius: 7 }}
             />
             <Button

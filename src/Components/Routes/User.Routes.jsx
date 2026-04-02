@@ -5,6 +5,7 @@ import HouseholdTable from "../Pages/User/Clients/HouseholdTable";
 import MyClients from "../Pages/User/Clients/MyClients";
 import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
 import CDFProspects from "../Pages/User/Prospects/CDFProspects";
+import MyTeam from "../Pages/User/MyTeam/MyTeam";
 
 export const withSpacing = (icon, label, marginLeft = 0) => ({
   label: (
@@ -48,7 +49,7 @@ export const userRoutes = [
     key: "/user/my-team",
     path: "/my-team",
     ...withSpacing("👤", "My Team"),
-    component: null,
+    component: <MyTeam />,
     condition: () => true,
   },
 ];

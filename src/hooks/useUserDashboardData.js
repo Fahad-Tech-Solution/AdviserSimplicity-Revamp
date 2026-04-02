@@ -4,9 +4,11 @@ import useApi from "./useApi";
 import {
   CDFProspectsData,
   MyClientsData,
+  MyTeamData,
   userDashboardError,
   userDashboardLoading,
 } from "../Store/authState";
+
 
 const getDisplayName = (person = {}) =>
   person?.preferredName ||
@@ -62,6 +64,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
   const { get } = useApi();
   const setCDFProspectsData = useSetAtom(CDFProspectsData);
   const setMyClientsData = useSetAtom(MyClientsData);
+  const setMyTeamData = useSetAtom(MyTeamData);
 
   const setDashboardLoading = useSetAtom(userDashboardLoading);
   const setDashboardError = useSetAtom(userDashboardError);
@@ -98,13 +101,16 @@ export default function useUserDashboardData({ enabled = true } = {}) {
               get("/api/user/Clients", { signal: abortController.signal }),
             setter: setMyClientsData,
           },
+          {
+            call: () =>
+              get("/api/user/Employees", { signal: abortController.signal }),
+            setter: setMyTeamData,
+          },
         ];
 
         const results = await Promise.allSettled(
           userApis.map((api) => api.call()),
         );
-
-        console.log("results", results); // these needs to be removed later in production
 
         if (!mounted) return;
 
@@ -166,6 +172,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
     setDashboardError,
     setDashboardLoading,
     setMyClientsData,
+    setMyTeamData,
   ]);
 
   const refetch = () => {

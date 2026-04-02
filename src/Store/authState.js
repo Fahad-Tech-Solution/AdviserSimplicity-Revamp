@@ -11,6 +11,9 @@ export const loggedInUser = atomWithStorage("loggedInUser", {
 export const CDFProspectsData = atomWithStorage("CDFProspectsData", []);
 export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
 
+/** Team / employees list from GET /api/user/Employees (bootstrap). */
+export const MyTeamData = atomWithStorage("MyTeamData", []);
+
 /** Currently selected household row from My Clients (set when user chooses Select). */
 export const SelectedClient = atom(null);
 

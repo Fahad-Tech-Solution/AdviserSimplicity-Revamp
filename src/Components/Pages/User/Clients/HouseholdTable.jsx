@@ -139,16 +139,19 @@ function buildRowSearchHaystack(row) {
 }
 
 function rowMatchesSearch(row, queryRaw) {
-  const q = String(queryRaw ?? "").trim().toLowerCase();
+  const q = String(queryRaw ?? "")
+    .trim()
+    .toLowerCase();
   if (!q) return true;
   const hay = buildRowSearchHaystack(row);
   if (hay.includes(q)) return true;
   const digitsQuery = q.replace(/\D/g, "");
   if (digitsQuery.length >= 2) {
-    const phones = `${getClientPhone(row.client)} ${getPartnerPhone(row.partner)}`.replace(
-      /\D/g,
-      "",
-    );
+    const phones =
+      `${getClientPhone(row.client)} ${getPartnerPhone(row.partner)}`.replace(
+        /\D/g,
+        "",
+      );
     if (phones.includes(digitsQuery)) return true;
   }
   return false;
@@ -169,17 +172,21 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
     const items = [
       { key: "view", label: "View", icon: <FileTextOutlined /> },
+      { type: "divider" },
       {
         key: "downloadReport",
         label: "Download Report",
         icon: <DownloadOutlined />,
       },
+      { type: "divider" },
       {
         key: "pushToAdviser",
         label: "Push to Adviser-link",
         icon: <UploadOutlined />,
       },
+      { type: "divider" },
       { key: "assign", label: "Assign", icon: <SwapOutlined /> },
+      { type: "divider" },
       {
         // Must differ by key so AntD `onClick({ key })` can distinguish Select vs Deselect
         key: isRowSelected ? "deselect" : "select",
@@ -448,8 +455,10 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
                 type="text"
                 shape="circle"
                 icon={
-                  <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                  // <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                  "⚙️"
                 }
+                style={{ fontSize: 18 }}
               />
             </Tooltip>
           </Dropdown>
