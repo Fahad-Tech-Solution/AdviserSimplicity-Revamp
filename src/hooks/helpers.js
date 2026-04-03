@@ -125,3 +125,112 @@ export const formatAustralianDate = (dateString = "") => {
     return "";
   }
 };
+
+/* ================================
+   MY CLIENTS (Jotai + API shape)
+================================ */
+
+/** GET may return a bare array, `{ clients: [] }`, or `{ data: [] }`. */
+export function normalizeMyClientsList(value) {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value.clients)) return value.clients;
+  if (Array.isArray(value.data)) return value.data;
+  return [];
+}
+
+/** Always store `{ clients: [...] }` in MyClientsData. */
+export function wrapMyClientsState(list) {
+  return { clients: Array.isArray(list) ? list : [] };
+}
+
+/**
+ * POST /personalDetails/Add — HouseholdTable needs a full row `{ _id, client, partner, updatedAt }`.
+ * Do not return only `res.client` or the table shows UNKNOWN / dashes.
+ */
+export function unwrapCreatedClientResponse(res) {
+  if (res == null) return null;
+  if (Array.isArray(res) && res[0]) return res[0];
+  if (res.data != null) {
+    const d = res.data;
+    return Array.isArray(d) ? d[0] : d;
+  }
+  if (typeof res === "object" && !Array.isArray(res)) {
+    if (res.client && typeof res.client === "object") {
+      if (
+        res._id ||
+        res.updatedAt ||
+        Object.prototype.hasOwnProperty.call(res, "partner")
+      ) {
+        return res;
+      }
+    }
+    return res;
+  }
+  return null;
+}
+
+/**
+ * Build a household row in the same shape as GET /api/user/Clients (for optimistic UI after Add).
+ */
+export function buildClientRowFromAddForm(values, apiRes = {}) {
+  const id =
+    apiRes?._id ||
+    apiRes?.id ||
+    (apiRes?.data && typeof apiRes.data === "object" && apiRes.data._id) ||
+    `temp-${Date.now()}`;
+
+  const updatedAt =
+    apiRes?.updatedAt ||
+    (apiRes?.data && apiRes.data?.updatedAt) ||
+    new Date().toISOString();
+
+  const client = {
+    clientLastName: values.clientLastName,
+    clientPreferredName: values.clientPreferredName,
+    clientAge: values.clientAge,
+    clientWorkPhone: values.clientWorkPhone,
+    Email: values.Email,
+    clientHomeAddress: values.clientHomeAddress,
+    clientMaritalStatus: values.clientMaritalStatus,
+  };
+
+  const ms = String(values.clientMaritalStatus || "")
+    .trim()
+    .toLowerCase();
+  const hidePartner = ["single", "widowed", "", null, undefined].includes(ms) || !ms;
+
+  const partner =
+    hidePartner || !(values.partnerPreferredName || values.partnerAge)
+      ? {}
+      : {
+          partnerPreferredName: values.partnerPreferredName,
+          partnerAge: values.partnerAge,
+          partnerWorkPhone: values.clientWorkPhone,
+        };
+
+  return {
+    _id: id,
+    client,
+    partner,
+    updatedAt,
+  };
+}
+
+/** Prefer full API household document; otherwise build from submitted form + ids from response. */
+export function mergeNewClientRowForTable(apiRes, formValues) {
+  const unwrapped = unwrapCreatedClientResponse(apiRes);
+  if (
+    unwrapped &&
+    typeof unwrapped === "object" &&
+    unwrapped.client &&
+    typeof unwrapped.client === "object" &&
+    (unwrapped._id || unwrapped.updatedAt)
+  ) {
+    return unwrapped;
+  }
+  if (formValues && typeof formValues === "object") {
+    return buildClientRowFromAddForm(formValues, apiRes);
+  }
+  return unwrapped;
+}

@@ -1,12 +1,16 @@
-import { useMemo } from "react";
-import { Avatar, Button, Dropdown, Tag, Tooltip } from "antd";
+import { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { Avatar, Button, Dropdown, message, Spin, Tooltip } from "antd";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
+import { normalizeMyClientsList } from "../../../../hooks/helpers";
 import {
+  discoveryDataAtom,
+  discoverySectionQuestionsAtom,
   loggedInUser,
   MyClientsData,
   SelectedClient,
 } from "../../../../Store/authState";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   CheckOutlined,
   CloseOutlined,
@@ -14,11 +18,13 @@ import {
   DownloadOutlined,
   EditOutlined,
   FileTextOutlined,
+  LoadingOutlined,
   MailOutlined,
   SettingOutlined,
   SwapOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
+import useApi from "../../../../hooks/useApi";
 
 const PRIMARY_GREEN = "#22c55e";
 
@@ -159,16 +165,57 @@ function rowMatchesSearch(row, queryRaw) {
 
 const HouseholdTable = ({ onAction, searchText = "" }) => {
   const session = useAtomValue(loggedInUser);
-  const selectedClient = useAtomValue(SelectedClient);
-  const setSelectedClient = useSetAtom(SelectedClient);
+
+  const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const setDiscoverySectionQuestions = useSetAtom(
+    discoverySectionQuestionsAtom,
+  );
+
+  const { get } = useApi();
+
+  const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
+  const [openDropdownRowId, setOpenDropdownRowId] = useState(null);
+  const [selectLoadingRowId, setSelectLoadingRowId] = useState(null);
+  /** Sync guard so onOpenChange cannot close the menu before Select loading state is applied. */
+  const selectLoadingRowIdRef = useRef(null);
+
   const permissions =
     session?.user?.roleID?.permissions ?? session?.permissions ?? [];
+
+  const finishSelectClientFlow = (rowId) => {
+    selectLoadingRowIdRef.current = null;
+    setSelectLoadingRowId(null);
+    setOpenDropdownRowId(null);
+  };
+
+  const getClientDetails = async (row) => {
+    const rowId = row?._id ?? row?.key;
+    try {
+      const [yesNoQuestionsRes, fullDetailsRes] = await Promise.all([
+        get(`/api/questions/${row?._id}`),
+        get(`/api/dataOfAllSection/${row?._id}`),
+      ]);
+
+      setDiscoverySectionQuestions(yesNoQuestionsRes.data);
+      setDiscoveryData(fullDetailsRes.data);
+      setSelectedClient(row);
+
+      const displayName = getClientLastName(row?.client || {}) || "Client";
+      message.success(`"${displayName.toUpperCase()}" is active now`);
+    } catch (error) {
+      console.error("Error getting client details", error);
+      message.error("Could not load client details. Please try again.");
+    } finally {
+      finishSelectClientFlow(rowId);
+    }
+  };
 
   const menuGenerator = (row, selectedClient) => {
     const rowId = row?._id ?? row?.key;
     const selectedId = selectedClient?._id ?? selectedClient?.key;
     const isRowSelected =
       Boolean(selectedId) && Boolean(rowId) && selectedId === rowId;
+    const isSelectLoading = Boolean(rowId) && selectLoadingRowId === rowId;
 
     const items = [
       { key: "view", label: "View", icon: <FileTextOutlined /> },
@@ -191,7 +238,22 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         // Must differ by key so AntD `onClick({ key })` can distinguish Select vs Deselect
         key: isRowSelected ? "deselect" : "select",
         label: isRowSelected ? "Deselect" : "Select",
-        icon: isRowSelected ? <CloseOutlined /> : <CheckOutlined />,
+        icon: isSelectLoading ? (
+          <Spin
+            size="small"
+            indicator={<LoadingOutlined spin />}
+            styles={{
+              indicator: {
+                color: "lightgray",
+              },
+            }}
+          />
+        ) : isRowSelected ? (
+          <CloseOutlined />
+        ) : (
+          <CheckOutlined />
+        ),
+        disabled: !isRowSelected && isSelectLoading,
       },
       { type: "divider" },
       {
@@ -228,7 +290,8 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         (item) => item?.key === "assign" || item?.key === "unAssign",
       );
       if (anchorIndex !== -1) {
-        items.splice(anchorIndex + 1, 0, {
+        items.splice(anchorIndex + 1, 0, { type: "divider" });
+        items.splice(anchorIndex + 2, 0, {
           key: row?.isRiskProfileCompleted
             ? "viewRiskProfile"
             : "sendRiskProfile",
@@ -263,8 +326,15 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       onClick: ({ key }) => {
         const action = keyToAction[key] || key;
         if (action === "Select") {
-          setSelectedClient(row);
+          flushSync(() => {
+            selectLoadingRowIdRef.current = rowId;
+            setSelectLoadingRowId(rowId);
+            setOpenDropdownRowId(rowId);
+          });
+          void getClientDetails(row);
         } else if (action === "Deselect") {
+          setDiscoverySectionQuestions({});
+          setDiscoveryData({});
           setSelectedClient(null);
         }
         onAction?.(action, row);
@@ -283,7 +353,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
           textAlign: "center",
           fontSize: 12,
           fontWeight: 700,
-          color: "#7ea897",
+          color: "#9ca3af",
         },
       }),
       render: (_, __, index) => index + 1,
@@ -355,6 +425,14 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
             </div>
           );
         })(),
+      // Add basic alphabetical sorting on Household name
+      sorter: (a, b) => {
+        const nameA = String(a.household || "").toLowerCase();
+        const nameB = String(b.household || "").toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+      },
     },
     {
       title: "Members",
@@ -435,14 +513,31 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         style: { fontSize: 11, color: "#4b5563" },
       }),
       render: (_, record) => formatDate(record?.updatedAt),
+      sorter: (a, b) => {
+        const dateA = a?.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const dateB = b?.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return dateA - dateB;
+      },
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, row) => {
+        const rowId = row?._id ?? row?.key;
         return (
           <Dropdown
             trigger={["click"]}
+            open={openDropdownRowId === rowId}
+            onOpenChange={(visible) => {
+              if (!visible) {
+                if (selectLoadingRowIdRef.current === rowId) {
+                  return;
+                }
+                setOpenDropdownRowId(null);
+              } else {
+                setOpenDropdownRowId(rowId);
+              }
+            }}
             menu={menuGenerator(row, selectedClient)}
             styles={{
               item: {
@@ -469,9 +564,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
   const myClientsData = useAtomValue(MyClientsData);
 
-  const clients = Array.isArray(myClientsData?.clients)
-    ? myClientsData.clients
-    : [];
+  const clients = normalizeMyClientsList(myClientsData);
 
   const tableData = useMemo(
     () =>
@@ -506,6 +599,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       bordered
       size="small"
       tableStyle={{ borderRadius: 12 }}
+      tableProps={{ childrenColumnName: "__antdNestedRows__" }}
     />
   );
 };

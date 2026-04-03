@@ -25,7 +25,12 @@ function roleIdFromRow(row) {
  *
  * @param {object|null} editingEmployee — when set, form opens in edit mode for that row.
  */
-export default function AddEmployee({ open, onClose, onSuccess, editingEmployee = null }) {
+export default function AddEmployee({
+  open,
+  onClose,
+  onSuccess,
+  editingEmployee = null,
+}) {
   const api = useApi();
   const { message } = AntdApp.useApp();
   const session = useAtomValue(loggedInUser);
@@ -136,8 +141,8 @@ export default function AddEmployee({ open, onClose, onSuccess, editingEmployee 
     [roles],
   );
 
-  const modalTitle = isEdit ? "Edit employee" : "Add employee";
-  const submitLabel = isEdit ? "Save changes" : "Add employee";
+  const modalTitle = isEdit ? "Edit Employee" : "Add Employee";
+  const submitLabel = isEdit ? "Save changes" : "Add Employee";
 
   return (
     <AppModal

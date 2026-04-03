@@ -2,11 +2,21 @@ import { Button, Input, Space } from "antd";
 import Text from "antd/es/typography/Text";
 import Title from "antd/es/typography/Title";
 import React, { useState } from "react";
-import { SearchOutlined } from "@ant-design/icons";
+import { useSetAtom } from "jotai";
+import { MyClientsData } from "../../../../Store/authState";
+import {
+  mergeNewClientRowForTable,
+  normalizeMyClientsList,
+  wrapMyClientsState,
+} from "../../../../hooks/helpers";
+import AddClient from "./components/AddClient";
 import HouseholdTable from "./HouseholdTable";
 
 const MyClients = () => {
   const [searchText, setSearchText] = useState("");
+  const [openAddClient, setOpenAddClient] = useState(false);
+  const setMyClientsData = useSetAtom(MyClientsData);
+
   return (
     <div>
       <div
@@ -64,12 +74,29 @@ const MyClients = () => {
                 padding: "17px 20px",
                 fontSize: 13,
               }}
+              onClick={() => {
+                setOpenAddClient(true);
+              }}
             >
               Add New +
             </Button>
           </Space>
         </div>
       </div>
+
+      <AddClient
+        open={openAddClient}
+        onClose={() => setOpenAddClient(false)}
+        onSuccess={(res, formValues) => {
+          const row = mergeNewClientRowForTable(res, formValues);
+          if (!row) return;
+          setMyClientsData((prev) => {
+            const list = normalizeMyClientsList(prev);
+            return wrapMyClientsState([row, ...list]);
+          });
+        }}
+      />
+
       <HouseholdTable searchText={searchText} />
     </div>
   );

@@ -6,7 +6,15 @@ import {
   MenuOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Drawer, Layout, Menu, Typography, Grid, Avatar } from "antd";
+import {
+  Drawer,
+  Layout,
+  Menu,
+  Typography,
+  Grid,
+  Avatar,
+  ConfigProvider,
+} from "antd";
 import {
   Link,
   Navigate,
@@ -30,20 +38,7 @@ import useUserDashboardData from "../../hooks/useUserDashboardData";
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
-
-const navItems = [
-  ...userRoutes,
-  {
-    key: "discovery",
-    ...withSpacing("⚙️", "Discovery", 0),
-    children: [...discoveryRoutes],
-  },
-  {
-    key: "strategy",
-    ...withSpacing("📋", "Strategy", 0),
-    children: [...strategyRoutes],
-  },
-];
+import { discoverySectionQuestionsAtom } from "../../Store/authState.js";
 
 export default function UserLayout() {
   const location = useLocation();
@@ -51,6 +46,25 @@ export default function UserLayout() {
   const isMobile = !screens.lg;
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
+  const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
+
+  const navItems = useMemo(() => {
+    const passes = (route) => route.condition?.(discoveryQuestions) !== false;
+    // `!== false` keeps routes with no `condition` visible; use `=== true` if you require condition
+    return [
+      ...userRoutes.filter(passes),
+      {
+        key: "discovery",
+        ...withSpacing({ icon: "⚙️", label: "Discovery", fontSize: "13px" }),
+        children: discoveryRoutes.filter(passes),
+      },
+      {
+        key: "strategy",
+        ...withSpacing({ icon: "📋", label: "Strategy", fontSize: "13px" }),
+        children: strategyRoutes.filter(passes),
+      },
+    ];
+  }, [discoveryQuestions]);
 
   useUserDashboardData({
     enabled: Boolean(session?.token),
@@ -69,8 +83,6 @@ export default function UserLayout() {
   }, [location.pathname]);
 
   const visibleRoutes = useMemo(() => {
-    // For now, render only routes that belong to /user and are already mounted by App.jsx (`/user/*`).
-    // You can expand this later to include /discovery and /strategy once those routes exist in App.jsx.
     return allUserRoutes;
   }, []);
 
@@ -115,19 +127,34 @@ export default function UserLayout() {
               }}
               // style={{ flex: 1, overflowY: "auto" }}
             >
-              <Menu
-                mode="inline"
-                selectedKeys={[selectedKey]}
-                items={navItems}
-                style={{ borderRight: 0 }}
-                styles={{
-                  // item: { paddingInline: 0 },
-                  subMenu: {
-                    item: { paddingLeft: "25px" },
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Menu: {
+                      fontSize: 12,
+                      subMenuItemBg: "#fff",
+                    },
                   },
                 }}
-                onClick={(info) => handleMenuClick(info)}
-              />
+              >
+                <Menu
+                  mode="inline"
+                  selectedKeys={[selectedKey]}
+                  items={navItems}
+                  inlineIndent={12}
+                  style={{ borderRight: 0 }}
+                  styles={{
+                    item: { padding: "0px 10px", height: "35px" },
+                    subMenu: {
+                      item: {
+                        padding: "0px 20px",
+                        height: "35px",
+                      },
+                    },
+                  }}
+                  onClick={(info) => handleMenuClick(info)}
+                />
+              </ConfigProvider>
             </div>
 
             {/* User Profile Section */}
@@ -143,7 +170,15 @@ export default function UserLayout() {
               }}
               onClick={() => console.log("Profile clicked", session)}
             >
-              <Avatar size={35} src={session?.user?.profileImage}>
+              <Avatar
+                size={35}
+                src={session?.user?.profileImage}
+                style={{
+                  background:
+                    "linear-gradient(135deg, #22c55e, rgb(22, 163, 74))",
+                  color: "#fff",
+                }}
+              >
                 {!session?.user?.profileImage &&
                   session?.user?.firstName?.charAt(0) +
                     session?.user?.lastName?.charAt(0)}

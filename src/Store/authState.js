@@ -19,3 +19,9 @@ export const SelectedClient = atom(null);
 
 export const userDashboardLoading = atom(false);
 export const userDashboardError = atom(null);
+
+export const discoveryDataAtom = atomWithStorage("discoveryDataAtom", {});
+export const discoverySectionQuestionsAtom = atomWithStorage(
+  "discoverySectionQuestionsAtom",
+  {},
+);

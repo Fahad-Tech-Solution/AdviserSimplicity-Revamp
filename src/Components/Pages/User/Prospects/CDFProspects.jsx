@@ -218,7 +218,7 @@ export default function CDFProspects() {
           textAlign: "center",
           fontSize: 12,
           fontWeight: 700,
-          color: "#7ea897",
+          color: "#9ca3af",
         },
       }),
       render: (_, __, index) => index + 1,
@@ -258,6 +258,14 @@ export default function CDFProspects() {
           />
         </Space>
       ),
+      // Add basic alphabetical sorting on Household name
+      sorter: (a, b) => {
+        const nameA = String(a.household || "").toLowerCase();
+        const nameB = String(b.household || "").toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+      },
     },
     {
       title: "Clients",
@@ -282,6 +290,18 @@ export default function CDFProspects() {
             ))}
           </div>
         );
+      },
+      // Add basic alphabetical sorting on client name
+      sorter: (a, b) => {
+        const nameA = (
+          a.clients && a.clients[0]?.name ? a.clients[0].name : ""
+        ).toLowerCase();
+        const nameB = (
+          b.clients && b.clients[0]?.name ? b.clients[0].name : ""
+        ).toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
       },
     },
     {
@@ -337,6 +357,12 @@ export default function CDFProspects() {
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
+      // Add basic date sorting for "Last updated at"
+      sorter: (a, b) => {
+        const dateA = a?.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+        const dateB = b?.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+        return dateA - dateB;
+      },
     },
     {
       title: "Status",
@@ -438,10 +464,14 @@ export default function CDFProspects() {
           </Text>
           <Title
             style={{
-              margin: 0,
+              margin: "12px 0 0 0",
               fontFamily: "Georgia,serif",
               fontWeight: 500,
               fontSize: 28,
+            }}
+            onClick={() => {
+              console.log(filteredData, "filteredData");
+              console.log(prospects, "prospects");
             }}
           >
             CDF Prospects
@@ -473,9 +503,10 @@ export default function CDFProspects() {
       <div
         style={{
           background: "#fff",
-          borderRadius: 18,
+          borderRadius: 12,
           border: "1px solid #ebedf0",
           boxShadow: "0 10px 35px rgba(15,23,42,0.05)",
+          marginTop: "35px",
         }}
       >
         <div
@@ -508,14 +539,14 @@ export default function CDFProspects() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    padding: "0 0 12px",
+                    padding: "0 10px 10px",
                     cursor: "pointer",
                     color: isActive ? "#22c55e" : "#6b7280",
-                    fontWeight: isActive ? 700 : 500,
+                    fontWeight: isActive ? 700 : 400,
                     borderBottom: isActive
                       ? "3px solid #22c55e"
                       : "3px solid transparent",
-                    fontSize: 14,
+                    fontSize: 13,
                   }}
                 >
                   {tab.label}

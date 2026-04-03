@@ -9,14 +9,6 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import {
-  DeleteOutlined,
-  EditOutlined,
-  FileTextOutlined,
-  SettingOutlined,
-  StopOutlined,
-  CheckOutlined,
-} from "@ant-design/icons";
 import { useAtom } from "jotai";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
 import AccountStatusTag from "../../../Common/AccountStatusTag";
@@ -123,7 +115,8 @@ export default function MyTeam() {
         });
         break;
       case "edit":
-        message.info("Edit adviser — connect form when ready.");
+        setEditingEmployee(row);
+        setEmployeeModalOpen(true);
         break;
       case "enable":
       case "disable":
@@ -157,15 +150,15 @@ export default function MyTeam() {
     const items = [
       {
         key: "view",
-        label: <span style={{ color: MENU_SUCCESS_GREEN }}>View</span>,
+        label: <span style={{ marginLeft: "10px" }}>View</span>,
         // icon: <FileTextOutlined style={{ color: MENU_SUCCESS_GREEN }} />,
         icon: "📄",
       },
       { type: "divider" },
       {
         key: "edit",
-        label: <span style={{ color: MENU_SUCCESS_GREEN }}>Edit</span>,
-        icon: <EditOutlined style={{ color: MENU_SUCCESS_GREEN }} />,
+        label: <span style={{ marginLeft: "10px" }}>Edit</span>,
+        // icon: <EditOutlined style={{ color: MENU_SUCCESS_GREEN }} />,
         icon: "✏️",
       },
       { type: "divider" },
@@ -173,14 +166,14 @@ export default function MyTeam() {
     if (row.isActive) {
       items.push({
         key: "disable",
-        label: <span style={{ color: MENU_SUCCESS_GREEN }}>Disable</span>,
+        label: <span style={{ marginLeft: "10px" }}>Disable</span>,
         // icon: <StopOutlined style={{ color: MENU_SUCCESS_GREEN }} />,
         icon: "❌ ",
       });
     } else {
       items.push({
         key: "enable",
-        label: <span style={{ color: MENU_SUCCESS_GREEN }}> Enable</span>,
+        label: <span style={{ marginLeft: "10px" }}> Enable</span>,
         // icon: <CheckOutlined style={{ color: MENU_SUCCESS_GREEN }} />,
         icon: "✅",
       });
@@ -190,7 +183,7 @@ export default function MyTeam() {
       key: "delete",
       label: " Delete",
       // icon: <DeleteOutlined />,
-      icon: "🗑️ ",
+      icon: <div style={{ marginRight: "10px" }}>🗑️ </div>,
       danger: true,
     });
 
@@ -209,7 +202,7 @@ export default function MyTeam() {
         style: {
           textAlign: "center",
           fontSize: 12,
-          color: "#7ea897",
+          color: "#9ca3af",
           fontWeight: 700,
         },
       }),
@@ -277,8 +270,10 @@ export default function MyTeam() {
                 type="text"
                 shape="circle"
                 icon={
-                  <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                  // <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
+                  "⚙️"
                 }
+                style={{ fontSize: 18 }}
               />
             </Tooltip>
           </Dropdown>

@@ -6,7 +6,7 @@ const PRIMARY_GREEN = "#22c55e";
 
 export default function DynamicDataTable({
   columns = [],
-  data = [],
+  data: dataProp = [],
   title,
   pageSize = 10,
   total,
@@ -22,6 +22,8 @@ export default function DynamicDataTable({
   showCount = true,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
+
+  const data = Array.isArray(dataProp) ? dataProp : [];
 
   const computedTotal = Number.isFinite(total) ? total : data.length;
   const totalPages = Math.max(1, Math.ceil(computedTotal / pageSize));

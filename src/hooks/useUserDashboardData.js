@@ -8,6 +8,10 @@ import {
   userDashboardError,
   userDashboardLoading,
 } from "../Store/authState";
+import {
+  normalizeMyClientsList,
+  wrapMyClientsState,
+} from "./helpers";
 
 
 const getDisplayName = (person = {}) =>
@@ -100,6 +104,8 @@ export default function useUserDashboardData({ enabled = true } = {}) {
             call: () =>
               get("/api/user/Clients", { signal: abortController.signal }),
             setter: setMyClientsData,
+            normalize: (res) =>
+              wrapMyClientsState(normalizeMyClientsList(res)),
           },
           {
             call: () =>
@@ -115,6 +121,8 @@ export default function useUserDashboardData({ enabled = true } = {}) {
         if (!mounted) return;
 
         const errors = [];
+
+        console.log(results, "results");
 
         results.forEach((result, index) => {
           const api = userApis[index];
