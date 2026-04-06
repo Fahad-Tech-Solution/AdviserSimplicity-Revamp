@@ -20,10 +20,24 @@ export default function DynamicDataTable({
   tableProps = {},
   pagination = {},
   showCount = true,
+  noPagination = false,
+  /** When true (default), wrapper uses overflow-x auto and Table gets scroll.x — independent of pagination. */
+  horizontalScroll = true,
+  wrapperStyle = {},
+  headerFontSize = 12,
+  bodyFontSize = 14,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const data = Array.isArray(dataProp) ? dataProp : [];
+
+  const { scroll: scrollFromTableProps, ...restTableProps } = tableProps;
+  const tableScroll =
+    scrollFromTableProps !== undefined
+      ? scrollFromTableProps
+      : horizontalScroll
+        ? { x: true }
+        : undefined;
 
   const computedTotal = Number.isFinite(total) ? total : data.length;
   const totalPages = Math.max(1, Math.ceil(computedTotal / pageSize));
@@ -92,7 +106,8 @@ export default function DynamicDataTable({
           flex: 1,
           minHeight: 0,
           width: "100%",
-          overflowX: "auto",
+          overflowX: horizontalScroll ? "auto" : "visible",
+          ...wrapperStyle,
         }}
       >
         <Table
@@ -101,21 +116,25 @@ export default function DynamicDataTable({
           className={className}
           rowClassName={() => "dynamic-table-row"}
           tableLayout="fixed"
-          scroll={{ x: true }}
+          scroll={tableScroll}
           size={size}
           bordered={bordered}
           style={{ ...tableStyle }}
-          pagination={{
-            current: currentPage,
-            total: computedTotal,
-            pageSize,
-            showSizeChanger: false,
-            showQuickJumper: false,
-            placement: ["bottomRight"],
-            showTotal: () => `Page ${currentPage} of ${totalPages}`,
-            onChange: (page) => setCurrentPage(page),
-            ...pagination,
-          }}
+          pagination={
+            !noPagination
+              ? {
+                  current: currentPage,
+                  total: computedTotal,
+                  pageSize,
+                  showSizeChanger: false,
+                  showQuickJumper: false,
+                  placement: ["bottomRight"],
+                  showTotal: () => `Page ${currentPage} of ${totalPages}`,
+                  onChange: (page) => setCurrentPage(page),
+                  ...pagination,
+                }
+              : false
+          }
           styles={{
             content: {
               border: "1px solid #e0e0e0",
@@ -138,7 +157,7 @@ export default function DynamicDataTable({
                 fontWeight: 600,
                 borderInlineColor: "#fff",
                 borderRadius: 0,
-                fontSize: 12,
+                fontSize: headerFontSize,
               },
             },
             body: {
@@ -149,13 +168,14 @@ export default function DynamicDataTable({
               cell: {
                 border: "none",
                 borderBottom: "0.5px solid #f3f3f3",
+                fontSize: bodyFontSize,
               },
             },
             section: {
               border: "none",
             },
           }}
-          {...tableProps}
+          {...restTableProps}
         />
       </div>
     </>

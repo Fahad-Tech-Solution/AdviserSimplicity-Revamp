@@ -16,7 +16,6 @@ import {
   ConfigProvider,
 } from "antd";
 import {
-  Link,
   Navigate,
   Route,
   Routes,
@@ -26,19 +25,25 @@ import {
 import logo from "../../assets/image/Adviser-Simpilicity1.png";
 import {
   allUserRoutes,
+  DISCOVERY_ADD_SECTION_KEY,
   discoveryRoutes,
   strategyRoutes,
   userRoutes,
   withSpacing,
 } from "../Routes/User.Routes.jsx";
-import { useAtomValue } from "jotai";
-import { loggedInUser } from "../../Store/authState.js";
+import DiscoveryFlowLayout from "./DiscoveryFlowLayout.jsx";
+import AddDiscoverySectionsModal from "../Pages/User/Discovery/AddSection/AddDiscoverySections.jsx";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  addDiscoverySectionsModalOpen,
+  loggedInUser,
+} from "../../store/authState.js";
 import useUserDashboardData from "../../hooks/useUserDashboardData";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
-import { discoverySectionQuestionsAtom } from "../../Store/authState.js";
+import { discoverySectionQuestionsAtom } from "../../store/authState.js";
 
 export default function UserLayout() {
   const location = useLocation();
@@ -47,6 +52,7 @@ export default function UserLayout() {
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
+  const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
 
   const navItems = useMemo(() => {
     const passes = (route) => route.condition?.(discoveryQuestions) !== false;
@@ -87,10 +93,12 @@ export default function UserLayout() {
   }, []);
 
   const handleMenuClick = (info) => {
-    console.log("Clicked menu item:", info);
-    // Example navigation
+    if (info.key === DISCOVERY_ADD_SECTION_KEY) {
+      setAddDiscoveryModalOpen(true);
+      return;
+    }
     if (info.key.startsWith("/")) {
-      navigate(info.key); // if using react-router
+      navigate(info.key);
     }
   };
 
@@ -213,7 +221,10 @@ export default function UserLayout() {
               mode="vertical"
               selectedKeys={[selectedKey]}
               items={navItems}
-              onClick={() => setDrawerOpen(false)}
+              onClick={(info) => {
+                handleMenuClick(info);
+                setDrawerOpen(false);
+              }}
             />
           </Drawer>
 
@@ -265,10 +276,28 @@ export default function UserLayout() {
                   element={r.component ?? <Navigate to="/user" replace />}
                 />
               ))}
+              <Route path="discovery" element={<DiscoveryFlowLayout />}>
+                <Route
+                  index
+                  element={<Navigate to="client-summary" replace />}
+                />
+                {discoveryRoutes
+                  .filter((r) => !r.modalOnly)
+                  .map((r) => (
+                    <Route
+                      key={r.key}
+                      path={r.relativePath}
+                      element={
+                        r.component ?? <Navigate to="/user" replace />
+                      }
+                    />
+                  ))}
+              </Route>
             </Routes>
           </div>
         </Content>
       </Layout>
+      <AddDiscoverySectionsModal />
     </Layout>
   );
 }

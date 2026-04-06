@@ -17,6 +17,10 @@ function resolveMaybeFunction(value, form) {
   return typeof value === "function" ? value(form) : value;
 }
 
+function isFunction(value) {
+  return typeof value === "function";
+}
+
 function buildOptions(options = []) {
   return options.map((option) =>
     typeof option === "string"
@@ -141,42 +145,48 @@ export default function DynamicFormField({
   valuePropName,
   action,
 }) {
+  const finalValuePropName =
+    valuePropName ||
+    (type === "checkbox" ? "checked" : type === "switch" ? "checked" : "value");
+
+  const renderField = (computedDisabled, computedHidden) => {
+    if (computedHidden) {
+      return null;
+    }
+
+    return (
+      <Form.Item
+        name={name}
+        label={label}
+        rules={rules}
+        dependencies={dependencies}
+        valuePropName={finalValuePropName}
+        {...formItemProps}
+      >
+        {getInputNode({
+          type,
+          placeholder,
+          options,
+          action,
+          fieldProps: {
+            disabled: computedDisabled,
+            ...fieldProps,
+          },
+        })}
+      </Form.Item>
+    );
+  };
+
+  const hasDynamicVisibility = isFunction(hidden);
+  const hasDynamicDisabled = isFunction(disabled);
+
+  if (!hasDynamicVisibility && !hasDynamicDisabled) {
+    return renderField(disabled, hidden);
+  }
+
   return (
     <Form.Item noStyle shouldUpdate>
-      {() => {
-        const computedDisabled = resolveMaybeFunction(disabled, form);
-        const computedHidden = resolveMaybeFunction(hidden, form);
-
-        if (computedHidden) {
-          return null;
-        }
-
-        const finalValuePropName =
-          valuePropName ||
-          (type === "checkbox" ? "checked" : type === "switch" ? "checked" : "value");
-
-        return (
-          <Form.Item
-            name={name}
-            label={label}
-            rules={rules}
-            dependencies={dependencies}
-            valuePropName={finalValuePropName}
-            {...formItemProps}
-          >
-            {getInputNode({
-              type,
-              placeholder,
-              options,
-              action,
-              fieldProps: {
-                disabled: computedDisabled,
-                ...fieldProps,
-              },
-            })}
-          </Form.Item>
-        );
-      }}
+      {() => renderField(resolveMaybeFunction(disabled, form), resolveMaybeFunction(hidden, form))}
     </Form.Item>
   );
 }

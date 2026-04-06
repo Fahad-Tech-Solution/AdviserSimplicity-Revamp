@@ -12,7 +12,7 @@ import {
 import { useAtom } from "jotai";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
 import AccountStatusTag from "../../../Common/AccountStatusTag";
-import { MyTeamData } from "../../../../Store/authState";
+import { MyTeamData } from "../../../../store/authState";
 import useApi from "../../../../hooks/useApi";
 import AddEmployee from "./components/AddEmployee";
 

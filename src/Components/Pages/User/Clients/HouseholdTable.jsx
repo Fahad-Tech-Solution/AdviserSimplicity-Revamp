@@ -9,7 +9,7 @@ import {
   loggedInUser,
   MyClientsData,
   SelectedClient,
-} from "../../../../Store/authState";
+} from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   CheckOutlined,
@@ -25,6 +25,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import useApi from "../../../../hooks/useApi";
+import { useNavigate } from "react-router-dom";
 
 const PRIMARY_GREEN = "#22c55e";
 
@@ -165,6 +166,7 @@ function rowMatchesSearch(row, queryRaw) {
 
 const HouseholdTable = ({ onAction, searchText = "" }) => {
   const session = useAtomValue(loggedInUser);
+  const navigate = useNavigate();
 
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const setDiscoverySectionQuestions = useSetAtom(
@@ -188,7 +190,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     setOpenDropdownRowId(null);
   };
 
-  const getClientDetails = async (row) => {
+  const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
     try {
       const [yesNoQuestionsRes, fullDetailsRes] = await Promise.all([
@@ -196,12 +198,15 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         get(`/api/dataOfAllSection/${row?._id}`),
       ]);
 
-      setDiscoverySectionQuestions(yesNoQuestionsRes.data);
-      setDiscoveryData(fullDetailsRes.data);
+      setDiscoverySectionQuestions(yesNoQuestionsRes);
+      setDiscoveryData(fullDetailsRes);
       setSelectedClient(row);
 
       const displayName = getClientLastName(row?.client || {}) || "Client";
       message.success(`"${displayName.toUpperCase()}" is active now`);
+      if (action === "View") {
+        navigate(`/user/discovery/personal-details`);
+      }
     } catch (error) {
       console.error("Error getting client details", error);
       message.error("Could not load client details. Please try again.");
@@ -218,7 +223,23 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     const isSelectLoading = Boolean(rowId) && selectLoadingRowId === rowId;
 
     const items = [
-      { key: "view", label: "View", icon: <FileTextOutlined /> },
+      {
+        key: "view",
+        label: "View",
+        icon: isSelectLoading ? (
+          <Spin
+            size="small"
+            indicator={<LoadingOutlined spin />}
+            styles={{
+              indicator: {
+                color: "lightgray",
+              },
+            }}
+          />
+        ) : (
+          <FileTextOutlined />
+        ),
+      },
       { type: "divider" },
       {
         key: "downloadReport",
@@ -325,13 +346,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       items,
       onClick: ({ key }) => {
         const action = keyToAction[key] || key;
-        if (action === "Select") {
+        if (action === "Select" || action === "View") {
           flushSync(() => {
             selectLoadingRowIdRef.current = rowId;
             setSelectLoadingRowId(rowId);
             setOpenDropdownRowId(rowId);
           });
-          void getClientDetails(row);
+          void getClientDetails(row, action);
         } else if (action === "Deselect") {
           setDiscoverySectionQuestions({});
           setDiscoveryData({});

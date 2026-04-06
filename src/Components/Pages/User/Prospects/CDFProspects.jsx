@@ -20,7 +20,7 @@ import ProspectStatusTag from "../../../Common/ProspectStatusTag";
 import ViewProspects from "./components/ViewProspects";
 import ViewGoals from "./components/ViewGoals";
 import { SlReload } from "react-icons/sl";
-import { CDFProspectsData, loggedInUser } from "../../../../Store/authState";
+import { CDFProspectsData, loggedInUser } from "../../../../store/authState";
 import { useAtom, useAtomValue } from "jotai";
 import useApi from "../../../../hooks/useApi";
 import { normalizeCDFProspect } from "../../../../hooks/useUserDashboardData";

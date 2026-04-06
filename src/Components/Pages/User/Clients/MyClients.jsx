@@ -3,7 +3,7 @@ import Text from "antd/es/typography/Text";
 import Title from "antd/es/typography/Title";
 import React, { useState } from "react";
 import { useSetAtom } from "jotai";
-import { MyClientsData } from "../../../../Store/authState";
+import { MyClientsData } from "../../../../store/authState";
 import {
   mergeNewClientRowForTable,
   normalizeMyClientsList,

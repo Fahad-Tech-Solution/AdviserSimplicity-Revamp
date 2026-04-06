@@ -15,7 +15,7 @@ export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
 export const MyTeamData = atomWithStorage("MyTeamData", []);
 
 /** Currently selected household row from My Clients (set when user chooses Select). */
-export const SelectedClient = atom(null);
+export const SelectedClient = atomWithStorage(null);
 
 export const userDashboardLoading = atom(false);
 export const userDashboardError = atom(null);
@@ -25,3 +25,6 @@ export const discoverySectionQuestionsAtom = atomWithStorage(
   "discoverySectionQuestionsAtom",
   {},
 );
+
+/** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
+export const addDiscoverySectionsModalOpen = atom(false);

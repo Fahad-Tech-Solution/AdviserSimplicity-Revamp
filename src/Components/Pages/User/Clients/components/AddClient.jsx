@@ -62,6 +62,7 @@ export default function AddClient({ open, onClose, onSuccess }) {
   }, [open, form]);
 
   const handleFinish = async (values) => {
+    console.log("values", values);
     const payload = buildPayload(values);
     setSubmitting(true);
     try {
@@ -86,7 +87,13 @@ export default function AddClient({ open, onClose, onSuccess }) {
     <AppModal
       open={open}
       onClose={onClose}
-      title="Add Client"
+      title={
+        <div
+          style={{ fontFamily: "Arial,serif", fontSize: 17, fontWeight: 800 }}
+        >
+          Add New Client
+        </div>
+      }
       width={500}
       destroyOnClose
       footer={
@@ -113,10 +120,10 @@ export default function AddClient({ open, onClose, onSuccess }) {
         labelCol={{ flex: "132px" }}
         labelAlign="left"
         wrapperCol={{ flex: 1 }}
-        // colon={false}
+        colon={false}
         onFinish={handleFinish}
         style={{ marginTop: 16 }}
-        // requiredMark={false}
+        requiredMark={false}
         styles={{
           label: {
             fontWeight: 600,
@@ -132,7 +139,11 @@ export default function AddClient({ open, onClose, onSuccess }) {
           rules={[{ required: true, message: "Enter household name" }]}
           style={{ marginBottom: 10 }}
         >
-          <Input placeholder="e.g. Bennett" allowClear />
+          <Input
+            placeholder="e.g. Bennett"
+            allowClear
+            className="custom-black-placeholder"
+          />
         </Form.Item>
         <Form.Item
           name="clientWorkPhone"
@@ -146,7 +157,11 @@ export default function AddClient({ open, onClose, onSuccess }) {
             },
           ]}
         >
-          <Input placeholder="Phone number" allowClear />
+          <Input
+            placeholder="Phone number"
+            allowClear
+            className="custom-black-placeholder"
+          />
         </Form.Item>
         <Form.Item
           name="Email"
@@ -157,7 +172,12 @@ export default function AddClient({ open, onClose, onSuccess }) {
           ]}
           style={{ marginBottom: 10 }}
         >
-          <Input placeholder="Email address" allowClear autoComplete="off" />
+          <Input
+            placeholder="Email address"
+            allowClear
+            autoComplete="off"
+            className="custom-black-placeholder"
+          />
         </Form.Item>
         <Form.Item
           name="clientHomeAddress"
@@ -165,7 +185,11 @@ export default function AddClient({ open, onClose, onSuccess }) {
           style={{ marginBottom: 10 }}
           rules={[{ required: true, message: "Enter address" }]}
         >
-          <Input placeholder="Street address" allowClear />
+          <Input
+            placeholder="Street address"
+            allowClear
+            className="custom-black-placeholder"
+          />
         </Form.Item>
         <Form.Item
           name="clientMaritalStatus"
@@ -174,7 +198,9 @@ export default function AddClient({ open, onClose, onSuccess }) {
           rules={[{ required: true, message: "Select marital status" }]}
         >
           <Select
-            placeholder="Select marital status"
+            placeholder={
+              <span style={{ color: "#000" }}>Select marital status</span>
+            }
             options={[
               { value: "Single", label: "Single" },
               { value: "Married", label: "Married" },
@@ -182,6 +208,7 @@ export default function AddClient({ open, onClose, onSuccess }) {
               { value: "Widowed", label: "Widowed" },
             ]}
             allowClear
+            dropdownStyle={{ color: "#000" }}
           />
         </Form.Item>
 
@@ -212,10 +239,13 @@ export default function AddClient({ open, onClose, onSuccess }) {
               rules={[{ required: true, message: "Enter primary name" }]}
               style={{ marginBottom: 0 }}
             >
-              <Input placeholder="Primary name" />
+              <Input
+                placeholder="Primary name"
+                className="custom-black-placeholder"
+              />
             </Form.Item>
           </Col>
-          <Col xs={8} sm={5} md={6}>
+          <Col xs={8} sm={5} md={7}>
             <Form.Item style={{ marginBottom: 0 }}>
               <Select
                 value={ROLE_PRIMARY}
@@ -224,7 +254,7 @@ export default function AddClient({ open, onClose, onSuccess }) {
               />
             </Form.Item>
           </Col>
-          <Col xs={16} sm={5} md={5}>
+          <Col xs={16} sm={5} md={4}>
             <Form.Item
               name="clientAge"
               style={{ marginBottom: 0 }}
@@ -247,7 +277,11 @@ export default function AddClient({ open, onClose, onSuccess }) {
                 },
               ]}
             >
-              <Input placeholder="Age" />
+              <Input
+                placeholder="Age"
+                className="custom-black-placeholder"
+                styles={{ input: { textAlign: "center" } }}
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -275,10 +309,13 @@ export default function AddClient({ open, onClose, onSuccess }) {
                     name="partnerPreferredName"
                     style={{ marginBottom: 0 }}
                   >
-                    <Input placeholder="Partner name (optional)" />
+                    <Input
+                      placeholder="Partner name (optional)"
+                      className="custom-black-placeholder"
+                    />
                   </Form.Item>
                 </Col>
-                <Col xs={8} sm={5} md={6}>
+                <Col xs={8} sm={5} md={7}>
                   <Form.Item style={{ marginBottom: 0 }}>
                     <Select
                       value={ROLE_PARTNER}
@@ -287,7 +324,7 @@ export default function AddClient({ open, onClose, onSuccess }) {
                     />
                   </Form.Item>
                 </Col>
-                <Col xs={16} sm={5} md={5}>
+                <Col xs={16} sm={5} md={4}>
                   <Form.Item
                     name="partnerAge"
                     style={{ marginBottom: 0 }}
@@ -305,7 +342,11 @@ export default function AddClient({ open, onClose, onSuccess }) {
                       },
                     ]}
                   >
-                    <Input placeholder="Age" />
+                    <Input
+                      placeholder="Age"
+                      className="custom-black-placeholder"
+                      styles={{ input: { textAlign: "center" } }}
+                    />
                   </Form.Item>
                 </Col>
               </Row>

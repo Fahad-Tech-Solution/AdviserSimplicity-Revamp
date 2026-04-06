@@ -7,7 +7,7 @@ import {
   MyTeamData,
   userDashboardError,
   userDashboardLoading,
-} from "../Store/authState";
+} from "../store/authState";
 import {
   normalizeMyClientsList,
   wrapMyClientsState,

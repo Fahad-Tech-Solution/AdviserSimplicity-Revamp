@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { App as AntdApp, Button, Col, Form, Input, Row, Select } from "antd";
 import { useAtomValue } from "jotai";
 import AppModal from "../../../../Common/AppModal";
-import { loggedInUser } from "../../../../../Store/authState";
+import { loggedInUser } from "../../../../../store/authState";
 import useApi from "../../../../../hooks/useApi";
 
 const FORM_ID = "add-employee-form";

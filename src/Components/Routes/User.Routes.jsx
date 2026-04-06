@@ -1,12 +1,32 @@
 // Central registry for all /user/* routes used in the app.
 // Fill in the `component` fields as you implement actual pages.
 
+import { Spin } from "antd";
+import { lazy, Suspense } from "react";
 import HouseholdTable from "../Pages/User/Clients/HouseholdTable";
 import MyClients from "../Pages/User/Clients/MyClients";
 import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
 import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 import MyTeam from "../Pages/User/MyTeam/MyTeam";
-import { PersonalDetails } from "../Pages/User/Discovery/PersonalDetails/PersonalDetails";
+
+/** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
+const PersonalDetailsLazy = lazy(() =>
+  import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
+    (m) => ({ default: m.PersonalDetails }),
+  ),
+);
+
+const personalDetailsElement = (
+  <Suspense
+    fallback={
+      <div style={{ padding: 48, textAlign: "center" }}>
+        <Spin size="large" />
+      </div>
+    }
+  >
+    <PersonalDetailsLazy />
+  </Suspense>
+);
 
 export const withSpacing = ({
   icon,
@@ -61,10 +81,19 @@ export const userRoutes = [
   },
 ];
 
+/**
+ * Discovery section: `relativePath` is the segment under `/user/discovery/:segment`.
+ * `stepTitle` / `stepIcon` drive DiscoveryFlowLayout heading + stepper (keep in sync with labels).
+ * `showInDiscoveryStepper: false` — show in sidebar only, not in the horizontal stepper.
+ */
 export const discoveryRoutes = [
   {
     key: "/user/discovery/client-summary",
+    relativePath: "client-summary",
+    stepTitle: "Client Summary",
+    stepIcon: "📄",
     path: "/user/discovery/client-summary",
+    showInDiscoveryStepper: false,
     ...withSpacing({
       icon: "📄",
       label: "Client Summary",
@@ -76,19 +105,25 @@ export const discoveryRoutes = [
   },
   {
     key: "/user/discovery/personal-details",
-    path: "/discovery/personal-details",
+    relativePath: "personal-details",
+    stepTitle: "Personal Details",
+    stepIcon: "👤",
+    path: "/user/discovery/personal-details",
     ...withSpacing({
       icon: "👤",
       label: "Personal Details",
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: <PersonalDetails />,
+    component: personalDetailsElement,
     condition: () => true,
   },
   {
-    key: "/discovery/income-expenses",
-    path: "/discovery/income-expenses",
+    key: "/user/discovery/income-expenses",
+    relativePath: "income-expenses",
+    stepTitle: "Income & Expenses",
+    stepIcon: "💲",
+    path: "/user/discovery/income-expenses",
     ...withSpacing({
       icon: "💲",
       label: "Income & Expenses",
@@ -99,8 +134,11 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/assets-debt",
-    path: "/discovery/assets-debt",
+    key: "/user/discovery/assets-debt",
+    relativePath: "assets-debt",
+    stepTitle: "Assets & Debt",
+    stepIcon: "🏡",
+    path: "/user/discovery/assets-debt",
     ...withSpacing({
       icon: "🏡",
       label: "Assets & Debt",
@@ -111,8 +149,11 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/financial-investments",
-    path: "/discovery/financial-investments",
+    key: "/user/discovery/financial-investments",
+    relativePath: "financial-investments",
+    stepTitle: "Financial Investments",
+    stepIcon: "📈",
+    path: "/user/discovery/financial-investments",
     ...withSpacing({
       icon: "📈",
       label: "Financial Investments",
@@ -123,8 +164,11 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/estate-planning",
-    path: "/discovery/estate-planning",
+    key: "/user/discovery/estate-planning",
+    relativePath: "estate-planning",
+    stepTitle: "Estate Planning",
+    stepIcon: "📋",
+    path: "/user/discovery/estate-planning",
     ...withSpacing({
       icon: "📋",
       label: "Estate Planning",
@@ -135,8 +179,11 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/estate-planning",
-    path: "/discovery/estate-planning",
+    key: "/user/discovery/personal-insurance",
+    relativePath: "personal-insurance",
+    stepTitle: "Personal Insurance",
+    stepIcon: "🛡️",
+    path: "/user/discovery/personal-insurance",
     ...withSpacing({
       icon: "🛡️",
       label: " Personal Insurance",
@@ -148,8 +195,11 @@ export const discoveryRoutes = [
       String(q?.personalInsuranceTab ?? "").toLowerCase() === "yes",
   },
   {
-    key: "/discovery/business-entities",
-    path: "/discovery/business-entities",
+    key: "/user/discovery/business-entities",
+    relativePath: "business-entities",
+    stepTitle: "Business Entities",
+    stepIcon: "🏢",
+    path: "/user/discovery/business-entities",
     ...withSpacing({
       icon: "🏢",
       label: "Business Entities",
@@ -165,8 +215,11 @@ export const discoveryRoutes = [
     },
   },
   {
-    key: "/discovery/smsf",
-    path: "/discovery/smsf",
+    key: "/user/discovery/smsf",
+    relativePath: "smsf",
+    stepTitle: "SMSF",
+    stepIcon: "🔐",
+    path: "/user/discovery/smsf",
     ...withSpacing({
       icon: "🔐",
       label: " SMSF",
@@ -178,8 +231,11 @@ export const discoveryRoutes = [
       String(q?.SMSFManagedFundsTab ?? "").toLowerCase() === "yes",
   },
   {
-    key: "/discovery/investment-trust",
-    path: "/discovery/investment-trust",
+    key: "/user/discovery/investment-trust",
+    relativePath: "investment-trust",
+    stepTitle: "Investment Trust",
+    stepIcon: "📊",
+    path: "/user/discovery/investment-trust",
     ...withSpacing({
       icon: "📊",
       label: " Investment Trust",
@@ -191,8 +247,11 @@ export const discoveryRoutes = [
       String(q?.businessAsInvestmentTab ?? "").toLowerCase() === "yes",
   },
   {
-    key: "/discovery/goals-objectives",
-    path: "/discovery/goals-objectives",
+    key: "/user/discovery/goals-objectives",
+    relativePath: "goals-objectives",
+    stepTitle: "Goals & Objectives",
+    stepIcon: "🎯",
+    path: "/user/discovery/goals-objectives",
     ...withSpacing({
       icon: "🎯",
       label: "Goals & Objectives",
@@ -203,8 +262,11 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/risk-profile",
-    path: "/discovery/risk-profile",
+    key: "/user/discovery/risk-profile",
+    relativePath: "risk-profile",
+    stepTitle: "Risk Profile",
+    stepIcon: "🌐",
+    path: "/user/discovery/risk-profile",
     ...withSpacing({
       icon: "🌐",
       label: "Risk Profile",
@@ -215,8 +277,13 @@ export const discoveryRoutes = [
     condition: () => true,
   },
   {
-    key: "/discovery/add-section",
-    path: "/discovery/add-section",
+    key: "/user/discovery/add-section",
+    relativePath: "add-section",
+    stepTitle: "Add Section",
+    stepIcon: "＋",
+    path: "/user/discovery/add-section",
+    /** No page route — opens `AddDiscoverySectionsModal` via Jotai (see UserLayout / DiscoveryFlowLayout). */
+    modalOnly: true,
     ...withSpacing({
       icon: "＋",
       label: "Add Section",
@@ -228,6 +295,46 @@ export const discoveryRoutes = [
     condition: () => true,
   },
 ];
+
+/** Menu / stepper key for Add Section (opens modal instead of navigating). */
+export const DISCOVERY_ADD_SECTION_KEY = "/user/discovery/add-section";
+
+/** Routes shown in nav + stepper for the current discovery questionnaire state. */
+export function getVisibleDiscoveryRoutes(questions = {}) {
+  return discoveryRoutes.filter((r) => r.condition?.(questions) !== false);
+}
+
+/** Routes that appear in DiscoveryFlowLayout’s horizontal stepper (sidebar can list more). */
+export function getDiscoveryStepperRoutes(questions = {}) {
+  return getVisibleDiscoveryRoutes(questions).filter(
+    (r) => r.showInDiscoveryStepper !== false,
+  );
+}
+
+export function pathMatchesDiscoveryRoute(pathname, route) {
+  if (!route?.relativePath) return false;
+  const p = pathname.replace(/\/$/, "");
+  return (
+    p === route.key ||
+    p.endsWith(`/user/discovery/${route.relativePath}`) ||
+    p.endsWith(`/${route.relativePath}`)
+  );
+}
+
+export function matchDiscoveryRoute(pathname, questions) {
+  return getVisibleDiscoveryRoutes(questions).find((r) =>
+    pathMatchesDiscoveryRoute(pathname, r),
+  );
+}
+
+export function getNextDiscoveryNavKey(pathname, questions) {
+  const visible = getVisibleDiscoveryRoutes(questions).filter(
+    (r) => !r.modalOnly,
+  );
+  const idx = visible.findIndex((r) => pathMatchesDiscoveryRoute(pathname, r));
+  if (idx >= 0 && idx < visible.length - 1) return visible[idx + 1].key;
+  return null;
+}
 
 export const strategyRoutes = [
   {
@@ -328,8 +435,5 @@ export const strategyRoutes = [
   },
 ];
 
-export const allUserRoutes = [
-  ...userRoutes,
-  ...discoveryRoutes,
-  ...strategyRoutes,
-];
+/** Flat routes rendered inside UserLayout (Discovery uses nested routes + DiscoveryFlowLayout). */
+export const allUserRoutes = [...userRoutes, ...strategyRoutes];
