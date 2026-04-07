@@ -4,7 +4,7 @@ import {
   EditOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
-import { App as AntdApp, Button, Form, Space } from "antd";
+import { App as AntdApp, Button, Checkbox, Form, Space } from "antd";
 import { useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DynamicFormField from "../../../../../Common/DynamicFormField.jsx";
@@ -18,6 +18,7 @@ import {
   buildViewContactRows,
   buildViewFinancialRows,
   buildViewPersonalRows,
+  childAgeFromDob,
   getPersonalDetailsFromDiscovery,
   mapSubmitValues,
 } from "../utils/personalDetails.mapper.js";
@@ -131,6 +132,12 @@ const PERSONAL_SECTION_CONFIG = [
     clientField: "clientDOB",
     partnerField: "partnerDOB",
     type: "date",
+    onChange: (value, row, form) => {
+      form.setFieldValue(
+        [row, row === "client" ? "clientAge" : "partnerAge"],
+        value ? Number(childAgeFromDob(value)) || undefined : undefined,
+      );
+    },
     width: 120,
   },
   {
@@ -235,6 +242,7 @@ const CONTACT_SECTION_CONFIG = [
     clientField: "clientHomeAddress",
     partnerField: "partnerHomeAddress",
     type: "textarea",
+    editMode: "address-with-sync",
   },
   {
     title: "Postcode/Suburb",
@@ -247,6 +255,7 @@ const CONTACT_SECTION_CONFIG = [
     },
     placeholder: "Type suburb or postcode...",
     width: 110,
+    editMode: "postcode-with-sync",
   },
   {
     title: "Postal Address",
@@ -254,6 +263,7 @@ const CONTACT_SECTION_CONFIG = [
     clientField: "clientPostalAddress",
     partnerField: "partnerPostalAddress",
     type: "textarea",
+    editMode: "address-with-sync",
   },
   {
     title: "Postcode/Suburb",
@@ -266,6 +276,7 @@ const CONTACT_SECTION_CONFIG = [
     },
     placeholder: "Type suburb or postcode...",
     width: 110,
+    editMode: "postcode-with-sync",
   },
   {
     title: "Mobile",
@@ -308,6 +319,39 @@ const CHILDREN_VIEW_COLUMNS = [
 const PERSONAL_VIEW_COLUMNS = buildViewColumns(PERSONAL_SECTION_CONFIG);
 const FINANCIAL_VIEW_COLUMNS = buildViewColumns(FINANCIAL_SECTION_CONFIG);
 const CONTACT_VIEW_COLUMNS = buildViewColumns(CONTACT_SECTION_CONFIG);
+const ADDRESS_SYNC_CHECKBOX_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0,
+  justifyContent: "center",
+  marginTop: 8,
+  fontSize: 11,
+};
+const ADDRESS_SYNC_CONFIG = {
+  partnerHome: {
+    label: "Same as Client Address",
+    sourceAddressName: ["client", "clientHomeAddress"],
+    sourcePostcodeName: ["client", "clientPostcode"],
+    targetAddressName: ["partner", "partnerHomeAddress"],
+    targetPostcodeName: ["partner", "partnerPostcode"],
+    persistedFieldName: ["partner", "partnerSameAsClient"],
+  },
+  clientPostal: {
+    label: "Same as Home Address",
+    sourceAddressName: ["client", "clientHomeAddress"],
+    sourcePostcodeName: ["client", "clientPostcode"],
+    targetAddressName: ["client", "clientPostalAddress"],
+    targetPostcodeName: ["client", "clientPostalPostCode"],
+    persistedFieldName: ["client", "clientSameAsAbove"],
+  },
+  partnerPostal: {
+    label: "Same as Home Address",
+    sourceAddressName: ["partner", "partnerHomeAddress"],
+    sourcePostcodeName: ["partner", "partnerPostcode"],
+    targetAddressName: ["partner", "partnerPostalAddress"],
+    targetPostcodeName: ["partner", "partnerPostalPostCode"],
+  },
+};
 
 /**
  * @typedef {Object} SectionColumnConfig
@@ -318,11 +362,127 @@ const CONTACT_VIEW_COLUMNS = buildViewColumns(CONTACT_SECTION_CONFIG);
  * @property {string} [type]
  * @property {string[]} [options]
  * @property {boolean} [disabled]
- * @property {"preferred-readonly"} [editMode]
+ * @property {"preferred-readonly"|"address-with-sync"|"postcode-with-sync"} [editMode]
  * @property {number} [width]
  * @property {string} [placeholder]
  * @property {Record<string, any>} [fieldProps]
+ * @property {(value: unknown, row: "client" | "partner", form: import("antd").FormInstance<PersonalDetailsFormValues>) => void} [onChange]
  */
+
+/**
+ * Resolve a field path for the client or partner row.
+ *
+ * @param {"client"|"partner"} row
+ * @param {SectionColumnConfig} config
+ * @returns {string[]}
+ */
+function resolveFieldName(row, config) {
+  return row === "client"
+    ? ["client", config.clientField]
+    : ["partner", config.partnerField];
+}
+
+/**
+ * Read a nested value from a plain object using a form-style path.
+ *
+ * @param {Record<string, any> | undefined} values
+ * @param {string[]} path
+ * @returns {unknown}
+ */
+function getValueAtPath(values, path) {
+  return path.reduce((current, key) => current?.[key], values);
+}
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function hasAddressValue(value) {
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+/**
+ * Resolve which sync rule applies to a contact table cell.
+ *
+ * @param {"client"|"partner"} row
+ * @param {string} viewKey
+ * @returns {"partnerHome"|"clientPostal"|"partnerPostal"|null}
+ */
+function getAddressSyncKey(row, viewKey) {
+  if (row === "partner" && (viewKey === "home" || viewKey === "homePc")) {
+    return "partnerHome";
+  }
+  if (row === "client" && (viewKey === "postal" || viewKey === "postalPc")) {
+    return "clientPostal";
+  }
+  if (row === "partner" && (viewKey === "postal" || viewKey === "postalPc")) {
+    return "partnerPostal";
+  }
+  return null;
+}
+
+/**
+ * Determine whether a target address pair currently matches its source pair.
+ *
+ * @param {PersonalDetailsFormValues} values
+ * @param {keyof typeof ADDRESS_SYNC_CONFIG} syncKey
+ * @returns {boolean}
+ */
+function areAddressFieldsSynced(values, syncKey) {
+  const config = ADDRESS_SYNC_CONFIG[syncKey];
+  const sourceAddress = getValueAtPath(values, config.sourceAddressName);
+  const sourcePostcode = getValueAtPath(values, config.sourcePostcodeName);
+  const targetAddress = getValueAtPath(values, config.targetAddressName);
+  const targetPostcode = getValueAtPath(values, config.targetPostcodeName);
+  const hasAnyValue =
+    hasAddressValue(sourceAddress) ||
+    hasAddressValue(sourcePostcode) ||
+    hasAddressValue(targetAddress) ||
+    hasAddressValue(targetPostcode);
+
+  return (
+    hasAnyValue &&
+    String(sourceAddress ?? "") === String(targetAddress ?? "") &&
+    String(sourcePostcode ?? "") === String(targetPostcode ?? "")
+  );
+}
+
+/**
+ * Build the local checkbox state for address-copy helpers.
+ *
+ * @param {PersonalDetailsFormValues} values
+ * @returns {{ partnerHome: boolean, clientPostal: boolean, partnerPostal: boolean }}
+ */
+function buildAddressSyncState(values) {
+  return {
+    partnerHome:
+      Boolean(values?.partner?.partnerSameAsClient) ||
+      areAddressFieldsSynced(values, "partnerHome"),
+    clientPostal:
+      Boolean(values?.client?.clientSameAsAbove) ||
+      areAddressFieldsSynced(values, "clientPostal"),
+    partnerPostal: areAddressFieldsSynced(values, "partnerPostal"),
+  };
+}
+
+/**
+ * Copy the source address pair into its target fields.
+ *
+ * @param {import("antd").FormInstance<PersonalDetailsFormValues>} form
+ * @param {keyof typeof ADDRESS_SYNC_CONFIG} syncKey
+ * @returns {void}
+ */
+function syncAddressFields(form, syncKey) {
+  const config = ADDRESS_SYNC_CONFIG[syncKey];
+  form.setFieldValue(
+    config.targetAddressName,
+    form.getFieldValue(config.sourceAddressName) ?? "",
+  );
+  form.setFieldValue(
+    config.targetPostcodeName,
+    form.getFieldValue(config.sourcePostcodeName) ?? "",
+  );
+}
 
 /**
  * Render a form field cell for either the client or partner row.
@@ -334,10 +494,7 @@ const CONTACT_VIEW_COLUMNS = buildViewColumns(CONTACT_SECTION_CONFIG);
  * @returns {JSX.Element}
  */
 function FormFieldCell({ form, row, config }) {
-  const name =
-    row === "client"
-      ? ["client", config.clientField]
-      : ["partner", config.partnerField];
+  const name = resolveFieldName(row, config);
 
   return (
     <DynamicFormField
@@ -349,6 +506,88 @@ function FormFieldCell({ form, row, config }) {
       disabled={config.disabled}
       formItemProps={{ style: { marginBottom: 0 }, label: null }}
       fieldProps={config.fieldProps}
+      onChange={(value) => config.onChange?.(value, row, form)}
+    />
+  );
+}
+
+/**
+ * Render a contact address cell with an optional copy-address checkbox.
+ *
+ * @param {Object} props
+ * @param {import("antd").FormInstance<PersonalDetailsFormValues>} props.form
+ * @param {"client"|"partner"} props.row
+ * @param {SectionColumnConfig} props.config
+ * @param {{ partnerHome: boolean, clientPostal: boolean, partnerPostal: boolean }} props.addressSync
+ * @param {(syncKey: "partnerHome"|"clientPostal"|"partnerPostal", checked: boolean) => void} props.onAddressSyncToggle
+ * @returns {JSX.Element}
+ */
+function AddressFieldCell({
+  form,
+  row,
+  config,
+  addressSync,
+  onAddressSyncToggle,
+}) {
+  const name = resolveFieldName(row, config);
+  const syncKey = getAddressSyncKey(row, config.viewKey);
+  const syncEnabled = syncKey ? addressSync[syncKey] : false;
+
+  return (
+    <div>
+      <DynamicFormField
+        form={form}
+        name={name}
+        type={config.type || "text"}
+        options={config.options}
+        placeholder={config.placeholder}
+        disabled={Boolean(config.disabled) || syncEnabled}
+        formItemProps={{ style: { marginBottom: 0 }, label: null }}
+        fieldProps={config.fieldProps}
+        onChange={(value) => config.onChange?.(value, row, form)}
+      />
+      {syncKey ? (
+        <Checkbox
+          checked={syncEnabled}
+          onChange={(event) =>
+            onAddressSyncToggle(syncKey, event.target.checked)
+          }
+          style={ADDRESS_SYNC_CHECKBOX_STYLE}
+        >
+          {ADDRESS_SYNC_CONFIG[syncKey].label}
+        </Checkbox>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Render a postcode cell that becomes read-only while its paired address sync is enabled.
+ *
+ * @param {Object} props
+ * @param {import("antd").FormInstance<PersonalDetailsFormValues>} props.form
+ * @param {"client"|"partner"} props.row
+ * @param {SectionColumnConfig} props.config
+ * @param {{ partnerHome: boolean, clientPostal: boolean, partnerPostal: boolean }} props.addressSync
+ * @returns {JSX.Element}
+ */
+function PostcodeFieldCell({ form, row, config, addressSync }) {
+  const name = resolveFieldName(row, config);
+  const syncKey = getAddressSyncKey(row, config.viewKey);
+
+  return (
+    <DynamicFormField
+      form={form}
+      name={name}
+      type={config.type || "text"}
+      options={config.options}
+      placeholder={config.placeholder}
+      disabled={
+        Boolean(config.disabled) || Boolean(syncKey && addressSync[syncKey])
+      }
+      formItemProps={{ style: { marginBottom: 0 }, label: null }}
+      fieldProps={config.fieldProps}
+      onChange={(value) => config.onChange?.(value, row, form)}
     />
   );
 }
@@ -395,9 +634,14 @@ function buildViewColumns(config) {
  *
  * @param {SectionColumnConfig[]} config
  * @param {import("antd").FormInstance<PersonalDetailsFormValues>} form
+ * @param {Object} [options]
+ * @param {{ partnerHome: boolean, clientPostal: boolean, partnerPostal: boolean }} [options.addressSync]
+ * @param {(syncKey: "partnerHome"|"clientPostal"|"partnerPostal", checked: boolean) => void} [options.onAddressSyncToggle]
  * @returns {Array<Record<string, any>>}
  */
-function buildEditColumns(config, form) {
+function buildEditColumns(config, form, options = {}) {
+  const { addressSync, onAddressSyncToggle } = options;
+
   return config.map((item) => {
     const base = {
       title: item.title,
@@ -410,6 +654,39 @@ function buildEditColumns(config, form) {
         ...base,
         render: (_, record) => (
           <PreferredReadonlyCell form={form} row={record.row} />
+        ),
+      };
+    }
+
+    if (
+      item.editMode === "address-with-sync" &&
+      addressSync &&
+      onAddressSyncToggle
+    ) {
+      return {
+        ...base,
+        render: (_, record) => (
+          <AddressFieldCell
+            form={form}
+            row={record.row}
+            config={item}
+            addressSync={addressSync}
+            onAddressSyncToggle={onAddressSyncToggle}
+          />
+        ),
+      };
+    }
+
+    if (item.editMode === "postcode-with-sync" && addressSync) {
+      return {
+        ...base,
+        render: (_, record) => (
+          <PostcodeFieldCell
+            form={form}
+            row={record.row}
+            config={item}
+            addressSync={addressSync}
+          />
         ),
       };
     }
@@ -462,6 +739,19 @@ export default function PersonalDetailsFrom({
 
   /** @type {PersonalDetailsFormValues} */
   const initialValues = useMemo(() => buildInitialValues(pd), [pd]);
+  const [addressSync, setAddressSync] = useState(() =>
+    buildAddressSyncState(initialValues),
+  );
+  const clientHomeAddress = Form.useWatch(
+    ["client", "clientHomeAddress"],
+    form,
+  );
+  const clientPostcode = Form.useWatch(["client", "clientPostcode"], form);
+  const partnerHomeAddress = Form.useWatch(
+    ["partner", "partnerHomeAddress"],
+    form,
+  );
+  const partnerPostcode = Form.useWatch(["partner", "partnerPostcode"], form);
   const viewPersonalRows = useMemo(() => buildViewPersonalRows(pd), [pd]);
   const viewFinancialRows = useMemo(() => buildViewFinancialRows(pd), [pd]);
   const viewContactRows = useMemo(() => buildViewContactRows(pd), [pd]);
@@ -475,20 +765,62 @@ export default function PersonalDetailsFrom({
     () => buildEditColumns(FINANCIAL_SECTION_CONFIG, form),
     [form],
   );
-  const contactEditColumns = useMemo(
-    () => buildEditColumns(CONTACT_SECTION_CONFIG, form),
+  const handleAddressSyncToggle = useCallback(
+    (syncKey, checked) => {
+      setAddressSync((prev) => ({ ...prev, [syncKey]: checked }));
+
+      const persistedFieldName =
+        ADDRESS_SYNC_CONFIG[syncKey].persistedFieldName;
+      if (persistedFieldName) {
+        form.setFieldValue(persistedFieldName, checked);
+      }
+
+      if (checked) {
+        syncAddressFields(form, syncKey);
+      }
+    },
     [form],
+  );
+  const contactEditColumns = useMemo(
+    () =>
+      buildEditColumns(CONTACT_SECTION_CONFIG, form, {
+        addressSync,
+        onAddressSyncToggle: handleAddressSyncToggle,
+      }),
+    [addressSync, form, handleAddressSyncToggle],
   );
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
   }, [form, initialValues]);
 
+  useEffect(() => {
+    setAddressSync(buildAddressSyncState(initialValues));
+  }, [initialValues]);
+
+  useEffect(() => {
+    if (addressSync.partnerHome) {
+      syncAddressFields(form, "partnerHome");
+    }
+  }, [addressSync.partnerHome, clientHomeAddress, clientPostcode, form]);
+
+  useEffect(() => {
+    if (addressSync.clientPostal) {
+      syncAddressFields(form, "clientPostal");
+    }
+  }, [addressSync.clientPostal, clientHomeAddress, clientPostcode, form]);
+
+  useEffect(() => {
+    if (addressSync.partnerPostal) {
+      syncAddressFields(form, "partnerPostal");
+    }
+  }, [addressSync.partnerPostal, partnerHomeAddress, partnerPostcode, form]);
+
   const finish = useCallback(
     async (values) => {
       const payload = {
         ...mapSubmitValues(values),
-        
+
         _id: pd?._id,
       };
 
@@ -511,7 +843,8 @@ export default function PersonalDetailsFrom({
                 client: saved.client ?? payload.client,
                 partner: saved.partner ?? payload.partner,
                 children: saved.children ?? payload.children,
-                haveAnyChildren: saved.haveAnyChildren ?? payload.haveAnyChildren,
+                haveAnyChildren:
+                  saved.haveAnyChildren ?? payload.haveAnyChildren,
               }
             : {
                 ...pd,
@@ -520,10 +853,16 @@ export default function PersonalDetailsFrom({
 
         setPd(nextPd);
         setDiscoveryData((prev) => {
-          if (prev?.personaldetails && typeof prev.personaldetails === "object") {
+          if (
+            prev?.personaldetails &&
+            typeof prev.personaldetails === "object"
+          ) {
             return { ...prev, personaldetails: nextPd };
           }
-          if (prev?.personalDetails && typeof prev.personalDetails === "object") {
+          if (
+            prev?.personalDetails &&
+            typeof prev.personalDetails === "object"
+          ) {
             return { ...prev, personalDetails: nextPd };
           }
           if (prev && typeof prev === "object") {

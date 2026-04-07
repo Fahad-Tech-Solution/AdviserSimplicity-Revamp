@@ -1,6 +1,7 @@
-import { Typography } from "antd";
+import { CheckOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Typography } from "antd";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   addDiscoverySectionsModalOpen,
@@ -10,9 +11,12 @@ import {
 import {
   DISCOVERY_ADD_SECTION_KEY,
   getDiscoveryStepperRoutes,
+  isDiscoveryRouteCompleted,
   matchDiscoveryRoute,
   pathMatchesDiscoveryRoute,
 } from "../Routes/User.Routes.jsx";
+import CardsSelection from "../Pages/User/Discovery/AddSection/CardsSelection.jsx";
+import AppModal from "../Common/AppModal.jsx";
 
 const { Text, Title } = Typography;
 
@@ -20,7 +24,22 @@ const PRIMARY_GREEN = "#22c55e";
 const MUTED = "#9ca3af";
 const LINE = "#e5e7eb";
 
-function DiscoveryStepper({ pathname, visibleRoutes, onNavigate }) {
+const DISCOVERY_ADD_BUTTON_STYLE = {
+  width: 48,
+  height: 48,
+  borderRadius: "50%",
+  background: PRIMARY_GREEN,
+  borderColor: PRIMARY_GREEN,
+  boxShadow: "0 8px 18px rgba(34, 197, 94, 0.28)",
+};
+
+function DiscoveryStepper({
+  pathname,
+  visibleRoutes,
+  onNavigate,
+  discoveryData,
+  discoveryQuestions,
+}) {
   const activeIndex = visibleRoutes.findIndex((r) =>
     pathMatchesDiscoveryRoute(pathname, r),
   );
@@ -55,6 +74,14 @@ function DiscoveryStepper({ pathname, visibleRoutes, onNavigate }) {
       >
         {visibleRoutes.map((route, index) => {
           const active = hasActiveStep && index === current;
+          const completed =
+            hasActiveStep &&
+            index < current &&
+            isDiscoveryRouteCompleted(route, {
+              pathname,
+              discoveryData,
+              discoveryQuestions,
+            });
           const icon = route.stepIcon ?? "•";
           const label = route.stepTitle ?? route.key;
           return (
@@ -79,10 +106,11 @@ function DiscoveryStepper({ pathname, visibleRoutes, onNavigate }) {
                   width: 40,
                   height: 40,
                   borderRadius: "50%",
-                  background: active ? PRIMARY_GREEN : "#fff",
-                  border: active
-                    ? `2px solid ${PRIMARY_GREEN}`
-                    : `2px solid ${LINE}`,
+                  background: active || completed ? PRIMARY_GREEN : "#fff",
+                  border:
+                    active || completed
+                      ? `2px solid ${PRIMARY_GREEN}`
+                      : `2px solid ${LINE}`,
 
                   display: "flex",
                   alignItems: "center",
@@ -94,7 +122,11 @@ function DiscoveryStepper({ pathname, visibleRoutes, onNavigate }) {
                     : "none",
                 }}
               >
-                <span style={{ opacity: active ? 1 : 0.75 }}>{icon}</span>
+                {completed ? (
+                  <CheckOutlined style={{ color: "#fff", fontSize: 15 }} />
+                ) : (
+                  <span style={{ opacity: active ? 1 : 0.75 }}>{icon}</span>
+                )}
               </div>
               <Text
                 role="button"
@@ -104,10 +136,10 @@ function DiscoveryStepper({ pathname, visibleRoutes, onNavigate }) {
                   fontSize: 9,
                   lineHeight: 1.2,
                   textAlign: "center",
-                  color: active ? PRIMARY_GREEN : MUTED,
-                  fontWeight: active ? 700 : 400,
+                  color: active || completed ? PRIMARY_GREEN : MUTED,
+                  fontWeight: active || completed ? 700 : 400,
                   display: "block",
-                  padding: "0 25px",
+                  padding: "0 23px",
                   fontFamily: "Arial, sans-serif",
                 }}
               >
@@ -131,6 +163,7 @@ export default function DiscoveryFlowLayout() {
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
+  const [ModalOpen, setModalOpen] = useState(false);
 
   const handleStepNavigate = (to) => {
     if (to === DISCOVERY_ADD_SECTION_KEY) {
@@ -145,8 +178,17 @@ export default function DiscoveryFlowLayout() {
     [discoveryQuestions],
   );
 
+  const CurrentRoute = useMemo(
+    () =>
+      stepperRoutes.find((r) =>
+        pathMatchesDiscoveryRoute(location.pathname, r),
+      ),
+    [discoveryQuestions],
+  );
+
   const matched = matchDiscoveryRoute(location.pathname, discoveryQuestions);
   const pageTitle = matched?.stepTitle ?? "Discovery";
+  const showDiscoveryAddButton = Boolean(matched?.showDiscoveryAddButton);
 
   return (
     <div style={{ maxWidth: 1100, margin: "21px auto", padding: "0px 0 24px" }}>
@@ -183,7 +225,41 @@ export default function DiscoveryFlowLayout() {
         pathname={location.pathname}
         visibleRoutes={stepperRoutes}
         onNavigate={handleStepNavigate}
+        discoveryData={discoveryData}
+        discoveryQuestions={discoveryQuestions}
       />
+
+      {showDiscoveryAddButton ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: 24,
+          }}
+        >
+          <Button
+            type="primary"
+            shape="circle"
+            onClick={() => setModalOpen(true)}
+            style={DISCOVERY_ADD_BUTTON_STYLE}
+          >
+            <PlusOutlined style={{ fontSize: 18, fontWeight: 700 }} />
+          </Button>
+        </div>
+      ) : null}
+
+      <AppModal
+        open={ModalOpen}
+        onClose={() => setModalOpen(false)}
+        title={CurrentRoute?.cardsSelectionTitle || ""}
+        width={780}
+        footer={null}
+      >
+        <CardsSelection
+          Cards={CurrentRoute?.Cards || []}
+          setModalOpen={setModalOpen}
+        />
+      </AppModal>
 
       <Outlet />
     </div>

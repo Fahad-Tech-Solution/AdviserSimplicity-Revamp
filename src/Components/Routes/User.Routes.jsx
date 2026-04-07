@@ -8,6 +8,7 @@ import MyClients from "../Pages/User/Clients/MyClients";
 import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
 import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 import MyTeam from "../Pages/User/MyTeam/MyTeam";
+import IncomeExpenses from "../Pages/User/Discovery/IncomeExpenses/IncomeExpenses.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -27,6 +28,49 @@ const personalDetailsElement = (
     <PersonalDetailsLazy />
   </Suspense>
 );
+
+const DISCOVERY_SECTION_METADATA_KEYS = new Set([
+  "_id",
+  "__v",
+  "createdAt",
+  "updatedAt",
+  "clientId",
+  "userId",
+]);
+
+function hasMeaningfulValue(value) {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (typeof value === "number") return !Number.isNaN(value);
+  if (typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+  if (typeof value === "object") {
+    return Object.entries(value).some(([key, nestedValue]) => {
+      if (DISCOVERY_SECTION_METADATA_KEYS.has(key)) {
+        return false;
+      }
+      return hasMeaningfulValue(nestedValue);
+    });
+  }
+  return false;
+}
+
+function getDiscoverySectionValue(data, keys = []) {
+  if (!data || typeof data !== "object") return null;
+
+  for (const key of keys) {
+    if (key in data) {
+      return data[key];
+    }
+  }
+
+  return null;
+}
+
+function createSectionCompletionCheck(...keys) {
+  return ({ discoveryData }) =>
+    hasMeaningfulValue(getDiscoverySectionValue(discoveryData, keys));
+}
 
 export const withSpacing = ({
   icon,
@@ -117,12 +161,18 @@ export const discoveryRoutes = [
     }),
     component: personalDetailsElement,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck(
+      "personaldetails",
+      "personalDetails",
+    ),
   },
   {
     key: "/user/discovery/income-expenses",
     relativePath: "income-expenses",
     stepTitle: "Income & Expenses",
+    cardsSelectionTitle: "Income & Expenses",
     stepIcon: "💲",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/income-expenses",
     ...withSpacing({
       icon: "💲",
@@ -130,14 +180,69 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <IncomeExpenses />,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck(
+      "incomeexpenses",
+      "incomeExpenses",
+      "incomeAndExpenses",
+    ),
+    Cards: [
+      {
+        title: "Employment",
+        key: "incomeFromOwnBusiness",
+        icon: "👔",
+        component: null,
+      },
+      {
+        title: "Sole Trader",
+        key: "incomeFromSoleTrader",
+        icon: "💼",
+        component: null,
+      },
+      {
+        title: "Partnership",
+        key: "incomeFromPartnership",
+        icon: "🤝",
+        component: null,
+      },
+      {
+        title: "Centerlink",
+        key: "incomeFromCentrelink",
+        icon: "⚙️",
+        component: null,
+        info: "This includes Family Tax Benefit (A&B) Payments and any Centrelink Cards.",
+      },
+      {
+        title: "Lifetime Pension",
+        key: "incomeFromSuperPayment",
+        icon: "💵",
+        component: null,
+      },
+      {
+        title: "Overseas Pension",
+        key: "incomeFromOverseasPension",
+        icon: "🌍",
+        component: null,
+      },
+      {
+        title: "Living Expenses",
+        key: "incomeFromRegularLivingExpenses",
+        icon: "💰",
+        component: null,
+        variant: "case3",
+        Labels: ["General Living", "Retirement Living"],
+        dataKey: "generalLivingExpenses",
+      },
+    ],
   },
   {
     key: "/user/discovery/assets-debt",
     relativePath: "assets-debt",
     stepTitle: "Assets & Debt",
+    cardsSelectionTitle: "Personal Assets & Liabilities",
     stepIcon: "🏡",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/assets-debt",
     ...withSpacing({
       icon: "🏡",
@@ -147,12 +252,15 @@ export const discoveryRoutes = [
     }),
     component: null,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck("assetsdebt", "assetsDebt"),
   },
   {
     key: "/user/discovery/financial-investments",
     relativePath: "financial-investments",
     stepTitle: "Financial Investments",
+    cardsSelectionTitle: "Financial Investments",
     stepIcon: "📈",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/financial-investments",
     ...withSpacing({
       icon: "📈",
@@ -162,12 +270,18 @@ export const discoveryRoutes = [
     }),
     component: null,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck(
+      "financialinvestments",
+      "financialInvestments",
+    ),
   },
   {
     key: "/user/discovery/estate-planning",
     relativePath: "estate-planning",
     stepTitle: "Estate Planning",
+    cardsSelectionTitle: "Estate Planning & Professional Adviser",
     stepIcon: "📋",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/estate-planning",
     ...withSpacing({
       icon: "📋",
@@ -177,12 +291,18 @@ export const discoveryRoutes = [
     }),
     component: null,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck(
+      "estateplanning",
+      "estatePlanning",
+    ),
   },
   {
     key: "/user/discovery/personal-insurance",
     relativePath: "personal-insurance",
     stepTitle: "Personal Insurance",
+    cardsSelectionTitle: "Personal Insurance",
     stepIcon: "🛡️",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/personal-insurance",
     ...withSpacing({
       icon: "🛡️",
@@ -193,12 +313,18 @@ export const discoveryRoutes = [
     component: null,
     condition: (q) =>
       String(q?.personalInsuranceTab ?? "").toLowerCase() === "yes",
+    isCompleted: createSectionCompletionCheck(
+      "personalinsurance",
+      "personalInsurance",
+    ),
   },
   {
     key: "/user/discovery/business-entities",
     relativePath: "business-entities",
     stepTitle: "Business Entities",
+    cardsSelectionTitle: "Business Entities",
     stepIcon: "🏢",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/business-entities",
     ...withSpacing({
       icon: "🏢",
@@ -213,12 +339,18 @@ export const discoveryRoutes = [
         String(q?.BusinessAsTrusts ?? "").toLowerCase() === "yes"
       );
     },
+    isCompleted: createSectionCompletionCheck(
+      "businessentities",
+      "businessEntities",
+    ),
   },
   {
     key: "/user/discovery/smsf",
     relativePath: "smsf",
     stepTitle: "SMSF",
     stepIcon: "🔐",
+    cardsSelectionTitle: "Self Manged Super Fund",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/smsf",
     ...withSpacing({
       icon: "🔐",
@@ -229,12 +361,15 @@ export const discoveryRoutes = [
     component: null,
     condition: (q) =>
       String(q?.SMSFManagedFundsTab ?? "").toLowerCase() === "yes",
+    isCompleted: createSectionCompletionCheck("smsf", "SMSF"),
   },
   {
     key: "/user/discovery/investment-trust",
     relativePath: "investment-trust",
     stepTitle: "Investment Trust",
+    cardsSelectionTitle: "Family Trust",
     stepIcon: "📊",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/investment-trust",
     ...withSpacing({
       icon: "📊",
@@ -245,12 +380,17 @@ export const discoveryRoutes = [
     component: null,
     condition: (q) =>
       String(q?.businessAsInvestmentTab ?? "").toLowerCase() === "yes",
+    isCompleted: createSectionCompletionCheck(
+      "investmenttrust",
+      "investmentTrust",
+    ),
   },
   {
     key: "/user/discovery/goals-objectives",
     relativePath: "goals-objectives",
     stepTitle: "Goals & Objectives",
     stepIcon: "🎯",
+    showDiscoveryAddButton: true,
     path: "/user/discovery/goals-objectives",
     ...withSpacing({
       icon: "🎯",
@@ -260,6 +400,10 @@ export const discoveryRoutes = [
     }),
     component: null,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck(
+      "goalsobjectives",
+      "goalsObjectives",
+    ),
   },
   {
     key: "/user/discovery/risk-profile",
@@ -275,6 +419,7 @@ export const discoveryRoutes = [
     }),
     component: null,
     condition: () => true,
+    isCompleted: createSectionCompletionCheck("riskprofile", "riskProfile"),
   },
   {
     key: "/user/discovery/add-section",
@@ -325,6 +470,18 @@ export function matchDiscoveryRoute(pathname, questions) {
   return getVisibleDiscoveryRoutes(questions).find((r) =>
     pathMatchesDiscoveryRoute(pathname, r),
   );
+}
+
+export function isDiscoveryRouteCompleted(route, context = {}) {
+  if (!route || typeof route.isCompleted !== "function") {
+    return false;
+  }
+
+  try {
+    return Boolean(route.isCompleted({ route, ...context }));
+  } catch {
+    return false;
+  }
 }
 
 export function getNextDiscoveryNavKey(pathname, questions) {

@@ -1,4 +1,7 @@
 import { Avatar, Card, Typography } from "antd";
+import AppModal from "../../../../../Common/AppModal";
+import UploadImage from "./UploadImage";
+import { useEffect, useState } from "react";
 
 const { Text } = Typography;
 
@@ -114,18 +117,24 @@ function dobAgeLine(person = {}, role = "client") {
 function hasPartnerDetails(partner = {}) {
   return Boolean(
     partner.partnerPreferredName ||
-      partner.partnerGivenName ||
-      partner.partnerLastName ||
-      partner.partnerEmail ||
-      partner.partnerWorkPhone ||
-      partner.partnerPhone ||
-      partner.partnerMobile,
+    partner.partnerGivenName ||
+    partner.partnerLastName ||
+    partner.partnerEmail ||
+    partner.partnerWorkPhone ||
+    partner.partnerPhone ||
+    partner.partnerMobile,
   );
 }
 
-export function ProfileCard({ person, role, imageUrl }) {
+export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
   const formal = buildFormalName(person, role);
   const nick = nicknameLine(person, role);
+  const [open, setOpen] = useState(false);
+  const [image, setImage] = useState(imageUrl);
+
+  useEffect(() => {
+    setImage(imageUrl);
+  }, [imageUrl]);
 
   if (role === "partner" && !hasPartnerDetails(person)) {
     return (
@@ -149,7 +158,7 @@ export function ProfileCard({ person, role, imageUrl }) {
     );
   }
 
-  const showAvatarImg = Boolean(imageUrl);
+  const showAvatarImg = Boolean(image);
 
   return (
     <Card
@@ -162,6 +171,26 @@ export function ProfileCard({ person, role, imageUrl }) {
       }}
       styles={{ body: { padding: "28px 24px" } }}
     >
+      <AppModal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Upload Image"
+        subtitle="Upload an image for your profile"
+        width={500}
+        destroyOnClose
+      >
+        <UploadImage
+          personalDetailsId={personalDetailsId}
+          owner={role}
+          currentImage={image}
+          onClose={() => setOpen(false)}
+          onSuccess={(nextImage) => {
+            setImage(nextImage?.url || nextImage || "");
+            setOpen(false);
+          }}
+        />
+      </AppModal>
+
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <div
           style={{
@@ -172,7 +201,7 @@ export function ProfileCard({ person, role, imageUrl }) {
         >
           <Avatar
             size={88}
-            src={showAvatarImg ? imageUrl : undefined}
+            src={showAvatarImg ? image : undefined}
             style={{
               background: "#f3f4f6",
               border: "3px solid rgba(34,197,94,.2)",
@@ -199,6 +228,10 @@ export function ProfileCard({ person, role, imageUrl }) {
               fontSize: 12,
             }}
             title="Primary"
+            onClick={() => {
+              setOpen(true);
+            }}
+            role="button"
           >
             📷
           </div>

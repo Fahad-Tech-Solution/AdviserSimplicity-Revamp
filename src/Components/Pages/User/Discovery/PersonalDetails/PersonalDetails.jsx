@@ -41,7 +41,7 @@ export function PersonalDetails() {
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
   const selected = useAtomValue(SelectedClient);
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(1);
 
   const pd = getPersonalDetailsFromDiscovery(discoveryData);
 
@@ -87,6 +87,7 @@ export function PersonalDetails() {
                   person={client}
                   role="client"
                   imageUrl={clientImageUrl}
+                  personalDetailsId={pd?._id}
                 />
               </Col>
               <Col xs={24} md={12}>
@@ -94,6 +95,7 @@ export function PersonalDetails() {
                   person={partner}
                   role="partner"
                   imageUrl={partnerImageUrl}
+                  personalDetailsId={pd?._id}
                 />
               </Col>
             </Row>
