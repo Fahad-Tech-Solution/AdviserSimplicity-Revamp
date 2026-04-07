@@ -1,5 +1,5 @@
 import { Form, Select, Space, Typography } from "antd";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import DynamicDataTable from "../../../../../Common/DynamicDataTable.jsx";
 import DynamicFormField from "../../../../../Common/DynamicFormField.jsx";
 import { childAgeFromDob } from "../utils/personalDetails.mapper.js";
@@ -13,15 +13,34 @@ const SECTION_TITLE_STYLE = {
   fontWeight: 700,
   color: "#111",
 };
-const CHILD_COUNT_OPTIONS = [1, 2, 3, 4, 5].map((value) => ({
+
+const CHILD_COUNT_OPTIONS = [0, 1, 2, 3, 4, 5].map((value) => ({
   label: String(value),
   value,
 }));
+
 const CHILDREN_EDIT_CONFIG = [
   { title: "First Name", key: "firstName", field: "firstName", type: "text" },
   { title: "Last Name", key: "lastName", field: "lastName", type: "text" },
-  { title: "DOB", key: "dob", field: "dob", type: "date" },
-  { title: "Age", key: "age", kind: "age" },
+  {
+    title: "DOB",
+    key: "dob",
+    field: "dob",
+    type: "date",
+    onChange: (value, record, form) => {
+      console.log(
+        childAgeFromDob(value),
+        "children.arrayOfChildren." + record.key + ".age",
+        form.getFieldsValue(),
+      );
+
+      form.setFieldValue(
+        ["children", "arrayOfChildren", record.name, "age"],
+        childAgeFromDob(value),
+      );
+    },
+  },
+  { title: "Age", key: "age", kind: "age", disabled: true },
   {
     title: "Gender",
     key: "gender",
@@ -66,54 +85,38 @@ const CHILDREN_EDIT_CONFIG = [
  * @param {ChildColumnConfig} props.config
  * @returns {JSX.Element}
  */
+
 const ChildFieldCell = memo(function ChildFieldCell({ form, record, config }) {
   return (
     <DynamicFormField
       form={form}
-      name={["children", "arrayOfChildren", record.name, config.field]}
+      name={[record.name, config.field]}
       type={config.type}
       options={config.options}
       formItemProps={{
         style: { marginBottom: 0 },
         label: null,
       }}
+      placeholder={config.placeholder || config.title || "0."}
+      disabled={config.disabled}
+      onChange={(value) => config.onChange?.(value, record, form)}
     />
   );
 });
 
-/**
- * Render computed child age for a specific Form.List row.
- *
- * @param {Object} props
- * @param {import("antd").FormInstance} props.form
- * @param {{ name: number }} props.record
- * @returns {JSX.Element}
- */
-const ChildAgeCell = memo(function ChildAgeCell({ form, record }) {
+const ChildAgeFieldCell = memo(function ChildAgeFieldCell({ form, record }) {
   return (
-    <Form.Item
-      shouldUpdate={(prev, cur) => {
-        const prevDob = prev?.children?.arrayOfChildren?.[record.name]?.dob;
-        const currentDob = cur?.children?.arrayOfChildren?.[record.name]?.dob;
-        return prevDob !== currentDob;
+    <DynamicFormField
+      form={form}
+      name={[record.name, "age"]}
+      type="text"
+      disabled
+      formItemProps={{
+        style: { marginBottom: 0 },
+        label: null,
       }}
-      style={{ marginBottom: 0 }}
-    >
-      {() => {
-        const dob = form.getFieldValue([
-          "children",
-          "arrayOfChildren",
-          record.name,
-          "dob",
-        ]);
-
-        return (
-          <Text style={{ fontSize: 13 }}>
-            {childAgeFromDob(dob) || "—"}
-          </Text>
-        );
-      }}
-    </Form.Item>
+      placeholder="Age"
+    />
   );
 });
 
@@ -125,6 +128,7 @@ const ChildAgeCell = memo(function ChildAgeCell({ form, record }) {
  * @param {{ genderOptions: string[], relationshipOptions: string[], yesNoOptions: string[] }} params.optionsMap
  * @returns {Array<Record<string, any>>}
  */
+
 function buildEditColumns({ form, optionsMap }) {
   return CHILDREN_EDIT_CONFIG.map((item) => {
     const base = {
@@ -136,7 +140,7 @@ function buildEditColumns({ form, optionsMap }) {
     if (item.kind === "age") {
       return {
         ...base,
-        render: (_, record) => <ChildAgeCell form={form} record={record} />,
+        render: (_, record) => <ChildAgeFieldCell form={form} record={record} />,
       };
     }
 
@@ -188,6 +192,7 @@ const ChildrenEditTable = memo(function ChildrenEditTable({
     }),
     [genderOptions, relationshipOptions, yesNoOptions],
   );
+
   const editColumns = useMemo(
     () =>
       buildEditColumns({
@@ -196,13 +201,15 @@ const ChildrenEditTable = memo(function ChildrenEditTable({
       }),
     [form, optionsMap],
   );
+
   const fieldRows = useMemo(
     () => fields.map((field) => ({ ...field, key: field.key })),
     [fields],
   );
+
   const handleChildCountChange = useCallback(
     (nextCount) => {
-      const safeCount = Math.max(1, Math.min(5, Number(nextCount) || 1));
+      const safeCount = Math.max(0, Math.min(5, Number(nextCount) || 0));
       const currentCount = fields.length;
 
       if (safeCount > currentCount) {
@@ -226,14 +233,20 @@ const ChildrenEditTable = memo(function ChildrenEditTable({
       <Space style={{ marginBottom: 8 }}>
         <Select
           placeholder="Children count"
-          value={fields.length || undefined}
+          value={fields.length}
           onChange={handleChildCountChange}
           options={CHILD_COUNT_OPTIONS}
           style={{ width: 120 }}
         />
       </Space>
 
-      <DynamicDataTable columns={editColumns} data={fieldRows} {...tableProps} />
+      {fields.length > 0 && (
+        <DynamicDataTable
+          columns={editColumns}
+          data={fieldRows}
+          {...tableProps}
+        />
+      )}
     </>
   );
 });
@@ -273,26 +286,21 @@ function ChildrenSection({
     [tableProps],
   );
 
+  useEffect(() => {
+    if (form.getFieldValue("haveAnyChildren") !== "Yes") {
+      form.setFieldValue("haveAnyChildren", "Yes");
+    }
+  }, [form]);
+
   return (
     <>
-      <Title level={5} style={SECTION_TITLE_STYLE}>
+      <Title
+        level={5}
+        style={SECTION_TITLE_STYLE}
+        onClick={() => console.log(form.getFieldValue("children"))}
+      >
         CHILDREN DETAILS
       </Title>
-
-      <Form.Item label={null} style={{ marginBottom: 8 }}>
-        {editing ? (
-          <DynamicFormField
-            form={form}
-            name="haveAnyChildren"
-            label="Have any children?"
-            type="select"
-            options={yesNoOptions}
-            formItemProps={{ style: { maxWidth: 220 } }}
-          />
-        ) : (
-          <Text>Have any children? </Text>
-        )}
-      </Form.Item>
 
       {!editing ? (
         <DynamicDataTable

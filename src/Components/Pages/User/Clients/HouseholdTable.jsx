@@ -192,6 +192,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
   const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
+    console.log("row", row);
     try {
       const [yesNoQuestionsRes, fullDetailsRes] = await Promise.all([
         get(`/api/questions/${row?._id}`),
@@ -347,11 +348,11 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       onClick: ({ key }) => {
         const action = keyToAction[key] || key;
         if (action === "Select" || action === "View") {
-          flushSync(() => {
-            selectLoadingRowIdRef.current = rowId;
-            setSelectLoadingRowId(rowId);
-            setOpenDropdownRowId(rowId);
-          });
+          // flushSync(() => {
+          //   selectLoadingRowIdRef.current = rowId;
+          //   setSelectLoadingRowId(rowId);
+          //   setOpenDropdownRowId(rowId);
+          // });
           void getClientDetails(row, action);
         } else if (action === "Deselect") {
           setDiscoverySectionQuestions({});

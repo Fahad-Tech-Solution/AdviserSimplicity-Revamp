@@ -7,11 +7,15 @@ import {
   InputNumber,
   Radio,
   Select,
+  Spin,
   Switch,
 } from "antd";
 import { ArrowUpOutlined } from "@ant-design/icons";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 
 const { TextArea, Password } = Input;
+const GEONAMES_USERNAME = "usamasaeed3k";
 
 function resolveMaybeFunction(value, form) {
   return typeof value === "function" ? value(form) : value;
@@ -19,6 +23,16 @@ function resolveMaybeFunction(value, form) {
 
 function isFunction(value) {
   return typeof value === "function";
+}
+
+function composeEventHandlers(...handlers) {
+  return (...args) => {
+    handlers.forEach((handler) => {
+      if (typeof handler === "function") {
+        handler(...args);
+      }
+    });
+  };
 }
 
 function buildOptions(options = []) {
@@ -30,6 +44,79 @@ function buildOptions(options = []) {
           value: option.value,
           disabled: option.disabled,
         },
+  );
+}
+
+function PostcodeSearchSelect({ placeholder, value, onChange, disabled, ...fieldProps }) {
+  const [optionsData, setOptionsData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    if (!value) return;
+    setOptionsData((prev) =>
+      prev.some((item) => item.value === value)
+        ? prev
+        : [{ value, label: value }, ...prev],
+    );
+  }, [value]);
+
+  const handleSearch = async (query) => {
+    if (!query) {
+      setOptionsData(value ? [{ value, label: value }] : []);
+      return;
+    }
+
+    const currentRequestId = ++requestIdRef.current;
+    setLoading(true);
+
+    try {
+      const res = await axios.get(
+        `https://secure.geonames.org/postalCodeSearchJSON?placename=${encodeURIComponent(
+          query,
+        )}&country=AU&maxRows=10&username=${GEONAMES_USERNAME}`,
+      );
+
+      if (currentRequestId !== requestIdRef.current) return;
+
+      const mapped = (res.data.postalCodes || []).map((place) => ({
+        value: `${place.placeName} (${place.postalCode})`,
+        label: `${place.placeName} (${place.postalCode})`,
+      }));
+
+      setOptionsData(
+        value && !mapped.some((item) => item.value === value)
+          ? [{ value, label: value }, ...mapped]
+          : mapped,
+      );
+    } catch (error) {
+      if (currentRequestId !== requestIdRef.current) return;
+      console.error("Error fetching postcodes:", error);
+      setOptionsData(value ? [{ value, label: value }] : []);
+    } finally {
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <Select
+      showSearch
+      allowClear
+      value={value || undefined}
+      placeholder={placeholder || "Type suburb or postcode..."}
+      onSearch={handleSearch}
+      onChange={onChange}
+      filterOption={false}
+      notFoundContent={loading ? <Spin size="small" /> : null}
+      options={optionsData}
+      style={{ width: "100%" }}
+      disabled={disabled}
+      getPopupContainer={() => document.body}
+      dropdownStyle={{ minWidth: 200 }} // Increase only popup width
+      {...fieldProps}
+    />
   );
 }
 
@@ -81,6 +168,9 @@ function getInputNode({
           {...fieldProps}
         />
       );
+
+    case "postalcode-search":
+      return <PostcodeSearchSelect placeholder={placeholder} {...fieldProps} />;
 
     case "date":
       return (
@@ -144,6 +234,7 @@ export default function DynamicFormField({
   dependencies,
   valuePropName,
   action,
+  onChange,
 }) {
   const finalValuePropName =
     valuePropName ||
@@ -169,6 +260,7 @@ export default function DynamicFormField({
           options,
           action,
           fieldProps: {
+            onChange: composeEventHandlers(fieldProps.onChange, onChange),
             disabled: computedDisabled,
             ...fieldProps,
           },

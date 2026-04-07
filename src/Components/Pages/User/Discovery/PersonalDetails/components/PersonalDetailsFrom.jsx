@@ -5,8 +5,11 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import { App as AntdApp, Button, Form, Space } from "antd";
+import { useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DynamicFormField from "../../../../../Common/DynamicFormField.jsx";
+import useApi from "../../../../../../hooks/useApi";
+import { discoveryDataAtom } from "../../../../../../store/authState";
 import ChildrenSection from "./ChildrenSection.jsx";
 import SectionTable from "./SectionTable.jsx";
 import {
@@ -238,6 +241,11 @@ const CONTACT_SECTION_CONFIG = [
     viewKey: "homePc",
     clientField: "clientPostcode",
     partnerField: "partnerPostcode",
+    type: "postalcode-search",
+    fieldProps: {
+      allowClear: true,
+    },
+    placeholder: "Type suburb or postcode...",
     width: 110,
   },
   {
@@ -252,6 +260,11 @@ const CONTACT_SECTION_CONFIG = [
     viewKey: "postalPc",
     clientField: "clientPostalPostCode",
     partnerField: "partnerPostalPostCode",
+    type: "postalcode-search",
+    fieldProps: {
+      allowClear: true,
+    },
+    placeholder: "Type suburb or postcode...",
     width: 110,
   },
   {
@@ -307,6 +320,7 @@ const CONTACT_VIEW_COLUMNS = buildViewColumns(CONTACT_SECTION_CONFIG);
  * @property {boolean} [disabled]
  * @property {"preferred-readonly"} [editMode]
  * @property {number} [width]
+ * @property {string} [placeholder]
  * @property {Record<string, any>} [fieldProps]
  */
 
@@ -331,6 +345,7 @@ function FormFieldCell({ form, row, config }) {
       name={name}
       type={config.type || "text"}
       options={config.options}
+      placeholder={config.placeholder}
       disabled={config.disabled}
       formItemProps={{ style: { marginBottom: 0 }, label: null }}
       fieldProps={config.fieldProps}
@@ -427,15 +442,23 @@ export default function PersonalDetailsFrom({
   onNext,
   onSave,
 }) {
+  const api = useApi();
   const { message } = AntdApp.useApp();
+  const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   /** @type {PersonalDetailsData | null} */
-  const pd = useMemo(
+  const resolvedPd = useMemo(
     () => getPersonalDetailsFromDiscovery(discoveryData),
     [discoveryData],
   );
+  const [pd, setPd] = useState(resolvedPd);
+
+  useEffect(() => {
+    setPd(resolvedPd);
+  }, [resolvedPd]);
 
   /** @type {PersonalDetailsFormValues} */
   const initialValues = useMemo(() => buildInitialValues(pd), [pd]);
@@ -463,20 +486,67 @@ export default function PersonalDetailsFrom({
 
   const finish = useCallback(
     async (values) => {
-      const payload = mapSubmitValues(values);
+      const payload = {
+        ...mapSubmitValues(values),
+        
+        _id: pd?._id,
+      };
+
+      if (!payload._id) {
+        message.error("Personal details ID is missing.");
+        return;
+      }
+
+      setSubmitting(true);
 
       try {
-        if (onSave) {
-          await onSave(payload);
-        } else {
-          message.success("Personal details saved (hook up API when ready).");
-        }
+        const saved = await api.patch("/api/personalDetails/Update", payload);
+
+        const nextPd =
+          saved && typeof saved === "object"
+            ? {
+                ...pd,
+                ...saved,
+                _id: saved._id ?? payload._id,
+                client: saved.client ?? payload.client,
+                partner: saved.partner ?? payload.partner,
+                children: saved.children ?? payload.children,
+                haveAnyChildren: saved.haveAnyChildren ?? payload.haveAnyChildren,
+              }
+            : {
+                ...pd,
+                ...payload,
+              };
+
+        setPd(nextPd);
+        setDiscoveryData((prev) => {
+          if (prev?.personaldetails && typeof prev.personaldetails === "object") {
+            return { ...prev, personaldetails: nextPd };
+          }
+          if (prev?.personalDetails && typeof prev.personalDetails === "object") {
+            return { ...prev, personalDetails: nextPd };
+          }
+          if (prev && typeof prev === "object") {
+            return { ...prev, ...nextPd };
+          }
+          return nextPd;
+        });
+
+        await onSave?.(saved ?? payload);
+        message.success("Personal details updated.");
         setEditing(false);
       } catch (error) {
-        message.error(error?.message || "Save failed.");
+        message.error(
+          error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            error?.message ||
+            "Save failed.",
+        );
+      } finally {
+        setSubmitting(false);
       }
     },
-    [message, onSave],
+    [api, message, onSave, pd, setDiscoveryData],
   );
 
   const handleEditBack = useCallback(() => {
@@ -543,22 +613,17 @@ export default function PersonalDetailsFrom({
             >
               Back
             </Button>
-            {!editing ? (
-              <Button icon={<EditOutlined />} onClick={handleStartEditing}>
-                Edit
-              </Button>
-            ) : (
+            {!editing && (
               <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                htmlType="submit"
-                style={PRIMARY_ACTION_STYLE}
+                key="edit"
+                icon={<EditOutlined />}
+                onClick={handleStartEditing}
               >
-                Save
+                Edit
               </Button>
             )}
           </Space>
-          {!editing && (
+          {!editing ? (
             <Button
               type="primary"
               icon={<ArrowRightOutlined />}
@@ -567,10 +632,20 @@ export default function PersonalDetailsFrom({
             >
               Next
             </Button>
+          ) : (
+            <Button
+              key="save"
+              type="primary"
+              icon={<SaveOutlined />}
+              htmlType="submit"
+              loading={submitting}
+              style={PRIMARY_ACTION_STYLE}
+            >
+              Save
+            </Button>
           )}
         </div>
       </Form>
     </div>
   );
 }
-

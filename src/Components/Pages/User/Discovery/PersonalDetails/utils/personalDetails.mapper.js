@@ -23,13 +23,13 @@ import dayjs from "dayjs";
  * @property {string} [clientSmoker]
  * @property {number|string} [clientPlannedRetirementAge]
  * @property {string} [clientHomeAddress]
- * @property {number|string} [clientPostcode]
+ * @property {string} [clientPostcode]
  * @property {string} [clientHomePhone]
  * @property {string} [clientWorkPhone]
  * @property {string} [clientMobile]
  * @property {string} [Email]
  * @property {string} [clientPostalAddress]
- * @property {number|string} [clientPostalPostCode]
+ * @property {string} [clientPostalPostCode]
  * @property {string} [clientOccupationID]
  * @property {string} [clientTaxResidentRadio]
  * @property {string} [clientPrivateHealthCoverRadio]
@@ -55,13 +55,13 @@ import dayjs from "dayjs";
  * @property {string} [partnerSmoker]
  * @property {number|string} [partnerPlannedRetirementAge]
  * @property {string} [partnerHomeAddress]
- * @property {number|string} [partnerPostcode]
+ * @property {string} [partnerPostcode]
  * @property {string} [partnerHomePhone]
  * @property {string} [partnerWorkPhone]
  * @property {string} [partnerMobile]
  * @property {string} [partnerEmail]
  * @property {string} [partnerPostalAddress]
- * @property {number|string} [partnerPostalPostCode]
+ * @property {string} [partnerPostalPostCode]
  * @property {string} [partnerOccupationID]
  * @property {string} [partnerTaxResidentRadio]
  * @property {string} [partnerPrivateHealthCoverRadio]
@@ -79,6 +79,7 @@ import dayjs from "dayjs";
  * @property {string} [depenantChild]
  * @property {string} [firstName]
  * @property {string} [lastName]
+ * @property {string} [age]
  */
 
 /**
@@ -200,14 +201,50 @@ export function toDayjs(value) {
 }
 
 /**
+ * Normalize numeric postcode-like values into strings for form inputs and API payloads.
+ * @param {unknown} value
+ * @returns {string}
+ */
+function toStringValue(value) {
+  if (value === null || value === undefined) return "";
+  return String(value);
+}
+
+/**
+ * @template {Record<string, any>} T
+ * @param {T | null | undefined} person
+ * @param {string[]} postcodeKeys
+ * @returns {T}
+ */
+function normalizePostcodeFields(person, postcodeKeys) {
+  if (!person || typeof person !== "object") {
+    return /** @type {T} */ ({});
+  }
+
+  const next = { ...person };
+  postcodeKeys.forEach((key) => {
+    if (key in next) {
+      next[key] = toStringValue(next[key]);
+    }
+  });
+  return /** @type {T} */ (next);
+}
+
+/**
  * Build Ant Design form initial values from the API shape.
  * Keeps the submit contract intact while normalizing date fields.
  * @param {PersonalDetailsData | null} pd
  * @returns {PersonalDetailsFormValues}
  */
 export function buildInitialValues(pd) {
-  const client = pd?.client ?? {};
-  const partner = pd?.partner ?? {};
+  const client = normalizePostcodeFields(pd?.client ?? {}, [
+    "clientPostcode",
+    "clientPostalPostCode",
+  ]);
+  const partner = normalizePostcodeFields(pd?.partner ?? {}, [
+    "partnerPostcode",
+    "partnerPostalPostCode",
+  ]);
   const rows = pd?.children?.arrayOfChildren ?? [];
 
   return {
@@ -226,6 +263,7 @@ export function buildInitialValues(pd) {
           ...child,
           firstName,
           lastName,
+          age: childAgeFromDob(child.dob),
           dob: toDayjs(child.dob),
         };
       }),
@@ -250,7 +288,12 @@ export function mapSubmitValues(values) {
   const mapPersonDates = (person, dobKey) => {
     if (!person || typeof person !== "object") return person;
 
-    const next = { ...person };
+    const next = normalizePostcodeFields(person, [
+      "clientPostcode",
+      "clientPostalPostCode",
+      "partnerPostcode",
+      "partnerPostalPostCode",
+    ]);
     if (next[dobKey]) {
       next[dobKey] = iso(next[dobKey]);
     }

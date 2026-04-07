@@ -72,6 +72,9 @@ export function PersonalDetails() {
                   discoveryData={discoveryData}
                   onBack={() => setStep(1)}
                   onNext={() => nextPath && navigate(nextPath)}
+                  onSave={(saved) => {
+                    setStep(1);
+                  }}
                 />
               </Col>
             </Row>
@@ -113,9 +116,7 @@ export function PersonalDetails() {
         >
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Button
-              onClick={() =>
-                message.info("View — connect when document viewer is ready.")
-              }
+              onClick={() => (step === 1 ? setStep(2) : setStep(1))}
               style={{ borderRadius: 8, minWidth: 96 }}
             >
               View
