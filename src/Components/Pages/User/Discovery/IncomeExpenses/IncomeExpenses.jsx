@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
-import React, { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import {
   discoveryDataAtom,
   discoverySectionQuestionsAtom,
@@ -9,17 +9,13 @@ import {
   getDiscoveryStepperRoutes,
   pathMatchesDiscoveryRoute,
 } from "../../../../Routes/User.Routes";
-import { Card, Col, Input, Row, Typography } from "antd";
-import { GoArrowUpRight } from "react-icons/go";
+import { Col, Row } from "antd";
+import DiscoveryTotalsCard from "../../../../Common/DiscoveryTotalsCard.jsx";
 
 const IncomeExpenses = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
-  const [ModalOpen, setModalOpen] = useState(false);
-
-  const { Title } = Typography;
 
   const stepperRoutes = useMemo(
     () => getDiscoveryStepperRoutes(discoveryQuestions),
@@ -31,7 +27,11 @@ const IncomeExpenses = () => {
       stepperRoutes.find((r) =>
         pathMatchesDiscoveryRoute(location.pathname, r),
       ),
-    [discoveryQuestions],
+    [location.pathname, stepperRoutes],
+  );
+
+  const showPartner = !["Single", "Widowed"].includes(
+    discoveryData.personalDetails?.client?.clientMaritalStatus,
   );
 
   return (
@@ -42,93 +42,30 @@ const IncomeExpenses = () => {
           if (isYes || card?.alwaysShow) {
             return (
               <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
-                <Card
-                  style={{
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px rgba(0, 0, 0, .05)",
-                  }}
-                  styles={{
-                    body: {
-                      padding: "24px 16px 18px",
-                      minHeight: "220px",
-                    },
-                  }}
-                >
-                  <h6
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      fontFamily: "Arial, sans-serif",
-                      textAlign: "center",
-                    }}
-                  >
-                    {card.title}
-                  </h6>
-                  <p
-                    style={{
-                      fontSize: 44,
-                      fontWeight: 700,
-                      textAlign: "center",
-                      margin: 0,
-                      padding: 0,
-                    }}
-                  >
-                    {card.icon}
-                  </p>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "22px",
-                        height: "22px",
-                        borderRadius: "5px",
-                        background: "#22c55e",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "11px",
-                        marginBottom: "6px",
-                        color: "#fff",
-                        boxShadow: "0 2px 6px rgba(34, 197, 94, .3)",
-                      }}
-                    >
-                      <GoArrowUpRight />
-                    </div>
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 400,
-                        fontFamily: "Arial, sans-serif",
-                        textAlign: "center",
-                        color: "#6b7280",
-                        marginBottom: "5px",
-                      }}
-                    >
-                      {discoveryData.personalDetails?.client
-                        ?.clientPreferredName || "N/A"}
-                    </p>
-                    <div>
-                      <Input
-                        placeholder="$0"
-                        size="small"
-                        style={{
-                          textAlign: "center",
-                          borderColor: "rgba(0, 0, 0, .1)",
-                          borderRadius: "6px",
-                          fontSize: 12,
-                          padding: "5px 10px",
-                          fontFamily: "Georgia,serif",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </Card>
+                <DiscoveryTotalsCard
+                  title={card.title}
+                  icon={card.icon}
+                  firstName={
+                    card?.firstNameKey ||
+                    discoveryData.personalDetails?.client?.clientPreferredName
+                  }
+                  firstTotal={
+                    discoveryData?.[card.key == "incomeFromRegularLivingExpenses" ? "generalLivingExpenses" : card.key]?.[
+                      card?.firstTotalKey || "clientTotal"
+                    ]
+                  }
+                  secondName={
+                    card?.secondNameKey ||
+                    discoveryData.personalDetails?.partner?.partnerPreferredName
+                  }
+                  secondTotal={
+                    discoveryData?.[card.key == "incomeFromRegularLivingExpenses" ? "retirementLivingExpenses" : card.key]?.[
+                      card?.secondTotalKey || "partnerTotal"
+                    ]
+                  }
+                  showPartner={card?.showSecondTotal || showPartner}
+                  secondisFormInput={card?.secondisFormInput}
+                />
               </Col>
             );
           }

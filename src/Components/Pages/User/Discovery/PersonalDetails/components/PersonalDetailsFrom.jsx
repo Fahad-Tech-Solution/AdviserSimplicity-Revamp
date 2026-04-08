@@ -76,7 +76,7 @@ const EMPLOYMENT_OPTIONS = [
   "Other",
 ];
 const YES_NO = ["Yes", "No"];
-const HEALTH_OPTIONS = ["good", "fair", "poor"];
+const HEALTH_OPTIONS = ["good", "average", "poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
 const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step-child", "Other"];
 const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);
@@ -89,7 +89,9 @@ const PERSON_ROWS = [
 
 function shouldShowPartnerRow(maritalStatus) {
   return !PARTNER_HIDDEN_MARITAL_STATUSES.has(
-    String(maritalStatus ?? "").trim().toLowerCase(),
+    String(maritalStatus ?? "")
+      .trim()
+      .toLowerCase(),
   );
 }
 
@@ -107,7 +109,9 @@ function phoneRule(message, { required = false } = {}) {
       const normalized = String(value ?? "").trim();
 
       if (!normalized) {
-        return required ? Promise.reject(new Error(message)) : Promise.resolve();
+        return required
+          ? Promise.reject(new Error(message))
+          : Promise.resolve();
       }
 
       return AUS_PHONE_REGEX.test(normalized)
@@ -558,7 +562,10 @@ function FormFieldCell({ form, row, config }) {
       placeholder={config.placeholder}
       rules={config.rules}
       disabled={config.disabled}
-      formItemProps={{ style: { marginBottom: 0 }, label: null }}
+      formItemProps={{
+        style: { marginBottom: 0 },
+        label: null,
+      }}
       fieldProps={config.fieldProps}
       onChange={(value) => config.onChange?.(value, row, form)}
     />
@@ -824,7 +831,10 @@ export default function PersonalDetailsFrom({
     [clientMaritalStatus, editing, pd?.client?.clientMaritalStatus],
   );
   const visiblePersonRows = useMemo(
-    () => (showPartnerRow ? PERSON_ROWS : PERSON_ROWS.filter((row) => row.row === "client")),
+    () =>
+      showPartnerRow
+        ? PERSON_ROWS
+        : PERSON_ROWS.filter((row) => row.row === "client"),
     [showPartnerRow],
   );
   const visibleViewPersonalRows = useMemo(

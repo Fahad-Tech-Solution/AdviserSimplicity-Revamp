@@ -47,7 +47,13 @@ function buildOptions(options = []) {
   );
 }
 
-function PostcodeSearchSelect({ placeholder, value, onChange, disabled, ...fieldProps }) {
+function PostcodeSearchSelect({
+  placeholder,
+  value,
+  onChange,
+  disabled,
+  ...fieldProps
+}) {
   const [optionsData, setOptionsData] = useState([]);
   const [loading, setLoading] = useState(false);
   const requestIdRef = useRef(0);
@@ -143,7 +149,13 @@ function getInputNode({
       );
 
     case "textarea":
-      return <TextArea placeholder={placeholder} autoSize={{ minRows: 2 }} {...fieldProps} />;
+      return (
+        <TextArea
+          placeholder={placeholder}
+          autoSize={{ minRows: 2 }}
+          {...fieldProps}
+        />
+      );
 
     case "select":
       return (
@@ -278,7 +290,12 @@ export default function DynamicFormField({
 
   return (
     <Form.Item noStyle shouldUpdate>
-      {() => renderField(resolveMaybeFunction(disabled, form), resolveMaybeFunction(hidden, form))}
+      {() =>
+        renderField(
+          resolveMaybeFunction(disabled, form),
+          resolveMaybeFunction(hidden, form),
+        )
+      }
     </Form.Item>
   );
 }

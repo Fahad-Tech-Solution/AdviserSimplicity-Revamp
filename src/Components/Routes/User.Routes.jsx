@@ -231,9 +231,13 @@ export const discoveryRoutes = [
         icon: "💰",
         component: null,
         variant: "case3",
-        Labels: ["General Living", "Retirement Living"],
-        dataKey: "generalLivingExpenses",
+        firstTotalKey: "generalLivingExpensesTotal", //"generalLivingExpenses"
+        secondTotalKey: "retirementLivingExpense", //"retirementLivingExpenses"
+        firstNameKey: "General Living",
+        secondNameKey: "Retirement Living",
         alwaysShow: true,
+        showSecondTotal: true,
+        secondisFormInput: true,
       },
     ],
   },
