@@ -233,6 +233,7 @@ export const discoveryRoutes = [
         variant: "case3",
         Labels: ["General Living", "Retirement Living"],
         dataKey: "generalLivingExpenses",
+        alwaysShow: true,
       },
     ],
   },

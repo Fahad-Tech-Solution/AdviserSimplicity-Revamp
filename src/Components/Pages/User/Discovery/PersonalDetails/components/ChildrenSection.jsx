@@ -19,14 +19,31 @@ const CHILD_COUNT_OPTIONS = [0, 1, 2, 3, 4, 5].map((value) => ({
   value,
 }));
 
+function requiredRule(message) {
+  return { required: true, message };
+}
+
 const CHILDREN_EDIT_CONFIG = [
-  { title: "First Name", key: "firstName", field: "firstName", type: "text" },
-  { title: "Last Name", key: "lastName", field: "lastName", type: "text" },
+  {
+    title: "First Name",
+    key: "firstName",
+    field: "firstName",
+    type: "text",
+    rules: [requiredRule("Child First Name required")],
+  },
+  {
+    title: "Last Name",
+    key: "lastName",
+    field: "lastName",
+    type: "text",
+    rules: [requiredRule("Child Last Name required")],
+  },
   {
     title: "DOB",
     key: "dob",
     field: "dob",
     type: "date",
+    rules: [requiredRule("Child DOB required")],
     onChange: (value, record, form) => {
       console.log(
         childAgeFromDob(value),
@@ -47,6 +64,7 @@ const CHILDREN_EDIT_CONFIG = [
     field: "gender",
     type: "select",
     optionsKey: "genderOptions",
+    rules: [requiredRule("Gender required")],
   },
   {
     title: "Relationship",
@@ -54,6 +72,7 @@ const CHILDREN_EDIT_CONFIG = [
     field: "relationship",
     type: "select",
     optionsKey: "relationshipOptions",
+    rules: [requiredRule("Relationship required")],
   },
   {
     title: "Dependent",
@@ -61,6 +80,7 @@ const CHILDREN_EDIT_CONFIG = [
     field: "depenantChild",
     type: "select",
     optionsKey: "yesNoOptions",
+    rules: [requiredRule("Dependent required")],
   },
 ];
 
@@ -74,6 +94,7 @@ const CHILDREN_EDIT_CONFIG = [
  * @property {"genderOptions"|"relationshipOptions"|"yesNoOptions"} [optionsKey]
  * @property {number} [width]
  * @property {string[]} [options]
+ * @property {Array<Record<string, any>>} [rules]
  */
 
 /**
@@ -93,6 +114,7 @@ const ChildFieldCell = memo(function ChildFieldCell({ form, record, config }) {
       name={[record.name, config.field]}
       type={config.type}
       options={config.options}
+      rules={config.rules}
       formItemProps={{
         style: { marginBottom: 0 },
         label: null,

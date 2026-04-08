@@ -193,11 +193,27 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
     console.log("row", row);
+    let yesNoQuestionsRes = [];
+    let fullDetailsRes = {};
     try {
-      const [yesNoQuestionsRes, fullDetailsRes] = await Promise.all([
+      const [yesNoQuestionsResult, fullDetailsResult] = await Promise.allSettled([
         get(`/api/questions/${row?._id}`),
         get(`/api/dataOfAllSection/${row?._id}`),
       ]);
+
+      if (yesNoQuestionsResult.status === "fulfilled") {
+        yesNoQuestionsRes = yesNoQuestionsResult.value;
+      } else {
+        // Assign default values for failed API call
+        yesNoQuestionsRes = {};
+      }
+
+      if (fullDetailsResult.status === "fulfilled") {
+        fullDetailsRes = fullDetailsResult.value;
+      } else {
+        // Assign default values for failed API call
+        fullDetailsRes = {};
+      }
 
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
@@ -209,8 +225,12 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         navigate(`/user/discovery/personal-details`);
       }
     } catch (error) {
+      // If an unexpected error occurs, assign default values
+      setDiscoverySectionQuestions([]);
+      setDiscoveryData({});
+      setSelectedClient(row);
+      // Do not show error to the client, but log for debugging
       console.error("Error getting client details", error);
-      message.error("Could not load client details. Please try again.");
     } finally {
       finishSelectClientFlow(rowId);
     }

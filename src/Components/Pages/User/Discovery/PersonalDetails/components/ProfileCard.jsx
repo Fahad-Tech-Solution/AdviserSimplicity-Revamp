@@ -144,7 +144,9 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
           borderRadius: 12,
           boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
           border: "1px solid #f0f0f0",
-          minHeight: 320,
+          // minHeight: 320,
+          height: "100%",
+          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -168,6 +170,7 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
         boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
         border: "1px solid #f0f0f0",
         height: "100%",
+        width: "100%",
       }}
       styles={{ body: { padding: "28px 24px" } }}
     >

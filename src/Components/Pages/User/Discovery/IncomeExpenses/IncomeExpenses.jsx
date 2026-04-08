@@ -39,7 +39,7 @@ const IncomeExpenses = () => {
       <Row gutter={[16, 16]}>
         {CurrentRoute?.Cards?.map((card) => {
           const isYes = discoveryQuestions[card.key] === "Yes";
-          if (isYes) {
+          if (isYes || card?.alwaysShow) {
             return (
               <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
                 <Card

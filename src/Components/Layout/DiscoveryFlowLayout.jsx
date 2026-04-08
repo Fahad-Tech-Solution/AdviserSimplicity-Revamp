@@ -183,7 +183,7 @@ export default function DiscoveryFlowLayout() {
       stepperRoutes.find((r) =>
         pathMatchesDiscoveryRoute(location.pathname, r),
       ),
-    [discoveryQuestions],
+    [discoveryQuestions, location.pathname],
   );
 
   const matched = matchDiscoveryRoute(location.pathname, discoveryQuestions);
@@ -240,7 +240,10 @@ export default function DiscoveryFlowLayout() {
           <Button
             type="primary"
             shape="circle"
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              setModalOpen(true);
+              console.log(stepperRoutes, CurrentRoute);
+            }}
             style={DISCOVERY_ADD_BUTTON_STYLE}
           >
             <PlusOutlined style={{ fontSize: 18, fontWeight: 700 }} />

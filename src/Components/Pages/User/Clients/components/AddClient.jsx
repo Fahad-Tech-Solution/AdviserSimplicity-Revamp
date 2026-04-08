@@ -31,7 +31,7 @@ function buildPayload(values) {
       clientAge: values.clientAge?.trim(),
     },
     partner: ["Married", "Divorced", "Widowed"].includes(
-      values.clientMaritalStatus?.trim().toLowerCase(),
+      values.clientMaritalStatus?.trim(),
     )
       ? {
           partnerPreferredName: values.partnerPreferredName?.trim(),

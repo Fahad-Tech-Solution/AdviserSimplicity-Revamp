@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import AdviceGoalCard from "../../../../Common/AdviceGoalCard";
 import { Button, Col, Divider, message, Row } from "antd";
-import { discoverySectionQuestionsAtom } from "../../../../../store/authState";
-import { useAtom } from "jotai";
+import {
+  discoverySectionQuestionsAtom,
+  SelectedClient,
+} from "../../../../../store/authState";
+import { useAtom, useAtomValue } from "jotai";
 import useApi from "../../../../../hooks/useApi";
 
 const CardsSelection = ({ Cards, setModalOpen }) => {
@@ -10,6 +13,8 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
     discoverySectionQuestionsAtom,
   );
   const [questionTemp, setQuestionTemp] = useState(discoveryQuestions);
+
+  const selectedClient = useAtomValue(SelectedClient);
 
   const onClick = (key) => {
     // setDiscoveryQuestions((prev) => ({
@@ -31,6 +36,7 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
   const SubmitFunction = async () => {
     try {
       let payload = {
+        clientFK: selectedClient?._id,
         ...discoveryQuestions,
         ...questionTemp,
       };
@@ -58,20 +64,25 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
   return (
     <div style={{ padding: "20px 0 0 0" }}>
       <Row gutter={[16, 16]} justify="center">
-        {Cards.map((card) => (
-          <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
-            <AdviceGoalCard
-              label={card.title}
-              Icon={card.icon}
-              status={questionTemp[card.key] || "No"}
-              key={card.key}
-              info={card.info}
-              onClick={() => {
-                onClick(card.key);
-              }}
-            />
-          </Col>
-        ))}
+        {Cards.map((card) => {
+          if (!card?.alwaysShow) {
+            return (
+              <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
+                <AdviceGoalCard
+                  label={card.title}
+                  Icon={card.icon}
+                  status={questionTemp[card.key] || "No"}
+                  key={card.key}
+                  info={card.info}
+                  onClick={() => {
+                    onClick(card.key);
+                  }}
+                />
+              </Col>
+            );
+          }
+          return null;
+        })}
       </Row>
       <Divider />
       <div style={{ display: "flex", justifyContent: "flex-end" }}>

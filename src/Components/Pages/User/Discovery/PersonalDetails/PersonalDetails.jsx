@@ -81,8 +81,8 @@ export function PersonalDetails() {
           )}
 
           {step === 1 && (
-            <Row gutter={[24, 24]}>
-              <Col xs={24} md={12}>
+            <Row gutter={[24, 24]} align={"stretch"}>
+              <Col xs={24} md={12} style={{ display: "flex", alignItems: "stretch" }}>
                 <ProfileCard
                   person={client}
                   role="client"

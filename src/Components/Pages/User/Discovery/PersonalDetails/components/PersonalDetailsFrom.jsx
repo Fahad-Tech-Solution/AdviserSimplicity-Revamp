@@ -63,8 +63,8 @@ const MARITAL_OPTIONS = [
   "Married",
   "De Facto",
   "Divorced",
+  "Partnered",
   "Widowed",
-  "Separated",
 ];
 const EMPLOYMENT_OPTIONS = [
   "Employed",
@@ -79,11 +79,43 @@ const YES_NO = ["Yes", "No"];
 const HEALTH_OPTIONS = ["good", "fair", "poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
 const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step-child", "Other"];
+const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);
+const AUS_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
 
 const PERSON_ROWS = [
   { key: "client", row: "client" },
   { key: "partner", row: "partner" },
 ];
+
+function shouldShowPartnerRow(maritalStatus) {
+  return !PARTNER_HIDDEN_MARITAL_STATUSES.has(
+    String(maritalStatus ?? "").trim().toLowerCase(),
+  );
+}
+
+function requiredRule(message) {
+  return { required: true, message };
+}
+
+function emailRule(message) {
+  return { type: "email", message };
+}
+
+function phoneRule(message, { required = false } = {}) {
+  return {
+    validator: (_, value) => {
+      const normalized = String(value ?? "").trim();
+
+      if (!normalized) {
+        return required ? Promise.reject(new Error(message)) : Promise.resolve();
+      }
+
+      return AUS_PHONE_REGEX.test(normalized)
+        ? Promise.resolve()
+        : Promise.reject(new Error(message));
+    },
+  };
+}
 
 const PERSONAL_SECTION_CONFIG = [
   {
@@ -99,12 +131,14 @@ const PERSONAL_SECTION_CONFIG = [
     partnerField: "partnerTitle",
     type: "select",
     options: TITLE_OPTIONS,
+    rules: [requiredRule("Title is Required")],
   },
   {
     title: "First Name",
     viewKey: "firstName",
     clientField: "clientGivenName",
     partnerField: "partnerGivenName",
+    rules: [requiredRule("First Name is required")],
   },
   {
     title: "Middle Name",
@@ -117,6 +151,7 @@ const PERSONAL_SECTION_CONFIG = [
     viewKey: "lastName",
     clientField: "clientLastName",
     partnerField: "partnerLastName",
+    rules: [requiredRule("Last Name is required")],
   },
   {
     title: "Gender",
@@ -125,6 +160,7 @@ const PERSONAL_SECTION_CONFIG = [
     partnerField: "partnerGender",
     type: "select",
     options: GENDER_OPTIONS,
+    rules: [requiredRule("Gender is required")],
   },
   {
     title: "Date of Birth",
@@ -138,6 +174,7 @@ const PERSONAL_SECTION_CONFIG = [
         value ? Number(childAgeFromDob(value)) || undefined : undefined,
       );
     },
+    rules: [requiredRule("DOB is required")],
     width: 120,
   },
   {
@@ -243,6 +280,7 @@ const CONTACT_SECTION_CONFIG = [
     partnerField: "partnerHomeAddress",
     type: "textarea",
     editMode: "address-with-sync",
+    rules: [requiredRule("Home address is required")],
   },
   {
     title: "Postcode/Suburb",
@@ -256,6 +294,7 @@ const CONTACT_SECTION_CONFIG = [
     placeholder: "Type suburb or postcode...",
     width: 110,
     editMode: "postcode-with-sync",
+    rules: [requiredRule("Postcode is required")],
   },
   {
     title: "Postal Address",
@@ -264,6 +303,7 @@ const CONTACT_SECTION_CONFIG = [
     partnerField: "partnerPostalAddress",
     type: "textarea",
     editMode: "address-with-sync",
+    rules: [requiredRule("Postal address is required")],
   },
   {
     title: "Postcode/Suburb",
@@ -277,6 +317,7 @@ const CONTACT_SECTION_CONFIG = [
     placeholder: "Type suburb or postcode...",
     width: 110,
     editMode: "postcode-with-sync",
+    rules: [requiredRule("Postal postcode is required")],
   },
   {
     title: "Mobile",
@@ -284,6 +325,10 @@ const CONTACT_SECTION_CONFIG = [
     clientField: "clientMobile",
     partnerField: "partnerMobile",
     width: 100,
+    rules: [
+      requiredRule("Mobile Phone is required"),
+      phoneRule("Valid Australian Mobile Phone number Format: 0X XXXX XXXX"),
+    ],
   },
   {
     title: "Home Phone",
@@ -291,6 +336,9 @@ const CONTACT_SECTION_CONFIG = [
     clientField: "clientHomePhone",
     partnerField: "partnerHomePhone",
     width: 100,
+    rules: [
+      phoneRule("Valid Australian Home Phone number Format: 0X XXXX XXXX"),
+    ],
   },
   {
     title: "Work Phone",
@@ -298,12 +346,16 @@ const CONTACT_SECTION_CONFIG = [
     clientField: "clientWorkPhone",
     partnerField: "partnerWorkPhone",
     width: 100,
+    rules: [
+      phoneRule("Valid Australian Work Phone number Format: 0X XXXX XXXX"),
+    ],
   },
   {
     title: "Email",
     viewKey: "email",
     clientField: "Email",
     partnerField: "partnerEmail",
+    rules: [requiredRule("Email is required"), emailRule("Invalid email")],
   },
 ];
 
@@ -365,6 +417,7 @@ const ADDRESS_SYNC_CONFIG = {
  * @property {"preferred-readonly"|"address-with-sync"|"postcode-with-sync"} [editMode]
  * @property {number} [width]
  * @property {string} [placeholder]
+ * @property {Array<Record<string, any>>} [rules]
  * @property {Record<string, any>} [fieldProps]
  * @property {(value: unknown, row: "client" | "partner", form: import("antd").FormInstance<PersonalDetailsFormValues>) => void} [onChange]
  */
@@ -503,6 +556,7 @@ function FormFieldCell({ form, row, config }) {
       type={config.type || "text"}
       options={config.options}
       placeholder={config.placeholder}
+      rules={config.rules}
       disabled={config.disabled}
       formItemProps={{ style: { marginBottom: 0 }, label: null }}
       fieldProps={config.fieldProps}
@@ -541,6 +595,7 @@ function AddressFieldCell({
         type={config.type || "text"}
         options={config.options}
         placeholder={config.placeholder}
+        rules={config.rules}
         disabled={Boolean(config.disabled) || syncEnabled}
         formItemProps={{ style: { marginBottom: 0 }, label: null }}
         fieldProps={config.fieldProps}
@@ -582,6 +637,7 @@ function PostcodeFieldCell({ form, row, config, addressSync }) {
       type={config.type || "text"}
       options={config.options}
       placeholder={config.placeholder}
+      rules={config.rules}
       disabled={
         Boolean(config.disabled) || Boolean(syncKey && addressSync[syncKey])
       }
@@ -746,6 +802,10 @@ export default function PersonalDetailsFrom({
     ["client", "clientHomeAddress"],
     form,
   );
+  const clientMaritalStatus = Form.useWatch(
+    ["client", "clientMaritalStatus"],
+    form,
+  );
   const clientPostcode = Form.useWatch(["client", "clientPostcode"], form);
   const partnerHomeAddress = Form.useWatch(
     ["partner", "partnerHomeAddress"],
@@ -756,6 +816,38 @@ export default function PersonalDetailsFrom({
   const viewFinancialRows = useMemo(() => buildViewFinancialRows(pd), [pd]);
   const viewContactRows = useMemo(() => buildViewContactRows(pd), [pd]);
   const viewChildrenRows = useMemo(() => buildViewChildrenRows(pd), [pd]);
+  const showPartnerRow = useMemo(
+    () =>
+      shouldShowPartnerRow(
+        editing ? clientMaritalStatus : pd?.client?.clientMaritalStatus,
+      ),
+    [clientMaritalStatus, editing, pd?.client?.clientMaritalStatus],
+  );
+  const visiblePersonRows = useMemo(
+    () => (showPartnerRow ? PERSON_ROWS : PERSON_ROWS.filter((row) => row.row === "client")),
+    [showPartnerRow],
+  );
+  const visibleViewPersonalRows = useMemo(
+    () =>
+      showPartnerRow
+        ? viewPersonalRows
+        : viewPersonalRows.filter((row) => row.key === "client"),
+    [showPartnerRow, viewPersonalRows],
+  );
+  const visibleViewFinancialRows = useMemo(
+    () =>
+      showPartnerRow
+        ? viewFinancialRows
+        : viewFinancialRows.filter((row) => row.key === "client"),
+    [showPartnerRow, viewFinancialRows],
+  );
+  const visibleViewContactRows = useMemo(
+    () =>
+      showPartnerRow
+        ? viewContactRows
+        : viewContactRows.filter((row) => row.key === "client"),
+    [showPartnerRow, viewContactRows],
+  );
 
   const personalEditColumns = useMemo(
     () => buildEditColumns(PERSONAL_SECTION_CONFIG, form),
@@ -908,8 +1000,8 @@ export default function PersonalDetailsFrom({
           editing={editing}
           viewColumns={PERSONAL_VIEW_COLUMNS}
           editColumns={personalEditColumns}
-          viewData={viewPersonalRows}
-          editData={PERSON_ROWS}
+          viewData={visibleViewPersonalRows}
+          editData={visiblePersonRows}
           tableProps={TABLE_PROPS}
         />
 
@@ -918,8 +1010,8 @@ export default function PersonalDetailsFrom({
           editing={editing}
           viewColumns={FINANCIAL_VIEW_COLUMNS}
           editColumns={financialEditColumns}
-          viewData={viewFinancialRows}
-          editData={PERSON_ROWS}
+          viewData={visibleViewFinancialRows}
+          editData={visiblePersonRows}
           tableProps={TABLE_PROPS}
         />
 
@@ -928,8 +1020,8 @@ export default function PersonalDetailsFrom({
           editing={editing}
           viewColumns={CONTACT_VIEW_COLUMNS}
           editColumns={contactEditColumns}
-          viewData={viewContactRows}
-          editData={PERSON_ROWS}
+          viewData={visibleViewContactRows}
+          editData={visiblePersonRows}
           tableProps={TABLE_PROPS}
         />
 
