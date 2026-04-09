@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useSetAtom } from "jotai";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
 import useApi from "./useApi";
 import {
   CDFProspectsData,
@@ -7,12 +7,29 @@ import {
   MyTeamData,
   userDashboardError,
   userDashboardLoading,
+  discoveryDataAtom,
 } from "../store/authState";
-import {
-  normalizeMyClientsList,
-  wrapMyClientsState,
-} from "./helpers";
+import { normalizeMyClientsList, wrapMyClientsState } from "./helpers";
 
+export function useOwnerOptions() {
+  const discoveryData = useAtomValue(discoveryDataAtom);
+
+  return useMemo(
+    () => [
+      {
+        label:
+          discoveryData.personalDetails?.client?.clientPreferredName || "N/A",
+        value: "client",
+      },
+      {
+        label:
+          discoveryData.personalDetails?.partner?.partnerPreferredName || "N/A",
+        value: "partner",
+      },
+    ],
+    [discoveryData],
+  );
+}
 
 const getDisplayName = (person = {}) =>
   person?.preferredName ||
@@ -104,8 +121,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
             call: () =>
               get("/api/user/Clients", { signal: abortController.signal }),
             setter: setMyClientsData,
-            normalize: (res) =>
-              wrapMyClientsState(normalizeMyClientsList(res)),
+            normalize: (res) => wrapMyClientsState(normalizeMyClientsList(res)),
           },
           {
             call: () =>

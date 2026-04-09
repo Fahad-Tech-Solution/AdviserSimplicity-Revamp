@@ -12,10 +12,24 @@ import {
 } from "antd";
 import { ArrowUpOutlined } from "@ant-design/icons";
 import axios from "axios";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useEffect, useRef, useState } from "react";
+import YesNoSwitch from "./YesNoSwitch.jsx";
+import { GoArrowUpRight } from "react-icons/go";
 
 const { TextArea, Password } = Input;
 const GEONAMES_USERNAME = "usamasaeed3k";
+const DATE_INPUT_FORMAT = "DD/MM/YYYY";
+const DATE_PARSE_FORMATS = [
+  "DD/MM/YYYY",
+  "D/M/YYYY",
+  "DD-MM-YYYY",
+  "D-M-YYYY",
+  "YYYY-MM-DD",
+];
+
+dayjs.extend(customParseFormat);
 
 function resolveMaybeFunction(value, form) {
   return typeof value === "function" ? value(form) : value;
@@ -44,6 +58,166 @@ function buildOptions(options = []) {
           value: option.value,
           disabled: option.disabled,
         },
+  );
+}
+
+function normalizeDateValue(value) {
+  if (!value) return null;
+  if (dayjs.isDayjs(value)) return value;
+
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed : null;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+
+  const normalizedValue = String(value).trim();
+  if (!normalizedValue) return null;
+
+  const parsed = dayjs(normalizedValue, DATE_PARSE_FORMATS, true);
+  if (parsed.isValid()) return parsed;
+
+  const fallback = dayjs(normalizedValue);
+  return fallback.isValid() ? fallback : null;
+}
+
+function buildCommittedDate(date) {
+  return date ? date.hour(12).minute(0).second(0).millisecond(0) : null;
+}
+
+function focusNextField(event) {
+  const form = event?.target?.form;
+  if (!form) return;
+
+  const index = Array.prototype.indexOf.call(form, event.target);
+  const next = form.elements[index + 1];
+  if (next && typeof next.focus === "function") {
+    next.focus();
+  }
+}
+
+function EnhancedDatePicker({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  placeholder,
+  disabled,
+  ...fieldProps
+}) {
+  const handleDateCommit = (rawValue) => {
+    if (rawValue === "") {
+      onChange?.(null);
+      return null;
+    }
+
+    const parsedDate = dayjs.isDayjs(rawValue)
+      ? rawValue
+      : parseDateInput(rawValue);
+    const committedDate = buildCommittedDate(parsedDate);
+
+    onChange?.(committedDate);
+    return committedDate;
+  };
+
+  return (
+    <DatePicker
+      placement="bottomLeft"
+      placeholder={placeholder}
+      format={DATE_INPUT_FORMAT}
+      allowClear
+      style={{ width: "100%" }}
+      value={normalizeDateValue(value)}
+      disabled={disabled}
+      onChange={(date) => {
+        handleDateCommit(date);
+      }}
+      onBlur={(event) => {
+        if (event?.target?.value !== undefined) {
+          handleDateCommit(event.target.value);
+        }
+        onBlur?.(event);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleDateCommit(event.target.value);
+          focusNextField(event);
+        }
+
+        onKeyDown?.(event);
+      }}
+      {...fieldProps}
+    />
+  );
+}
+
+function YesNoSwitchWithButton({
+  value,
+  onChange,
+  disabled,
+  action,
+  ...fieldProps
+}) {
+  const buttonLabel = action?.name || action?.label || "Open";
+  const buttonKey = action?.key || `${fieldProps.name || "yesNo"}_button`;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <YesNoSwitch
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        {...fieldProps}
+      />
+      <div className="d-flex justify-content-center align-items-center">
+        {value === "Yes" ? (
+          <Button
+            key={buttonKey}
+            type={"primary"}
+            size={action?.size || "small"}
+            style={{ width: "25%", padding: 0 }}
+            onClick={() =>
+              action?.onClick?.({
+                key: buttonKey,
+                name: action?.name || buttonLabel,
+                value,
+                fieldName: fieldProps.name,
+              })
+            }
+            disabled={disabled || action?.disabled}
+          >
+            <GoArrowUpRight />
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ModalPopupButton({ action, disabled, ...fieldProps }) {
+  const buttonLabel = action?.name || action?.label || "Open";
+  const buttonKey = action?.key || `${fieldProps.name || "modalPopup"}_button`;
+
+  return (
+    <div className="d-flex justify-content-center align-items-center">
+      <Button
+        key={buttonKey}
+        type={"primary"}
+        size={"small"}
+        style={{ width: "25px", padding: 0, ...action?.style }}
+        onClick={() =>
+          action?.onClick?.({
+            key: buttonKey,
+            name: action?.name || buttonLabel,
+            fieldName: fieldProps.name,
+          })
+        }
+        disabled={disabled || action?.disabled}
+      ><GoArrowUpRight />
+      </Button>
+    </div>
   );
 }
 
@@ -136,6 +310,37 @@ function getInputNode({
   const normalizedOptions = buildOptions(options);
 
   switch (type) {
+    case "yesNoSwitch":
+      return (
+        <YesNoSwitch
+          value={fieldProps.value}
+          onChange={fieldProps.onChange}
+          disabled={fieldProps.disabled}
+          key={fieldProps.name}
+          {...fieldProps}
+        />
+      );
+
+    case "yesNoSwitchWithButton":
+      return (
+        <YesNoSwitchWithButton
+          value={fieldProps.value}
+          onChange={fieldProps.onChange}
+          disabled={fieldProps.disabled}
+          action={action}
+          {...fieldProps}
+        />
+      );
+
+    case "modalPopup":
+      return (
+        <ModalPopupButton
+          disabled={fieldProps.disabled}
+          action={action}
+          {...fieldProps}
+        />
+      );
+
     case "password":
       return <Password placeholder={placeholder} {...fieldProps} />;
 
@@ -144,6 +349,14 @@ function getInputNode({
         <InputNumber
           placeholder={placeholder}
           style={{ width: "100%" }}
+          onKeyDown={(e) => {
+            if (
+              !/[0-9]/.test(e.key) &&
+              !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+            ) {
+              e.preventDefault();
+            }
+          }}
           {...fieldProps}
         />
       );
@@ -186,12 +399,7 @@ function getInputNode({
 
     case "date":
       return (
-        <DatePicker
-          placeholder={placeholder}
-          format="DD/MM/YYYY"
-          style={{ width: "100%" }}
-          {...fieldProps}
-        />
+        <EnhancedDatePicker placeholder={placeholder} {...fieldProps} />
       );
 
     case "radio":
@@ -251,6 +459,9 @@ export default function DynamicFormField({
   const finalValuePropName =
     valuePropName ||
     (type === "checkbox" ? "checked" : type === "switch" ? "checked" : "value");
+  const fieldNameString = Array.isArray(name)
+    ? name.join(".")
+    : String(name || "");
 
   const renderField = (computedDisabled, computedHidden) => {
     if (computedHidden) {
@@ -272,6 +483,8 @@ export default function DynamicFormField({
           options,
           action,
           fieldProps: {
+            name: fieldNameString,
+            id: fieldNameString,
             onChange: composeEventHandlers(fieldProps.onChange, onChange),
             disabled: computedDisabled,
             ...fieldProps,

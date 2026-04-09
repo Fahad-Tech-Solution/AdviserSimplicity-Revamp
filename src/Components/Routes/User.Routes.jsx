@@ -9,6 +9,7 @@ import DashboardPage from "../Pages/User/Dashboard/DashboardPage";
 import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 import MyTeam from "../Pages/User/MyTeam/MyTeam";
 import IncomeExpenses from "../Pages/User/Discovery/IncomeExpenses/IncomeExpenses.jsx";
+import EmploymentModal from "../Pages/User/Discovery/IncomeExpenses/components/EmploymentModal.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -192,7 +193,8 @@ export const discoveryRoutes = [
         title: "Employment",
         key: "incomeFromOwnBusiness",
         icon: "👔",
-        component: null,
+        component: <EmploymentModal />,
+        modalWidth: "1200px",
       },
       {
         title: "Sole Trader",

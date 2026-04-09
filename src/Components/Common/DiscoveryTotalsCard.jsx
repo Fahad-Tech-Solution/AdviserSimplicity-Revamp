@@ -1,8 +1,10 @@
-import { Button, Card, Input, Space } from "antd";
-import { useState } from "react";
+import { Button, Card, ConfigProvider, Input, Space, Spin } from "antd";
+import { useEffect, useState } from "react";
 import { GoArrowUpRight } from "react-icons/go";
 import { toCommaAndDollar } from "../../hooks/helpers";
 import { FaRegSave } from "react-icons/fa";
+import { BiLoaderCircle } from "react-icons/bi";
+import { MdModeEditOutline } from "react-icons/md";
 
 const CARD_STYLE = {
   borderRadius: 16,
@@ -107,11 +109,15 @@ function TotalValue({ name, value }) {
   );
 }
 
-function FormField({ name, value }) {
+function FormField({ name, value, callBackFunction }) {
   let [inputValue, setInputValue] = useState(value);
+  let [loading, setLoading] = useState(false);
+  let [isEditing, setIsEditing] = useState(false);
   const hasValue = Boolean(value);
 
-  const handleSave = async () => {};
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
 
   return (
     <>
@@ -123,7 +129,9 @@ function FormField({ name, value }) {
             borderRadius: "6px 0 0 6px",
             height: "25px",
             padding: "0",
+            backgroundColor: !isEditing ? "rgb(243 244 246)" : "transparent",
           }}
+          disabled={!isEditing}
           value={inputValue}
           onChange={(e) =>
             setInputValue(
@@ -134,9 +142,42 @@ function FormField({ name, value }) {
         <Button
           type="primary"
           style={{ fontSize: 12, height: "25px", borderRadius: "0 6px 6px 0" }}
-          onClick={handleSave}
+          onClick={async () => {
+            if (!isEditing) {
+              setIsEditing(true);
+              return;
+            }
+
+            setLoading(true);
+            try {
+              await callBackFunction(inputValue);
+            } catch (error) {
+              console.error(error);
+            } finally {
+              setLoading(false);
+              setIsEditing(false);
+            }
+          }}
         >
-          <FaRegSave style={{ fontSize: 12 }} />
+          {isEditing ? (
+            loading ? (
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Spin: {
+                      colorPrimary: "#fff",
+                    },
+                  },
+                }}
+              >
+                <Spin size="small" />
+              </ConfigProvider>
+            ) : (
+              <FaRegSave style={{ fontSize: 12 }} />
+            )
+          ) : (
+            <MdModeEditOutline style={{ fontSize: 12 }} />
+          )}
         </Button>
       </div>
     </>
@@ -152,19 +193,25 @@ export default function DiscoveryTotalsCard({
   secondTotal,
   showPartner = false,
   secondisFormInput = false,
+  callBackFunction = () => {},
+  OpenModal = () => {},
 }) {
   return (
     <Card style={CARD_STYLE} styles={{ body: CARD_BODY_STYLE }}>
       <h6 style={TITLE_STYLE}>{title}</h6>
       <p style={ICON_WRAPPER_STYLE}>{renderIcon(icon)}</p>
       <div style={CONTENT_STYLE}>
-        <div style={BADGE_STYLE}>
+        <div role="button" style={BADGE_STYLE} onClick={() => OpenModal()}>
           <GoArrowUpRight />
         </div>
 
         <TotalValue name={firstName} value={firstTotal} />
         {secondisFormInput ? (
-          <FormField name={secondName} value={secondTotal} />
+          <FormField
+            name={secondName}
+            value={secondTotal}
+            callBackFunction={callBackFunction}
+          />
         ) : showPartner ? (
           <TotalValue name={secondName} value={secondTotal} />
         ) : null}
