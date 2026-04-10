@@ -11,7 +11,10 @@ import MyTeam from "../Pages/User/MyTeam/MyTeam";
 import IncomeExpenses from "../Pages/User/Discovery/IncomeExpenses/IncomeExpenses.jsx";
 import EmploymentModal from "../Pages/User/Discovery/IncomeExpenses/components/EmploymentSection/EmploymentModal.jsx";
 import SoleTraderModal from "../Pages/User/Discovery/IncomeExpenses/components/SoleTraderSection/SoleTraderModal.jsx";
-
+import PartnershipModal from "../Pages/User/Discovery/IncomeExpenses/components/PartnershipSection/PartnershipModal.jsx";
+import CentrelinkModal from "../Pages/User/Discovery/IncomeExpenses/components/CentrelinkSection/CentrelinkModal.jsx";
+import LifetimePensionModal from "../Pages/User/Discovery/IncomeExpenses/components/LifetimePensionSection/LifetimePensionModal.jsx";
+import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/components/OverseasPensionSection/OverseasPensionModal.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -202,32 +205,36 @@ export const discoveryRoutes = [
         key: "incomeFromSoleTrader",
         icon: "💼",
         component: <SoleTraderModal />,
-        modalWidth: "1200px",
+        modalWidth: "1100px",
       },
       {
         title: "Partnership",
         key: "incomeFromPartnership",
         icon: "🤝",
-        component: null,
+        component: <PartnershipModal />,
+        modalWidth: "1200px",
       },
       {
         title: "Centerlink",
         key: "incomeFromCentrelink",
         icon: "⚙️",
-        component: null,
+        component: <CentrelinkModal />,
         info: "This includes Family Tax Benefit (A&B) Payments and any Centrelink Cards.",
+        modalWidth: "1100px",
       },
       {
         title: "Lifetime Pension",
         key: "incomeFromSuperPayment",
         icon: "💵",
-        component: null,
+        component: <LifetimePensionModal />,
+        modalWidth: "800px",
       },
       {
         title: "Overseas Pension",
         key: "incomeFromOverseasPension",
         icon: "🌍",
-        component: null,
+        component: <OverseasPensionModal />,
+        modalWidth: "800px",
       },
       {
         title: "Living Expenses",
