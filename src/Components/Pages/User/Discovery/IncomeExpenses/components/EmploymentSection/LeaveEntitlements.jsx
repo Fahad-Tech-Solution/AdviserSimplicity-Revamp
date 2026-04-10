@@ -1,6 +1,6 @@
 import { Alert, Button, Col, Form, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
-import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
+import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
 
 const TABLE_PROPS = {

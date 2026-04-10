@@ -2,20 +2,20 @@ import { Button, Col, Form, message, Row, Select, Space } from "antd";
 import dayjs from "dayjs";
 import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
-import { discoveryDataAtom } from "../../../../../../store/authState";
+import { discoveryDataAtom } from "../../../../../../../store/authState";
 import {
   formatNumber,
   toCommaAndDollar,
-} from "../../../../../../hooks/helpers";
-import { useOwnerOptions } from "../../../../../../hooks/useUserDashboardData";
-import useApi from "../../../../../../hooks/useApi.js";
-import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
+} from "../../../../../../../hooks/helpers";
+import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData";
+import useApi from "../../../../../../../hooks/useApi.js";
+import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
-import AppModal from "../../../../../Common/AppModal.jsx";
+import AppModal from "../../../../../../Common/AppModal.jsx";
 import LeaveEntitlements from "./LeaveEntitlements.jsx";
 import SalaryDetail from "./SalaryDetail.jsx";
 import SalaryPackageModal from "./SalaryPackageModal.jsx";
-import { renderModalContent } from "../../../../../Common/renderModalContent.jsx";
+import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
 
 const OWNER_SELECT_CLASS = "employment-owner-select";
 const EMPLOYMENT_STATUS_OPTIONS = [
@@ -435,7 +435,6 @@ export default function EmploymentModal({ modalData }) {
           )
         : "",
     };
-
 
     try {
       setSaving(true);
