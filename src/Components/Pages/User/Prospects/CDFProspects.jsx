@@ -25,6 +25,7 @@ import { useAtom, useAtomValue } from "jotai";
 import useApi from "../../../../hooks/useApi";
 import { normalizeCDFProspect } from "../../../../hooks/useUserDashboardData";
 import { useNavigate } from "react-router-dom";
+import { formatAustralianDate } from "../../../../hooks/helpers";
 
 const { Title, Text } = Typography;
 
@@ -308,7 +309,20 @@ export default function CDFProspects() {
       title: "Age",
       dataIndex: "ages",
       key: "ages",
-      render: (ages) => stackText(ages),
+      render: (ages) => {
+        return (
+          <div
+            style={{
+              fontSize: 12,
+              color: "#4b5563",
+              fontWeight: 400,
+              fontFamily: "Arial, serif",
+            }}
+          >
+            {stackText(ages)}
+          </div>
+        );
+      },
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
@@ -317,8 +331,21 @@ export default function CDFProspects() {
       title: "Contact",
       dataIndex: "contacts",
       key: "contacts",
-      width: 80,
-      render: (contacts) => stackText(contacts),
+      width: 90,
+      render: (contacts) => {
+        return (
+          <div
+            style={{
+              fontSize: 12,
+              color: "#4b5563",
+              fontWeight: 400,
+              fontFamily: "Arial, serif",
+            }}
+          >
+            {stackText(contacts)}
+          </div>
+        );
+      },
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
@@ -328,11 +355,23 @@ export default function CDFProspects() {
       dataIndex: "emails",
       key: "emails",
 
-      render: (emails) =>
-        stackText(emails, {
-          lineBreak: "anywhere",
-          color: "#4b5563",
-        }),
+      render: (emails) => {
+        return (
+          <div
+            style={{
+              fontSize: 11,
+              color: "#4b5563",
+              fontWeight: 400,
+              fontFamily: "Arial, serif",
+            }}
+          >
+            {stackText(emails, {
+              lineBreak: "anywhere",
+              color: "#4b5563",
+            })}
+          </div>
+        );
+      },
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
@@ -341,11 +380,24 @@ export default function CDFProspects() {
       title: "Address",
       dataIndex: "addresses",
       key: "addresses",
-      render: (addresses) =>
-        stackText(addresses, {
-          lineBreak: "anywhere",
-          color: "#4b5563",
-        }),
+      render: (addresses) => {
+        return (
+          <div
+            style={{
+              fontSize: 11,
+              color: "#4b5563",
+              fontWeight: 400,
+              fontFamily: "Arial, serif",
+            }}
+          >
+            {stackText(addresses, {
+              lineBreak: "anywhere",
+              color: "#4b5563",
+            })}
+          </div>
+        );
+      },
+      // width: 250,
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
@@ -354,6 +406,21 @@ export default function CDFProspects() {
       title: "Last updated at",
       dataIndex: "lastUpdated",
       key: "lastUpdated",
+      render: (lastUpdated) => {
+        return (
+          <div
+            className="text-center"
+            style={{
+              fontSize: 11,
+              color: "#4b5563",
+              fontWeight: 400,
+              fontFamily: "Arial, serif",
+            }}
+          >
+            {lastUpdated}
+          </div>
+        );
+      },
       onCell: (record) => ({
         style: { fontSize: 11 },
       }),
