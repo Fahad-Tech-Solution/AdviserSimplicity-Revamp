@@ -109,13 +109,6 @@ const INCOME_EXPENSE_CARDS = [
     key: "incomeFromSoleTrader",
     icon: "💼",
     component: <SoleTraderModal />,
-    modalWidth: "1200px",
-  },
-  {
-    title: "Sole Trader",
-    key: "incomeFromSoleTrader",
-    icon: "💼",
-    component: <SoleTraderModal />,
     modalWidth: "1100px",
   },
   {
