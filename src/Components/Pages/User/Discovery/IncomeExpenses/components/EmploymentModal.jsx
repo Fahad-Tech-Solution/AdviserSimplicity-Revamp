@@ -69,8 +69,10 @@ function buildInitialPerson(person = {}, totalValue = "") {
       person?.SalaryPackageModal?.grossSalary || totalValue,
     ),
     SalaryPackageModal: person?.SalaryPackageModal || {},
-    salaryPackagingModal: person?.SalaryPackagingModal || {},
-    LeaveEntitlementsModal: person?.LeaveEntitlementsModal || {},
+    SalaryPackagingModal:
+      person?.SalaryPackagingModal || person?.salaryPackagingModal || {},
+    LeaveEntitlementsModal:
+      person?.LeaveEntitlementsModal || person?.leaveEntitlementsModal || {},
     salaryPackagingRadio: person?.salaryPackagingRadio || undefined,
     leaveEntitlementsRadio: person?.leaveEntitlementsRadio || undefined,
     choiceOfFund: person?.choiceOfFund || undefined,
@@ -319,11 +321,25 @@ export default function EmploymentModal({ modalData }) {
   }, [allowPartner, form, selectedOwners]);
 
   const handleFinish = async (values) => {
-    const owner = Array.isArray(values.owner) ? values.owner : [];
+    const formValues = form.getFieldsValue(true);
+    const sourceValues = {
+      ...formValues,
+      ...values,
+      client: {
+        ...(formValues?.client || {}),
+        ...(values?.client || {}),
+      },
+      partner: {
+        ...(formValues?.partner || {}),
+        ...(values?.partner || {}),
+      },
+    };
+    const owner = Array.isArray(sourceValues.owner) ? sourceValues.owner : [];
+
     const clientSelected = owner.includes("client");
     const partnerSelected = allowPartner && owner.includes("partner");
 
-    const nextSectionData = {
+    const payload = {
       ...sectionData,
       owner,
       clientFK:
@@ -333,29 +349,37 @@ export default function EmploymentModal({ modalData }) {
       client: clientSelected
         ? {
             ...(sectionData?.client || {}),
-            occupation: values?.client?.occupation || "",
-            employmentStatus: values?.client?.employmentStatus || "",
-            nameOfCompany: values?.client?.nameOfCompany || "",
-            startDate: values?.client?.startDate?.toISOString?.() || "",
-            hoursWorked: parseDigitsValue(values?.client?.hoursWorked),
-            choiceOfFund: values?.client?.choiceOfFund || "",
-            salaryPackagingRadio: values?.client?.salaryPackagingRadio || "",
+            occupation: sourceValues?.client?.occupation || "",
+            employmentStatus: sourceValues?.client?.employmentStatus || "",
+            nameOfCompany: sourceValues?.client?.nameOfCompany || "",
+            startDate:
+              sourceValues?.client?.startDate?.toISOString?.() ||
+              sourceValues?.client?.startDate ||
+              "",
+            hoursWorked: parseDigitsValue(sourceValues?.client?.hoursWorked),
+            choiceOfFund: sourceValues?.client?.choiceOfFund || "",
+            salaryPackagingRadio:
+              sourceValues?.client?.salaryPackagingRadio || "",
             SalaryPackagingModal: {
               ...(sectionData?.client?.SalaryPackagingModal || {}),
-              ...(values?.client?.SalaryPackagingModal || {}),
+              ...(sourceValues?.client?.SalaryPackagingModal ||
+                sourceValues?.client?.salaryPackagingModal ||
+                {}),
             },
             LeaveEntitlementsModal: {
               ...(sectionData?.client?.LeaveEntitlementsModal || {}),
-              ...(values?.client?.LeaveEntitlementsModal || {}),
+              ...(sourceValues?.client?.LeaveEntitlementsModal ||
+                sourceValues?.client?.leaveEntitlementsModal ||
+                {}),
             },
             leaveEntitlementsRadio:
-              values?.client?.leaveEntitlementsRadio || "",
+              sourceValues?.client?.leaveEntitlementsRadio || "",
             SalaryPackageModal: {
               ...(sectionData?.client?.SalaryPackageModal || {}),
-              ...(values?.client?.SalaryPackageModal || {}),
+              ...(sourceValues?.client?.SalaryPackageModal || {}),
               grossSalary: formatCurrencyValue(
-                values?.client?.SalaryPackageModal?.grossSalary ||
-                  values?.client?.grossSalary,
+                sourceValues?.client?.SalaryPackageModal?.grossSalary ||
+                  sourceValues?.client?.grossSalary,
               ),
             },
           }
@@ -363,59 +387,66 @@ export default function EmploymentModal({ modalData }) {
       partner: partnerSelected
         ? {
             ...(sectionData?.partner || {}),
-            occupation: values?.partner?.occupation || "",
-            employmentStatus: values?.partner?.employmentStatus || "",
-            nameOfCompany: values?.partner?.nameOfCompany || "",
-            startDate: values?.partner?.startDate?.toISOString?.() || "",
-            hoursWorked: parseDigitsValue(values?.partner?.hoursWorked),
-            choiceOfFund: values?.partner?.choiceOfFund || "",
-            salaryPackagingRadio: values?.partner?.salaryPackagingRadio || "",
+            occupation: sourceValues?.partner?.occupation || "",
+            employmentStatus: sourceValues?.partner?.employmentStatus || "",
+            nameOfCompany: sourceValues?.partner?.nameOfCompany || "",
+            startDate:
+              sourceValues?.partner?.startDate?.toISOString?.() ||
+              sourceValues?.partner?.startDate ||
+              "",
+            hoursWorked: parseDigitsValue(sourceValues?.partner?.hoursWorked),
+            choiceOfFund: sourceValues?.partner?.choiceOfFund || "",
+            salaryPackagingRadio:
+              sourceValues?.partner?.salaryPackagingRadio || "",
             SalaryPackagingModal: {
               ...(sectionData?.partner?.SalaryPackagingModal || {}),
-              ...(values?.partner?.SalaryPackagingModal || {}),
+              ...(sourceValues?.partner?.SalaryPackagingModal ||
+                sourceValues?.partner?.salaryPackagingModal ||
+                {}),
             },
             LeaveEntitlementsModal: {
               ...(sectionData?.partner?.LeaveEntitlementsModal || {}),
-              ...(values?.partner?.LeaveEntitlementsModal || {}),
+              ...(sourceValues?.partner?.LeaveEntitlementsModal ||
+                sourceValues?.partner?.leaveEntitlementsModal ||
+                {}),
             },
             leaveEntitlementsRadio:
-              values?.partner?.leaveEntitlementsRadio || "",
+              sourceValues?.partner?.leaveEntitlementsRadio || "",
             SalaryPackageModal: {
               ...(sectionData?.partner?.SalaryPackageModal || {}),
-              ...(values?.partner?.SalaryPackageModal || {}),
+              ...(sourceValues?.partner?.SalaryPackageModal || {}),
               grossSalary: formatCurrencyValue(
-                values?.partner?.SalaryPackageModal?.grossSalary ||
-                  values?.partner?.grossSalary,
+                sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
+                  sourceValues?.partner?.grossSalary,
               ),
             },
           }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(
-            values?.client?.SalaryPackageModal?.grossSalary ||
-              values?.client?.grossSalary,
+            sourceValues?.client?.SalaryPackageModal?.grossSalary ||
+              sourceValues?.client?.grossSalary,
           )
         : "",
       partnerTotal: partnerSelected
         ? formatCurrencyValue(
-            values?.partner?.SalaryPackageModal?.grossSalary ||
-              values?.partner?.grossSalary,
+            sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
+              sourceValues?.partner?.grossSalary,
           )
         : "",
     };
 
-    console.log("nextSectionData", nextSectionData);
 
     try {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromOwnBusiness/Update", nextSectionData)
-        : await post("/api/incomeFromOwnBusiness/Add", nextSectionData);
+        ? await patch("/api/incomeFromOwnBusiness/Update", payload)
+        : await post("/api/incomeFromOwnBusiness/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
-        [modalData.key]: saved || nextSectionData,
+        [modalData.key]: saved || payload,
       }));
 
       message.success(
@@ -476,6 +507,7 @@ export default function EmploymentModal({ modalData }) {
                     fontSize: "11px",
                   },
                 }}
+                disabled={!editing}
               />
             </Form.Item>
           </Col>

@@ -49,7 +49,9 @@ function getInitialValues(modalData) {
   const parentForm = modalData?.parentForm;
   const packaging =
     ownerKey && parentForm
-      ? parentForm.getFieldValue([ownerKey, "salaryPackagingModal"]) || {}
+      ? parentForm.getFieldValue([ownerKey, "SalaryPackagingModal"]) ||
+        parentForm.getFieldValue([ownerKey, "salaryPackagingModal"]) ||
+        {}
       : modalData?.initialValues || {};
 
   return buildInitialValues(packaging);
@@ -180,7 +182,7 @@ export default function SalaryPackageModal({ modalData }) {
   const handleConfirmAndExit = async () => {
     const values = await form.validateFields();
     modalData?.parentForm?.setFieldValue?.(
-      [modalData?.ownerKey, "salaryPackagingModal"],
+      [modalData?.ownerKey, "SalaryPackagingModal"],
       values,
     );
     setEditing(false);

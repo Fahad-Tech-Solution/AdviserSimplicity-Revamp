@@ -55,15 +55,6 @@ function getInitialValues(modalData) {
       ? parentForm.getFieldValue([ownerKey, "LeaveEntitlementsModal"]) || {}
       : modalData?.initialValues || {};
 
-  console.log(
-    "leaveEntitlements",
-    leaveEntitlements,
-    "ownerKey",
-    ownerKey,
-    "parentForm",
-    parentForm.getFieldValue([ownerKey]),
-  );
-
   return buildInitialValues(leaveEntitlements);
 }
 
@@ -177,7 +168,7 @@ export default function LeaveEntitlements({ modalData }) {
   const handleConfirmAndExit = async () => {
     const values = await form.validateFields();
     modalData?.parentForm?.setFieldValue?.(
-      [modalData?.ownerKey, "leaveEntitlementsModal"],
+      [modalData?.ownerKey, "LeaveEntitlementsModal"],
       values,
     );
     setEditing(false);
