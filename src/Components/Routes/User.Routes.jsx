@@ -12,6 +12,10 @@ import IncomeExpenses from "../Pages/User/Discovery/IncomeExpenses/IncomeExpense
 import EmploymentModal from "../Pages/User/Discovery/IncomeExpenses/components/EmploymentSection/EmploymentModal.jsx";
 import GeneralLiving from "../Pages/User/Discovery/IncomeExpenses/components/GeneralLiving/GeneralLiving.jsx";
 import SoleTraderModal from "../Pages/User/Discovery/IncomeExpenses/components/SoleTraderSection/SoleTraderModal.jsx";
+import PartnershipModal from "../Pages/User/Discovery/IncomeExpenses/components/PartnershipSection/PartnershipModal.jsx";
+import CentrelinkModal from "../Pages/User/Discovery/IncomeExpenses/components/CentrelinkSection/CentrelinkModal.jsx";
+import LifetimePensionModal from "../Pages/User/Discovery/IncomeExpenses/components/LifetimePensionSection/LifetimePensionModal.jsx";
+import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/components/OverseasPensionSection/OverseasPensionModal.jsx";
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
@@ -108,29 +112,40 @@ const INCOME_EXPENSE_CARDS = [
     modalWidth: "1200px",
   },
   {
+    title: "Sole Trader",
+    key: "incomeFromSoleTrader",
+    icon: "💼",
+    component: <SoleTraderModal />,
+    modalWidth: "1100px",
+  },
+  {
     title: "Partnership",
     key: "incomeFromPartnership",
     icon: "🤝",
-    component: null,
+    component: <PartnershipModal />,
+    modalWidth: "1200px",
   },
   {
     title: "Centerlink",
     key: "incomeFromCentrelink",
     icon: "⚙️",
-    component: null,
+    component: <CentrelinkModal />,
     info: "This includes Family Tax Benefit (A&B) Payments and any Centrelink Cards.",
+    modalWidth: "1100px",
   },
   {
     title: "Lifetime Pension",
     key: "incomeFromSuperPayment",
     icon: "💵",
-    component: null,
+    component: <LifetimePensionModal />,
+    modalWidth: "800px",
   },
   {
     title: "Overseas Pension",
     key: "incomeFromOverseasPension",
     icon: "🌍",
-    component: null,
+    component: <OverseasPensionModal />,
+    modalWidth: "800px",
   },
   {
     title: "Living Expenses",
