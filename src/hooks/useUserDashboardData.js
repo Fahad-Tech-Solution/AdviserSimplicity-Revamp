@@ -8,6 +8,7 @@ import {
   userDashboardError,
   userDashboardLoading,
   discoveryDataAtom,
+  InvestmentOffersData,
 } from "../store/authState";
 import { normalizeMyClientsList, wrapMyClientsState } from "./helpers";
 
@@ -86,6 +87,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
   const setCDFProspectsData = useSetAtom(CDFProspectsData);
   const setMyClientsData = useSetAtom(MyClientsData);
   const setMyTeamData = useSetAtom(MyTeamData);
+  const setInvestmentOffersData = useSetAtom(InvestmentOffersData);
 
   const setDashboardLoading = useSetAtom(userDashboardLoading);
   const setDashboardError = useSetAtom(userDashboardError);
@@ -127,6 +129,11 @@ export default function useUserDashboardData({ enabled = true } = {}) {
             call: () =>
               get("/api/user/Employees", { signal: abortController.signal }),
             setter: setMyTeamData,
+          },
+          {
+            call: () =>
+              get("/api/investmentoffer", { signal: abortController.signal }),
+            setter: setInvestmentOffersData,
           },
         ];
 
@@ -197,6 +204,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
     setDashboardLoading,
     setMyClientsData,
     setMyTeamData,
+    setInvestmentOffersData,
   ]);
 
   const refetch = () => {

@@ -10,7 +10,11 @@ import CDFProspects from "../Pages/User/Prospects/CDFProspects";
 import MyTeam from "../Pages/User/MyTeam/MyTeam";
 import IncomeExpenses from "../Pages/User/Discovery/IncomeExpenses/IncomeExpenses.jsx";
 import EmploymentModal from "../Pages/User/Discovery/IncomeExpenses/components/EmploymentSection/EmploymentModal.jsx";
+import GeneralLiving from "../Pages/User/Discovery/IncomeExpenses/components/GeneralLiving/GeneralLiving.jsx";
 import SoleTraderModal from "../Pages/User/Discovery/IncomeExpenses/components/SoleTraderSection/SoleTraderModal.jsx";
+import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
+import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
+import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -73,6 +77,78 @@ function createSectionCompletionCheck(...keys) {
   return ({ discoveryData }) =>
     hasMeaningfulValue(getDiscoverySectionValue(discoveryData, keys));
 }
+
+function createCardsCompletionCheck(cards = []) {
+  return ({ discoveryData }) =>
+    (cards || []).some((card) => {
+      const keys =
+        Array.isArray(card?.completionKeys) && card.completionKeys.length > 0
+          ? card.completionKeys
+          : [card?.key];
+
+      return keys.some((key) =>
+        hasMeaningfulValue(getDiscoverySectionValue(discoveryData, [key])),
+      );
+    });
+}
+
+const INCOME_EXPENSE_CARDS = [
+  {
+    title: "Employment",
+    key: "incomeFromOwnBusiness",
+    icon: "👔",
+    component: <EmploymentModal />,
+    modalWidth: "1200px",
+  },
+  {
+    title: "Sole Trader",
+    key: "incomeFromSoleTrader",
+    icon: "💼",
+    component: <SoleTraderModal />,
+    modalWidth: "1200px",
+  },
+  {
+    title: "Partnership",
+    key: "incomeFromPartnership",
+    icon: "🤝",
+    component: null,
+  },
+  {
+    title: "Centerlink",
+    key: "incomeFromCentrelink",
+    icon: "⚙️",
+    component: null,
+    info: "This includes Family Tax Benefit (A&B) Payments and any Centrelink Cards.",
+  },
+  {
+    title: "Lifetime Pension",
+    key: "incomeFromSuperPayment",
+    icon: "💵",
+    component: null,
+  },
+  {
+    title: "Overseas Pension",
+    key: "incomeFromOverseasPension",
+    icon: "🌍",
+    component: null,
+  },
+  {
+    title: "Living Expenses",
+    key: "incomeFromRegularLivingExpenses",
+    completionKeys: ["generalLivingExpenses", "retirementLivingExpenses"],
+    icon: "💰",
+    component: <GeneralLiving />,
+    modalWidth: "600px",
+    variant: "case3",
+    firstTotalKey: "generalLivingExpensesTotal",
+    secondTotalKey: "retirementLivingExpense",
+    firstNameKey: "General Living",
+    secondNameKey: "Retirement Living",
+    alwaysShow: true,
+    showSecondTotal: true,
+    secondisFormInput: true,
+  },
+];
 
 export const withSpacing = ({
   icon,
@@ -184,66 +260,8 @@ export const discoveryRoutes = [
     }),
     component: <IncomeExpenses />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck(
-      "incomeexpenses",
-      "incomeExpenses",
-      "incomeAndExpenses",
-    ),
-    Cards: [
-      {
-        title: "Employment",
-        key: "incomeFromOwnBusiness",
-        icon: "👔",
-        component: <EmploymentModal />,
-        modalWidth: "1200px",
-      },
-      {
-        title: "Sole Trader",
-        key: "incomeFromSoleTrader",
-        icon: "💼",
-        component: <SoleTraderModal />,
-        modalWidth: "1200px",
-      },
-      {
-        title: "Partnership",
-        key: "incomeFromPartnership",
-        icon: "🤝",
-        component: null,
-      },
-      {
-        title: "Centerlink",
-        key: "incomeFromCentrelink",
-        icon: "⚙️",
-        component: null,
-        info: "This includes Family Tax Benefit (A&B) Payments and any Centrelink Cards.",
-      },
-      {
-        title: "Lifetime Pension",
-        key: "incomeFromSuperPayment",
-        icon: "💵",
-        component: null,
-      },
-      {
-        title: "Overseas Pension",
-        key: "incomeFromOverseasPension",
-        icon: "🌍",
-        component: null,
-      },
-      {
-        title: "Living Expenses",
-        key: "incomeFromRegularLivingExpenses",
-        icon: "💰",
-        component: null,
-        variant: "case3",
-        firstTotalKey: "generalLivingExpensesTotal", //"generalLivingExpenses"
-        secondTotalKey: "retirementLivingExpense", //"retirementLivingExpenses"
-        firstNameKey: "General Living",
-        secondNameKey: "Retirement Living",
-        alwaysShow: true,
-        showSecondTotal: true,
-        secondisFormInput: true,
-      },
-    ],
+    isCompleted: createCardsCompletionCheck(INCOME_EXPENSE_CARDS),
+    Cards: INCOME_EXPENSE_CARDS,
   },
   {
     key: "/user/discovery/assets-debt",
@@ -259,9 +277,82 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <AssetAndDebt />,
     condition: () => true,
     isCompleted: createSectionCompletionCheck("assetsdebt", "assetsDebt"),
+    Cards: [
+      {
+        title: "Family Home",
+        key: "familyHome",
+        icon: "🏠",
+        component: <FamilyHome />,
+        modalWidth: "1200px",
+        firstNameKey: "Value",
+        secondNameKey: "Loan",
+        secondTotalKey: "loanAmount",
+        showSecondTotal: true,
+      },
+      {
+        title: "Car",
+        key: "car",
+        icon: "🚗",
+        component: <AssetInfoModal />,
+        modalWidth: "700px",
+        showSecondTotal: true,
+      },
+      {
+        title: "Contents",
+        key: "houseHold",
+        icon: "🏠",
+        component: <AssetInfoModal />,
+        modalWidth: "550px",
+        firstNameKey: "Joint",
+        firstTotalKey: "jointTotal",
+        showSecondTotal: false,
+      },
+      {
+        title: "Boat",
+        key: "boat",
+        icon: "⛵",
+        component: <AssetInfoModal />,
+        modalWidth: "550px",
+        firstNameKey: "Joint",
+        firstTotalKey: "jointTotal",
+        showSecondTotal: false,
+      },
+      {
+        title: "Caravan",
+        key: "caravan",
+        icon: "🚌",
+        component: <AssetInfoModal />,
+        modalWidth: "550px",
+        firstNameKey: "Joint",
+        firstTotalKey: "jointTotal",
+        showSecondTotal: false,
+      },
+      {
+        title: "Other Assets",
+        key: "otherAssets",
+        icon: "⚙️",
+        component: <AssetInfoModal />,
+        modalWidth: "550px",
+        firstNameKey: "Joint",
+        firstTotalKey: "jointTotal",
+        showSecondTotal: false,
+      },
+      {
+        title: "Personal Loan",
+        key: "personalLoans",
+        icon: "🤝",
+        component: null,
+      },
+      {
+        title: "Credit Card",
+        key: "creditCards",
+        icon: "💳",
+        component: null,
+      },
+    ],
   },
   {
     key: "/user/discovery/financial-investments",

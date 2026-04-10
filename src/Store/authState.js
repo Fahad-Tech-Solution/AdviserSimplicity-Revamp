@@ -14,6 +14,9 @@ export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
 /** Team / employees list from GET /api/user/Employees (bootstrap). */
 export const MyTeamData = atomWithStorage("MyTeamData", []);
 
+
+export const InvestmentOffersData = atomWithStorage("InvestmentOffersData", []);
+
 /** Currently selected household row from My Clients (set when user chooses Select). */
 export const SelectedClient = atomWithStorage(null);
 
