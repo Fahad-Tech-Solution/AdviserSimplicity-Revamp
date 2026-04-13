@@ -72,7 +72,7 @@ function formatPercentValue(value) {
   return `${Math.min(Number(digits), 100)}%`;
 }
 
-function buildEmptyLoan() {
+function buildEmptyCard() {
   return {
     LenderCurrent: undefined,
     LoanBalance: "",
@@ -105,7 +105,7 @@ function calculateAnnualRepayments(record, currentForm) {
   );
 }
 
-function normalizeLoan(entry = {}) {
+function normalizeCard(entry = {}) {
   return {
     LenderCurrent: entry?.LenderCurrent || undefined,
     LoanBalance: formatCurrencyValue(entry?.LoanBalance),
@@ -120,20 +120,20 @@ function normalizeLoan(entry = {}) {
 }
 
 function buildInitialValues(sectionData) {
-  const loans = Array.isArray(sectionData?.client)
-    ? sectionData.client.map(normalizeLoan)
+  const cards = Array.isArray(sectionData?.client)
+    ? sectionData.client.map(normalizeCard)
     : [];
-  const count = Math.min(Math.max(loans.length || 1, 1), 2);
+  const count = Math.min(Math.max(cards.length || 1, 1), 2);
 
   return {
-    numberOfLoans: count,
-    personalLoans: Array.from({ length: count }, (_, idx) =>
-      loans[idx] ? loans[idx] : buildEmptyLoan(),
+    numberOfCards: count,
+    creditCards: Array.from({ length: count }, (_, idx) =>
+      cards[idx] ? cards[idx] : buildEmptyCard(),
     ),
   };
 }
 
-export default function PersonalLoanModal({ modalData }) {
+export default function CreditCardModal({ modalData }) {
   const [form] = Form.useForm();
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [editing, setEditing] = useState(false);
@@ -144,7 +144,7 @@ export default function PersonalLoanModal({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
 
-  const lenderOptions = useMemo(() => {
+  const lenderOption = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
     const mapped = institutions
       .map((item) => ({
@@ -154,7 +154,7 @@ export default function PersonalLoanModal({ modalData }) {
       .filter((option) => option.value && option.label);
 
     const existingValues = (Array.isArray(sectionData?.client) ? sectionData.client : [])
-      .map((loan) => loan?.LenderCurrent)
+      .map((card) => card?.LenderCurrent)
       .filter(Boolean);
 
     existingValues.forEach((value) => {
@@ -167,60 +167,51 @@ export default function PersonalLoanModal({ modalData }) {
   }, [investmentOffers, sectionData?.client]);
 
   const initialValues = useMemo(() => buildInitialValues(sectionData), [sectionData]);
-  const numberOfLoans = Form.useWatch("numberOfLoans", form) || initialValues.numberOfLoans;
-  const personalLoans = Form.useWatch("personalLoans", form) || initialValues.personalLoans;
+  const numberOfCards = Form.useWatch("numberOfCards", form) || initialValues.numberOfCards;
+  const creditCards = Form.useWatch("creditCards", form) || initialValues.creditCards;
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
   }, [form, initialValues]);
 
   useEffect(() => {
-    const count = Number(numberOfLoans) || 1;
-    const current = Array.isArray(personalLoans) ? [...personalLoans] : [];
+    const count = Number(numberOfCards) || 1;
+    const current = Array.isArray(creditCards) ? [...creditCards] : [];
     if (current.length === count) return;
 
-    const nextLoans = Array.from({ length: count }, (_, idx) =>
-      current[idx] ? current[idx] : buildEmptyLoan(),
+    const nextCards = Array.from({ length: count }, (_, idx) =>
+      current[idx] ? current[idx] : buildEmptyCard(),
     );
-    form.setFieldValue("personalLoans", nextLoans);
-  }, [form, numberOfLoans, personalLoans]);
-
-  const handleDeleteRow = (rowIndex) => {
-    const current = Array.isArray(form.getFieldValue("personalLoans"))
-      ? [...form.getFieldValue("personalLoans")]
-      : [];
-
-    if (current.length <= 1) {
-      form.setFieldValue("personalLoans", [buildEmptyLoan()]);
-      form.setFieldValue("numberOfLoans", 1);
-      return;
-    }
-
-    const filtered = current.filter((_, idx) => idx !== rowIndex);
-    form.setFieldValue("personalLoans", filtered);
-    form.setFieldValue("numberOfLoans", filtered.length);
-  };
+    form.setFieldValue("creditCards", nextCards);
+  }, [creditCards, form, numberOfCards]);
 
   const columns = useMemo(
     () => [
+      {
+        title: "No#",
+        dataIndex: "index",
+        key: "owner",
+        width: 60,
+        editable: false,
+        renderView: ({ record }) => record.rowIndex + 1,
+      },
       {
         title: "Lender",
         dataIndex: "LenderCurrent",
         key: "LenderCurrent",
         field: "LenderCurrent",
         type: "select",
-        options: lenderOptions,
+        options: lenderOption,
         placeholder: "Lender",
-        width: 250,
+        width: 260,
       },
       {
-        title: "Loan Balance",
+        title: "Outstanding Balance",
         dataIndex: "LoanBalance",
         key: "LoanBalance",
         field: "LoanBalance",
         type: "text",
-        placeholder: "Loan Balance",
-        width: 150,
+        placeholder: "Outstanding Balance",
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -235,7 +226,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanType",
         type: "select",
         options: LOAN_TYPE_OPTIONS,
-        width: 130,
       },
       {
         title: "Repayments Amount",
@@ -244,7 +234,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "RepaymentsAmount",
         type: "text",
         placeholder: "Repayments Amount",
-        width: 170,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -260,7 +249,7 @@ export default function PersonalLoanModal({ modalData }) {
         field: "Frequency",
         type: "select",
         options: FREQUENCY_OPTIONS,
-        width: 150,
+        width: 200,
         onChange: (_, record, __, currentForm) => {
           calculateAnnualRepayments(record, currentForm);
         },
@@ -272,7 +261,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "AnnualRepayments",
         type: "text",
         placeholder: "Annual Repayments",
-        width: 180,
         disabled: true,
         editable: true,
       },
@@ -283,7 +271,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "InterestRate",
         type: "text",
         placeholder: "Interest Rate (p.a)",
-        width: 170,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -298,7 +285,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanTerm",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 140,
       },
       {
         title: "Loan Term Remaining",
@@ -307,52 +293,33 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 180,
-      },
-      {
-        title: "Action",
-        dataIndex: "action",
-        key: "action",
-        width: 80,
-        editable: false,
-        renderEdit: ({ record }) => (
-          <Button
-            type="text"
-            danger
-            onClick={() => handleDeleteRow(record.rowIndex)}
-            disabled={!editing}
-          >
-            🗑️
-          </Button>
-        ),
-        renderView: () => "--",
       },
     ],
-    [editing, lenderOptions],
+    [lenderOption],
   );
 
   const rows = useMemo(
     () =>
-      Array.from({ length: Number(numberOfLoans) || 0 }, (_, rowIndex) => {
-        const row = personalLoans?.[rowIndex] || {};
+      Array.from({ length: Number(numberOfCards) || 0 }, (_, rowIndex) => {
+        const row = creditCards?.[rowIndex] || {};
         return {
-          key: `loan-${rowIndex}`,
+          key: `credit-card-${rowIndex}`,
           rowIndex,
-          formPath: ["personalLoans", rowIndex],
+          formPath: ["creditCards", rowIndex],
           ...row,
         };
       }),
-    [numberOfLoans, personalLoans],
+    [creditCards, numberOfCards],
   );
 
   const handleFinish = async (values) => {
-    const loans = (Array.isArray(values?.personalLoans) ? values.personalLoans : [])
-      .slice(0, Number(values?.numberOfLoans) || 0)
-      .map((loan) => ({
-        ...loan,
-        LoanBalance: formatCurrencyValue(loan?.LoanBalance),
-        RepaymentsAmount: formatCurrencyValue(loan?.RepaymentsAmount),
-        AnnualRepayments: formatCurrencyValue(loan?.AnnualRepayments),
+    const cards = (Array.isArray(values?.creditCards) ? values.creditCards : [])
+      .slice(0, Number(values?.numberOfCards) || 0)
+      .map((card) => ({
+        ...card,
+        LoanBalance: formatCurrencyValue(card?.LoanBalance),
+        RepaymentsAmount: formatCurrencyValue(card?.RepaymentsAmount),
+        AnnualRepayments: formatCurrencyValue(card?.AnnualRepayments),
       }));
 
     const payload = {
@@ -361,10 +328,10 @@ export default function PersonalLoanModal({ modalData }) {
         sectionData?.clientFK ||
         discoveryData?.personalDetails?._id ||
         undefined,
-      client: loans,
+      client: cards,
       clientTotal: formatCurrencyValue(
-        loans.reduce(
-          (total, loan) => total + (parseCurrencyValue(loan?.LoanBalance) || 0),
+        cards.reduce(
+          (total, card) => total + (parseCurrencyValue(card?.LoanBalance) || 0),
           0,
         ),
       ),
@@ -375,21 +342,21 @@ export default function PersonalLoanModal({ modalData }) {
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch("/api/personalLoans/Update", payload)
-        : await post("/api/personalLoans/Add", payload);
+        ? await patch("/api/creditCards/Update", payload)
+        : await post("/api/creditCards/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Personal Loan"} updated successfully`);
+      message.success(`${modalData?.title || "Credit Card"} updated successfully`);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
           error?.message ||
-          `Failed to update ${modalData?.title || "Personal Loan"}`,
+          `Failed to update ${modalData?.title || "Credit Card"}`,
       );
     } finally {
       setSaving(false);
@@ -415,15 +382,10 @@ export default function PersonalLoanModal({ modalData }) {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
             <Form.Item
-              label="Number of Personal Loan :"
-              name="numberOfLoans"
+              label="Number of Credit Cards :"
+              name="numberOfCards"
               style={{ marginBottom: 0 }}
-              rules={[
-                {
-                  required: true,
-                  message: "Number of Personal Loan is required",
-                },
-              ]}
+              rules={[{ required: true, message: "Number of Credit Cards is required" }]}
             >
               <Select
                 options={COUNT_OPTIONS}

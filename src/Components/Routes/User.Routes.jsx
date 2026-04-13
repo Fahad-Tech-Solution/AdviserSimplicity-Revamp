@@ -19,6 +19,8 @@ import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/compone
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
+import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/personalLoan/personalLoanModal.jsx";
+import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -352,13 +354,19 @@ export const discoveryRoutes = [
         title: "Personal Loan",
         key: "personalLoans",
         icon: "🤝",
-        component: null,
+        component: <PersonalLoanModal/>,
+        modalWidth: "1200px",
+        firstNameKey: "Joint",
+        showSecondTotal: false,
       },
       {
         title: "Credit Card",
         key: "creditCards",
         icon: "💳",
-        component: null,
+        component: <CreditCardModal/>,
+        modalWidth: "1200px",
+        firstNameKey: "Joint",
+        showSecondTotal: false,
       },
     ],
   },
