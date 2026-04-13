@@ -66,8 +66,11 @@ export default function LoginForm() {
       navigate("/user", { replace: true });
       message.success("Login successful.");
     } catch (err) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Login failed.";
+      let msg = err?.response?.data?.message || err?.message || "Login failed.";
+      //if error is 401, show "Invalid email or password"
+      if (err?.response?.status === 401) {
+        msg = "Invalid email or password";
+      }
       setError(msg);
     } finally {
       setSubmitting(false);

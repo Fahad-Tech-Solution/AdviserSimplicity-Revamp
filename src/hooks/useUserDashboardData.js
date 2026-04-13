@@ -32,6 +32,21 @@ export function useOwnerOptions() {
   );
 }
 
+export function getOwnerDisplayName(owner) {
+  const discoveryData = useAtomValue(discoveryDataAtom);
+  console.log(owner, "owner");
+  
+  return owner.trim === "Joint" || owner === "joint"
+    ? (discoveryData.personalDetails?.client?.clientPreferredName || "Client") +
+        " & " +
+        (discoveryData.personalDetails?.partner?.partnerPreferredName ||
+          "Partner")
+    : owner === "client" || owner === "Client"
+      ? discoveryData.personalDetails?.client?.clientPreferredName || "Client"
+      : discoveryData.personalDetails?.partner?.partnerPreferredName ||
+        "Partner";
+}
+
 const getDisplayName = (person = {}) =>
   person?.preferredName ||
   person?.firstName ||

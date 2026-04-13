@@ -20,7 +20,11 @@ import ProspectStatusTag from "../../../Common/ProspectStatusTag";
 import ViewProspects from "./components/ViewProspects";
 import ViewGoals from "./components/ViewGoals";
 import { SlReload } from "react-icons/sl";
-import { CDFProspectsData, loggedInUser } from "../../../../store/authState";
+import {
+  CDFProspectsData,
+  loggedInUser,
+  userDashboardLoading,
+} from "../../../../store/authState";
 import { useAtom, useAtomValue } from "jotai";
 import useApi from "../../../../hooks/useApi";
 import { normalizeCDFProspect } from "../../../../hooks/useUserDashboardData";
@@ -51,6 +55,7 @@ export default function CDFProspects() {
   const { message } = AntdApp.useApp();
   const [prospects, setProspects] = useAtom(CDFProspectsData);
   const session = useAtomValue(loggedInUser);
+  const isDashboardLoading = useAtomValue(userDashboardLoading);
   const [activeTab, setActiveTab] = useState("new");
   const [searchText, setSearchText] = useState("");
   const [selectedProspect, setSelectedProspect] = useState(null);
@@ -648,6 +653,12 @@ export default function CDFProspects() {
           bordered={true}
           size="small"
           tableStyle={{ borderRadius: 0, overflow: "hidden" }}
+          tableProps={{
+            loading: {
+              spinning: isDashboardLoading,
+              tip: "Loading prospects...",
+            },
+          }}
         />
       </div>
     </div>

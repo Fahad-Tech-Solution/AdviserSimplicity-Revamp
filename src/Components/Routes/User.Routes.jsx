@@ -19,6 +19,11 @@ import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/compone
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
+import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
+import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
+import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
+import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare.jsx";
+import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestments.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -158,6 +163,83 @@ const INCOME_EXPENSE_CARDS = [
   },
 ];
 
+const ASSETS_DEBT_CARDS = [
+  {
+    title: "Family Home",
+    key: "familyHome",
+    icon: "🏠",
+    component: <FamilyHome />,
+    modalWidth: "1200px",
+    firstNameKey: "Value",
+    secondNameKey: "Loan",
+    secondTotalKey: "loanAmount",
+    showSecondTotal: true,
+  },
+  {
+    title: "Car",
+    key: "car",
+    icon: "🚗",
+    component: <AssetInfoModal />,
+    modalWidth: "700px",
+  },
+  {
+    title: "Contents",
+    key: "houseHold",
+    icon: "🏪",
+    component: <AssetInfoModal />,
+    modalWidth: "550px",
+    firstNameKey: "Joint",
+    firstTotalKey: "jointTotal",
+    showSecondTotal: false,
+  },
+  {
+    title: "Boat",
+    key: "boat",
+    icon: "⛵",
+    component: <AssetInfoModal />,
+    modalWidth: "550px",
+    firstNameKey: "Joint",
+    firstTotalKey: "jointTotal",
+    showSecondTotal: false,
+  },
+  {
+    title: "Caravan",
+    key: "caravan",
+    icon: "🚌",
+    component: <AssetInfoModal />,
+    modalWidth: "550px",
+    firstNameKey: "Joint",
+    firstTotalKey: "jointTotal",
+    showSecondTotal: false,
+  },
+  {
+    title: "Other Assets",
+    key: "otherAssets",
+    icon: "⚙️",
+    component: <AssetInfoModal />,
+    modalWidth: "550px",
+    firstNameKey: "Joint",
+    firstTotalKey: "jointTotal",
+    showSecondTotal: false,
+  },
+  {
+    title: "Personal Loan",
+    key: "personalLoans",
+    icon: "🤝",
+    component: null,
+    firstNameKey: "Joint",
+    showSecondTotal: false,
+  },
+  {
+    title: "Credit Card",
+    key: "creditCards",
+    icon: "💳",
+    component: null,
+    firstNameKey: "Joint",
+    showSecondTotal: false,
+  },
+];
+
 export const withSpacing = ({
   icon,
   label,
@@ -287,80 +369,8 @@ export const discoveryRoutes = [
     }),
     component: <AssetAndDebt />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck("assetsdebt", "assetsDebt"),
-    Cards: [
-      {
-        title: "Family Home",
-        key: "familyHome",
-        icon: "🏠",
-        component: <FamilyHome />,
-        modalWidth: "1200px",
-        firstNameKey: "Value",
-        secondNameKey: "Loan",
-        secondTotalKey: "loanAmount",
-        showSecondTotal: true,
-      },
-      {
-        title: "Car",
-        key: "car",
-        icon: "🚗",
-        component: <AssetInfoModal />,
-        modalWidth: "700px",
-        showSecondTotal: true,
-      },
-      {
-        title: "Contents",
-        key: "houseHold",
-        icon: "🏠",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Boat",
-        key: "boat",
-        icon: "⛵",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Caravan",
-        key: "caravan",
-        icon: "🚌",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Other Assets",
-        key: "otherAssets",
-        icon: "⚙️",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Personal Loan",
-        key: "personalLoans",
-        icon: "🤝",
-        component: null,
-      },
-      {
-        title: "Credit Card",
-        key: "creditCards",
-        icon: "💳",
-        component: null,
-      },
-    ],
+    isCompleted: createCardsCompletionCheck(ASSETS_DEBT_CARDS),
+    Cards: ASSETS_DEBT_CARDS,
   },
   {
     key: "/user/discovery/financial-investments",
@@ -376,12 +386,117 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <FinancialInvestments />,
     condition: () => true,
     isCompleted: createSectionCompletionCheck(
       "financialinvestments",
       "financialInvestments",
     ),
+    Cards: [
+      {
+        title: "Bank Accounts",
+        key: "bankAccountFinance",
+        icon: "🏦",
+        component: <MiddleWare />,
+        innerComponent: <BankTermDetailsModal />,
+        modalWidth: "620px",
+        tableRows: 10,
+      },
+      {
+        title: "Term Deposits",
+        key: "termDepositsFinance",
+        icon: "⏱️",
+        component: <MiddleWare />,
+        innerComponent: <BankTermDetailsModal />,
+        modalWidth: "620px",
+        tableRows: 10,
+      },
+      {
+        title: "Australian Shares/ETFs",
+        key: "australianShareMarket",
+        icon: "📊",
+        component: <MiddleWare />,
+        innerComponent: <AustralianShare />,
+        modalWidth: "620px",
+        tableRows: 50,
+      },
+      {
+        title: "Platform Investments",
+        key: "managedFund",
+        icon: "💼",
+        component: <MiddleWare />,
+        innerComponent: <PlatformInvestments />,
+        modalWidth: "620px",
+        tableRows: 50,
+      },
+      {
+        title: "Investment Bond",
+        key: "investmentBondFinance",
+        icon: "🏅",
+        component: null,
+      },
+      //SuperAndRetirement
+      {
+        title: "Super Funds",
+        key: "superAnnuationIssues",
+        icon: "🐷",
+        component: null,
+      },
+      {
+        title: "Account Based Pension",
+        key: "accountBasedPensionIssues",
+        icon: "🐷",
+        component: null,
+      },
+      {
+        title: "Annuities",
+        key: "annuitiesIssues",
+        icon: "📅",
+        component: null,
+      },
+      // Investment
+      {
+        title: "Investment Properties",
+        key: "investmentPropertyDetails",
+        icon: "🏘️",
+        component: null,
+        // Labels: ["Property Portfolio", "Total Debt"],
+        // variant: "case2",
+        // Labels: [
+        //   {
+        //     label: "Property Portfolio",
+        //     value: (questionDetail) =>
+        //       questionDetail?.investmentPropertyDetails?.propertyPortfolio ??
+        //       "",
+        //     component: null,
+        //     key: "investmentPropertyDetails",
+        //     maintitle: true,
+        //     onTop: true,
+        //   },
+        //   {
+        //     label: "Total Debt",
+        //     value: (questionDetail) =>
+        //       questionDetail?.investmentPropertyDetails?.totalDebt ?? "",
+        //     component: null,
+        //     key: "investmentPropertyDetails",
+        //     maintitle: true,
+        //     modalButton: false,
+        //   },
+        // ],
+      },
+      {
+        title: "Investment Loan",
+        key: "managedFundsLOC",
+        icon: "📋",
+        component: null,
+      },
+      {
+        title: "Margin Loan",
+        key: "managedFundsMarginLoan",
+        icon: "📉",
+        component: null,
+      },
+    ],
   },
   {
     key: "/user/discovery/estate-planning",

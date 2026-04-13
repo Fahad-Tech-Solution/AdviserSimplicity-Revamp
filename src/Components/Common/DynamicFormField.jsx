@@ -215,8 +215,38 @@ function ModalPopupButton({ action, disabled, ...fieldProps }) {
           })
         }
         disabled={disabled || action?.disabled}
-      ><GoArrowUpRight />
+      >
+        <GoArrowUpRight />
       </Button>
+    </div>
+  );
+}
+
+function InputActionField({
+  placeholder,
+  action,
+  disabled,
+  value,
+  onChange,
+  ...fieldProps
+}) {
+  return (
+    <div className="d-flex justify-content-start w-100 align-items-center gap-2">
+      <Input
+        placeholder={placeholder}
+        size="small"
+        style={{ height: "26px", borderRadius: "7px", maxWidth: "140px" }}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        {...fieldProps}
+      />
+      <ModalPopupButton
+        action={action}
+        disabled={false}
+        name={fieldProps.name}
+        id={fieldProps.id}
+      />
     </div>
   );
 }
@@ -352,7 +382,13 @@ function getInputNode({
           onKeyDown={(e) => {
             if (
               !/[0-9]/.test(e.key) &&
-              !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+              ![
+                "Backspace",
+                "Delete",
+                "ArrowLeft",
+                "ArrowRight",
+                "Tab",
+              ].includes(e.key)
             ) {
               e.preventDefault();
             }
@@ -398,9 +434,7 @@ function getInputNode({
       return <PostcodeSearchSelect placeholder={placeholder} {...fieldProps} />;
 
     case "date":
-      return (
-        <EnhancedDatePicker placeholder={placeholder} {...fieldProps} />
-      );
+      return <EnhancedDatePicker placeholder={placeholder} {...fieldProps} />;
 
     case "radio":
       return <Radio.Group options={normalizedOptions} {...fieldProps} />;
@@ -413,22 +447,12 @@ function getInputNode({
 
     case "input-action":
       return (
-        <Input
+        <InputActionField
           placeholder={placeholder}
-          addonAfter={
-            <Button
-              type="primary"
-              size="small"
-              icon={action?.icon || <ArrowUpOutlined />}
-              onClick={action?.onClick}
-              disabled={action?.disabled}
-              style={{
-                background: "#22c55e",
-                borderColor: "#22c55e",
-                boxShadow: "none",
-              }}
-            />
-          }
+          action={action}
+          disabled={fieldProps.disabled}
+          value={fieldProps.value}
+          onChange={fieldProps.onChange}
           {...fieldProps}
         />
       );
