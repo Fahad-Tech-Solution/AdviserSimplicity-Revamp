@@ -26,7 +26,7 @@ import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
 import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestments.jsx";
-
+import InvestmentLoanModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentLoanSection/InvestmentLoanModal.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -492,13 +492,16 @@ export const discoveryRoutes = [
         title: "Investment Loan",
         key: "managedFundsLOC",
         icon: "📋",
-        component: null,
+        component: <InvestmentLoanModal/>,
+        modalWidth: "1300px",
+    
       },
       {
         title: "Margin Loan",
         key: "managedFundsMarginLoan",
         icon: "📉",
-        component: null,
+        component: <InvestmentLoanModal/>,
+        modalWidth: "1200px",
       },
     ],
   },
