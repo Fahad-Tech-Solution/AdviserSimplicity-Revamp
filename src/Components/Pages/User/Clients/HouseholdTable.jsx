@@ -9,6 +9,7 @@ import {
   loggedInUser,
   MyClientsData,
   SelectedClient,
+  userDashboardLoading,
 } from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
@@ -605,6 +606,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   ];
 
   const myClientsData = useAtomValue(MyClientsData);
+  const isDashboardLoading = useAtomValue(userDashboardLoading);
 
   const clients = normalizeMyClientsList(myClientsData);
 
@@ -641,7 +643,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       bordered
       size="small"
       tableStyle={{ borderRadius: 12 }}
-      tableProps={{ childrenColumnName: "__antdNestedRows__" }}
+      tableProps={{
+        childrenColumnName: "__antdNestedRows__",
+        loading: {
+          spinning: isDashboardLoading,
+          tip: "Loading households...",
+        },
+      }}
     />
   );
 };

@@ -99,6 +99,29 @@ function buildInitialValues(sectionData = {}, config) {
   };
 }
 
+function getOwnerDisplayName(ownerValue, ownerOptions = [], discoveryData = {}) {
+  if (!ownerValue) return "--";
+
+  if (ownerValue === "joint" || ownerValue === JOINT_OPTION.label) {
+    const clientName =
+      discoveryData?.personalDetails?.client?.clientPreferredName ||
+      discoveryData?.personaldetails?.client?.clientPreferredName ||
+      "Client";
+    const partnerName =
+      discoveryData?.personalDetails?.partner?.partnerPreferredName ||
+      discoveryData?.personaldetails?.partner?.partnerPreferredName ||
+      "";
+
+    return partnerName ? `${clientName} & ${partnerName}` : clientName;
+  }
+
+  return (
+    ownerOptions.find((item) => item.value === ownerValue)?.label ||
+    ownerOptions.find((item) => item.label === ownerValue)?.label ||
+    ownerValue
+  );
+}
+
 function buildRows({
   config,
   selectedOwners,
@@ -112,7 +135,7 @@ function buildRows({
     return [
       {
         key: "joint",
-        owner: JOINT_OPTION.label,
+        owner: "joint",
         formPath: ["joint"],
         ...(watchedJoint || initialValues?.joint || {}),
       },
@@ -232,6 +255,7 @@ export default function AssetInfoModal({ modalData }) {
         dataIndex: "owner",
         width: 160,
         editable: false,
+        renderView: ({ value }) => getOwnerDisplayName(value, availableOwnerOptions, discoveryData),
       },
     ];
 
@@ -264,7 +288,7 @@ export default function AssetInfoModal({ modalData }) {
     });
 
     return columns;
-  }, [config]);
+  }, [availableOwnerOptions, config, discoveryData]);
 
   const handleFinish = async (values) => {
     const formValues = form.getFieldsValue(true);

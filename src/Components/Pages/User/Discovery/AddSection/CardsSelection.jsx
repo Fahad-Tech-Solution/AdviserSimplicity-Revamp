@@ -22,8 +22,8 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
     //   [key]: "Yes" === discoveryQuestions[key] ? "No" : "Yes",
     // }));
 
-    console.log(key);
-    console.log(questionTemp);
+    // console.log(key);
+    // console.log(questionTemp);
 
     setQuestionTemp((prev) => ({
       ...prev,
