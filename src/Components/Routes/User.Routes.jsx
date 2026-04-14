@@ -23,6 +23,10 @@ import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/
 import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
+import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
+import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare.jsx";
+import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestments.jsx";
+import InvestmentLoanModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentLoanSection/InvestmentLoanModal.jsx";
 import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/Bankandterm/BankTermDetailsModal.jsx";
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
@@ -499,13 +503,16 @@ export const discoveryRoutes = [
         title: "Investment Loan",
         key: "managedFundsLOC",
         icon: "📋",
-        component: null,
+        component: <InvestmentLoanModal/>,
+        modalWidth: "1300px",
+    
       },
       {
         title: "Margin Loan",
         key: "managedFundsMarginLoan",
         icon: "📉",
-        component: null,
+        component: <InvestmentLoanModal/>,
+        modalWidth: "1200px",
       },
     ],
   },
