@@ -19,13 +19,13 @@ import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/compone
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
+import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/personalLoan/personalLoanModal.jsx";
+import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
 import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestments.jsx";
-import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/personalLoan/personalLoanModal.jsx";
-import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -228,7 +228,8 @@ const ASSETS_DEBT_CARDS = [
     title: "Personal Loan",
     key: "personalLoans",
     icon: "🤝",
-    component: null,
+    component: <PersonalLoanModal />,
+    modalWidth: "1200px",
     firstNameKey: "Joint",
     showSecondTotal: false,
   },
@@ -236,7 +237,8 @@ const ASSETS_DEBT_CARDS = [
     title: "Credit Card",
     key: "creditCards",
     icon: "💳",
-    component: null,
+    component: <CreditCardModal />,
+    modalWidth: "1200px",
     firstNameKey: "Joint",
     showSecondTotal: false,
   },
@@ -371,86 +373,8 @@ export const discoveryRoutes = [
     }),
     component: <AssetAndDebt />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck("assetsdebt", "assetsDebt"),
-    Cards: [
-      {
-        title: "Family Home",
-        key: "familyHome",
-        icon: "🏠",
-        component: <FamilyHome />,
-        modalWidth: "1200px",
-        firstNameKey: "Value",
-        secondNameKey: "Loan",
-        secondTotalKey: "loanAmount",
-        showSecondTotal: true,
-      },
-      {
-        title: "Car",
-        key: "car",
-        icon: "🚗",
-        component: <AssetInfoModal />,
-        modalWidth: "700px",
-        showSecondTotal: true,
-      },
-      {
-        title: "Contents",
-        key: "houseHold",
-        icon: "🏠",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Boat",
-        key: "boat",
-        icon: "⛵",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Caravan",
-        key: "caravan",
-        icon: "🚌",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Other Assets",
-        key: "otherAssets",
-        icon: "⚙️",
-        component: <AssetInfoModal />,
-        modalWidth: "550px",
-        firstNameKey: "Joint",
-        firstTotalKey: "jointTotal",
-        showSecondTotal: false,
-      },
-      {
-        title: "Personal Loan",
-        key: "personalLoans",
-        icon: "🤝",
-        component: <PersonalLoanModal/>,
-        modalWidth: "1200px",
-        firstNameKey: "Joint",
-        showSecondTotal: false,
-      },
-      {
-        title: "Credit Card",
-        key: "creditCards",
-        icon: "💳",
-        component: <CreditCardModal/>,
-        modalWidth: "1200px",
-        firstNameKey: "Joint",
-        showSecondTotal: false,
-      },
-    ],
+    isCompleted: createCardsCompletionCheck(ASSETS_DEBT_CARDS),
+    Cards: ASSETS_DEBT_CARDS,
   },
   {
     key: "/user/discovery/financial-investments",

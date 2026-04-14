@@ -197,9 +197,9 @@ export default function useUserDashboardData({ enabled = true } = {}) {
           setDashboardError(error);
         }
       } finally {
-        if (mounted) {
+        // if (mounted) {
           setDashboardLoading(false);
-        }
+        // }
         inFlightRef.current = false;
       }
     };
