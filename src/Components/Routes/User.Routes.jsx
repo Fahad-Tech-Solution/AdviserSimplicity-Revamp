@@ -19,6 +19,8 @@ import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/compone
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
+import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/personalLoan/personalLoanModal.jsx";
+import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
 import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
@@ -226,7 +228,8 @@ const ASSETS_DEBT_CARDS = [
     title: "Personal Loan",
     key: "personalLoans",
     icon: "🤝",
-    component: null,
+    component: <PersonalLoanModal />,
+    modalWidth: "1200px",
     firstNameKey: "Joint",
     showSecondTotal: false,
   },
@@ -234,7 +237,8 @@ const ASSETS_DEBT_CARDS = [
     title: "Credit Card",
     key: "creditCards",
     icon: "💳",
-    component: null,
+    component: <CreditCardModal />,
+    modalWidth: "1200px",
     firstNameKey: "Joint",
     showSecondTotal: false,
   },
