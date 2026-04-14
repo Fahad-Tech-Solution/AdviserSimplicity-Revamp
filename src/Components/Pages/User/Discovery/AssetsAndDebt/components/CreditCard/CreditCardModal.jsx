@@ -3,7 +3,10 @@ import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
 import {
   InvestmentOffersData,
   discoveryDataAtom,
@@ -149,11 +152,14 @@ export default function CreditCardModal({ modalData }) {
     const mapped = institutions
       .map((item) => ({
         value: String(item?._id ?? item?.value ?? ""),
-        label: item?.platformName || item?.label || item?.name || item?._id || "",
+        label:
+          item?.platformName || item?.label || item?.name || item?._id || "",
       }))
       .filter((option) => option.value && option.label);
 
-    const existingValues = (Array.isArray(sectionData?.client) ? sectionData.client : [])
+    const existingValues = (
+      Array.isArray(sectionData?.client) ? sectionData.client : []
+    )
       .map((card) => card?.LenderCurrent)
       .filter(Boolean);
 
@@ -166,9 +172,14 @@ export default function CreditCardModal({ modalData }) {
     return mapped;
   }, [investmentOffers, sectionData?.client]);
 
-  const initialValues = useMemo(() => buildInitialValues(sectionData), [sectionData]);
-  const numberOfCards = Form.useWatch("numberOfCards", form) || initialValues.numberOfCards;
-  const creditCards = Form.useWatch("creditCards", form) || initialValues.creditCards;
+  const initialValues = useMemo(
+    () => buildInitialValues(sectionData),
+    [sectionData],
+  );
+  const numberOfCards =
+    Form.useWatch("numberOfCards", form) || initialValues.numberOfCards;
+  const creditCards =
+    Form.useWatch("creditCards", form) || initialValues.creditCards;
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -203,7 +214,6 @@ export default function CreditCardModal({ modalData }) {
         type: "select",
         options: lenderOption,
         placeholder: "Lender",
-        width: 260,
       },
       {
         title: "Outstanding Balance",
@@ -249,7 +259,6 @@ export default function CreditCardModal({ modalData }) {
         field: "Frequency",
         type: "select",
         options: FREQUENCY_OPTIONS,
-        width: 200,
         onChange: (_, record, __, currentForm) => {
           calculateAnnualRepayments(record, currentForm);
         },
@@ -350,7 +359,9 @@ export default function CreditCardModal({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Credit Card"} updated successfully`);
+      message.success(
+        `${modalData?.title || "Credit Card"} updated successfully`,
+      );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
@@ -364,7 +375,7 @@ export default function CreditCardModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}
@@ -385,7 +396,12 @@ export default function CreditCardModal({ modalData }) {
               label="Number of Credit Cards :"
               name="numberOfCards"
               style={{ marginBottom: 0 }}
-              rules={[{ required: true, message: "Number of Credit Cards is required" }]}
+              rules={[
+                {
+                  required: true,
+                  message: "Number of Credit Cards is required",
+                },
+              ]}
             >
               <Select
                 options={COUNT_OPTIONS}
@@ -416,7 +432,9 @@ export default function CreditCardModal({ modalData }) {
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
                   <Button
                     type="primary"

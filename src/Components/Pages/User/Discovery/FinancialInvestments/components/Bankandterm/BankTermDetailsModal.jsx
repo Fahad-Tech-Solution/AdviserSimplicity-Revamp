@@ -1,9 +1,9 @@
 import { Alert, Button, Col, Form, Row, Select, Space } from "antd";
-import { InvestmentOffersData } from "../../../../../../store/authState";
+import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { useAtomValue } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
-import EditableDynamicTable from "../../../../../Common/EditableDynamicTable";
-import { toCommaAndDollar } from "../../../../../../hooks/helpers";
+import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
+import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import { RiEdit2Fill } from "react-icons/ri";
 
 const TABLE_PROPS = {
@@ -138,7 +138,6 @@ export default function BankTermDetailsModal({ modalData }) {
       type: "select",
       options: institutionOptions,
       placeholder: "Name of Institution",
-      width: 220,
     },
     {
       title: "Account Number",
@@ -147,7 +146,6 @@ export default function BankTermDetailsModal({ modalData }) {
       field: "accountNumber",
       type: "text",
       placeholder: "Account Number",
-      width: 180,
     },
     {
       title: "Current Balance",
@@ -156,7 +154,6 @@ export default function BankTermDetailsModal({ modalData }) {
       field: "currentBalance",
       type: "text",
       placeholder: "Current Balance",
-      width: 180,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [...(record?.formPath || []), column.field],
@@ -168,18 +165,8 @@ export default function BankTermDetailsModal({ modalData }) {
       title: "Action",
       key: "action",
       dataIndex: "action",
-      width: 90,
       editable: false,
-      renderView: ({ record }) => (
-        <Button
-          type="text"
-          danger
-          aria-label={`Remove row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
-        >
-          🗑️
-        </Button>
-      ),
+      renderView: () => "--",
       renderEdit: ({ record }) => (
         <Button
           type="text"

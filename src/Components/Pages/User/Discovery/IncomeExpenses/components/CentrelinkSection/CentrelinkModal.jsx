@@ -4,7 +4,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
 import { discoveryDataAtom } from "../../../../../../../store/authState.js";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
 import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 
@@ -103,7 +106,10 @@ function buildInitialValues(sectionData, allowPartner) {
   return {
     owner,
     client: buildInitialPerson(sectionData?.client, sectionData?.clientTotal),
-    partner: buildInitialPerson(sectionData?.partner, sectionData?.partnerTotal),
+    partner: buildInitialPerson(
+      sectionData?.partner,
+      sectionData?.partnerTotal,
+    ),
   };
 }
 
@@ -118,7 +124,7 @@ export default function CentrelinkModal({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
 
   const CENTRELINK_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 120 },
+    { title: "Owner", key: "owner", kind: "owner", width: 80 },
     {
       title: "CRN",
       dataIndex: "CRN",
@@ -126,7 +132,6 @@ export default function CentrelinkModal({ modalData }) {
       field: "CRN",
       type: "text",
       placeholder: "CRN",
-      width: 140,
     },
     {
       title: "Payment Type",
@@ -135,7 +140,6 @@ export default function CentrelinkModal({ modalData }) {
       field: "paymentType",
       type: "multiselect",
       placeholder: "Payment Type",
-      width: 250,
       options: PAYMENT_TYPE_OPTIONS,
     },
     {
@@ -145,7 +149,6 @@ export default function CentrelinkModal({ modalData }) {
       field: "fortnightlyPayment",
       type: "text",
       placeholder: "Fortnightly Payment",
-      width: 200,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -161,7 +164,6 @@ export default function CentrelinkModal({ modalData }) {
       field: "annualPaymentAmount",
       type: "text",
       placeholder: "Annual Payment Amount",
-      width: 250,
       disabled: true,
       editable: true,
     },
@@ -172,7 +174,6 @@ export default function CentrelinkModal({ modalData }) {
       field: "centrelinkCardsHeld",
       type: "multiselect",
       placeholder: "Concession Cards",
-      width: 270,
       options: CONCESSION_CARD_OPTIONS,
     },
   ];
@@ -224,8 +225,14 @@ export default function CentrelinkModal({ modalData }) {
           CRN: form.getFieldValue([owner, "CRN"]),
           paymentType: form.getFieldValue([owner, "paymentType"]),
           fortnightlyPayment: form.getFieldValue([owner, "fortnightlyPayment"]),
-          annualPaymentAmount: form.getFieldValue([owner, "annualPaymentAmount"]),
-          centrelinkCardsHeld: form.getFieldValue([owner, "centrelinkCardsHeld"]),
+          annualPaymentAmount: form.getFieldValue([
+            owner,
+            "annualPaymentAmount",
+          ]),
+          centrelinkCardsHeld: form.getFieldValue([
+            owner,
+            "centrelinkCardsHeld",
+          ]),
         })),
     [allowPartner, availableOwnerOptions, form, selectedOwners],
   );
@@ -329,7 +336,9 @@ export default function CentrelinkModal({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Centrelink"} updated successfully`);
+      message.success(
+        `${modalData?.title || "Centrelink"} updated successfully`,
+      );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
@@ -343,7 +352,7 @@ export default function CentrelinkModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}
@@ -401,7 +410,9 @@ export default function CentrelinkModal({ modalData }) {
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
                   <Button
                     type="primary"

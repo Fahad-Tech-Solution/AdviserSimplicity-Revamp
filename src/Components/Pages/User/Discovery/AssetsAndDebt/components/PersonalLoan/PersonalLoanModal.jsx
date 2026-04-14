@@ -3,7 +3,10 @@ import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
 import {
   InvestmentOffersData,
   discoveryDataAtom,
@@ -149,11 +152,14 @@ export default function PersonalLoanModal({ modalData }) {
     const mapped = institutions
       .map((item) => ({
         value: String(item?._id ?? item?.value ?? ""),
-        label: item?.platformName || item?.label || item?.name || item?._id || "",
+        label:
+          item?.platformName || item?.label || item?.name || item?._id || "",
       }))
       .filter((option) => option.value && option.label);
 
-    const existingValues = (Array.isArray(sectionData?.client) ? sectionData.client : [])
+    const existingValues = (
+      Array.isArray(sectionData?.client) ? sectionData.client : []
+    )
       .map((loan) => loan?.LenderCurrent)
       .filter(Boolean);
 
@@ -166,9 +172,14 @@ export default function PersonalLoanModal({ modalData }) {
     return mapped;
   }, [investmentOffers, sectionData?.client]);
 
-  const initialValues = useMemo(() => buildInitialValues(sectionData), [sectionData]);
-  const numberOfLoans = Form.useWatch("numberOfLoans", form) || initialValues.numberOfLoans;
-  const personalLoans = Form.useWatch("personalLoans", form) || initialValues.personalLoans;
+  const initialValues = useMemo(
+    () => buildInitialValues(sectionData),
+    [sectionData],
+  );
+  const numberOfLoans =
+    Form.useWatch("numberOfLoans", form) || initialValues.numberOfLoans;
+  const personalLoans =
+    Form.useWatch("personalLoans", form) || initialValues.personalLoans;
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -211,7 +222,6 @@ export default function PersonalLoanModal({ modalData }) {
         type: "select",
         options: lenderOptions,
         placeholder: "Lender",
-        width: 250,
       },
       {
         title: "Loan Balance",
@@ -220,7 +230,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanBalance",
         type: "text",
         placeholder: "Loan Balance",
-        width: 150,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -235,7 +244,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanType",
         type: "select",
         options: LOAN_TYPE_OPTIONS,
-        width: 130,
       },
       {
         title: "Repayments Amount",
@@ -244,7 +252,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "RepaymentsAmount",
         type: "text",
         placeholder: "Repayments Amount",
-        width: 170,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -260,7 +267,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "Frequency",
         type: "select",
         options: FREQUENCY_OPTIONS,
-        width: 150,
         onChange: (_, record, __, currentForm) => {
           calculateAnnualRepayments(record, currentForm);
         },
@@ -272,7 +278,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "AnnualRepayments",
         type: "text",
         placeholder: "Annual Repayments",
-        width: 180,
         disabled: true,
         editable: true,
       },
@@ -283,7 +288,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "InterestRate",
         type: "text",
         placeholder: "Interest Rate (p.a)",
-        width: 170,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -298,7 +302,6 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanTerm",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 140,
       },
       {
         title: "Loan Term Remaining",
@@ -307,13 +310,11 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 180,
       },
       {
         title: "Action",
         dataIndex: "action",
         key: "action",
-        width: 80,
         editable: false,
         renderEdit: ({ record }) => (
           <Button
@@ -346,7 +347,9 @@ export default function PersonalLoanModal({ modalData }) {
   );
 
   const handleFinish = async (values) => {
-    const loans = (Array.isArray(values?.personalLoans) ? values.personalLoans : [])
+    const loans = (
+      Array.isArray(values?.personalLoans) ? values.personalLoans : []
+    )
       .slice(0, Number(values?.numberOfLoans) || 0)
       .map((loan) => ({
         ...loan,
@@ -383,7 +386,9 @@ export default function PersonalLoanModal({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Personal Loan"} updated successfully`);
+      message.success(
+        `${modalData?.title || "Personal Loan"} updated successfully`,
+      );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
@@ -454,7 +459,9 @@ export default function PersonalLoanModal({ modalData }) {
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
                   <Button
                     type="primary"

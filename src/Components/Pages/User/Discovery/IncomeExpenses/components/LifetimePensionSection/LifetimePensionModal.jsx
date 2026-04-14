@@ -4,7 +4,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
 import { discoveryDataAtom } from "../../../../../../../store/authState.js";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
 import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 
@@ -95,7 +98,10 @@ function buildInitialValues(sectionData, allowPartner) {
   return {
     owner,
     client: buildInitialPerson(sectionData?.client, sectionData?.clientTotal),
-    partner: buildInitialPerson(sectionData?.partner, sectionData?.partnerTotal),
+    partner: buildInitialPerson(
+      sectionData?.partner,
+      sectionData?.partnerTotal,
+    ),
   };
 }
 
@@ -149,10 +155,15 @@ export default function LifetimePensionModal({ modalData }) {
     });
 
     return Array.from(mergedMap.values());
-  }, [form, modalData?.fundOptions, sectionData?.client?.fundName, sectionData?.partner?.fundName]);
+  }, [
+    form,
+    modalData?.fundOptions,
+    sectionData?.client?.fundName,
+    sectionData?.partner?.fundName,
+  ]);
 
   const LIFETIME_PENSION_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 120 },
+    { title: "Owner", key: "owner", kind: "owner", width: 80 },
     {
       title: "Fund Name",
       dataIndex: "fundName",
@@ -161,7 +172,6 @@ export default function LifetimePensionModal({ modalData }) {
       type: "select",
       options: fundOptions,
       placeholder: "Fund Name",
-      width: 150,
     },
     {
       title: "Fortnight Payment",
@@ -170,7 +180,6 @@ export default function LifetimePensionModal({ modalData }) {
       field: "regularIncomePerFortnight",
       type: "text",
       placeholder: "Fortnight Payment",
-      width: 180,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -188,7 +197,6 @@ export default function LifetimePensionModal({ modalData }) {
       placeholder: "Annual Payment",
       disabled: true,
       editable: true,
-      width: 170,
     },
     {
       title: "Centrelink Deductible Amount",
@@ -197,7 +205,6 @@ export default function LifetimePensionModal({ modalData }) {
       field: "centrelinkDeductibleAmount",
       type: "text",
       placeholder: "Centrelink Deductible Amount",
-      width: 240,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -211,7 +218,6 @@ export default function LifetimePensionModal({ modalData }) {
       key: "isPension",
       field: "isPension",
       type: "yesNoSwitch",
-      width: 130,
     },
   ];
 
@@ -306,7 +312,9 @@ export default function LifetimePensionModal({ modalData }) {
             regularIncomePerFortnight: formatCurrencyValue(
               sourceValues?.client?.regularIncomePerFortnight,
             ),
-            regularIncomePA: formatCurrencyValue(sourceValues?.client?.regularIncomePA),
+            regularIncomePA: formatCurrencyValue(
+              sourceValues?.client?.regularIncomePA,
+            ),
             centrelinkDeductibleAmount: formatCurrencyValue(
               sourceValues?.client?.centrelinkDeductibleAmount,
             ),
@@ -320,7 +328,9 @@ export default function LifetimePensionModal({ modalData }) {
             regularIncomePerFortnight: formatCurrencyValue(
               sourceValues?.partner?.regularIncomePerFortnight,
             ),
-            regularIncomePA: formatCurrencyValue(sourceValues?.partner?.regularIncomePA),
+            regularIncomePA: formatCurrencyValue(
+              sourceValues?.partner?.regularIncomePA,
+            ),
             centrelinkDeductibleAmount: formatCurrencyValue(
               sourceValues?.partner?.centrelinkDeductibleAmount,
             ),
@@ -363,7 +373,7 @@ export default function LifetimePensionModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}
@@ -421,7 +431,9 @@ export default function LifetimePensionModal({ modalData }) {
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
                   <Button
                     type="primary"

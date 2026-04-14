@@ -66,6 +66,18 @@ function resolveFieldName(record, column, rowPathKey, getFieldName) {
   return [...rowPath, fieldKey];
 }
 
+function buildLockedWidthStyle(width) {
+  if (width === null || width === undefined || width === "") {
+    return {};
+  }
+
+  return {
+    width,
+    minWidth: width,
+    maxWidth: width,
+  };
+}
+
 export default function EditableDynamicTable({
   form,
   editing = false,
@@ -77,72 +89,88 @@ export default function EditableDynamicTable({
 }) {
   const resolvedColumns = useMemo(
     () =>
-      (columns || []).map((column) => ({
-        title: column.title,
-        key: column.key || column.dataIndex,
-        width: column.width,
-        dataIndex: column.dataIndex,
-        render: (_, record) => {
-          const value = record?.[column.dataIndex];
-          const fieldName = resolveFieldName(
-            record,
-            column,
-            rowPathKey,
-            getFieldName,
-          );
-          const resolvedAction = column.action
-            ? {
-                ...column.action,
-                onClick: (payload) =>
-                  column.action?.onClick?.({
-                    ...payload,
-                    record,
-                    column,
-                    form,
-                    fieldName,
-                    value: form?.getFieldValue?.(fieldName),
-                  }),
-              }
-            : undefined;
+      (columns || []).map((column) => {
+        const lockedWidthStyle = buildLockedWidthStyle(column.width);
 
-          if (editing) {
-            if (typeof column.renderEdit === "function") {
-              return column.renderEdit({ record, column, form });
-            }
-
-            if (column.editable === false || column.justText) {
-              return formatCellValue(value, column, record);
-            }
-
-            return (
-              <DynamicFormField
-                form={form}
-                name={fieldName}
-                type={column.type || "text"}
-                options={column.options}
-                placeholder={column.placeholder}
-                rules={column.rules}
-                disabled={column.disabled}
-                hidden={column.hidden}
-                dependencies={column.dependencies}
-                valuePropName={column.valuePropName}
-                action={resolvedAction}
-                fieldProps={column.fieldProps}
-                formItemProps={{
-                  style: { marginBottom: 0 },
-                  label: null,
-                  ...column.formItemProps,
-                }}
-                onChange={(nextValue) =>
-                  column.onChange?.(nextValue, record, column, form)
-                }
-              />
+        return {
+          title: column.title,
+          key: column.key || column.dataIndex,
+          width: column.width,
+          dataIndex: column.dataIndex,
+          onCell: () => ({
+            style: lockedWidthStyle,
+          }),
+          onHeaderCell: () => ({
+            style: lockedWidthStyle,
+          }),
+          render: (_, record) => {
+            const value = record?.[column.dataIndex];
+            const fieldName = resolveFieldName(
+              record,
+              column,
+              rowPathKey,
+              getFieldName,
             );
-          }
+            const resolvedAction = column.action
+              ? {
+                  ...column.action,
+                  onClick: (payload) =>
+                    column.action?.onClick?.({
+                      ...payload,
+                      record,
+                      column,
+                      form,
+                      fieldName,
+                      value: form?.getFieldValue?.(fieldName),
+                    }),
+                }
+              : undefined;
 
-          return formatCellValue(value, column, record);
-        },
-      })),
+            if (editing) {
+              if (typeof column.renderEdit === "function") {
+                return (
+                  <div style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                    {column.renderEdit({ record, column, form })}
+                  </div>
+                );
+              }
+
+              if (column.editable === false || column.justText) {
+                return formatCellValue(value, column, record);
+              }
+
+              return (
+                <div style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                  <DynamicFormField
+                    form={form}
+                    name={fieldName}
+                    type={column.type || "text"}
+                    options={column.options}
+                    placeholder={column.placeholder}
+                    rules={column.rules}
+                    disabled={column.disabled}
+                    hidden={column.hidden}
+                    dependencies={column.dependencies}
+                    valuePropName={column.valuePropName}
+                    action={resolvedAction}
+                    fieldProps={column.fieldProps}
+                    formItemProps={{
+                      style: { marginBottom: 0 },
+                      label: null,
+                      ...column.formItemProps,
+                    }}
+                    onChange={(nextValue) =>
+                      column.onChange?.(nextValue, record, column, form)
+                    }
+                  />
+                </div>
+              );
+            }
+
+            return formatCellValue(value, column, record);
+          },
+        };
+      }),
     [columns, editing, form, getFieldName, rowPathKey],
   );
 

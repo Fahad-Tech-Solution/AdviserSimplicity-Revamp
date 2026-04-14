@@ -129,7 +129,7 @@ export default function OverseasPensionModal({ modalData }) {
   );
 
   const OVERSEAS_PENSION_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 120 },
+    { title: "Owner", key: "owner", kind: "owner", width: 80},
     {
       title: "Country",
       dataIndex: "country",
@@ -137,7 +137,6 @@ export default function OverseasPensionModal({ modalData }) {
       field: "country",
       type: "text",
       placeholder: "Country",
-      width: 170,
     },
     {
       title: "Frequency",
@@ -146,7 +145,6 @@ export default function OverseasPensionModal({ modalData }) {
       field: "frequency",
       type: "select",
       options: optionsFrequency,
-      width: 150,
       onChange: (_, record, __, currentForm) => {
         calculateAnnualRepayments(record, currentForm);
       },
@@ -158,7 +156,6 @@ export default function OverseasPensionModal({ modalData }) {
       field: "regularPayment",
       type: "text",
       placeholder: "Regular Payment",
-      width: 170,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -174,7 +171,6 @@ export default function OverseasPensionModal({ modalData }) {
       field: "annualPayment",
       type: "text",
       placeholder: "Annual Payment",
-      width: 170,
       disabled: true,
     },
   ];
@@ -310,7 +306,7 @@ export default function OverseasPensionModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}

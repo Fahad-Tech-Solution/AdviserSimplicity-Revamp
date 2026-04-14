@@ -84,7 +84,7 @@ export default function SoleTraderModal({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
 
   const SOLE_TRADER_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 120 },
+    { title: "Owner", key: "owner", kind: "owner", width: 80 },
     {
       title: "Business Name",
       dataIndex: "businessName",
@@ -92,7 +92,6 @@ export default function SoleTraderModal({ modalData }) {
       field: "businessName",
       type: "text",
       placeholder: "Business Name",
-      width: 250,
     },
     {
       title: "ABN",
@@ -101,7 +100,6 @@ export default function SoleTraderModal({ modalData }) {
       field: "ABN",
       type: "number",
       placeholder: "ABN",
-      width: 140,
     },
     {
       title: "Business Address",
@@ -109,7 +107,6 @@ export default function SoleTraderModal({ modalData }) {
       key: "businessAddress",
       field: "businessAddress",
       type: "textarea",
-      width: 250,
       placeholder: "Business Address",
     },
     {
@@ -119,7 +116,6 @@ export default function SoleTraderModal({ modalData }) {
       field: "postCode",
       type: "postalcode-search",
       placeholder: "Postcode/Suburb",
-      width: 180,
     },
     {
       title: "Net Business Income",
@@ -128,7 +124,6 @@ export default function SoleTraderModal({ modalData }) {
       field: "netBusinessIncome",
       type: "text",
       placeholder: "Net Business Income",
-      width: 170,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -143,7 +138,6 @@ export default function SoleTraderModal({ modalData }) {
       field: "goodWill",
       type: "text",
       placeholder: "GoodWill Business Valuation",
-      width: 190,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [record.formPath, column.field],
@@ -303,7 +297,7 @@ export default function SoleTraderModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}

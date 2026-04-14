@@ -45,7 +45,7 @@ function buildOwnerLabel(type, discoveryData) {
   return `${clientName} & ${partnerName}`;
 }
 
-function buildInitialValues(sectionData = {}) {
+function buildInitialValues(sectionData = {}, noJoint = false) {
   return {
     client: {
       currentBalanceArray: sectionData?.client || [],
@@ -57,7 +57,7 @@ function buildInitialValues(sectionData = {}) {
       currentBalance: sectionData?.partnerCurrentBalance || "",
       costBase: sectionData?.partnerCostBaseTemp || "",
     },
-    joint: {
+    joint: noJoint ? undefined : {
       currentBalanceArray: sectionData?.joint || [],
       currentBalance: sectionData?.jointCurrentBalance || "",
       costBase: sectionData?.jointCostBaseTemp || "",
@@ -65,12 +65,6 @@ function buildInitialValues(sectionData = {}) {
   };
 }
 
-function calculateTotalBalance(entries = []) {
-  return entries.reduce(
-    (sum, item) => sum + parseCurrencyValue(item?.currentBalance),
-    0,
-  );
-}
 
 function calculateDisplayTotal(primaryBalance, jointBalance) {
   const primary = parseCurrencyValue(primaryBalance);
@@ -112,12 +106,34 @@ const MiddleWare = ({ modalData }) => {
       countLabel: "Number of Australian Shares/ETFs",
       width: 800,
     },
+    managedFund: {
+      addEndpoint: "/api/managedFund/Add",
+      updateEndpoint: "/api/managedFund/Update",
+      countLabel: "Number of Platform Investments",
+      width: 800,
+    },
+    investmentBondFinance: {
+      addEndpoint: "/api/investmentBondFinance/Add",
+      updateEndpoint: "/api/investmentBondFinance/Update",
+      countLabel: "Number of Investment Bonds",
+      width: 800,
+    },
+    superAnnuationIssues: {
+      addEndpoint: "/api/superAnnuationIssues/Add",
+      updateEndpoint: "/api/superAnnuationIssues/Update",
+      countLabel: "Number of Super Funds",
+      width: 1000,
+      noJoint:true,
+    },
   };
 
   const config =
     MIDDLEWARE_CONFIG[modalData?.key] || MIDDLEWARE_CONFIG.bankAccountFinance;
   config.pageLimit = modalData?.tableRows || 10;
-  const hasCostBase = modalData?.key === "australianShareMarket";
+  const includeJoint = !config.noJoint;
+  const hasCostBase = ["australianShareMarket", "managedFund"].includes(
+    modalData?.key,
+  );
 
   const showPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
@@ -125,7 +141,7 @@ const MiddleWare = ({ modalData }) => {
   const sectionData = discoveryData?.[modalData?.key] || {};
 
   const initialValues = useMemo(
-    () => buildInitialValues(sectionData),
+    () => buildInitialValues(sectionData, config.noJoint),
     [sectionData],
   );
 
@@ -160,7 +176,10 @@ const MiddleWare = ({ modalData }) => {
         parentForm: currentForm,
         sectionKey: modalData?.key,
         tableRows: modalData?.tableRows || 10,
-        closeModal: () => setDetailModalOpen(false),
+        closeModal: () => {
+          setDetailModalOpen(false);
+          setEditing(true);
+        },
       });
     },
     [modalData?.innerComponent, modalData?.key, modalData?.title],
@@ -186,6 +205,40 @@ const MiddleWare = ({ modalData }) => {
           name: "Open Current Balance",
           onClick: openInnerModal,
         },
+        renderView: ({ value, record }) => (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                minHeight: 26,
+                width: 100,
+                padding: "2px 11px",
+                borderRadius: 7,
+                lineHeight: "22px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={value || ""}
+            >
+              {value || ""}
+            </div>
+            <Button
+              type="primary"
+              size="small"
+              style={{ width: 25, padding: 0 }}
+              onClick={() => openInnerModal({ record, form })}
+            >
+              ↗
+            </Button>
+          </div>
+        ),
       },
     ];
 
@@ -217,24 +270,25 @@ const MiddleWare = ({ modalData }) => {
     ];
 
     if (showPartner) {
-      rows.push(
-        {
-          key: "partner",
-          formPath: ["partner"],
-          owner: buildOwnerLabel("partner", discoveryData),
-          currentBalance:
-            partnerCurrentBalance ?? initialValues?.partner?.currentBalance,
-          costBase: partnerCostBase ?? initialValues?.partner?.costBase,
-        },
-        {
+      rows.push({
+        key: "partner",
+        formPath: ["partner"],
+        owner: buildOwnerLabel("partner", discoveryData),
+        currentBalance:
+          partnerCurrentBalance ?? initialValues?.partner?.currentBalance,
+        costBase: partnerCostBase ?? initialValues?.partner?.costBase,
+      });
+
+      if (includeJoint) {
+        rows.push({
           key: "joint",
           formPath: ["joint"],
           owner: buildOwnerLabel("joint", discoveryData),
           currentBalance:
             jointCurrentBalance ?? initialValues?.joint?.currentBalance,
           costBase: jointCostBase ?? initialValues?.joint?.costBase,
-        },
-      );
+        });
+      }
     }
 
     return rows;
@@ -242,6 +296,7 @@ const MiddleWare = ({ modalData }) => {
     clientCurrentBalance,
     clientCostBase,
     discoveryData,
+    includeJoint,
     initialValues,
     jointCurrentBalance,
     jointCostBase,
@@ -280,33 +335,38 @@ const MiddleWare = ({ modalData }) => {
       partner: showPartner
         ? sourceValues?.partner?.currentBalanceArray || []
         : [],
-      joint: showPartner ? sourceValues?.joint?.currentBalanceArray || [] : [],
+      joint:
+        showPartner && includeJoint
+          ? sourceValues?.joint?.currentBalanceArray || []
+          : [],
       clientCurrentBalance: sourceValues?.client?.currentBalance || "",
       partnerCurrentBalance: showPartner
         ? sourceValues?.partner?.currentBalance || ""
         : "",
-      jointCurrentBalance: showPartner
+      jointCurrentBalance: showPartner && includeJoint
         ? sourceValues?.joint?.currentBalance || ""
         : "",
-      clientTotal: showPartner
+      clientTotal: showPartner && includeJoint
         ? calculateDisplayTotal(
             sourceValues?.client?.currentBalance,
             sourceValues?.joint?.currentBalance,
           )
         : sourceValues?.client?.currentBalance || "",
-      partnerTotal: showPartner
+      partnerTotal: showPartner && includeJoint
         ? calculateDisplayTotal(
             sourceValues?.partner?.currentBalance,
             sourceValues?.joint?.currentBalance,
           )
-        : "",
+        : showPartner
+          ? sourceValues?.partner?.currentBalance || ""
+          : "",
       ...(hasCostBase
         ? {
             clientCostBaseTemp: sourceValues?.client?.costBase || "",
             partnerCostBaseTemp: showPartner
               ? sourceValues?.partner?.costBase || ""
               : "",
-            jointCostBaseTemp: showPartner
+            jointCostBaseTemp: showPartner && includeJoint
               ? sourceValues?.joint?.costBase || ""
               : "",
           }

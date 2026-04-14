@@ -4,8 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { IoReload, IoWarning } from "react-icons/io5";
 import { RiEdit2Fill } from "react-icons/ri";
-import EditableDynamicTable from "../../../../../Common/EditableDynamicTable";
-import { toCommaAndDollar } from "../../../../../../hooks/helpers";
+import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
+import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -29,7 +29,9 @@ function formatCurrencyValue(value) {
 }
 
 function normalizeAsxCode(value) {
-  return String(value ?? "").trim().toUpperCase();
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
 }
 
 function isValidAsxCode(value) {
@@ -79,11 +81,20 @@ function calculateCurrentBalance(sharePrice, shares) {
 async function fetchShareQuote(code) {
   const normalizedCode = normalizeAsxCode(code);
   if (!isValidAsxCode(normalizedCode)) return null;
+  console.log("normalizedCode", normalizedCode);
+
+  const settings = {
+    headers: {
+      "X-RapidAPI-Key": "5e10294d2amsh7867e98a73e61abp176da5jsn21b129bfc40a",
+      "X-RapidAPI-Host": "apidojo-yahoo-finance-v1.p.rapidapi.com",
+    },
+  };
 
   const response = await axios.get(
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
+    `https://apidojo-yahoo-finance-v1.p.rapidapi.com/market/v2/get-quotes?region=AU&symbols=${encodeURIComponent(
       normalizedCode,
     )}`,
+    settings,
   );
 
   const company = response?.data?.quoteResponse?.result?.[0];
@@ -142,15 +153,21 @@ export default function AustralianShare({ modalData }) {
     const quote = await fetchShareQuote(code);
     if (!quote) return;
 
-    currentForm.setFieldValue(["shares", index, "ASXCode"], normalizeAsxCode(code));
-    currentForm.setFieldValue(["shares", index, "companyName"], quote.companyName);
-    currentForm.setFieldValue(["shares", index, "sharePrice"], quote.sharePrice);
+    currentForm.setFieldValue(
+      ["shares", index, "ASXCode"],
+      normalizeAsxCode(code),
+    );
+    currentForm.setFieldValue(
+      ["shares", index, "companyName"],
+      quote.companyName,
+    );
+    currentForm.setFieldValue(
+      ["shares", index, "sharePrice"],
+      quote.sharePrice,
+    );
     currentForm.setFieldValue(
       ["shares", index, "currentBalance"],
-      calculateCurrentBalance(
-        quote.sharePrice,
-        currentShares?.[index]?.shares,
-      ),
+      calculateCurrentBalance(quote.sharePrice, currentShares?.[index]?.shares),
     );
   };
 
@@ -214,7 +231,7 @@ export default function AustralianShare({ modalData }) {
       title: "No#",
       dataIndex: "rowNumber",
       key: "rowNumber",
-      width: 60,
+      width: 50,
       editable: false,
     },
     {
@@ -231,7 +248,6 @@ export default function AustralianShare({ modalData }) {
       field: "ASXCode",
       type: "text",
       placeholder: "ASX Code",
-      width: 150,
       onChange: async (value, record, column, currentForm) => {
         const nextCode = normalizeAsxCode(value?.target?.value);
         currentForm.setFieldValue([...record.formPath, column.field], nextCode);
@@ -274,7 +290,7 @@ export default function AustralianShare({ modalData }) {
       field: "companyName",
       type: "text",
       placeholder: "Company Name",
-      width: 200,
+      disabled: true,
     },
     {
       title: "Share Price",
@@ -283,10 +299,13 @@ export default function AustralianShare({ modalData }) {
       field: "sharePrice",
       type: "text",
       placeholder: "Share Price",
-      width: 140,
+      disabled: true,
       onChange: (value, record, column, currentForm) => {
         const nextPrice = formatCurrencyValue(value?.target?.value);
-        currentForm.setFieldValue([...record.formPath, column.field], nextPrice);
+        currentForm.setFieldValue(
+          [...record.formPath, column.field],
+          nextPrice,
+        );
         currentForm.setFieldValue(
           [...record.formPath, "currentBalance"],
           calculateCurrentBalance(
@@ -303,10 +322,12 @@ export default function AustralianShare({ modalData }) {
       field: "shares",
       type: "number",
       placeholder: "Number of Shares",
-      width: 120,
       onChange: (value, record, column, currentForm) => {
         const nextShares = value?.target?.value ?? value;
-        currentForm.setFieldValue([...record.formPath, column.field], nextShares);
+        currentForm.setFieldValue(
+          [...record.formPath, column.field],
+          nextShares,
+        );
         currentForm.setFieldValue(
           [...record.formPath, "currentBalance"],
           calculateCurrentBalance(
@@ -323,7 +344,6 @@ export default function AustralianShare({ modalData }) {
       field: "costBase",
       type: "text",
       placeholder: "Cost Base",
-      width: 140,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [...record.formPath, column.field],
@@ -338,25 +358,14 @@ export default function AustralianShare({ modalData }) {
       field: "currentBalance",
       type: "text",
       placeholder: "Current Balance",
-      width: 160,
       disabled: true,
     },
     {
       title: "Action",
       key: "action",
       dataIndex: "action",
-      width: 90,
       editable: false,
-      renderView: ({ record }) => (
-        <Button
-          type="text"
-          danger
-          aria-label={`Remove row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
-        >
-          🗑️
-        </Button>
-      ),
+      renderView: () => "--",
       renderEdit: ({ record }) => (
         <Button
           type="text"
@@ -401,7 +410,7 @@ export default function AustralianShare({ modalData }) {
         }}
       >
         <Row gutter={[16, 16]}>
-          {previousDataExists ? (
+          {previousDataExists && editing ? (
             <Col xs={24}>
               <Alert
                 type="warning"
@@ -415,7 +424,13 @@ export default function AustralianShare({ modalData }) {
                       justifyContent: "space-between",
                     }}
                   >
-                    <span>Please press this button to update share price</span>
+                    <span
+                      onClick={() => {
+                        console.log("All values", form.getFieldsValue());
+                      }}
+                    >
+                      Please press this button to update share price
+                    </span>
                     <Button
                       type="default"
                       icon={<IoReload />}
@@ -472,7 +487,9 @@ export default function AustralianShare({ modalData }) {
               <Space>
                 {!editing ? (
                   <>
-                    <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                    <Button onClick={() => modalData?.closeModal?.()}>
+                      Cancel
+                    </Button>
                     <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>

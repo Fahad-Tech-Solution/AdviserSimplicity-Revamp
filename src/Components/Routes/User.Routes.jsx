@@ -23,9 +23,10 @@ import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/
 import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
-import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/BankTermDetailsModal.jsx";
-import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare.jsx";
-import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestments.jsx";
+import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/Bankandterm/BankTermDetailsModal.jsx";
+import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
+import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
+import SuperFunds from "../Pages/User/Discovery/FinancialInvestments/components/SuperFunds/SuperFunds.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -431,20 +432,26 @@ export const discoveryRoutes = [
         component: <MiddleWare />,
         innerComponent: <PlatformInvestments />,
         modalWidth: "620px",
-        tableRows: 50,
+        tableRows: 5,
       },
       {
         title: "Investment Bond",
         key: "investmentBondFinance",
         icon: "🏅",
-        component: null,
+        component: <MiddleWare />,
+        innerComponent: <PlatformInvestments />,
+        modalWidth: "620px",
+        tableRows: 5,
       },
       //SuperAndRetirement
       {
         title: "Super Funds",
         key: "superAnnuationIssues",
         icon: "🐷",
-        component: null,
+        component: <MiddleWare />,
+        innerComponent: <SuperFunds />,
+        modalWidth: "620px",
+        tableRows: 5,
       },
       {
         title: "Account Based Pension",

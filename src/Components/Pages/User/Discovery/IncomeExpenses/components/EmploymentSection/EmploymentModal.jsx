@@ -108,7 +108,7 @@ export default function EmploymentModal({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
 
   const EMPLOYMENT_TABLE_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 120 },
+    { title: "Owner", key: "owner", kind: "owner", width: 70 },
     {
       title: "Occupation",
       key: "occupation",
@@ -124,7 +124,7 @@ export default function EmploymentModal({ modalData }) {
       field: "employmentStatus",
       type: "select",
       options: EMPLOYMENT_STATUS_OPTIONS,
-      width: 150,
+      width: 120,
     },
     {
       title: "Name of Company",
@@ -132,7 +132,7 @@ export default function EmploymentModal({ modalData }) {
       dataIndex: "nameOfCompany",
       field: "nameOfCompany",
       type: "text",
-      width: 160,
+      width: 150,
     },
     {
       title: "Start Date",
@@ -140,7 +140,7 @@ export default function EmploymentModal({ modalData }) {
       dataIndex: "startDate",
       field: "startDate",
       type: "date",
-      width: 200,
+      width: 130,
     },
     {
       title: "Hours Worked",
@@ -150,7 +150,7 @@ export default function EmploymentModal({ modalData }) {
       type: "number",
       min: 0,
       step: 0.5,
-      width: 110,
+      width: 90,
     },
     {
       title: "Salary Detail",
@@ -181,7 +181,7 @@ export default function EmploymentModal({ modalData }) {
           });
         },
       },
-      width: 120,
+      width: 90,
     },
     {
       title: "Salary Packaging",
@@ -265,6 +265,7 @@ export default function EmploymentModal({ modalData }) {
     [allowPartner, sectionData],
   );
   const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
+
   const tableColumns = useMemo(
     () =>
       EMPLOYMENT_TABLE_COLUMNS.map((column) =>
@@ -278,6 +279,7 @@ export default function EmploymentModal({ modalData }) {
       ),
     [],
   );
+
   const rows = useMemo(
     () =>
       (selectedOwners || [])
@@ -464,7 +466,7 @@ export default function EmploymentModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
         open={openModal}
         onClose={() => setOpenModal(false)}

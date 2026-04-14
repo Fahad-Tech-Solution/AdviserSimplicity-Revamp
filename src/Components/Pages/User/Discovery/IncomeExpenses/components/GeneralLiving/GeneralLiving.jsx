@@ -171,7 +171,6 @@ const COLUMNS = [
     dataIndex: "name",
     key: "name",
     editable: false,
-    width: 180,
   },
   {
     title: "Amount ($)",
@@ -180,7 +179,6 @@ const COLUMNS = [
     field: "amount",
     type: "text",
     placeholder: "Enter Amount",
-    width: 140,
     onChange: (value, record, column, form) => {
       const formatted = formatCurrencyValue(value?.target?.value);
       form.setFieldValue([...record.formPath, column.field], formatted);
@@ -193,7 +191,6 @@ const COLUMNS = [
     field: "frequency",
     type: "select",
     options: FREQUENCY_OPTIONS,
-    width: 140,
     onChange: (value, record, column, form) => {
       form.setFieldValue([...record.formPath, column.field], value);
     },
