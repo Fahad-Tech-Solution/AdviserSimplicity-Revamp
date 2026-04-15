@@ -664,7 +664,7 @@ joint: jointSelected
   };
 
   return (
-    <div style={{ padding: "16px 0 4px " }}>
+    <div style={{ padding: "16px  4px 0 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}

@@ -28,6 +28,7 @@ import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/c
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
 import SuperFunds from "../Pages/User/Discovery/FinancialInvestments/components/SuperFunds/SuperFunds.jsx";
+import InvestmentPropertiesModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentProperties/InvestmentPropertiesModal.jsx";
 import AccountBasedPension from "../Pages/User/Discovery/FinancialInvestments/components/AccountBasedPension/AccountBasedPension.jsx";
 import superFundsIcon from "../../assets/image/SectionImages/SuperFunds.jpeg";
 import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/Annuities/Annuities.jsx";
@@ -487,7 +488,14 @@ export const discoveryRoutes = [
         title: "Investment Properties",
         key: "investmentPropertyDetails",
         icon: "🏘️",
-        component: null,
+        component: <InvestmentPropertiesModal />,
+        modalWidth: "1200px",
+        tableRows: 10,
+        firstNameKey: "Property Portfolio",
+        secondNameKey: "Total Debt",
+        firstTotalKey: "propertyPortfolio",
+        secondTotalKey: "totalDebt",
+        showSecondTotal: true,
       },
       {
         title: "Investment Loan",

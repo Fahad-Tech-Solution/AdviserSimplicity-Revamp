@@ -196,6 +196,22 @@ export default function CreditCardModal({ modalData }) {
     form.setFieldValue("creditCards", nextCards);
   }, [creditCards, form, numberOfCards]);
 
+  const handleDeleteRow = (rowIndex) => {
+    const current = Array.isArray(form.getFieldValue("creditCards"))
+      ? [...form.getFieldValue("creditCards")]
+      : [];
+
+    if (current.length <= 1) {
+      form.setFieldValue("creditCards", [buildEmptyCard()]);
+      form.setFieldValue("numberOfCards", 1);
+      return;
+    }
+
+    const filtered = current.filter((_, idx) => idx !== rowIndex);
+    form.setFieldValue("creditCards", filtered);
+    form.setFieldValue("numberOfCards", filtered.length);
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -303,8 +319,25 @@ export default function CreditCardModal({ modalData }) {
         type: "select",
         options: LOAN_TERM_OPTIONS,
       },
+      {
+        title: "Action",
+        dataIndex: "action",
+        key: "action",
+        editable: false,
+        renderEdit: ({ record }) => (
+          <Button
+            type="text"
+            danger
+            onClick={() => handleDeleteRow(record.rowIndex)}
+            disabled={!editing}
+          >
+            🗑️
+          </Button>
+        ),
+        renderView: () => "--",
+      },
     ],
-    [lenderOption],
+    [editing, lenderOption],
   );
 
   const rows = useMemo(
