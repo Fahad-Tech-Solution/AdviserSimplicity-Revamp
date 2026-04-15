@@ -52,13 +52,25 @@ function hasMeaningfulValues(initialValues = {}) {
 
 export default function SuperFundsGroupInsuranceModal({ modalData }) {
   const [form] = Form.useForm();
+
   const initialValues = useMemo(
     () => modalData?.initialValues?.groupInsuranceDetails || {},
     [modalData],
   );
-  const [editing, setEditing] = useState(() => !hasMeaningfulValues(initialValues));
 
-  const watchedValues = Form.useWatch([], form) || initialValues;
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(initialValues),
+  );
+
+  const lifeCover = Form.useWatch("lifeCover", form);
+  const TPDCover = Form.useWatch("TPDCover", form);
+  const coverType = Form.useWatch("coverType", form);
+  const cost = Form.useWatch("cost", form);
+  const monthlyIncome = Form.useWatch("monthlyIncome", form);
+  const waitingPeriod = Form.useWatch("waitingPeriod", form);
+  const BenefitPeriod = Form.useWatch("BenefitPeriod", form);
+  const coverType2 = Form.useWatch("coverType2", form);
+  const cost2 = Form.useWatch("cost2", form);
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -70,14 +82,36 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       {
         key: "group-insurance",
         formPath: [],
-        ...watchedValues,
+        lifeCover: lifeCover ?? initialValues?.lifeCover ?? "",
+        TPDCover: TPDCover ?? initialValues?.TPDCover ?? "",
+        coverType: coverType ?? initialValues?.coverType ?? "",
+        cost: cost ?? initialValues?.cost ?? "",
+        monthlyIncome: monthlyIncome ?? initialValues?.monthlyIncome ?? "",
+        waitingPeriod: waitingPeriod ?? initialValues?.waitingPeriod ?? "",
+        BenefitPeriod: BenefitPeriod ?? initialValues?.BenefitPeriod ?? "",
+        coverType2: coverType2 ?? initialValues?.coverType2 ?? "",
+        cost2: cost2 ?? initialValues?.cost2 ?? "",
       },
     ],
-    [watchedValues],
+    [
+      BenefitPeriod,
+      TPDCover,
+      cost,
+      cost2,
+      coverType,
+      coverType2,
+      initialValues,
+      lifeCover,
+      monthlyIncome,
+      waitingPeriod,
+    ],
   );
 
   const formatMoneyChange = (value, record, column, currentForm) => {
-    currentForm.setFieldValue(column.field, formatCurrencyValue(value?.target?.value));
+    currentForm.setFieldValue(
+      column.field,
+      formatCurrencyValue(value?.target?.value),
+    );
   };
 
   const columns = [
@@ -88,7 +122,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "lifeCover",
       type: "text",
       placeholder: "Life Cover",
-      width: 160,
       onChange: formatMoneyChange,
     },
     {
@@ -98,7 +131,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "TPDCover",
       type: "text",
       placeholder: "TPD Cover",
-      width: 160,
       onChange: formatMoneyChange,
     },
     {
@@ -108,7 +140,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "coverType",
       type: "select",
       options: COVER_TYPE_OPTIONS,
-      width: 140,
     },
     {
       title: "Cost p.a.",
@@ -117,7 +148,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "cost",
       type: "text",
       placeholder: "Cost p.a.",
-      width: 140,
       onChange: formatMoneyChange,
     },
     {
@@ -127,7 +157,7 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "monthlyIncome",
       type: "text",
       placeholder: "Monthly Income Protection",
-      width: 180,
+      width: 160,
       onChange: formatMoneyChange,
     },
     {
@@ -137,7 +167,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "waitingPeriod",
       type: "select",
       options: WAITING_PERIOD_OPTIONS,
-      width: 150,
     },
     {
       title: "Benefit Period",
@@ -146,7 +175,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "BenefitPeriod",
       type: "select",
       options: BENEFIT_PERIOD_OPTIONS,
-      width: 150,
     },
     {
       title: "Cover Type",
@@ -155,7 +183,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "coverType2",
       type: "select",
       options: COVER_TYPE_OPTIONS,
-      width: 140,
     },
     {
       title: "Cost p.a.",
@@ -164,7 +191,6 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
       field: "cost2",
       type: "text",
       placeholder: "Cost p.a.",
-      width: 140,
       onChange: formatMoneyChange,
     },
   ];
@@ -185,7 +211,7 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24}>
@@ -198,11 +224,15 @@ export default function SuperFundsGroupInsuranceModal({ modalData }) {
             />
           </Col>
           <Col xs={24}>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
               <Space>
                 {!editing ? (
                   <>
-                    <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                    <Button onClick={() => modalData?.closeModal?.()}>
+                      Cancel
+                    </Button>
                     <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>

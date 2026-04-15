@@ -191,7 +191,6 @@ export default function HomeLoanModal({ modalData }) {
       type: "select",
       options: lenderOptions,
       placeholder: "Lender",
-      width: 260,
     },
     {
       title: "Loan Balance",
@@ -200,7 +199,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "loanBalance",
       type: "text",
       placeholder: "Loan Balance",
-      width: 150,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(column.field, formatCurrencyValue(value));
       },
@@ -212,7 +210,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "loanType",
       type: "select",
       options: LOAN_TYPE_OPTIONS,
-      width: 130,
     },
     {
       title: "Repayments Amount",
@@ -221,7 +218,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "repaymentsAmount",
       type: "text",
       placeholder: "Repayments Amount",
-      width: 160,
       onChange: annualFormula,
     },
     {
@@ -231,11 +227,7 @@ export default function HomeLoanModal({ modalData }) {
       field: "frequency",
       type: "select",
       options: FREQUENCY_OPTIONS,
-      width: 140,
       onChange: annualFormula,
-      fieldProps: {
-        style: { width: "200px" },
-      },
     },
     {
       title: "Annual Repayments",
@@ -245,7 +237,6 @@ export default function HomeLoanModal({ modalData }) {
       type: "text",
       placeholder: "Annual Repayments",
       disabled: true,
-      width: 170,
     },
     {
       title: "Interest Rate (p.a)",
@@ -254,7 +245,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "interestRatePA",
       type: "text",
       placeholder: "Interest Rate (p.a)",
-      width: 160,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(column.field, formatPercentValue(value));
       },
@@ -266,7 +256,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "loanTerm",
       type: "select",
       options: LOAN_TERM_OPTIONS,
-      width: 140,
     },
     {
       title: "Loan Term Remaining",
@@ -275,7 +264,6 @@ export default function HomeLoanModal({ modalData }) {
       field: "loanTermRemaining",
       type: "select",
       options: LOAN_TERM_OPTIONS,
-      width: 180,
     },
   ];
 

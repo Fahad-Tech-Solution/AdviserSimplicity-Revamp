@@ -235,7 +235,7 @@ function InputActionField({
       <Input
         placeholder={placeholder}
         size="small"
-        style={{ height: "26px", borderRadius: "7px", maxWidth: "140px" }}
+        style={{ height: "26px", borderRadius: "7px", maxWidth: "140px", minWidth: "80px" }}
         value={value}
         onChange={onChange}
         disabled={disabled}
@@ -411,6 +411,7 @@ function getInputNode({
         <Select
           placeholder={placeholder}
           options={normalizedOptions}
+          style={{ maxWidth: "140px", minWidth: "100px" }}
           allowClear
           showSearch
           optionFilterProp="label"
@@ -424,6 +425,7 @@ function getInputNode({
           mode="multiple"
           placeholder={placeholder}
           options={normalizedOptions}
+          style={{ maxWidth: "140px", minWidth: "100px" }}
           allowClear
           optionFilterProp="label"
           {...fieldProps}

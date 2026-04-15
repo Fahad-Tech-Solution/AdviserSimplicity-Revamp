@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { useMemo } from "react";
 import DynamicDataTable from "./DynamicDataTable.jsx";
 import DynamicFormField from "./DynamicFormField.jsx";
+import InputActionDisplay from "./InputActionDisplay.jsx";
 
 function toArrayPath(path) {
   if (Array.isArray(path)) return path;
@@ -11,16 +12,15 @@ function toArrayPath(path) {
 
 function resolveOptionsLabel(value, options = []) {
   const normalizedOptions = options.map((option) =>
-    typeof option === "string"
-      ? { label: option, value: option }
-      : option,
+    typeof option === "string" ? { label: option, value: option } : option,
   );
 
   if (Array.isArray(value)) {
     return value
       .map(
         (item) =>
-          normalizedOptions.find((option) => option?.value === item)?.label || item,
+          normalizedOptions.find((option) => option?.value === item)?.label ||
+          item,
       )
       .join(", ");
   }
@@ -129,7 +129,13 @@ export default function EditableDynamicTable({
             if (editing) {
               if (typeof column.renderEdit === "function") {
                 return (
-                  <div style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      maxWidth: "100%",
+                      overflow: "hidden",
+                    }}
+                  >
                     {column.renderEdit({ record, column, form })}
                   </div>
                 );
@@ -140,7 +146,13 @@ export default function EditableDynamicTable({
               }
 
               return (
-                <div style={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                  }}
+                >
                   <DynamicFormField
                     form={form}
                     name={fieldName}
@@ -164,6 +176,17 @@ export default function EditableDynamicTable({
                     }
                   />
                 </div>
+              );
+            }
+
+            if (column.type === "input-action" && resolvedAction) {
+              return (
+                <InputActionDisplay
+                  value={value}
+                  onClick={() => resolvedAction.onClick?.({})}
+                  valueWidth={column.inputActionValueWidth}
+                  contentPadding={column.inputActionContentPadding}
+                />
               );
             }
 

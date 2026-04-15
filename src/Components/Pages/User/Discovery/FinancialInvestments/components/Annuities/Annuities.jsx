@@ -4,14 +4,12 @@ import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
+import DynamicFormField from "../../../../../../Common/DynamicFormField.jsx";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
-import SuperFundsBalanceBenefitModal from "./SuperFundsBalanceBenefitModal.jsx";
-import SuperFundsGroupInsuranceModal from "./SuperFundsGroupInsuranceModal.jsx";
-import BeneficiariesModal from "./BeneficiariesModal.jsx";
-import ContributionsModal from "./ContributionsModal.jsx";
-import AnnualAdviceModal from "./AnnualAdviceModal.jsx";
+import AnnualAdviceModal from "../SuperFunds/AnnualAdviceModal.jsx";
+import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -23,10 +21,30 @@ const TABLE_PROPS = {
   bodyFontSize: 12,
 };
 
+const SOURCE_OF_FUNDS_OPTIONS = [
+  { value: "Ordinary", label: "Ordinary" },
+  { value: "Super", label: "Super" },
+];
+
+const ANNUITY_TYPE_OPTIONS = [
+  { value: "Fixed Term", label: "Fixed Term" },
+  { value: "Lifetime", label: "Lifetime" },
+];
+
+const YEAR_OPTIONS = Array.from({ length: 30 }, (_, index) => ({
+  value: String(index + 1),
+  label: `Year ${index + 1}`,
+}));
+
 function parseCurrencyValue(value) {
   if (value === null || value === undefined || value === "") return 0;
   const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function formatCurrencyValue(value) {
+  const numeric = parseCurrencyValue(value);
+  return numeric ? toCommaAndDollar(numeric) : "";
 }
 
 function normalizeSelectValue(value) {
@@ -38,33 +56,28 @@ function normalizeSelectValue(value) {
 function buildInitialValues(ownerArray = []) {
   return {
     NumberOfMap: ownerArray.length || undefined,
-    superFunds: ownerArray,
+    annuities: ownerArray,
   };
 }
 
-function buildSuperFundEntries(count, entries = []) {
+function buildAnnuityEntries(count, entries = []) {
   return Array.from({ length: count }, (_, index) => {
     const entry = entries?.[index] || {};
     return {
-      platformName: normalizeSelectValue(entry?.platformName),
-      memberNumber: entry?.memberNumber || "",
-      balanceBenefit: entry?.balanceBenefit || "",
-      balanceBenefitDetails:
-        entry?.balanceBenefitDetails &&
-        typeof entry.balanceBenefitDetails === "object"
-          ? entry.balanceBenefitDetails
+      productProvider: normalizeSelectValue(entry?.productProvider),
+      accountNumber: entry?.accountNumber || "",
+      sourceFunds: normalizeSelectValue(entry?.sourceFunds),
+      originalInvestmentAmount: entry?.originalInvestmentAmount || "",
+      returnCapitalValue: entry?.returnCapitalValue || "",
+      annualAnnuityPayment: entry?.annualAnnuityPayment || "",
+      annualAnnuityPaymentArray:
+        entry?.annualAnnuityPaymentArray &&
+        typeof entry.annualAnnuityPaymentArray === "object"
+          ? entry.annualAnnuityPaymentArray
           : {},
-      groupInsurance: entry?.groupInsurance || "No",
-      groupInsuranceDetails:
-        entry?.groupInsuranceDetails &&
-        typeof entry.groupInsuranceDetails === "object"
-          ? entry.groupInsuranceDetails
-          : {},
-      contributions: entry?.contributions || "No",
-      contributionsArray: Array.isArray(entry?.contributionsArray)
-        ? entry.contributionsArray
-        : [],
-      contributionsStartYear: entry?.contributionsStartYear || undefined,
+      annuityType: normalizeSelectValue(entry?.annuityType),
+      term: normalizeSelectValue(entry?.term),
+      yearsMaturity: normalizeSelectValue(entry?.yearsMaturity),
       nominatedBeneficiaries: entry?.nominatedBeneficiaries || "No",
       nominatedBeneficiariesDetails:
         entry?.nominatedBeneficiariesDetails &&
@@ -81,31 +94,35 @@ function buildSuperFundEntries(count, entries = []) {
 }
 
 function hasMeaningfulValues(initialValues = {}) {
-  const rows = initialValues?.superFunds || [];
+  const rows = initialValues?.annuities || [];
   if ((initialValues?.NumberOfMap || 0) > 0) return true;
 
   return rows.some((row) =>
     [
-      row?.platformName,
-      row?.memberNumber,
-      row?.balanceBenefit,
-      row?.groupInsurance,
-      row?.contributions,
+      row?.productProvider,
+      row?.accountNumber,
+      row?.sourceFunds,
+      row?.originalInvestmentAmount,
+      row?.returnCapitalValue,
+      row?.annualAnnuityPayment,
+      row?.annuityType,
+      row?.term,
+      row?.yearsMaturity,
       row?.nominatedBeneficiaries,
       row?.annualAdvice,
     ].some((value) => String(value ?? "").trim() !== ""),
   );
 }
 
-function buildFundOptions(investmentOffers, entries = []) {
-  const funds = investmentOffers?.SuperannuationFunds || [];
-  const options = funds.map((item) => ({
+function buildProviderOptions(investmentOffers, entries = []) {
+  const providers = investmentOffers?.Annuities || [];
+  const options = providers.map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
   }));
 
   entries.forEach((entry) => {
-    const currentValue = normalizeSelectValue(entry?.platformName);
+    const currentValue = normalizeSelectValue(entry?.productProvider);
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
@@ -143,7 +160,7 @@ function SwitchPopupDisplay({ value, onClick }) {
   );
 }
 
-export default function SuperFunds({ modalData }) {
+export default function Annuities({ modalData }) {
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
@@ -161,10 +178,11 @@ export default function SuperFunds({ modalData }) {
     [ownerArray],
   );
   const count = Form.useWatch("NumberOfMap", form);
-  const watchedSuperFunds = Form.useWatch("superFunds", form);
-  const fundOptions = useMemo(
-    () => buildFundOptions(investmentOffers, initialValues?.superFunds || []),
-    [initialValues?.superFunds, investmentOffers],
+  const watchedAnnuities = Form.useWatch("annuities", form);
+  const providerOptions = useMemo(
+    () =>
+      buildProviderOptions(investmentOffers, initialValues?.annuities || []),
+    [initialValues?.annuities, investmentOffers],
   );
 
   useEffect(() => {
@@ -172,27 +190,28 @@ export default function SuperFunds({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
-  const getStoredSuperFunds = useCallback(
-    () => form.getFieldValue("superFunds") || initialValues.superFunds || [],
-    [form, initialValues.superFunds],
+  const getStoredAnnuities = useCallback(
+    () => form.getFieldValue("annuities") || initialValues.annuities || [],
+    [form, initialValues.annuities],
   );
 
   const rows = useMemo(
     () =>
-      buildSuperFundEntries(Number(count) || 0, getStoredSuperFunds()).map(
+      buildAnnuityEntries(Number(count) || 0, getStoredAnnuities()).map(
         (item, index) => ({
-          key: `${modalData?.ownerKey || "owner"}-super-${index}`,
-          formPath: ["superFunds", index],
+          key: `${modalData?.ownerKey || "owner"}-annuity-${index}`,
+          formPath: ["annuities", index],
           rowNumber: index + 1,
           ...item,
         }),
       ),
-    [count, getStoredSuperFunds, modalData?.ownerKey, watchedSuperFunds],
+    [count, getStoredAnnuities, modalData?.ownerKey, watchedAnnuities],
   );
 
   const syncParentValues = (nextEntries) => {
     const totalBalance = nextEntries.reduce(
-      (total, item) => total + parseCurrencyValue(item?.balanceBenefit),
+      (total, item) =>
+        total + parseCurrencyValue(item?.originalInvestmentAmount),
       0,
     );
 
@@ -210,43 +229,42 @@ export default function SuperFunds({ modalData }) {
     const nextCount = Number(nextValue) || 0;
     form.setFieldValue("NumberOfMap", nextValue);
     form.setFieldValue(
-      "superFunds",
-      buildSuperFundEntries(nextCount, getStoredSuperFunds()),
+      "annuities",
+      buildAnnuityEntries(nextCount, getStoredAnnuities()),
     );
   };
 
   const handleRemoveRow = (rowIndex) => {
-    const currentEntries = form.getFieldValue("superFunds") || [];
+    const currentEntries = form.getFieldValue("annuities") || [];
     const nextEntries = currentEntries.filter((_, index) => index !== rowIndex);
     const nextCount = nextEntries.length;
 
-    form.setFieldValue("superFunds", nextEntries);
+    form.setFieldValue("annuities", nextEntries);
     form.setFieldValue("NumberOfMap", nextCount || undefined);
   };
 
   const openDetailModal = useCallback(
     (type, { record, form: currentForm }) => {
       const rowValues = currentForm.getFieldValue(record?.formPath) || {};
-      const selectedFund = normalizeSelectValue(rowValues?.platformName);
+      const selectedProvider = normalizeSelectValue(rowValues?.productProvider);
 
-      if (!selectedFund) {
-        message.error("Please select fund name first");
+      if (!selectedProvider) {
+        message.error("Please select provider name first");
         return;
       }
 
-      const fund =
-        investmentOffers?.SuperannuationFunds?.find(
-          (item) => String(item?._id) === selectedFund,
+      const provider =
+        investmentOffers?.Annuities?.find(
+          (item) => String(item?._id) === selectedProvider,
         ) || null;
 
-      const fundLabel = getOptionLabel(fundOptions, selectedFund);
-
+      const providerLabel = getOptionLabel(providerOptions, selectedProvider);
       const commonData = {
         parentForm: currentForm,
         fieldPath: record?.formPath || [],
         initialValues: rowValues,
-        fundLabel,
-        platform: fund,
+        providerLabel,
+        platform: provider,
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
@@ -254,30 +272,28 @@ export default function SuperFunds({ modalData }) {
       };
 
       const detailMap = {
-        balanceBenefit: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Balance and Details`,
-          width: 1280,
-          component: <SuperFundsBalanceBenefitModal />,
-        },
-        groupInsurance: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Group Insurance`,
-          width: 1280,
-          component: <SuperFundsGroupInsuranceModal />,
-        },
-        contributions: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Contributions`,
-          width: 1000,
-          component: <ContributionsModal />,
+        annualAnnuityPayment: {
+          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Annual Annuity Payment`,
+          width: 760,
+          component: <AnnualAdviceModal />,
+          valueKey: "annualAnnuityPayment",
+          arrayKey: "annualAnnuityPaymentArray",
+          feeLabel: "Annuity Payment",
+          totalLabel: "Annual Annuity Payment",
         },
         nominatedBeneficiaries: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Beneficiaries`,
+          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Beneficiaries`,
           width: 1180,
           component: <BeneficiariesModal />,
         },
         annualAdvice: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Ongoing Annual Fee`,
+          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Annual Ongoing Fee`,
           width: 760,
           component: <AnnualAdviceModal />,
+          valueKey: "annualAdvice",
+          arrayKey: "annualAdviceArray",
+          feeLabel: "Ongoing Fee",
+          totalLabel: "Annual Ongoing Fee",
         },
       };
 
@@ -287,7 +303,7 @@ export default function SuperFunds({ modalData }) {
         ...(detailMap[type] || {}),
       });
     },
-    [fundOptions, investmentOffers?.SuperannuationFunds, modalData?.ownerLabel],
+    [investmentOffers?.Annuities, modalData?.ownerLabel, providerOptions],
   );
 
   const columns = [
@@ -299,95 +315,129 @@ export default function SuperFunds({ modalData }) {
       editable: false,
     },
     {
-      title: "Fund Name",
-      dataIndex: "platformName",
-      key: "platformName",
-      field: "platformName",
+      title: "Product Provider",
+      dataIndex: "productProvider",
+      key: "productProvider",
+      field: "productProvider",
       type: "select",
-      options: fundOptions,
-      placeholder: "Select Fund",
+      options: providerOptions,
+      placeholder: "Select Provider",
+    },
+    {
+      title: "Account Number",
+      dataIndex: "accountNumber",
+      key: "accountNumber",
+      field: "accountNumber",
+      type: "text",
+      placeholder: "Account Number",
+    },
+    {
+      title: "Source of Funds",
+      dataIndex: "sourceFunds",
+      key: "sourceFunds",
+      field: "sourceFunds",
+      type: "select",
+      options: SOURCE_OF_FUNDS_OPTIONS,
+      placeholder: "Select Source",
+    },
+    {
+      title: "Initial Investment",
+      dataIndex: "originalInvestmentAmount",
+      key: "originalInvestmentAmount",
+      field: "originalInvestmentAmount",
+      type: "text",
+      placeholder: "Initial Investment",
+      onChange: (value, record, column, currentForm) => {
+        currentForm.setFieldValue(
+          [...record.formPath, column.field],
+          formatCurrencyValue(value?.target?.value),
+        );
+      },
+    },
+    {
+      title: "Return of Capital Value",
+      dataIndex: "returnCapitalValue",
+      key: "returnCapitalValue",
+      field: "returnCapitalValue",
+      type: "text",
+      placeholder: "Return of Capital",
+      onChange: (value, record, column, currentForm) => {
+        currentForm.setFieldValue(
+          [...record.formPath, column.field],
+          formatCurrencyValue(value?.target?.value),
+        );
+      },
+    },
+    {
+      title: "Annual Annuity Payment",
+      dataIndex: "annualAnnuityPayment",
+      key: "annualAnnuityPayment",
+      field: "annualAnnuityPayment",
+      disabled: true,
+      type: "input-action",
+      placeholder: "Annual Annuity Payment",
+      action: {
+        name: "Open Annual Annuity Payment",
+        onClick: (payload) => openDetailModal("annualAnnuityPayment", payload),
+      },
+    },
+    {
+      title: "Annuity Type",
+      dataIndex: "annuityType",
+      key: "annuityType",
+      field: "annuityType",
+      type: "select",
+      options: ANNUITY_TYPE_OPTIONS,
+      placeholder: "Select Type",
       onChange: (value, record, column, currentForm) => {
         const nextValue = normalizeSelectValue(value);
-        const currentValue = normalizeSelectValue(
-          currentForm.getFieldValue([...record.formPath, column.field]),
-        );
-
         currentForm.setFieldValue(
           [...record.formPath, column.field],
           nextValue,
         );
-
-        if (currentValue && currentValue !== nextValue) {
-          currentForm.setFieldValue([...record.formPath], {
-            platformName: nextValue,
-            memberNumber: "",
-            balanceBenefit: "",
-            balanceBenefitDetails: {},
-            groupInsurance: "No",
-            groupInsuranceDetails: {},
-            contributions: "No",
-            contributionsArray: [],
-            contributionsStartYear: undefined,
-            nominatedBeneficiaries: "No",
-            nominatedBeneficiariesDetails: {},
-            annualAdvice: "",
-            annualAdviceArray: {},
-          });
+        if (nextValue === "Lifetime") {
+          currentForm.setFieldValue([...record.formPath, "term"], "");
+          currentForm.setFieldValue([...record.formPath, "yearsMaturity"], "");
         }
       },
     },
     {
-      title: "Member Number",
-      dataIndex: "memberNumber",
-      key: "memberNumber",
-      field: "memberNumber",
-      type: "text",
-      placeholder: "Member Number",
-    },
-    {
-      title: "Balance and Details",
-      dataIndex: "balanceBenefit",
-      key: "balanceBenefit",
-      field: "balanceBenefit",
-      disabled: true,
-      type: "input-action",
-      placeholder: "Balance Benefit",
-      action: {
-        name: "Open Balance and Details",
-        onClick: (payload) => openDetailModal("balanceBenefit", payload),
-      },
-    },
-    {
-      title: "Insurance",
-      dataIndex: "groupInsurance",
-      key: "groupInsurance",
-      field: "groupInsurance",
-      type: "yesNoSwitchWithButton",
-      action: {
-        name: "Open Insurance",
-        onClick: (payload) => openDetailModal("groupInsurance", payload),
-      },
-      renderView: ({ value, record }) => (
-        <SwitchPopupDisplay
-          value={value}
-          onClick={() => openDetailModal("groupInsurance", { record, form })}
+      title: "Term",
+      dataIndex: "term",
+      key: "term",
+      field: "term",
+      renderEdit: ({ record, column, form: currentForm }) => (
+        <DynamicFormField
+          form={currentForm}
+          name={[...record.formPath, column.field]}
+          type="select"
+          options={YEAR_OPTIONS}
+          placeholder="Select Term"
+          disabled={
+            currentForm.getFieldValue([...record.formPath, "annuityType"]) ===
+            "Lifetime"
+          }
+          formItemProps={{ style: { marginBottom: 0 } }}
         />
       ),
     },
     {
-      title: "Contributions",
-      dataIndex: "contributions",
-      key: "contributions",
-      field: "contributions",
-      type: "yesNoSwitchWithButton",
-      action: {
-        name: "Open Contributions",
-        onClick: (payload) => openDetailModal("contributions", payload),
-      },
-      renderView: ({ value, record }) => (
-        <SwitchPopupDisplay
-          value={value}
-          onClick={() => openDetailModal("contributions", { record, form })}
+      title: "Years to Maturity",
+      dataIndex: "yearsMaturity",
+      key: "yearsMaturity",
+      field: "yearsMaturity",
+      renderEdit: ({ record, column, form: currentForm }) => (
+        <DynamicFormField
+          form={currentForm}
+          name={[...record.formPath, column.field]}
+          type="select"
+          options={YEAR_OPTIONS}
+          placeholder="Select Years"
+          disabled={
+            currentForm.getFieldValue([...record.formPath, "annuityType"]) ===
+            "Lifetime"
+          }
+          formItemProps={{ style: { marginBottom: 0 } }}
         />
       ),
     },
@@ -412,15 +462,15 @@ export default function SuperFunds({ modalData }) {
       ),
     },
     {
-      title: "Ongoing Advice Fee",
+      title: "Annual Advice Fee",
       dataIndex: "annualAdvice",
       key: "annualAdvice",
       field: "annualAdvice",
       disabled: true,
       type: "input-action",
-      placeholder: "Ongoing Advice Fee",
+      placeholder: "Annual Advice Fee",
       action: {
-        name: "Open Ongoing Fee",
+        name: "Open Annual Advice Fee",
         onClick: (payload) => openDetailModal("annualAdvice", payload),
       },
     },
@@ -446,9 +496,9 @@ export default function SuperFunds({ modalData }) {
   const handleConfirmAndExit = async () => {
     const values = form.getFieldsValue(true);
     const countValue = Number(values?.NumberOfMap) || 0;
-    const savedEntries = buildSuperFundEntries(
+    const savedEntries = buildAnnuityEntries(
       countValue,
-      values?.superFunds || [],
+      values?.annuities || [],
     );
 
     syncParentValues(savedEntries);
@@ -469,9 +519,9 @@ export default function SuperFunds({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={4}>
             <Form.Item
-              label="Number of Super Funds"
+              label="Number of Annuities"
               name="NumberOfMap"
               style={{ marginBottom: 0 }}
             >
@@ -481,7 +531,7 @@ export default function SuperFunds({ modalData }) {
                 disabled={!editing}
                 style={{ width: "100%", borderRadius: "8px" }}
                 options={Array.from(
-                  { length: modalData?.tableRows || 5 },
+                  { length: modalData?.tableRows || 3 },
                   (_, index) => ({ value: index + 1, label: index + 1 }),
                 )}
               />

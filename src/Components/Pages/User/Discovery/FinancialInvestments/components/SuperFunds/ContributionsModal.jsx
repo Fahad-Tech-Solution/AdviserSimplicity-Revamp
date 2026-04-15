@@ -51,7 +51,10 @@ function buildInitialValues(rowValues = {}) {
 }
 
 function hasMeaningfulValues(initialValues = {}) {
-  return Boolean(initialValues?.startYear) || (initialValues?.entries || []).length > 0;
+  return (
+    Boolean(initialValues?.startYear) ||
+    (initialValues?.entries || []).length > 0
+  );
 }
 
 function buildContributionEntries(financialYears, entries = []) {
@@ -65,26 +68,33 @@ function buildContributionEntries(financialYears, entries = []) {
   }));
 }
 
-export default function SuperFundsContributionsModal({ modalData }) {
+export default function ContributionsModal({ modalData }) {
   const [form] = Form.useForm();
-  const initialValues = useMemo(
-    () => buildInitialValues(modalData?.initialValues || {}),
-    [modalData],
+  const initialValues = useMemo(() => {
+    const values = buildInitialValues(modalData?.initialValues || {});
+    return {
+      ...values,
+      entries: buildContributionEntries(
+        buildFinancialYears(values.startYear),
+        values.entries,
+      ),
+    };
+  }, [modalData]);
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(initialValues),
   );
-  const [editing, setEditing] = useState(() => !hasMeaningfulValues(initialValues));
 
   const startYear = Form.useWatch("startYear", form);
   const entries = Form.useWatch("entries", form) || initialValues.entries || [];
-  const financialYears = useMemo(() => buildFinancialYears(startYear), [startYear]);
+  const financialYears = useMemo(
+    () => buildFinancialYears(startYear),
+    [startYear],
+  );
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
-
-  useEffect(() => {
-    form.setFieldValue("entries", buildContributionEntries(financialYears, entries));
-  }, [financialYears]);
 
   const rows = useMemo(
     () =>
@@ -97,7 +107,21 @@ export default function SuperFundsContributionsModal({ modalData }) {
     [entries, financialYears],
   );
 
-  const recalculateTotals = (record, currentForm, changedField, changedValue) => {
+  const handleStartYearChange = (date) => {
+    const nextYear = date?.year();
+    const currentEntries = form.getFieldValue("entries") || [];
+    form.setFieldValue(
+      "entries",
+      buildContributionEntries(buildFinancialYears(nextYear), currentEntries),
+    );
+  };
+
+  const recalculateTotals = (
+    record,
+    currentForm,
+    changedField,
+    changedValue,
+  ) => {
     const path = record?.formPath || [];
     const employer =
       changedField === "employerContributions"
@@ -110,7 +134,9 @@ export default function SuperFundsContributionsModal({ modalData }) {
 
     currentForm.setFieldValue(
       [...path, "totalConcessional"],
-      formatCurrencyValue(parseCurrencyValue(employer) + parseCurrencyValue(concessional)),
+      formatCurrencyValue(
+        parseCurrencyValue(employer) + parseCurrencyValue(concessional),
+      ),
     );
   };
 
@@ -134,7 +160,6 @@ export default function SuperFundsContributionsModal({ modalData }) {
       title: "Financial Years",
       dataIndex: "financialYear",
       key: "financialYear",
-      width: 120,
       editable: false,
     },
     {
@@ -144,7 +169,6 @@ export default function SuperFundsContributionsModal({ modalData }) {
       field: "employerContributions",
       type: "text",
       placeholder: "Employer Contributions",
-      width: 180,
       onChange: handleMoneyChange,
     },
     {
@@ -154,7 +178,6 @@ export default function SuperFundsContributionsModal({ modalData }) {
       field: "concessional",
       type: "text",
       placeholder: "Concessional",
-      width: 180,
       onChange: handleMoneyChange,
     },
     {
@@ -164,7 +187,6 @@ export default function SuperFundsContributionsModal({ modalData }) {
       field: "totalConcessional",
       type: "text",
       placeholder: "Total Concessional",
-      width: 180,
       disabled: true,
     },
     {
@@ -174,7 +196,6 @@ export default function SuperFundsContributionsModal({ modalData }) {
       field: "nonConcessionalContributions",
       type: "text",
       placeholder: "Non-Concessional Contributions",
-      width: 180,
       onChange: handleMoneyChange,
     },
   ];
@@ -205,31 +226,46 @@ export default function SuperFundsContributionsModal({ modalData }) {
         <Row gutter={[16, 16]}>
           <Col xs={24}>
             <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
-              <div style={{ paddingTop: 8 }}>Financial year Start Date:</div>
-              <DatePicker
-                picker="year"
-                placeholder="Select Year"
-                value={startYear ? dayjs(String(startYear), "YYYY") : null}
-                disabled={!editing}
-                onChange={(date) => form.setFieldValue("startYear", date?.year())}
-              />
+              <Form.Item
+                label="Financial year Start Date"
+                name="startYear"
+                style={{ margin: 0, paddingTop: 8 }}
+                getValueProps={(value) => ({
+                  value: value ? dayjs(String(value), "YYYY") : null,
+                })}
+                getValueFromEvent={(date) => date?.year()}
+              >
+                <DatePicker
+                  picker="year"
+                  placeholder="Select Year"
+                  disabled={!editing}
+                  onChange={handleStartYearChange}
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
             </div>
           </Col>
           <Col xs={24}>
-            <EditableDynamicTable
-              form={form}
-              editing={editing}
-              columns={columns}
-              data={rows}
-              tableProps={TABLE_PROPS}
-            />
+            {financialYears.length > 0 ? (
+              <EditableDynamicTable
+                form={form}
+                editing={editing}
+                columns={columns}
+                data={rows}
+                tableProps={TABLE_PROPS}
+              />
+            ) : null}
           </Col>
           <Col xs={24}>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
               <Space>
                 {!editing ? (
                   <>
-                    <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                    <Button onClick={() => modalData?.closeModal?.()}>
+                      Cancel
+                    </Button>
                     <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>

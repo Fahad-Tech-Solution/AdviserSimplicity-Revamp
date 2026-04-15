@@ -18,6 +18,22 @@ const FREQUENCY_OPTIONS = [
   { value: "Annualy", label: "Annually" },
 ];
 
+function getValueField(modalData) {
+  return modalData?.valueKey || "annualAdvice";
+}
+
+function getArrayField(modalData) {
+  return modalData?.arrayKey || "annualAdviceArray";
+}
+
+function getFeeLabel(modalData) {
+  return modalData?.feeLabel || "Ongoing Fee";
+}
+
+function getTotalLabel(modalData) {
+  return modalData?.totalLabel || "Annual Ongoing Fee";
+}
+
 function parseCurrencyValue(value) {
   if (value === null || value === undefined || value === "") return 0;
   const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
@@ -43,17 +59,19 @@ function calculateAnnualAdvice(serviceFee, frequency) {
     : toCommaAndDollar(baseValue);
 }
 
-function buildInitialValues(rowValues = {}) {
+function buildInitialValues(rowValues = {}, modalData) {
+  const valueField = getValueField(modalData);
+  const arrayField = getArrayField(modalData);
   const savedValues =
-    rowValues?.annualAdviceArray && typeof rowValues.annualAdviceArray === "object"
-      ? rowValues.annualAdviceArray
+    rowValues?.[arrayField] && typeof rowValues[arrayField] === "object"
+      ? rowValues[arrayField]
       : {};
 
   const serviceFee = savedValues?.serviceFee || "";
   const frequency = normalizeSelectValue(savedValues?.frequency);
   const annualAdviserServiceFee =
     savedValues?.annualAdviserServiceFee ||
-    rowValues?.annualAdvice ||
+    rowValues?.[valueField] ||
     calculateAnnualAdvice(serviceFee, frequency);
 
   return {
@@ -71,11 +89,15 @@ function hasMeaningfulValues(initialValues = {}) {
   ].some((value) => String(value ?? "").trim() !== "");
 }
 
-export default function SuperFundsAnnualAdviceModal({ modalData }) {
+export default function AnnualAdviceModal({ modalData }) {
   const [form] = Form.useForm();
+  const valueField = getValueField(modalData);
+  const arrayField = getArrayField(modalData);
+  const feeLabel = getFeeLabel(modalData);
+  const totalLabel = getTotalLabel(modalData);
   const initialValues = useMemo(
-    () => buildInitialValues(modalData?.initialValues || {}),
-    [modalData],
+    () => buildInitialValues(modalData?.initialValues || {}, modalData),
+    [arrayField, modalData, valueField],
   );
   const [editing, setEditing] = useState(() => !hasMeaningfulValues(initialValues));
 
@@ -138,12 +160,12 @@ export default function SuperFundsAnnualAdviceModal({ modalData }) {
       editable: false,
     },
     {
-      title: "Ongoing Fee",
+      title: feeLabel,
       dataIndex: "serviceFee",
       key: "serviceFee",
       field: "serviceFee",
       type: "text",
-      placeholder: "Ongoing Fee",
+      placeholder: feeLabel,
       width: 180,
       onChange: handleAnnualFeeChange,
     },
@@ -159,12 +181,12 @@ export default function SuperFundsAnnualAdviceModal({ modalData }) {
       onChange: handleAnnualFeeChange,
     },
     {
-      title: "Annual Ongoing Fee",
+      title: totalLabel,
       dataIndex: "annualAdviserServiceFee",
       key: "annualAdviserServiceFee",
       field: "annualAdviserServiceFee",
       type: "text",
-      placeholder: "Annual Ongoing Fee",
+      placeholder: totalLabel,
       width: 200,
       disabled: true,
     },
@@ -182,8 +204,8 @@ export default function SuperFundsAnnualAdviceModal({ modalData }) {
       modalData?.parentForm?.getFieldValue?.(modalData?.fieldPath) || {};
     const updatedRow = {
       ...currentRow,
-      annualAdviceArray: savedValues,
-      annualAdvice: savedValues.annualAdviserServiceFee,
+      [arrayField]: savedValues,
+      [valueField]: savedValues.annualAdviserServiceFee,
     };
 
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);

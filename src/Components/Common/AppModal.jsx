@@ -22,7 +22,9 @@ export default function AppModal({
     <Modal
       title={title}
       open={open}
-      onCancel={onClose}
+      onCancel={() => {
+        onClose();
+      }}
       width={width}
       centered={centered}
       footer={footer}

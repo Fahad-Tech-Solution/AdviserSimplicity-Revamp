@@ -6,7 +6,10 @@ import EditableDynamicTable from "../../../../Common/EditableDynamicTable";
 import { renderModalContent } from "../../../../Common/renderModalContent";
 import useTitleBlock from "../../../../../hooks/useTitleBlock";
 import AppModal from "../../../../Common/AppModal";
-import { discoveryDataAtom } from "../../../../../store/authState";
+import {
+  discoveryDataAtom,
+  discoverySectionQuestionsAtom,
+} from "../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../hooks/helpers";
 import useApi from "../../../../../hooks/useApi";
 
@@ -57,14 +60,15 @@ function buildInitialValues(sectionData = {}, noJoint = false) {
       currentBalance: sectionData?.partnerCurrentBalance || "",
       costBase: sectionData?.partnerCostBaseTemp || "",
     },
-    joint: noJoint ? undefined : {
-      currentBalanceArray: sectionData?.joint || [],
-      currentBalance: sectionData?.jointCurrentBalance || "",
-      costBase: sectionData?.jointCostBaseTemp || "",
-    },
+    joint: noJoint
+      ? undefined
+      : {
+          currentBalanceArray: sectionData?.joint || [],
+          currentBalance: sectionData?.jointCurrentBalance || "",
+          costBase: sectionData?.jointCostBaseTemp || "",
+        },
   };
 }
-
 
 function calculateDisplayTotal(primaryBalance, jointBalance) {
   const primary = parseCurrencyValue(primaryBalance);
@@ -80,6 +84,8 @@ const MiddleWare = ({ modalData }) => {
   const [saving, setSaving] = useState(false);
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const setQuestionData = useSetAtom(discoverySectionQuestionsAtom);
+
   const { post, patch } = useApi();
 
   const headingStyle = { fontFamily: "Georgia,serif" };
@@ -123,7 +129,21 @@ const MiddleWare = ({ modalData }) => {
       updateEndpoint: "/api/superAnnuationIssues/Update",
       countLabel: "Number of Super Funds",
       width: 1000,
-      noJoint:true,
+      noJoint: true,
+    },
+    accountBasedPensionIssues: {
+      addEndpoint: "/api/accountBasedPensionIssues/Add",
+      updateEndpoint: "/api/accountBasedPensionIssues/Update",
+      countLabel: "Number of Account Based Pensions",
+      width: 1000,
+      noJoint: true,
+    },
+    annuitiesIssues: {
+      addEndpoint: "/api/annuitiesIssues/Add",
+      updateEndpoint: "/api/annuitiesIssues/Update",
+      countLabel: "Number of Annuities",
+      width: 1500,
+      noJoint: true,
     },
   };
 
@@ -160,8 +180,8 @@ const MiddleWare = ({ modalData }) => {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-    setEditing(!sectionData?._id);
-  }, [form, initialValues, sectionData?._id]);
+    setEditing(!sectionData?.clientFK);
+  }, [form, initialValues, sectionData?.clientFK]);
 
   const openInnerModal = useCallback(
     ({ record, form: currentForm }) => {
@@ -205,40 +225,6 @@ const MiddleWare = ({ modalData }) => {
           name: "Open Current Balance",
           onClick: openInnerModal,
         },
-        renderView: ({ value, record }) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              width: "100%",
-            }}
-          >
-            <div
-              style={{
-                minHeight: 26,
-                width: 100,
-                padding: "2px 11px",
-                borderRadius: 7,
-                lineHeight: "22px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              title={value || ""}
-            >
-              {value || ""}
-            </div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 25, padding: 0 }}
-              onClick={() => openInnerModal({ record, form })}
-            >
-              ↗
-            </Button>
-          </div>
-        ),
       },
     ];
 
@@ -343,47 +329,76 @@ const MiddleWare = ({ modalData }) => {
       partnerCurrentBalance: showPartner
         ? sourceValues?.partner?.currentBalance || ""
         : "",
-      jointCurrentBalance: showPartner && includeJoint
-        ? sourceValues?.joint?.currentBalance || ""
-        : "",
-      clientTotal: showPartner && includeJoint
-        ? calculateDisplayTotal(
-            sourceValues?.client?.currentBalance,
-            sourceValues?.joint?.currentBalance,
-          )
-        : sourceValues?.client?.currentBalance || "",
-      partnerTotal: showPartner && includeJoint
-        ? calculateDisplayTotal(
-            sourceValues?.partner?.currentBalance,
-            sourceValues?.joint?.currentBalance,
-          )
-        : showPartner
-          ? sourceValues?.partner?.currentBalance || ""
+      jointCurrentBalance:
+        showPartner && includeJoint
+          ? sourceValues?.joint?.currentBalance || ""
           : "",
+      clientTotal:
+        showPartner && includeJoint
+          ? calculateDisplayTotal(
+              sourceValues?.client?.currentBalance,
+              sourceValues?.joint?.currentBalance,
+            )
+          : sourceValues?.client?.currentBalance || "",
+      partnerTotal:
+        showPartner && includeJoint
+          ? calculateDisplayTotal(
+              sourceValues?.partner?.currentBalance,
+              sourceValues?.joint?.currentBalance,
+            )
+          : showPartner
+            ? sourceValues?.partner?.currentBalance || ""
+            : "",
       ...(hasCostBase
         ? {
             clientCostBaseTemp: sourceValues?.client?.costBase || "",
             partnerCostBaseTemp: showPartner
               ? sourceValues?.partner?.costBase || ""
               : "",
-            jointCostBaseTemp: showPartner && includeJoint
-              ? sourceValues?.joint?.costBase || ""
-              : "",
+            jointCostBaseTemp:
+              showPartner && includeJoint
+                ? sourceValues?.joint?.costBase || ""
+                : "",
           }
         : {}),
     };
 
+    if (modalData?.key === "superAnnuationIssues") {
+      payload._id = undefined;
+      payload.joint = undefined;
+      payload.jointCurrentBalance = undefined;
+      payload.jointCostBaseTemp = undefined;
+      payload.jointTotal = undefined;
+    }
+
     try {
       setSaving(true);
 
-      const saved = sectionData?._id
+      const saved = sectionData?.clientFK
         ? await patch(config.updateEndpoint, payload)
         : await post(config.addEndpoint, payload);
 
-      setDiscoveryData((prev) => ({
-        ...(prev && typeof prev === "object" ? prev : {}),
-        [modalData.key]: saved || payload,
-      }));
+      if (modalData?.key === "superAnnuationIssues") {
+        setDiscoveryData((prev) => ({
+          ...(prev && typeof prev === "object" ? prev : {}),
+          [modalData.key]: saved.superFunds || payload,
+        }));
+
+        setDiscoveryData((prev) => ({
+          ...(prev && typeof prev === "object" ? prev : {}),
+          personalInsurance: saved.personalInsurance,
+        }));
+
+        setQuestionData((prev) => ({
+          ...(prev && typeof prev === "object" ? prev : {}),
+          ...saved.questionDetails,
+        }));
+      } else {
+        setDiscoveryData((prev) => ({
+          ...(prev && typeof prev === "object" ? prev : {}),
+          [modalData.key]: saved || payload,
+        }));
+      }
 
       message.success(
         `${modalData?.title || "Financial section"} updated successfully`,

@@ -44,6 +44,21 @@ function getRelationshipOptions(nominationType) {
   ];
 }
 
+function parseDigitsValue(value) {
+  return String(value ?? "").replace(/[^0-9]/g, "");
+}
+
+function getChangedValue(value) {
+  return value?.target?.value ?? value;
+}
+
+function formatPercentValue(value, max = 100) {
+  const digits = parseDigitsValue(getChangedValue(value));
+  if (!digits) return "";
+  const limited = Math.min(Number(digits), max);
+  return `${limited}%`;
+}
+
 function buildInitialValues(rowValues = {}) {
   const details =
     rowValues?.nominatedBeneficiariesDetails &&
@@ -53,7 +68,10 @@ function buildInitialValues(rowValues = {}) {
 
   return {
     nominationType: normalizeSelectValue(details?.nominationType),
-    NumberOfMap: Number(details?.NumberOfMap) || details?.nominatedBeneficiariesArray?.length || 1,
+    NumberOfMap:
+      Number(details?.NumberOfMap) ||
+      details?.nominatedBeneficiariesArray?.length ||
+      1,
     BeneficiariesDetails: Array.isArray(details?.nominatedBeneficiariesArray)
       ? details.nominatedBeneficiariesArray
       : [],
@@ -69,25 +87,31 @@ function hasMeaningfulValues(initialValues = {}) {
 
 function buildRows(count, entries = []) {
   return Array.from({ length: count }, (_, index) => ({
-    relationshipStatus: normalizeSelectValue(entries?.[index]?.relationshipStatus),
+    relationshipStatus: normalizeSelectValue(
+      entries?.[index]?.relationshipStatus,
+    ),
     beneficiaryName: entries?.[index]?.beneficiaryName || "",
     DOB: entries?.[index]?.DOB || "",
     shareBenefit: entries?.[index]?.shareBenefit || "",
   }));
 }
 
-export default function SuperFundsBeneficiariesModal({ modalData }) {
+export default function BeneficiariesModal({ modalData }) {
   const [form] = Form.useForm();
   const initialValues = useMemo(
     () => buildInitialValues(modalData?.initialValues || {}),
     [modalData],
   );
-  const [editing, setEditing] = useState(() => !hasMeaningfulValues(initialValues));
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(initialValues),
+  );
 
   const nominationType = Form.useWatch("nominationType", form);
   const count = Form.useWatch("NumberOfMap", form);
   const beneficiaries =
-    Form.useWatch("BeneficiariesDetails", form) || initialValues.BeneficiariesDetails || [];
+    Form.useWatch("BeneficiariesDetails", form) ||
+    initialValues.BeneficiariesDetails ||
+    [];
   const relationshipOptions = useMemo(
     () => getRelationshipOptions(nominationType),
     [nominationType],
@@ -101,7 +125,10 @@ export default function SuperFundsBeneficiariesModal({ modalData }) {
   useEffect(() => {
     if (nominationType === "Reversionary Beneficiary") {
       form.setFieldValue("NumberOfMap", 1);
-      form.setFieldValue(["BeneficiariesDetails", 0, "shareBenefit"], "100.00%");
+      form.setFieldValue(
+        ["BeneficiariesDetails", 0, "shareBenefit"],
+        "100.00%",
+      );
     }
   }, [form, nominationType]);
 
@@ -119,29 +146,28 @@ export default function SuperFundsBeneficiariesModal({ modalData }) {
   const handleCountChange = (nextValue) => {
     const nextCount = Number(nextValue) || 1;
     form.setFieldValue("NumberOfMap", nextCount);
-    form.setFieldValue("BeneficiariesDetails", buildRows(nextCount, beneficiaries));
+    form.setFieldValue(
+      "BeneficiariesDetails",
+      buildRows(nextCount, beneficiaries),
+    );
   };
 
   const formatShareChange = (value, record, column, currentForm) => {
     const index = (record?.rowNumber || 1) - 1;
-    const entered = Math.max(
-      0,
-      parseFloat(String(value?.target?.value || "").replace(/[^0-9.-]/g, "")) || 0,
-    );
     const rowsData = currentForm.getFieldValue("BeneficiariesDetails") || [];
 
     let otherSum = 0;
     rowsData.forEach((row, rowIndex) => {
       if (rowIndex === index) return;
       otherSum +=
-        parseFloat(String(row?.shareBenefit || "").replace(/[^0-9.-]/g, "")) || 0;
+        parseFloat(String(row?.shareBenefit || "").replace(/[^0-9.-]/g, "")) ||
+        0;
     });
 
     const allowed = Math.max(0, 100 - otherSum);
-    const finalValue = Math.min(entered, allowed);
     currentForm.setFieldValue(
       [...record.formPath, column.field],
-      `${finalValue.toFixed(2)}%`,
+      formatPercentValue(value, allowed),
     );
   };
 
@@ -208,7 +234,9 @@ export default function SuperFundsBeneficiariesModal({ modalData }) {
     const totalShare = savedBeneficiaries.reduce(
       (sum, item) =>
         sum +
-        (parseFloat(String(item?.shareBenefit || "").replace(/[^0-9.-]/g, "")) || 0),
+        (parseFloat(
+          String(item?.shareBenefit || "").replace(/[^0-9.-]/g, ""),
+        ) || 0),
       0,
     );
 
@@ -245,27 +273,47 @@ export default function SuperFundsBeneficiariesModal({ modalData }) {
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24}>
-            <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
               <div style={{ minWidth: 220 }}>
-                <Form.Item label="Nomination Type" name="nominationType" style={{ marginBottom: 0 }}>
+                <Form.Item
+                  label="Nomination Type"
+                  name="nominationType"
+                  style={{ marginBottom: 0 }}
+                >
                   <Select
                     placeholder="Select"
                     disabled={!editing}
                     options={NOMINATION_OPTIONS}
-                    onChange={(value) => form.setFieldValue("nominationType", value)}
+                    onChange={(value) =>
+                      form.setFieldValue("nominationType", value)
+                    }
                   />
                 </Form.Item>
               </div>
-              <div style={{ minWidth: 140 }}>
-                <Form.Item label="Number of Beneficiaries" name="NumberOfMap" style={{ marginBottom: 0 }}>
+              <div style={{ minWidth: 180 }}>
+                <Form.Item
+                  label="Number of Beneficiaries"
+                  name="NumberOfMap"
+                  style={{ marginBottom: 0 }}
+                >
                   <Select
                     placeholder="Select"
-                    disabled={!editing || nominationType === "Reversionary Beneficiary"}
+                    disabled={
+                      !editing || nominationType === "Reversionary Beneficiary"
+                    }
                     options={Array.from({ length: 10 }, (_, index) => ({
                       value: index + 1,
                       label: index + 1,
                     }))}
                     onChange={handleCountChange}
+                    style={{ width: "80px" }}
                   />
                 </Form.Item>
               </div>
@@ -281,11 +329,15 @@ export default function SuperFundsBeneficiariesModal({ modalData }) {
             />
           </Col>
           <Col xs={24}>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
               <Space>
                 {!editing ? (
                   <>
-                    <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                    <Button onClick={() => modalData?.closeModal?.()}>
+                      Cancel
+                    </Button>
                     <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>

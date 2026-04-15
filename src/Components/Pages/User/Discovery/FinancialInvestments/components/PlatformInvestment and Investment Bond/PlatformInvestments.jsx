@@ -124,43 +124,6 @@ function getOptionLabel(options = [], value) {
   );
 }
 
-function PopupDisplay({ value, onClick }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          minHeight: 26,
-          width: 70,
-          padding: "2px 11px 2px 0px",
-          borderRadius: 7,
-          lineHeight: "22px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={value || ""}
-      >
-        {value || ""}
-      </div>
-      <Button
-        type="primary"
-        size="small"
-        style={{ width: 25, padding: 0 }}
-        onClick={onClick}
-      >
-        ↗
-      </Button>
-    </div>
-  );
-}
-
 export default function PlatformInvestments({ modalData }) {
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [form] = Form.useForm();
@@ -377,12 +340,6 @@ export default function PlatformInvestments({ modalData }) {
         name: "Open Portfolio Value",
         onClick: openPortfolioModal,
       },
-      renderView: ({ value, record }) => (
-        <PopupDisplay
-          value={value}
-          onClick={() => openPortfolioModal({ record, form })}
-        />
-      ),
     },
     {
       title: "Total Cost Base",
@@ -411,12 +368,6 @@ export default function PlatformInvestments({ modalData }) {
         name: "Open Ongoing Fee",
         onClick: openServiceFeeModal,
       },
-      renderView: ({ value, record }) => (
-        <PopupDisplay
-          value={value}
-          onClick={() => openServiceFeeModal({ record, form })}
-        />
-      ),
     },
     {
       title: "Action",

@@ -28,7 +28,9 @@ import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/c
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
 import SuperFunds from "../Pages/User/Discovery/FinancialInvestments/components/SuperFunds/SuperFunds.jsx";
-
+import AccountBasedPension from "../Pages/User/Discovery/FinancialInvestments/components/AccountBasedPension/AccountBasedPension.jsx";
+import superFundsIcon from "../../assets/image/SectionImages/SuperFunds.jpeg";
+import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/Annuities/Annuities.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -448,23 +450,37 @@ export const discoveryRoutes = [
       {
         title: "Super Funds",
         key: "superAnnuationIssues",
-        icon: "🐷",
+        icon: (
+          <img
+            src={superFundsIcon}
+            alt="Super Funds"
+            width={30}
+            height={32}
+            style={{ mixBlendMode: "multiply" }}
+          />
+        ),
         component: <MiddleWare />,
         innerComponent: <SuperFunds />,
         modalWidth: "620px",
-        tableRows: 5,
+        tableRows: 10,
       },
       {
         title: "Account Based Pension",
         key: "accountBasedPensionIssues",
         icon: "🐷",
-        component: null,
+        component: <MiddleWare />,
+        innerComponent: <AccountBasedPension />,
+        modalWidth: "620px",
+        tableRows: 3,
       },
       {
         title: "Annuities",
         key: "annuitiesIssues",
         icon: "📅",
-        component: null,
+        component: <MiddleWare />,
+        innerComponent: <Annuities />,
+        modalWidth: "620px",
+        tableRows: 3,
       },
       // Investment
       {
@@ -472,43 +488,19 @@ export const discoveryRoutes = [
         key: "investmentPropertyDetails",
         icon: "🏘️",
         component: null,
-        // Labels: ["Property Portfolio", "Total Debt"],
-        // variant: "case2",
-        // Labels: [
-        //   {
-        //     label: "Property Portfolio",
-        //     value: (questionDetail) =>
-        //       questionDetail?.investmentPropertyDetails?.propertyPortfolio ??
-        //       "",
-        //     component: null,
-        //     key: "investmentPropertyDetails",
-        //     maintitle: true,
-        //     onTop: true,
-        //   },
-        //   {
-        //     label: "Total Debt",
-        //     value: (questionDetail) =>
-        //       questionDetail?.investmentPropertyDetails?.totalDebt ?? "",
-        //     component: null,
-        //     key: "investmentPropertyDetails",
-        //     maintitle: true,
-        //     modalButton: false,
-        //   },
-        // ],
       },
       {
         title: "Investment Loan",
         key: "managedFundsLOC",
         icon: "📋",
-        component: <InvestmentLoanModal/>,
+        component: <InvestmentLoanModal />,
         modalWidth: "1300px",
-    
       },
       {
         title: "Margin Loan",
         key: "managedFundsMarginLoan",
         icon: "📉",
-        component: <InvestmentLoanModal/>,
+        component: <InvestmentLoanModal />,
         modalWidth: "1200px",
       },
     ],
