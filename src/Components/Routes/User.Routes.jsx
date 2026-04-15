@@ -28,7 +28,7 @@ import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/c
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
 import SuperFunds from "../Pages/User/Discovery/FinancialInvestments/components/SuperFunds/SuperFunds.jsx";
-
+import InvestmentPropertiesModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentProperties/InvestmentPropertiesModal.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -471,30 +471,14 @@ export const discoveryRoutes = [
         title: "Investment Properties",
         key: "investmentPropertyDetails",
         icon: "🏘️",
-        component: null,
-        // Labels: ["Property Portfolio", "Total Debt"],
-        // variant: "case2",
-        // Labels: [
-        //   {
-        //     label: "Property Portfolio",
-        //     value: (questionDetail) =>
-        //       questionDetail?.investmentPropertyDetails?.propertyPortfolio ??
-        //       "",
-        //     component: null,
-        //     key: "investmentPropertyDetails",
-        //     maintitle: true,
-        //     onTop: true,
-        //   },
-        //   {
-        //     label: "Total Debt",
-        //     value: (questionDetail) =>
-        //       questionDetail?.investmentPropertyDetails?.totalDebt ?? "",
-        //     component: null,
-        //     key: "investmentPropertyDetails",
-        //     maintitle: true,
-        //     modalButton: false,
-        //   },
-        // ],
+        component: <InvestmentPropertiesModal />,
+        modalWidth: "1200px",
+        tableRows: 10,
+        firstNameKey: "Property Portfolio",
+        secondNameKey: "Total Debt",
+        firstTotalKey: "propertyPortfolio",
+        secondTotalKey: "totalDebt",
+        showSecondTotal: true,
       },
       {
         title: "Investment Loan",
