@@ -32,6 +32,8 @@ import InvestmentPropertiesModal from "../Pages/User/Discovery/FinancialInvestme
 import AccountBasedPension from "../Pages/User/Discovery/FinancialInvestments/components/AccountBasedPension/AccountBasedPension.jsx";
 import superFundsIcon from "../../assets/image/SectionImages/SuperFunds.jpeg";
 import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/Annuities/Annuities.jsx";
+import EstatePlanning from "../Pages/User/Discovery/EstatePlanning/EstatePlanning.jsx";
+import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/components/wills/EstatePlanningWill.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -249,6 +251,140 @@ const ASSETS_DEBT_CARDS = [
   },
 ];
 
+const FINANCIAL_INVESTMENTS_CARDS = [
+  {
+    title: "Bank Accounts",
+    key: "bankAccountFinance",
+    icon: "🏦",
+    component: <MiddleWare />,
+    innerComponent: <BankTermDetailsModal />,
+    modalWidth: "620px",
+    tableRows: 10,
+  },
+  {
+    title: "Term Deposits",
+    key: "termDepositsFinance",
+    icon: "⏱️",
+    component: <MiddleWare />,
+    innerComponent: <BankTermDetailsModal />,
+    modalWidth: "620px",
+    tableRows: 10,
+  },
+  {
+    title: "Australian Shares/ETFs",
+    key: "australianShareMarket",
+    icon: "📊",
+    component: <MiddleWare />,
+    innerComponent: <AustralianShare />,
+    modalWidth: "620px",
+    tableRows: 50,
+  },
+  {
+    title: "Platform Investments",
+    key: "managedFund",
+    icon: "💼",
+    component: <MiddleWare />,
+    innerComponent: <PlatformInvestments />,
+    modalWidth: "620px",
+    tableRows: 5,
+  },
+  {
+    title: "Investment Bond",
+    key: "investmentBondFinance",
+    icon: "🏅",
+    component: <MiddleWare />,
+    innerComponent: <PlatformInvestments />,
+    modalWidth: "620px",
+    tableRows: 5,
+  },
+  //SuperAndRetirement
+  {
+    title: "Super Funds",
+    key: "superAnnuationIssues",
+    icon: (
+      <img
+        src={superFundsIcon}
+        alt="Super Funds"
+        width={30}
+        height={32}
+        style={{ mixBlendMode: "multiply" }}
+      />
+    ),
+    component: <MiddleWare />,
+    innerComponent: <SuperFunds />,
+    modalWidth: "620px",
+    tableRows: 10,
+  },
+  {
+    title: "Account Based Pension",
+    key: "accountBasedPensionIssues",
+    icon: "🐷",
+    component: <MiddleWare />,
+    innerComponent: <AccountBasedPension />,
+    modalWidth: "620px",
+    tableRows: 3,
+  },
+  {
+    title: "Annuities",
+    key: "annuitiesIssues",
+    icon: "📅",
+    component: <MiddleWare />,
+    innerComponent: <Annuities />,
+    modalWidth: "620px",
+    tableRows: 3,
+  },
+  // Investment
+  {
+    title: "Investment Properties",
+    key: "investmentPropertyDetails",
+    icon: "🏘️",
+    component: <InvestmentPropertiesModal />,
+    modalWidth: "1500px",
+    tableRows: 10,
+    firstNameKey: "Property Portfolio",
+    secondNameKey: "Total Debt",
+    firstTotalKey: "propertyPortfolio",
+    secondTotalKey: "totalDebt",
+    showSecondTotal: true,
+  },
+  {
+    title: "Investment Loan",
+    key: "managedFundsLOC",
+    icon: "📋",
+    component: <InvestmentLoanModal />,
+    modalWidth: "1300px",
+  },
+  {
+    title: "Margin Loan",
+    key: "managedFundsMarginLoan",
+    icon: "📉",
+    component: <InvestmentLoanModal />,
+    modalWidth: "1200px",
+  },
+];
+
+const ESTATE_PLANNING_CARDS = [
+  {
+    title: "Wills",
+    key: "will",
+    icon: "📄",
+    component: <EstatePlanningWill />,
+    modalWidth: "1200px",
+  },
+  {
+    title: "Power of Attorneys",
+    key: "POA",
+    icon: "🤝",
+    component: null,
+  },
+  {
+    title: "Professional Advisers",
+    key: "professionalAdviser",
+    icon: "👔",
+    component: null,
+  },
+];
+
 export const withSpacing = ({
   icon,
   label,
@@ -397,121 +533,8 @@ export const discoveryRoutes = [
     }),
     component: <FinancialInvestments />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck(
-      "financialinvestments",
-      "financialInvestments",
-    ),
-    Cards: [
-      {
-        title: "Bank Accounts",
-        key: "bankAccountFinance",
-        icon: "🏦",
-        component: <MiddleWare />,
-        innerComponent: <BankTermDetailsModal />,
-        modalWidth: "620px",
-        tableRows: 10,
-      },
-      {
-        title: "Term Deposits",
-        key: "termDepositsFinance",
-        icon: "⏱️",
-        component: <MiddleWare />,
-        innerComponent: <BankTermDetailsModal />,
-        modalWidth: "620px",
-        tableRows: 10,
-      },
-      {
-        title: "Australian Shares/ETFs",
-        key: "australianShareMarket",
-        icon: "📊",
-        component: <MiddleWare />,
-        innerComponent: <AustralianShare />,
-        modalWidth: "620px",
-        tableRows: 50,
-      },
-      {
-        title: "Platform Investments",
-        key: "managedFund",
-        icon: "💼",
-        component: <MiddleWare />,
-        innerComponent: <PlatformInvestments />,
-        modalWidth: "620px",
-        tableRows: 5,
-      },
-      {
-        title: "Investment Bond",
-        key: "investmentBondFinance",
-        icon: "🏅",
-        component: <MiddleWare />,
-        innerComponent: <PlatformInvestments />,
-        modalWidth: "620px",
-        tableRows: 5,
-      },
-      //SuperAndRetirement
-      {
-        title: "Super Funds",
-        key: "superAnnuationIssues",
-        icon: (
-          <img
-            src={superFundsIcon}
-            alt="Super Funds"
-            width={30}
-            height={32}
-            style={{ mixBlendMode: "multiply" }}
-          />
-        ),
-        component: <MiddleWare />,
-        innerComponent: <SuperFunds />,
-        modalWidth: "620px",
-        tableRows: 10,
-      },
-      {
-        title: "Account Based Pension",
-        key: "accountBasedPensionIssues",
-        icon: "🐷",
-        component: <MiddleWare />,
-        innerComponent: <AccountBasedPension />,
-        modalWidth: "620px",
-        tableRows: 3,
-      },
-      {
-        title: "Annuities",
-        key: "annuitiesIssues",
-        icon: "📅",
-        component: <MiddleWare />,
-        innerComponent: <Annuities />,
-        modalWidth: "620px",
-        tableRows: 3,
-      },
-      // Investment
-      {
-        title: "Investment Properties",
-        key: "investmentPropertyDetails",
-        icon: "🏘️",
-        component: <InvestmentPropertiesModal />,
-        modalWidth: "1200px",
-        tableRows: 10,
-        firstNameKey: "Property Portfolio",
-        secondNameKey: "Total Debt",
-        firstTotalKey: "propertyPortfolio",
-        secondTotalKey: "totalDebt",
-        showSecondTotal: true,
-      },
-      {
-        title: "Investment Loan",
-        key: "managedFundsLOC",
-        icon: "📋",
-        component: <InvestmentLoanModal />,
-        modalWidth: "1300px",
-      },
-      {
-        title: "Margin Loan",
-        key: "managedFundsMarginLoan",
-        icon: "📉",
-        component: <InvestmentLoanModal />,
-        modalWidth: "1200px",
-      },
-    ],
+    isCompleted: createCardsCompletionCheck(FINANCIAL_INVESTMENTS_CARDS),
+    Cards: FINANCIAL_INVESTMENTS_CARDS,
   },
   {
     key: "/user/discovery/estate-planning",
@@ -527,12 +550,10 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <EstatePlanning />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck(
-      "estateplanning",
-      "estatePlanning",
-    ),
+    isCompleted: createCardsCompletionCheck(ESTATE_PLANNING_CARDS),
+    Cards: ESTATE_PLANNING_CARDS,
   },
   {
     key: "/user/discovery/personal-insurance",

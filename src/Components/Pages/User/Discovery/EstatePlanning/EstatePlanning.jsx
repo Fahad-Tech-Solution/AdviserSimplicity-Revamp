@@ -16,7 +16,7 @@ import AppModal from "../../../../Common/AppModal.jsx";
 import { renderModalContent } from "../../../../Common/renderModalContent.jsx";
 import useTitleBlock from "../../../../../hooks/useTitleBlock.jsx";
 
-const FinancialInvestments = () => {
+const EstatePlanning = () => {
   const location = useLocation();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
@@ -100,7 +100,7 @@ const FinancialInvestments = () => {
                 color: "#94a3b8",
               }}
             >
-              Click the + button above to add financial investments items
+              Click the + button above to add estate planning items
             </div>
           </div>
         </div>
@@ -159,4 +159,4 @@ const FinancialInvestments = () => {
   );
 };
 
-export default FinancialInvestments;
+export default EstatePlanning;
