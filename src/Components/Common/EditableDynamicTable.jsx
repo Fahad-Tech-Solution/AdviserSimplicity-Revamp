@@ -126,6 +126,19 @@ export default function EditableDynamicTable({
                 }
               : undefined;
 
+            const resolvedDisabled =
+              typeof column.disabled === "function"
+                ? Boolean(
+                    column.disabled({
+                      record,
+                      column,
+                      form,
+                      fieldName,
+                      value: form?.getFieldValue?.(fieldName),
+                    }),
+                  )
+                : Boolean(column.disabled);
+
             if (editing) {
               if (typeof column.renderEdit === "function") {
                 return (
@@ -160,7 +173,7 @@ export default function EditableDynamicTable({
                     options={column.options}
                     placeholder={column.placeholder}
                     rules={column.rules}
-                    disabled={column.disabled}
+                    disabled={resolvedDisabled}
                     hidden={column.hidden}
                     dependencies={column.dependencies}
                     valuePropName={column.valuePropName}

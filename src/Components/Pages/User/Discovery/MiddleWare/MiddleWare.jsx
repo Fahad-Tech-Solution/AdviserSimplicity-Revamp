@@ -63,10 +63,10 @@ function buildInitialValues(sectionData = {}, noJoint = false) {
     joint: noJoint
       ? undefined
       : {
-          currentBalanceArray: sectionData?.joint || [],
-          currentBalance: sectionData?.jointCurrentBalance || "",
-          costBase: sectionData?.jointCostBaseTemp || "",
-        },
+        currentBalanceArray: sectionData?.joint || [],
+        currentBalance: sectionData?.jointCurrentBalance || "",
+        costBase: sectionData?.jointCostBaseTemp || "",
+      },
   };
 }
 
@@ -145,6 +145,21 @@ const MiddleWare = ({ modalData }) => {
       width: 1500,
       noJoint: true,
     },
+    BusinessAsCompanyStructure: {
+      addEndpoint: "/api/BusinessAsCompanyStructure/Add",
+      updateEndpoint: "/api/BusinessAsCompanyStructure/Update",
+      countLabel: "Number of Companies",
+      width: 1400,
+      noJoint: true,
+    },
+    BusinessAsTrusts: {
+      addEndpoint: "/api/BusinessAsTrusts/Add",
+      updateEndpoint: "/api/BusinessAsTrusts/Update",
+      countLabel: "Number of Trusts",
+      width: 1400,
+      noJoint: true,
+    },
+
   };
 
   const config =
@@ -336,34 +351,34 @@ const MiddleWare = ({ modalData }) => {
       clientTotal:
         showPartner && includeJoint
           ? calculateDisplayTotal(
-              sourceValues?.client?.currentBalance,
-              sourceValues?.joint?.currentBalance,
-            )
+            sourceValues?.client?.currentBalance,
+            sourceValues?.joint?.currentBalance,
+          )
           : sourceValues?.client?.currentBalance || "",
       partnerTotal:
         showPartner && includeJoint
           ? calculateDisplayTotal(
-              sourceValues?.partner?.currentBalance,
-              sourceValues?.joint?.currentBalance,
-            )
+            sourceValues?.partner?.currentBalance,
+            sourceValues?.joint?.currentBalance,
+          )
           : showPartner
             ? sourceValues?.partner?.currentBalance || ""
             : "",
       ...(hasCostBase
         ? {
-            clientCostBaseTemp: sourceValues?.client?.costBase || "",
-            partnerCostBaseTemp: showPartner
-              ? sourceValues?.partner?.costBase || ""
+          clientCostBaseTemp: sourceValues?.client?.costBase || "",
+          partnerCostBaseTemp: showPartner
+            ? sourceValues?.partner?.costBase || ""
+            : "",
+          jointCostBaseTemp:
+            showPartner && includeJoint
+              ? sourceValues?.joint?.costBase || ""
               : "",
-            jointCostBaseTemp:
-              showPartner && includeJoint
-                ? sourceValues?.joint?.costBase || ""
-                : "",
-          }
+        }
         : {}),
     };
 
-    if (modalData?.key === "superAnnuationIssues") {
+    if (["superAnnuationIssues", "BusinessAsCompanyStructure", "BusinessAsTrusts"].includes(modalData?.key)) {
       payload._id = undefined;
       payload.joint = undefined;
       payload.jointCurrentBalance = undefined;
@@ -407,8 +422,8 @@ const MiddleWare = ({ modalData }) => {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Financial section"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Financial section"}`,
       );
     } finally {
       setSaving(false);

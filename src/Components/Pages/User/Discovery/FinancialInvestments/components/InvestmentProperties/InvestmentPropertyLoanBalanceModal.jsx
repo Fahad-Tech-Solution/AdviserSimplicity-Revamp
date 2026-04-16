@@ -296,7 +296,7 @@ export default function InvestmentPropertyLoanBalanceModal({
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <EditableDynamicTable
           form={form}
