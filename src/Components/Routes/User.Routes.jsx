@@ -37,6 +37,9 @@ import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/component
 import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessEntities.jsx";
 import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/PowerOfAttorney/PowerOfAttorney.jsx";
 import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
+import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/PersonalInsurance.jsx";
+import PersonalInsuranceModal from "../Pages/User/Discovery/PersonalInsurance/components/PersonalInsuranceModal.jsx";
+
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -411,6 +414,37 @@ const ESTATE_PLANNING_CARDS = [
   },
 ];
 
+const PERSONAL_INSURANCE_CARDS = [
+  {
+    title: "Life Insurance",
+    key: "lifeInsurance",
+    icon: "📋",
+    component: <PersonalInsuranceModal />,
+    modalWidth: "1000px",
+  },
+  {
+    title: "TPD Insurance",
+    key: "TPDInsurance",
+    icon: "♿",
+    modalWidth: "1000px",
+    component: <PersonalInsuranceModal />,
+  },
+  {
+    title: "Trauma Insurance",
+    key: "TraumaInsurance",
+    modalWidth: "1000px",
+    icon: "⬜",
+    component: <PersonalInsuranceModal />,
+  },
+  {
+    title: "Income Protection",
+    key: "IncomeProtection",
+    modalWidth: "1000px",
+    icon: "☂️",
+    component: <PersonalInsuranceModal />,
+  },
+];
+
 export const withSpacing = ({
   icon,
   label,
@@ -595,13 +629,11 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
     condition: (q) =>
       String(q?.personalInsuranceTab ?? "").toLowerCase() === "yes",
-    isCompleted: createSectionCompletionCheck(
-      "personalinsurance",
-      "personalInsurance",
-    ),
+    component: <PersonalInsurance />,
+    isCompleted: createCardsCompletionCheck(PERSONAL_INSURANCE_CARDS),
+    Cards: PERSONAL_INSURANCE_CARDS,
   },
   {
     key: "/user/discovery/business-entities",
