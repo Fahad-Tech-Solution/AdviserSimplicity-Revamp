@@ -34,6 +34,7 @@ import superFundsIcon from "../../assets/image/SectionImages/SuperFunds.jpeg";
 import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/Annuities/Annuities.jsx";
 import EstatePlanning from "../Pages/User/Discovery/EstatePlanning/EstatePlanning.jsx";
 import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/components/wills/EstatePlanningWill.jsx";
+import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessEntities.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -363,6 +364,27 @@ const FINANCIAL_INVESTMENTS_CARDS = [
   },
 ];
 
+const BUSINESS_ENTITIES_CARDS = [
+  {
+    title: "Trading Company",
+    key: "BusinessAsCompanyStructure",
+    icon: "🏢",
+    component: <MiddleWare />,
+    innerComponent: <AccountBasedPension />,
+    modalWidth: "620px",
+    tableRows: 3,
+  },
+  {
+    title: "Business Trust",
+    key: "BusinessAsTrusts",
+    icon: "💼",
+    component: <MiddleWare />,
+    innerComponent: <AccountBasedPension />,
+    modalWidth: "620px",
+    tableRows: 3,
+  },
+];
+
 const ESTATE_PLANNING_CARDS = [
   {
     title: "Wills",
@@ -591,17 +613,15 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <BusinessEntities />,
     condition: (q) => {
       return (
         String(q?.BusinessAsCompanyStructure ?? "").toLowerCase() === "yes" ||
         String(q?.BusinessAsTrusts ?? "").toLowerCase() === "yes"
       );
     },
-    isCompleted: createSectionCompletionCheck(
-      "businessentities",
-      "businessEntities",
-    ),
+    isCompleted: createCardsCompletionCheck(BUSINESS_ENTITIES_CARDS),
+    Cards: BUSINESS_ENTITIES_CARDS,
   },
   {
     key: "/user/discovery/smsf",
