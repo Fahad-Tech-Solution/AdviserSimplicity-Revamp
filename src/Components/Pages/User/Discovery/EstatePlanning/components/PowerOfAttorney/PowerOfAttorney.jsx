@@ -7,8 +7,7 @@ import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.
 import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
 import { discoveryDataAtom } from "../../../../../../../store/authState";
 import useApi from "../../../../../../../hooks/useApi.js";
-import EstatePlanningDescriptionModal from "./EstatePlanningDescriptionModal.jsx";
-import ExecutorDetailsModal from "./ExecutorDetailsModal.jsx";
+import ExecutorDetailsModal from "../wills/ExecutorDetailsModal.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -18,6 +17,14 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
+
+const POA_TYPE_OPTIONS = [
+  { value: "Enduring", label: "Enduring" },
+  { value: "Financial & Personal", label: "Financial & Personal" },
+  { value: "Medical Decision Maker", label: "Medical Decision Maker" },
+  { value: "Limited", label: "Limited" },
+  { value: "Other", label: "Other" },
+];
 
 function getClientName(discoveryData) {
   return (
@@ -51,67 +58,39 @@ function buildOwnerOptions(discoveryData, allowPartner) {
     : [{ value: "client", label: clientName }];
 }
 
-function buildWillPerson(person = {}) {
-  const executor = Array.isArray(person?.executor) ? person.executor : [];
-  console.log("person", person);
+function buildPOAPerson(person = {}) {
+  const POAName = Array.isArray(person?.POAName) ? person.POAName : [];
   return {
+    POAType: person?.POAType || "",
     yearSetUp: person?.yearSetUp || "",
-    willsCurrent: person?.willsCurrent || "",
-    executor,
-    executorDisplay: executor.length ? String(executor.length) : "",
-    enduringGuardianship: person?.enduringGuardianship || "",
-    testamentaryTrust: person?.testamentaryTrust || "",
-    estatePlanningRadio: person?.estatePlanningRadio || "",
-    estatePlanningdescription: person?.estatePlanningdescription || "",
+    POAName,
+    POADisplay: POAName.length ? String(POAName.length) : "",
   };
 }
 
 function buildInitialValues(sectionData = {}, allowPartner) {
   const rawOwner = Array.isArray(sectionData?.owner) ? sectionData.owner : [];
-
   const owner = allowPartner
     ? rawOwner
     : rawOwner.filter((value) => value === "client");
 
   return {
     owner,
-    client: buildWillPerson(sectionData?.client),
-    partner: buildWillPerson(sectionData?.partner),
+    client: buildPOAPerson(sectionData?.client),
+    partner: buildPOAPerson(sectionData?.partner),
   };
 }
 
 function buildPayloadPerson(person = {}, existing = {}) {
   return {
     ...existing,
+    POAType: person?.POAType || "",
     yearSetUp: person?.yearSetUp || "",
-    willsCurrent: person?.willsCurrent || "",
-    executor: Array.isArray(person?.executor) ? person.executor : [],
-    enduringGuardianship: person?.enduringGuardianship || "",
-    testamentaryTrust: person?.testamentaryTrust || "",
-    estatePlanningRadio: person?.estatePlanningRadio || "",
-    estatePlanningdescription: person?.estatePlanningdescription || "",
+    POAName: Array.isArray(person?.POAName) ? person.POAName : [],
   };
 }
 
-function SwitchPopupDisplay({ value, onClick }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span>{value || "No"}</span>
-      {value === "Yes" ? (
-        <Button
-          type="primary"
-          size="small"
-          style={{ width: 25, padding: 0 }}
-          onClick={onClick}
-        >
-          ↗
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
-export default function EstatePlanningWill({ modalData }) {
+export default function PowerOfAttorney({ modalData }) {
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -123,7 +102,6 @@ export default function EstatePlanningWill({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
 
   const sectionData = discoveryData?.[modalData?.key] || {};
-
   const allowPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
   );
@@ -162,16 +140,13 @@ export default function EstatePlanningWill({ modalData }) {
         key: "client",
         formPath: "client",
         ownerLabel: clientName,
+        POAType: watchedClient?.POAType || "",
         yearSetUp: watchedClient?.yearSetUp || "",
-        willsCurrent: watchedClient?.willsCurrent || "No",
-        executorDisplay:
-          Array.isArray(watchedClient?.executor) &&
-          watchedClient.executor.length
-            ? String(watchedClient.executor.length)
-            : "",
-        enduringGuardianship: watchedClient?.enduringGuardianship || "No",
-        testamentaryTrust: watchedClient?.testamentaryTrust || "No",
-        estatePlanningRadio: watchedClient?.estatePlanningRadio || "No",
+        POADisplay:
+          watchedClient?.POADisplay ||
+          (Array.isArray(watchedClient?.POAName) && watchedClient.POAName.length
+            ? String(watchedClient.POAName.length)
+            : ""),
       });
     }
 
@@ -180,16 +155,14 @@ export default function EstatePlanningWill({ modalData }) {
         key: "partner",
         formPath: "partner",
         ownerLabel: partnerName,
+        POAType: watchedPartner?.POAType || "",
         yearSetUp: watchedPartner?.yearSetUp || "",
-        willsCurrent: watchedPartner?.willsCurrent || "No",
-        executorDisplay:
-          Array.isArray(watchedPartner?.executor) &&
-          watchedPartner.executor.length
-            ? String(watchedPartner.executor.length)
-            : "",
-        enduringGuardianship: watchedPartner?.enduringGuardianship || "No",
-        testamentaryTrust: watchedPartner?.testamentaryTrust || "No",
-        estatePlanningRadio: watchedPartner?.estatePlanningRadio || "No",
+        POADisplay:
+          watchedPartner?.POADisplay ||
+          (Array.isArray(watchedPartner?.POAName) &&
+          watchedPartner.POAName.length
+            ? String(watchedPartner.POAName.length)
+            : ""),
       });
     }
 
@@ -198,41 +171,30 @@ export default function EstatePlanningWill({ modalData }) {
         key: "together",
         formPath: "client",
         ownerLabel: `Together (${clientName} & ${partnerName})`,
+        POAType: watchedClient?.POAType || "",
         yearSetUp: watchedClient?.yearSetUp || "",
-        willsCurrent: watchedClient?.willsCurrent || "",
-        executorDisplay:
-          Array.isArray(watchedClient?.executor) &&
-          watchedClient.executor.length
-            ? String(watchedClient.executor.length)
-            : "",
-        enduringGuardianship: watchedClient?.enduringGuardianship || "",
-        testamentaryTrust: watchedClient?.testamentaryTrust || "",
-        estatePlanningRadio: watchedClient?.estatePlanningRadio || "",
+        POADisplay:
+          watchedClient?.POADisplay ||
+          (Array.isArray(watchedClient?.POAName) && watchedClient.POAName.length
+            ? String(watchedClient.POAName.length)
+            : ""),
       });
     }
 
     return nextRows;
   }, [allowPartner, discoveryData, selectedOwners, form]);
 
-  const openInnerModal = (type, record) => {
+  const openInnerModal = (record) => {
     const rowValues = form.getFieldValue(record?.formPath) || {};
-
-    const detailMap = {
-      executor: {
-        title: `${record?.ownerLabel || "Owner"} Executor`,
-        width: 900,
-        question: "Number of Executors",
-        component: <ExecutorDetailsModal />,
-      },
-      estatePlanning: {
-        title: `${record?.ownerLabel || "Owner"} Estate Planning`,
-        width: 760,
-        component: <EstatePlanningDescriptionModal />,
-      },
-    };
 
     setDetailModalOpen(true);
     setDetailModalData({
+      title: `${record?.ownerLabel || "Owner"} Name of POA`,
+      width: 900,
+      question: "Number of Power of Attorney's",
+      component: <ExecutorDetailsModal />,
+      arrayKey: "POAName",
+      displayKey: "POADisplay",
       parentForm: form,
       fieldPath: record?.formPath,
       initialValues: rowValues,
@@ -240,7 +202,6 @@ export default function EstatePlanningWill({ modalData }) {
         setDetailModalOpen(false);
         setEditing(true);
       },
-      ...(detailMap[type] || {}),
     });
   };
 
@@ -252,6 +213,15 @@ export default function EstatePlanningWill({ modalData }) {
       editable: false,
     },
     {
+      title: "POA Type",
+      dataIndex: "POAType",
+      key: "POAType",
+      field: "POAType",
+      type: "select",
+      placeholder: "Select POA Type",
+      options: POA_TYPE_OPTIONS,
+    },
+    {
       title: "Year Set Up",
       dataIndex: "yearSetUp",
       key: "yearSetUp",
@@ -260,58 +230,17 @@ export default function EstatePlanningWill({ modalData }) {
       placeholder: "Enter Year Set Up",
     },
     {
-      title: "Are Your Wills Current",
-      dataIndex: "willsCurrent",
-      key: "willsCurrent",
-      field: "willsCurrent",
-      type: "yesNoSwitch",
-      renderView: ({ value }) => value || "No",
-    },
-    {
-      title: "Executor",
-      dataIndex: "executorDisplay",
-      key: "executorDisplay",
-      field: "executorDisplay",
+      title: "Name of POA",
+      dataIndex: "POADisplay",
+      key: "POADisplay",
+      field: "POADisplay",
       type: "input-action",
       disabled: true,
-      placeholder: "Executor",
+      placeholder: "Name of POA",
       action: {
-        name: "Open Executor",
-        onClick: ({ record }) => openInnerModal("executor", record),
+        name: "Open Name of POA",
+        onClick: ({ record }) => openInnerModal(record),
       },
-    },
-    {
-      title: "Enduring Guardianship",
-      dataIndex: "enduringGuardianship",
-      key: "enduringGuardianship",
-      field: "enduringGuardianship",
-      type: "yesNoSwitch",
-      renderView: ({ value }) => value || "No",
-    },
-    {
-      title: "Testamentary Trust",
-      dataIndex: "testamentaryTrust",
-      key: "testamentaryTrust",
-      field: "testamentaryTrust",
-      type: "yesNoSwitch",
-      renderView: ({ value }) => value || "No",
-    },
-    {
-      title: "Estate Planning Requirements",
-      dataIndex: "estatePlanningRadio",
-      key: "estatePlanningRadio",
-      field: "estatePlanningRadio",
-      type: "yesNoSwitchWithButton",
-      action: {
-        name: "Open Estate Planning",
-        onClick: ({ record }) => openInnerModal("estatePlanning", record),
-      },
-      renderView: ({ value, record }) => (
-        <SwitchPopupDisplay
-          value={value}
-          onClick={() => openInnerModal("estatePlanning", record)}
-        />
-      ),
     },
   ];
 
@@ -380,21 +309,23 @@ export default function EstatePlanningWill({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/will/Update", payload)
-        : await post("/api/will/Add", payload);
+        ? await patch("/api/POA/Update", payload)
+        : await post("/api/POA/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Wills"} updated successfully`);
+      message.success(
+        `${modalData?.title || "Power of Attorneys"} updated successfully`,
+      );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
           error?.message ||
-          `Failed to update ${modalData?.title || "Wills"}`,
+          `Failed to update ${modalData?.title || "Power of Attorneys"}`,
       );
     } finally {
       setSaving(false);
@@ -417,17 +348,9 @@ export default function EstatePlanningWill({ modalData }) {
         initialValues={initialValues}
         onFinish={handleFinish}
         requiredMark={false}
-        colon={false}
-        styles={{
-          label: {
-            fontWeight: "600",
-            fontSize: "13px",
-            fontFamily: "Arial, serif",
-          },
-        }}
       >
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={7}>
+          <Col xs={24} md={10}>
             <Form.Item label="Owner" name="owner" style={{ marginBottom: 0 }}>
               <Select
                 mode="multiple"
@@ -466,21 +389,12 @@ export default function EstatePlanningWill({ modalData }) {
                     <Button onClick={() => modalData?.closeModal?.()}>
                       Cancel
                     </Button>
-                    <Button
-                      key={"edit"}
-                      type="primary"
-                      onClick={() => setEditing(true)}
-                    >
+                    <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    key={"save"}
-                    type="primary"
-                    htmlType="submit"
-                    loading={saving}
-                  >
+                  <Button type="primary" htmlType="submit" loading={saving}>
                     Save
                   </Button>
                 )}

@@ -164,14 +164,21 @@ function YesNoSwitchWithButton({
   const buttonKey = action?.key || `${fieldProps.name || "yesNo"}_button`;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        maxWidth: "100px",
+      }}
+    >
       <YesNoSwitch
         value={value}
         onChange={onChange}
         disabled={disabled}
         {...fieldProps}
       />
-      <div className="d-flex justify-content-center align-items-center">
+      <div className="d-flex justify-content-center align-items-center ">
         {value === "Yes" ? (
           <Button
             key={buttonKey}
@@ -235,7 +242,12 @@ function InputActionField({
       <Input
         placeholder={placeholder}
         size="small"
-        style={{ height: "26px", borderRadius: "7px", maxWidth: "140px", minWidth: "80px" }}
+        style={{
+          height: "26px",
+          borderRadius: "7px",
+          maxWidth: "140px",
+          minWidth: "80px",
+        }}
         value={value}
         onChange={onChange}
         disabled={disabled}

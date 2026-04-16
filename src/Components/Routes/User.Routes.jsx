@@ -35,6 +35,8 @@ import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/A
 import EstatePlanning from "../Pages/User/Discovery/EstatePlanning/EstatePlanning.jsx";
 import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/components/wills/EstatePlanningWill.jsx";
 import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessEntities.jsx";
+import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/PowerOfAttorney/PowerOfAttorney.jsx";
+import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
@@ -391,19 +393,21 @@ const ESTATE_PLANNING_CARDS = [
     key: "will",
     icon: "📄",
     component: <EstatePlanningWill />,
-    modalWidth: "1200px",
+    modalWidth: "1000px",
   },
   {
     title: "Power of Attorneys",
     key: "POA",
     icon: "🤝",
-    component: null,
+    component: <PowerOfAttorney />,
+    modalWidth: "700px",
   },
   {
     title: "Professional Advisers",
     key: "professionalAdviser",
     icon: "👔",
-    component: null,
+    component: <ProfessionalAdvisers />,
+    modalWidth: "1000px",
   },
 ];
 

@@ -42,7 +42,7 @@ export default function AppModal({
         },
       }}
     >
-      <Divider style={{ margin: 0 }} />
+      {title && <Divider style={{ margin: 0 }} />}
       {children}
     </Modal>
   );

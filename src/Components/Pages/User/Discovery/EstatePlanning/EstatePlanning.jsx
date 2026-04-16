@@ -11,7 +11,6 @@ import {
 } from "../../../../Routes/User.Routes";
 import { Col, message, Row } from "antd";
 import DiscoveryTotalsCard from "../../../../Common/DiscoveryTotalsCard.jsx";
-import useApi from "../../../../../hooks/useApi.js";
 import AppModal from "../../../../Common/AppModal.jsx";
 import { renderModalContent } from "../../../../Common/renderModalContent.jsx";
 import useTitleBlock from "../../../../../hooks/useTitleBlock.jsx";
@@ -60,10 +59,14 @@ const EstatePlanning = () => {
       <AppModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={renderTitleBlock({
-          title: modalData?.title,
-          icon: modalData?.icon,
-        })}
+        title={
+          modalData?.key === "professionalAdviser"
+            ? null
+            : renderTitleBlock({
+                title: modalData?.title,
+                icon: modalData?.icon,
+              })
+        }
         width={modalData?.width}
       >
         {renderModalContent(modalData)}

@@ -13,7 +13,7 @@ const CARD_STYLE = {
 
 const CARD_BODY_STYLE = {
   padding: "24px 16px 18px",
-  minHeight: "262px",
+  maxHeight: "262px",
 };
 
 const TITLE_STYLE = {
