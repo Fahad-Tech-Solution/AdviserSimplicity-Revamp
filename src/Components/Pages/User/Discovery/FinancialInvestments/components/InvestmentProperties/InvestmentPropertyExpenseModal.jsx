@@ -1,10 +1,7 @@
 import { Button, Form, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import {
-  formatNumber,
-  toCommaAndDollar,
-} from "../../../../../../../hooks/helpers.js";
+import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 // import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 
 const TABLE_PROPS = {
@@ -78,10 +75,7 @@ function updateTotal(record, currentForm) {
   const row = currentForm.getFieldValue([...record.formPath]) || {};
   const entry = normalizeEntry(row);
   const total = computeTotal(entry);
-  currentForm.setFieldValue(
-    [...record.formPath, "totalExpance"],
-    toCommaAndDollar(total),
-  );
+  currentForm.setFieldValue([...record.formPath, "totalExpance"], toCommaAndDollar(total));
 }
 
 export default function InvestmentPropertyExpenseModal({
@@ -117,10 +111,7 @@ export default function InvestmentPropertyExpenseModal({
     // ensure total is set on open if missing
     const entry = normalizeEntry(form.getFieldValue(["expenseRows", 0]) || {});
     if (!entry.totalExpance) {
-      form.setFieldValue(
-        ["expenseRows", 0, "totalExpance"],
-        toCommaAndDollar(computeTotal(entry)),
-      );
+      form.setFieldValue(["expenseRows", 0, "totalExpance"], toCommaAndDollar(computeTotal(entry)));
     }
   }, [form, initialValues]);
 
@@ -133,7 +124,6 @@ export default function InvestmentPropertyExpenseModal({
         field: "councilRates",
         type: "text",
         placeholder: "Council Rates",
-
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -149,7 +139,6 @@ export default function InvestmentPropertyExpenseModal({
         field: "waterRates",
         type: "text",
         placeholder: "Water Rates",
-
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -237,8 +226,7 @@ export default function InvestmentPropertyExpenseModal({
       {
         key: "expenseRow0",
         formPath: ["expenseRows", 0],
-        ...(form.getFieldValue(["expenseRows", 0]) ||
-          initialValues.expenseRows[0]),
+        ...(form.getFieldValue(["expenseRows", 0]) || initialValues.expenseRows[0]),
       },
     ],
     [form, initialValues.expenseRows],
@@ -249,13 +237,12 @@ export default function InvestmentPropertyExpenseModal({
       setSaving(true);
       const values = await form.validateFields();
       const entry = normalizeEntry(values?.expenseRows?.[0] || {});
-      const total =
-        parseCurrencyValue(entry.totalExpance) ?? computeTotal(entry);
+      const total = parseCurrencyValue(entry.totalExpance) ?? computeTotal(entry);
       resolvedOnSave?.({
         array: [{ ...entry, totalExpance: toCommaAndDollar(total) }],
         total: toCommaAndDollar(total),
       });
-      setLocalEditing(false);
+      // setLocalEditing(false);
       resolvedOnClose?.();
     } finally {
       setSaving(false);
@@ -272,7 +259,7 @@ export default function InvestmentPropertyExpenseModal({
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <EditableDynamicTable
           form={form}
@@ -282,30 +269,19 @@ export default function InvestmentPropertyExpenseModal({
           tableProps={TABLE_PROPS}
           rowPathKey="formPath"
         />
-        <div
-          style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}
-        >
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
           <Space>
             {!localEditing ? (
               <>
                 <Button onClick={handleCancel} disabled={saving}>
                   Cancel
                 </Button>
-                <Button
-                  type="primary"
-                  onClick={() => setLocalEditing(true)}
-                  disabled={saving}
-                >
+                <Button type="primary" onClick={() => setLocalEditing(true)} disabled={saving}>
                   Edit
                 </Button>
               </>
             ) : (
-              <Button
-                type="primary"
-                onClick={handleOk}
-                loading={saving}
-                disabled={saving}
-              >
+              <Button type="primary" onClick={handleOk} loading={saving} disabled={saving}>
                 Confirm and Exit
               </Button>
             )}
@@ -315,3 +291,4 @@ export default function InvestmentPropertyExpenseModal({
     </div>
   );
 }
+

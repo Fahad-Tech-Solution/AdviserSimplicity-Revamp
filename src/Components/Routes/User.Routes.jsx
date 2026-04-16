@@ -35,6 +35,8 @@ import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/A
 import EstatePlanning from "../Pages/User/Discovery/EstatePlanning/EstatePlanning.jsx";
 import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/components/wills/EstatePlanningWill.jsx";
 import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessEntities.jsx";
+import TradingCompanyModal from "../Pages/User/Discovery/BusinessEntities/coponents/TradingCompanySection/TradingCompanyModal.jsx";
+import BusinessTrustModal from "../Pages/User/Discovery/BusinessEntities/coponents/BusinessTrustSection/BusinessTrustModal.jsx";
 import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/PowerOfAttorney/PowerOfAttorney.jsx";
 import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
 import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/PersonalInsurance.jsx";
@@ -375,7 +377,7 @@ const BUSINESS_ENTITIES_CARDS = [
     key: "BusinessAsCompanyStructure",
     icon: "🏢",
     component: <MiddleWare />,
-    innerComponent: <AccountBasedPension />,
+    innerComponent: <TradingCompanyModal />,
     modalWidth: "620px",
     tableRows: 3,
   },
@@ -384,7 +386,7 @@ const BUSINESS_ENTITIES_CARDS = [
     key: "BusinessAsTrusts",
     icon: "💼",
     component: <MiddleWare />,
-    innerComponent: <AccountBasedPension />,
+    innerComponent: <BusinessTrustModal />,
     modalWidth: "620px",
     tableRows: 3,
   },
