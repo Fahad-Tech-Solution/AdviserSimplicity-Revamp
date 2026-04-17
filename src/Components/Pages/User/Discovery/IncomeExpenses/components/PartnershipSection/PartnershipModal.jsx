@@ -56,7 +56,8 @@ function parsePercentValue(value) {
 function formatPercentValue(value) {
   const numeric = parsePercentValue(value);
   if (numeric === undefined) return "";
-  return `${numeric}%`;
+  const bounded = Math.min(Math.max(numeric, 0), 100);
+  return `${bounded}%`;
 }
 
 function Formula(record, currentForm) {

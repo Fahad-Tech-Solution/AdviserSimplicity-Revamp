@@ -72,11 +72,18 @@ function normalizeTrust(entry = {}) {
     aNC: String(entry?.aNC ?? "").replace(/[^0-9]/g, ""),
     distributionReceived: formatCurrencyValue(entry?.distributionReceived),
     businessValuation: formatCurrencyValue(entry?.businessValuation),
-    directorsOfCorporateTrustee: Array.isArray(entry?.directorsOfCorporateTrustee)
-      ? entry.directorsOfCorporateTrustee.map((d) => ({
+    // directorsOfCorporateTrustee: Array.isArray(entry?.directorsOfCorporateTrustee)
+    //   ? entry.directorsOfCorporateTrustee.map((d) => ({
+    //       directorName: String(d?.directorName ?? "").trim(),
+    //     }))
+    //   : [],
+
+    directorsOfCorporateTrustee:
+      Array.isArray(entry?.directorsOfCorporateTrustee)
+        ? entry.directorsOfCorporateTrustee.map((d) => ({
           directorName: String(d?.directorName ?? "").trim(),
         }))
-      : [],
+        : entry?.directorsOfCorporateTrustee || [],
   };
 }
 
@@ -130,7 +137,7 @@ export default function BusinessTrustModal({ modalData }) {
   const ownerKey = modalData?.ownerKey;
 
   const sectionData = parentForm?.getFieldValue?.(ownerKey) || {};
-
+  console.log("sectionData", sectionData);
   const initialValues = useMemo(
     () => buildInitialValues(sectionData),
     [sectionData?.currentBalanceArray, sectionData?.clientFK],
@@ -166,29 +173,65 @@ export default function BusinessTrustModal({ modalData }) {
   };
 
   const openTrusteeInnerModal = useCallback(
-    (rowIndex) => {
-      const trust = form.getFieldValue(["tradingTrusts", rowIndex]) || {};
+    ({ record, form: currentForm } = {}) => {
+      const rowIndex =
+        typeof record?.rowNumber === "number"
+          ? record.rowNumber - 1
+          : typeof record?.rowIndex === "number"
+            ? record.rowIndex
+            : null;
+      if (rowIndex === null) return;
+
+      const trust = currentForm?.getFieldValue?.(["tradingTrusts", rowIndex]) || {};
       const trusteeType = trust?.trusteeType;
       if (!trusteeType) return;
 
       const isCorporate = trusteeType === "Corporate";
       setDetailModalOpen(true);
       setDetailModalData({
+        type: "trusteeInner",
         title: isCorporate ? "Company Directors" : "Trustee Name",
-        width: 720,
-        component: <BusinessTrustTrusteeInnerModal />,
-        parentForm: form,
-        rowIndex,
         countLabel: isCorporate ? "Number of Directors :" : "Number of Trustees :",
-        columnHead: isCorporate ? "Director Name" : "Trustee Name",
-        maxCount: modalData?.tableRows || 4,
+        width: 500,
+        component: <BusinessTrustTrusteeInnerModal />,
+        editing,
+        valueArray:
+          currentForm?.getFieldValue?.([
+            "tradingTrusts",
+            rowIndex,
+            "directorsOfCorporateTrustee",
+          ]) || [],
+        // onSave: (rows) => {
+        //   currentForm?.setFieldValue?.(
+        //     ["tradingTrusts", rowIndex, "directorsOfCorporateTrustee"],
+        //     rows,
+        //   );
+        // },
+
+
+
+        // countLabel: isCorporate ? "Number of Directors :" : "Number of Trustees :",
+        // columnHead: isCorporate ? "Director Name" : "Trustee Name",
+
+        onSave: (rows) => {
+          currentForm?.setFieldValue(
+            ["tradingTrusts", rowIndex, "directorsOfCorporateTrustee"],
+            rows,
+          );
+
+          // ✅ force UI refresh (important for future extensions)
+          currentForm?.setFieldsValue({
+            tradingTrusts: currentForm.getFieldValue("tradingTrusts"),
+          });
+        },
+        maxCount: 4,
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
         },
       });
     },
-    [form, modalData?.tableRows],
+    [editing, modalData?.tableRows],
   );
 
   const detailRows = useMemo(
@@ -270,11 +313,26 @@ export default function BusinessTrustModal({ modalData }) {
       dataIndex: "trusteeType",
       key: "trusteeType",
       field: "trusteeType",
-      type: "select",
+      type: "select-action",
       options: TRUSTEE_TYPE_OPTIONS,
       placeholder: "Select",
+      action: {
+        name: "Open Trustee Type",
+        onClick: (payload) => openTrusteeInnerModal(payload),
+      },
+      onChange: (value, record, __, currentForm) => {
+        const nextType = value;
+        currentForm.setFieldValue([...record.formPath, "trusteeType"], nextType);
+        // Keep existing directors/trustees list; only the label/title changes
+        // depending on Corporate vs Individual.
+        if (nextType === "Individual") {
+          currentForm.setFieldValue([...record.formPath, "trusteeName"], "");
+          currentForm.setFieldValue([...record.formPath, "aNC"], "");
+        }
+      },
+      renderView: ({ value }) => trusteeTypeLabel(value) || "--",
     },
-   
+
     {
       title: "Trustee Name",
       dataIndex: "trusteeName",
@@ -301,7 +359,7 @@ export default function BusinessTrustModal({ modalData }) {
         );
       },
     },
-  
+
     {
       title: "Distribution Received",
       dataIndex: "distributionReceived",
@@ -351,20 +409,25 @@ export default function BusinessTrustModal({ modalData }) {
   ];
 
   const handleConfirmAndExit = async () => {
-    const values = await form.validateFields();
+    // validateFields() may omit nested values written via setFieldValue (e.g. directorsOfCorporateTrustee).
+    await form.validateFields();
+    const values = form.getFieldsValue(true);
+
     const countValue = Number(values?.NumberOfMap) || 0;
+
     const savedEntries = buildEntries(
       countValue,
       Array.isArray(values?.tradingTrusts) ? values.tradingTrusts : [],
     ).map(normalizeTrust);
 
-    syncParentValues(savedEntries);
+    syncParentValues(savedEntries); // ✅ correct flow
+
     setEditing(false);
     modalData?.closeModal?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
