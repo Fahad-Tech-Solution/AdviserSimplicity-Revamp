@@ -214,6 +214,15 @@ export default function PersonalLoanModal({ modalData }) {
 
   const columns = useMemo(
     () => [
+
+      {
+        title: "No#",
+        dataIndex: "index",
+        key: "owner",
+        width: 60,
+        editable: false,
+        renderView: ({ record }) => record.rowIndex + 1,
+      },
       {
         title: "Lender",
         dataIndex: "LenderCurrent",
@@ -371,10 +380,9 @@ export default function PersonalLoanModal({ modalData }) {
           0,
         ),
       ),
-      partner: [],
-      partnerTotal: "",
+     
     };
-
+console.log("payload",payload);
     try {
       setSaving(true);
       const saved = sectionData?.clientFK

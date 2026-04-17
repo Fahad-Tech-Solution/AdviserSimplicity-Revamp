@@ -241,7 +241,9 @@ export default function InvestmentLoanModal({ modalData }) {
 
   const columns = useMemo(() => {
     const commonColumns = [
-      { title: "Owner", key: "owner", kind: "owner", width: 150 },
+      { title: "Owner", key: "owner", kind: "owner", 
+        // width: 150 
+      },
       {
         title: "Lender",
         dataIndex: "lender",
@@ -249,7 +251,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "lender",
         type: "select",
         options: lenderOption,
-        width: isMarginLoan ? 200 : 150,
+        // width: isMarginLoan ? 200 : 150,
       },
       {
         title: "Loan Balance",
@@ -258,7 +260,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanBalance",
         type: "text",
         placeholder: "Loan Balance",
-        width: isMarginLoan ? 160 : 200,
+        // width: isMarginLoan ? 160 : 200,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -276,7 +278,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "monthlyContribution",
         type: "text",
         placeholder: "Monthly Contribution",
-        width: 180,
+        // width: 180,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -293,7 +295,7 @@ export default function InvestmentLoanModal({ modalData }) {
         type: "text",
         disabled: true,
         editable: true,
-        width: 200,
+        // width: 200,
       },
       {
         title: "Interest Rate (p.a)",
@@ -302,7 +304,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "interestRate",
         type: "text",
         placeholder: "Interest Rate",
-        width: 150,
+        // width: 150,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -317,7 +319,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTerm",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 150,
+        // width: 150,
       },
       {
         title: "Loan Term Remaining",
@@ -326,7 +328,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 180,
+        // width: 180,
       },
       {
         title: "Deductible Loan Amount",
@@ -335,7 +337,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "deductibleLoanAmount",
         type: "text",
         placeholder: "Deductible Loan Amount",
-        width: 200,
+        // width: 200,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -353,7 +355,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanType",
         type: "select",
         options: LOAN_TYPE_OPTIONS,
-        width: 150,
+        // width: 150,
       },
       {
         title: "Repayments Amount",
@@ -362,7 +364,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "repaymentsAmount",
         type: "text",
         placeholder: "Repayments Amount",
-        width: 200,
+        // width: 200,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -378,7 +380,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "frequency",
         type: "select",
         options: FREQUENCY_OPTIONS,
-        width: 150,
+        // width: 150,
         onChange: (_, record, __, currentForm) => {
           calculateAnnualRepayments(record, currentForm);
         },
@@ -392,7 +394,7 @@ export default function InvestmentLoanModal({ modalData }) {
         placeholder: "Annual Repayments",
         disabled: true,
         editable: true,
-        width: 150,
+        // width: 150,
       },
       {
         title: "Interest Rate",
@@ -401,7 +403,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "interestRate",
         type: "text",
         placeholder: "Interest Rate",
-        width: 200,
+        // width: 200,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -416,7 +418,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTerm",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 150,
+        // width: 150,
       },
       {
         title: "Loan Term Remaining",
@@ -425,7 +427,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        width: 150,
+        // width: 150,
       },
       {
         title: "Deductible Loan Amount",
@@ -434,7 +436,7 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "deductibleLoanAmount",
         type: "text",
         placeholder: "Deductible Loan Amount",
-        width: 200,
+        // width: 200,
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [record.formPath, column.field],
@@ -680,7 +682,7 @@ joint: jointSelected
         requiredMark={false}
       >
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Form.Item
               label={modalData?.title !== "Investment Loan" ? "Members" : "Owner"}
               name="owner"

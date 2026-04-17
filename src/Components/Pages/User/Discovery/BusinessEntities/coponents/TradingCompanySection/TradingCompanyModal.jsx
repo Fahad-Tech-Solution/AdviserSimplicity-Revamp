@@ -260,6 +260,8 @@ export default function TradingCompanyModal({ modalData }) {
             key: "directorship",
             field: "directorship",
             type: "yesNoSwitch",
+            // defaultValue: "No",
+            
         },
         {
             title: "Shareholding",

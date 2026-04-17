@@ -377,8 +377,7 @@ export default function CreditCardModal({ modalData }) {
           0,
         ),
       ),
-      partner: [],
-      partnerTotal: "",
+     
     };
 
     try {

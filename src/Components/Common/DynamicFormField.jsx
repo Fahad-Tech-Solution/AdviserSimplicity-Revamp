@@ -263,6 +263,44 @@ function InputActionField({
   );
 }
 
+function SelectActionField({
+  placeholder,
+  action,
+  disabled,
+  value,
+  onChange,
+  options = [],
+  ...fieldProps
+}) {
+  return (
+    <div className="d-flex justify-content-start w-100 align-items-center gap-2">
+      <Select
+        placeholder={placeholder}
+        size="small"
+        style={{
+          height: "26px",
+          borderRadius: "7px",
+          maxWidth: "180px",
+          minWidth: "120px",
+          width: "100%",
+        }}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        options={buildOptions(options)}
+        {...fieldProps}
+      />
+      {/* Modal icon should never be disabled (per request) */}
+      <ModalPopupButton
+        action={action}
+        disabled={false}
+        name={fieldProps.name}
+        id={fieldProps.id}
+      />
+    </div>
+  );
+}
+
 function PostcodeSearchSelect({
   placeholder,
   value,
@@ -489,7 +527,32 @@ function getInputNode({
         />
       );
 
-    case "text":
+    case "select-action":
+      return (
+        <SelectActionField
+          placeholder={placeholder}
+          action={action}
+          disabled={fieldProps.disabled}
+          value={fieldProps.value}
+          onChange={fieldProps.onChange}
+          options={options}
+          {...fieldProps}
+        />
+      );
+
+     case "input-action":
+      return (
+        <InputActionField
+          placeholder={placeholder}
+          action={action}
+          disabled={fieldProps.disabled}
+          value={fieldProps.value}
+          onChange={fieldProps.onChange}
+          {...fieldProps}
+        />
+      );
+
+      case "text":
     default:
       return (
         <Input
