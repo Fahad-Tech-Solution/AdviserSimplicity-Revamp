@@ -43,10 +43,21 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
       groupCoverValue?._id;
 
     const providerLabel =
-      safeProviderOptions.find((option) => option?.value === providerId)?.label ||
+      safeProviderOptions.find((option) => option?.value === providerId)
+        ?.label ||
       groupCoverValue?.platformName ||
       providerId ||
       "--";
+
+    let IP =
+      groupCoverValue?.groupInsuranceDetails?.monthlyIncome &&
+      groupCoverValue?.groupInsuranceDetails?.monthlyIncome !== "$0"
+        ? (groupCoverValue?.groupInsuranceDetails?.monthlyIncome || "$0") +
+          "/" +
+          (groupCoverValue?.groupInsuranceDetails?.waitingPeriod || "30") +
+          " Days/" +
+          (groupCoverValue?.groupInsuranceDetails?.BenefitPeriod || "2 Years")
+        : "$0";
 
     return [
       {
@@ -67,10 +78,7 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
           groupCoverValue?.TPD ||
           groupCoverValue?.groupInsuranceDetails?.TPDCover ||
           "$0",
-        IP:
-          groupCoverValue?.IP ||
-          groupCoverValue?.groupInsuranceDetails?.monthlyIncome ||
-          "$0",
+        IP: IP || "$0",
         premiumPA:
           groupCoverValue?.premiumPA ||
           groupCoverValue?.groupInsuranceDetails?.cost ||

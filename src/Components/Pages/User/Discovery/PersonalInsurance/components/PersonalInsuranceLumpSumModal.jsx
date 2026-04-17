@@ -1,155 +1,302 @@
-import { Button, Col, Form, Input, Row, Select, Switch } from "antd";
-import { useEffect } from "react";
+import { Button, Col, Form, Row, Space } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { RiEdit2Fill } from "react-icons/ri";
+import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
 
-const PREMIUM_TYPE_OPTIONS = [
-  { value: "Stepped", label: "Stepped" },
-  { value: "Level", label: "Level" },
-];
+const TABLE_PROPS = {
+  showCount: false,
+  noPagination: true,
+  horizontalScroll: true,
+  tableStyle: { borderRadius: 12, overflow: "hidden" },
+  headerFontSize: 11,
+  bodyFontSize: 12,
+};
 
-const TPD_DEFINITION_OPTIONS = [
-  { value: "Any", label: "Any" },
-  { value: "Own", label: "Own" },
-  { value: "Split (Own)", label: "Split (Own)" },
-];
-
-function toCurrency(value) {
-  const numeric = Number(String(value || "").replace(/[^0-9.-]+/g, ""));
-  if (!Number.isFinite(numeric) || numeric === 0) return "$0";
-  return new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(numeric);
-}
-
-export default function PersonalInsuranceLumpSumModal({
-  onClose,
-  onSave,
-  editing,
-  value,
-}) {
+export default function PersonalInsuranceLumpSumModal({ modalData }) {
   const [form] = Form.useForm();
+  const record = modalData?.record || {};
+  const fieldPath = Array.isArray(record?.formPath) ? record.formPath : null;
+  const currentParentRow =
+    (fieldPath
+      ? modalData?.parentForm?.getFieldValue?.(fieldPath)
+      : null) || record;
+
+  function parseCurrencyValue(value) {
+    if (value === null || value === undefined || value === "") return 0;
+    const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  function formatCurrencyValue(value) {
+    const numeric = parseCurrencyValue(value);
+    if (!numeric) return "$0";
+    return new Intl.NumberFormat("en-AU", {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numeric);
+  }
+
+  function hasMeaningfulValues(values = {}) {
+    return Object.values(values || {}).some((value) => {
+      if (value === null || value === undefined || value === "") return false;
+      if (value === "No") return false;
+      return String(value).trim() !== "";
+    });
+  }
+
+  const initialValues = useMemo(() => {
+    return {
+      life: formatCurrencyValue(
+        currentParentRow?.LifeTPDTraumaDetails?.life ||
+          currentParentRow?.life ||
+          "$0",
+      ),
+      TPD: formatCurrencyValue(
+        currentParentRow?.LifeTPDTraumaDetails?.TPD ||
+          currentParentRow?.TPD ||
+          "$0",
+      ),
+      trauma: formatCurrencyValue(
+        currentParentRow?.LifeTPDTraumaDetails?.trauma ||
+          currentParentRow?.trauma ||
+          "$0",
+      ),
+      premiumType: currentParentRow?.LifeTPDTraumaDetails?.premiumType || "",
+      TPDDefinition: currentParentRow?.LifeTPDTraumaDetails?.TPDDefinition || "",
+      traumaPlus: currentParentRow?.LifeTPDTraumaDetails?.traumaPlus || "No",
+      CPI: currentParentRow?.LifeTPDTraumaDetails?.CPI || "No",
+      superlinked: currentParentRow?.LifeTPDTraumaDetails?.superlinked || "No",
+    };
+  }, [currentParentRow]);
+
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(initialValues),
+  );
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    form.setFieldsValue({
-      life: value?.life || "$0",
-      TPD: value?.TPD || "$0",
-      trauma: value?.trauma || "$0",
-      premiumType: value?.premiumType || undefined,
-      TPDDefinition: value?.TPDDefinition || undefined,
-      traumaPlus: Boolean(value?.traumaPlus),
-      CPI: Boolean(value?.CPI),
-      superlinked: Boolean(value?.superlinked),
-    });
-  }, [form, value]);
+    form.setFieldsValue(initialValues);
+    setEditing(!hasMeaningfulValues(initialValues));
+  }, [form, initialValues]);
+
+  const formatMoneyChange = (value, recordValue, column, currentForm) => {
+    currentForm.setFieldValue(
+      column.field,
+      formatCurrencyValue(value?.target?.value),
+    );
+  };
+
+  const columns = useMemo(() => {
+    return [
+      {
+        title: "No#",
+        dataIndex: "index",
+        key: "index",
+        render: (_, __, i) => i + 1,
+        justText: true,
+        width: 60,
+      },
+      {
+        title: "Life",
+        dataIndex: "life",
+        key: "life",
+        field: "life",
+        type: "text",
+        placeholder: "$0",
+        onChange: formatMoneyChange,
+      },
+      {
+        title: "TPD",
+        dataIndex: "TPD",
+        key: "TPD",
+        field: "TPD",
+        type: "text",
+        placeholder: "$0",
+        onChange: formatMoneyChange,
+      },
+      {
+        title: "Trauma",
+        dataIndex: "trauma",
+        key: "trauma",
+        field: "trauma",
+        type: "text",
+        placeholder: "$0",
+        onChange: formatMoneyChange,
+      },
+      {
+        title: "Premium Type",
+        dataIndex: "premiumType",
+        key: "premiumType",
+        field: "premiumType",
+        type: "select",
+        options: [
+          { value: "Stepped", label: "Stepped" },
+          { value: "Level", label: "Level" },
+        ],
+      },
+      {
+        title: "TPD Definition",
+        dataIndex: "TPDDefinition",
+        key: "TPDDefinition",
+        field: "TPDDefinition",
+        type: "select",
+        options: [
+          { value: "Any", label: "Any" },
+          { value: "Own", label: "Own" },
+          { value: "Split (Own)", label: "Split (Own)" },
+        ],
+      },
+      {
+        title: "Trauma Plus",
+        dataIndex: "traumaPlus",
+        key: "traumaPlus",
+        field: "traumaPlus",
+        type: "yesNoSwitch",
+      },
+      {
+        title: "CPI",
+        dataIndex: "CPI",
+        key: "CPI",
+        field: "CPI",
+        type: "yesNoSwitch",
+      },
+      {
+        title: "Superlinked",
+        dataIndex: "superlinked",
+        key: "superlinked",
+        field: "superlinked",
+        type: "yesNoSwitch",
+      },
+    ];
+  }, []);
+
+  const data = useMemo(() => {
+    return [
+      {
+        key: "lumpsum-cover",
+        index: 1,
+        life: initialValues?.life ?? "",
+        TPD: initialValues?.TPD ?? "",
+        trauma: initialValues?.trauma ?? "",
+        premiumType: initialValues?.premiumType ?? "",
+        TPDDefinition: initialValues?.TPDDefinition ?? "",
+        traumaPlus: initialValues?.traumaPlus ?? "No",
+        CPI: initialValues?.CPI ?? "No",
+        superlinked: initialValues?.superlinked ?? "No",
+      },
+    ];
+  }, [initialValues]);
+
+  const handleFinish = async (values) => {
+    console.log(values, "values");
+    const normalizedValues = {
+      life: formatCurrencyValue(values?.life),
+      TPD: formatCurrencyValue(values?.TPD),
+      trauma: formatCurrencyValue(values?.trauma),
+      premiumType: values?.premiumType || "",
+      TPDDefinition: values?.TPDDefinition || "",
+      traumaPlus: values?.traumaPlus || "No",
+      CPI: values?.CPI || "No",
+      superlinked: values?.superlinked || "No",
+    };
+
+    console.log(normalizedValues, "normalizedValues");
+    console.log(!fieldPath, "fieldPath");
+
+    try {
+      setSaving(true);
+
+      if (!fieldPath) {
+        modalData?.closeModal?.();
+        return;
+      }
+
+      modalData?.parentForm?.setFieldValue?.(
+        [...fieldPath, "life"],
+        normalizedValues.life,
+      );
+      modalData?.parentForm?.setFieldValue?.(
+        [...fieldPath, "TPD"],
+        normalizedValues.TPD,
+      );
+      modalData?.parentForm?.setFieldValue?.(
+        [...fieldPath, "trauma"],
+        normalizedValues.trauma,
+      );
+      modalData?.parentForm?.setFieldValue?.(
+        [...fieldPath, "LifeTPDTraumaDetails"],
+        normalizedValues,
+      );
+
+      setEditing(false);
+      modalData?.closeModal?.();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (editing) {
+      form.setFieldsValue(initialValues);
+      if (hasMeaningfulValues(initialValues)) {
+        setEditing(false);
+        return;
+      }
+    }
+
+    modalData?.closeModal?.();
+  };
 
   return (
     <Form
       form={form}
       layout="vertical"
-      onFinish={(values) =>
-        onSave?.({
-          ...values,
-          life: toCurrency(values?.life),
-          TPD: toCurrency(values?.TPD),
-          trauma: toCurrency(values?.trauma),
-        })
-      }
+      onFinish={handleFinish}
       requiredMark={false}
       style={{ paddingTop: 20 }}
     >
-      <Row gutter={16}>
-        <Col xs={24} md={8}>
-          <Form.Item name="life" label="Life">
-            <Input
-              disabled={!editing}
-              placeholder="$0"
-              onBlur={(event) =>
-                form.setFieldValue("life", toCurrency(event?.target?.value))
-              }
-            />
-          </Form.Item>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={24}>
+          <EditableDynamicTable
+            form={form}
+            editing={editing}
+            columns={columns}
+            data={data}
+            tableProps={TABLE_PROPS}
+          />
         </Col>
-        <Col xs={24} md={8}>
-          <Form.Item name="TPD" label="TPD">
-            <Input
-              disabled={!editing}
-              placeholder="$0"
-              onBlur={(event) =>
-                form.setFieldValue("TPD", toCurrency(event?.target?.value))
-              }
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item name="trauma" label="Trauma">
-            <Input
-              disabled={!editing}
-              placeholder="$0"
-              onBlur={(event) =>
-                form.setFieldValue("trauma", toCurrency(event?.target?.value))
-              }
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item name="premiumType" label="Premium Type">
-            <Select
-              disabled={!editing}
-              allowClear
-              placeholder="Select premium type"
-              options={PREMIUM_TYPE_OPTIONS}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item name="TPDDefinition" label="TPD Definition">
-            <Select
-              disabled={!editing}
-              allowClear
-              placeholder="Select TPD definition"
-              options={TPD_DEFINITION_OPTIONS}
-            />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item
-            name="traumaPlus"
-            label="Trauma Plus"
-            valuePropName="checked"
-          >
-            <Switch disabled={!editing} />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item name="CPI" label="CPI" valuePropName="checked">
-            <Switch disabled={!editing} />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item
-            name="superlinked"
-            label="Superlinked"
-            valuePropName="checked"
-          >
-            <Switch disabled={!editing} />
-          </Form.Item>
-        </Col>
-        <Col xs={24}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 12,
-            }}
-          >
-            <Button onClick={onClose}>{editing ? "Cancel" : "Close"}</Button>
-            {editing ? (
-              <Button type="primary" htmlType="submit">
-                Save
-              </Button>
-            ) : null}
+        <Col xs={24} md={24}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <Space>
+              {!editing ? (
+                <>
+                  <Button onClick={handleCancel}>Cancel</Button>
+                  <Button
+                    key="edit"
+                    type="primary"
+                    htmlType="button"
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit <RiEdit2Fill />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button onClick={handleCancel}>Cancel</Button>
+                  <Button
+                    key="save"
+                    type="primary"
+                    htmlType="submit"
+                    loading={saving}
+                    disabled={saving}
+                  >
+                    Confirm and Exit
+                  </Button>
+                </>
+              )}
+            </Space>
           </div>
         </Col>
       </Row>

@@ -253,7 +253,6 @@ export default function AssetInfoModal({ modalData }) {
         title: "Owner",
         key: "owner",
         dataIndex: "owner",
-        width: 160,
         editable: false,
         renderView: ({ value }) => getOwnerDisplayName(value, availableOwnerOptions, discoveryData),
       },
@@ -267,7 +266,6 @@ export default function AssetInfoModal({ modalData }) {
         field: config.extraField.key,
         type: "text",
         placeholder: config.extraField.placeholder,
-        width: 220,
       });
     }
 
@@ -278,7 +276,6 @@ export default function AssetInfoModal({ modalData }) {
       field: "currentValue",
       type: "text",
       placeholder: "Current Value",
-      width: 180,
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [...(record?.formPath || []), column.field],

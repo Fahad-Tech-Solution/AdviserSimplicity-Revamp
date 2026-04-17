@@ -187,6 +187,19 @@ const PERSONAL_SECTION_CONFIG = [
     clientField: "clientAge",
     partnerField: "partnerAge",
     type: "number",
+    rules: [
+      requiredRule("Age is required"),
+      { pattern: /^\d+$/, message: "Enter a valid age" },
+      {
+        type: "number",
+        min: 20,
+        max: 80,
+        message: "Age must be between 20 and 80",
+        transform: (value) => {
+          return Number(value);
+        },
+      },
+    ],
     width: 72,
     disabled: true,
   },

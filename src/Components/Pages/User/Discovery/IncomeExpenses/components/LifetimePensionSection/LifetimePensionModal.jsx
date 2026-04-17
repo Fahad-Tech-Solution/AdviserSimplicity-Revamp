@@ -127,40 +127,14 @@ export default function LifetimePensionModal({ modalData }) {
     [allowPartner, ownerOptions],
   );
 
-  const fundOptions = useMemo(() => {
-    const sourceOptions = Array.isArray(modalData?.fundOptions)
-      ? modalData.fundOptions
-      : [];
-    const normalized = sourceOptions.map((option) =>
-      typeof option === "string" ? { label: option, value: option } : option,
-    );
-
-    const existingValues = [
-      sectionData?.client?.fundName,
-      sectionData?.partner?.fundName,
-      form.getFieldValue(["client", "fundName"]),
-      form.getFieldValue(["partner", "fundName"]),
-    ].filter(Boolean);
-
-    const mergedMap = new Map();
-    normalized.forEach((option) => {
-      if (!option?.value) return;
-      mergedMap.set(option.value, {
-        value: option.value,
-        label: option.label || option.value,
-      });
-    });
-    existingValues.forEach((value) => {
-      mergedMap.set(value, { value, label: value });
-    });
-
-    return Array.from(mergedMap.values());
-  }, [
-    form,
-    modalData?.fundOptions,
-    sectionData?.client?.fundName,
-    sectionData?.partner?.fundName,
-  ]);
+  const fundOptions = [
+    { value: "ESS Super", label: "ESS Super" },
+    { value: "PSS", label: "PSS" },
+    { value: "CSC", label: "CSC" },
+    { value: "Uni Super", label: "Uni Super" },
+    { value: "Telstra", label: "Telstra" },
+    { value: "Other", label: "Other" },
+  ];
 
   const LIFETIME_PENSION_COLUMNS = [
     { title: "Owner", key: "owner", kind: "owner", width: 80 },

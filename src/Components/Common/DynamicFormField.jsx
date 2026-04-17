@@ -127,7 +127,7 @@ function EnhancedDatePicker({
       placeholder={placeholder}
       format={DATE_INPUT_FORMAT}
       allowClear
-      style={{ width: "100%" }}
+      style={{ width: "100%", height: "26px", borderRadius: "7px" }}
       value={normalizeDateValue(value)}
       disabled={disabled}
       onChange={(date) => {
@@ -390,7 +390,11 @@ function getInputNode({
       return (
         <InputNumber
           placeholder={placeholder}
-          style={{ width: "100%" }}
+          style={{
+            height: "26px",
+            borderRadius: "7px",
+            width: "100%",
+          }}
           onKeyDown={(e) => {
             if (
               !/[0-9]/.test(e.key) &&
@@ -423,7 +427,12 @@ function getInputNode({
         <Select
           placeholder={placeholder}
           options={normalizedOptions}
-          style={{ maxWidth: "140px", minWidth: "100px" }}
+          style={{
+            maxWidth: "140px",
+            minWidth: "100px",
+            height: "26px",
+            borderRadius: "7px",
+          }}
           allowClear
           showSearch
           optionFilterProp="label"
@@ -437,7 +446,16 @@ function getInputNode({
           mode="multiple"
           placeholder={placeholder}
           options={normalizedOptions}
-          style={{ maxWidth: "140px", minWidth: "100px" }}
+          style={{
+            maxWidth: "140px",
+            minWidth: "100px",
+            borderRadius: "7px",
+          }}
+          styles={{
+            item: {
+              fontSize: "12px",
+            },
+          }}
           allowClear
           optionFilterProp="label"
           {...fieldProps}
@@ -473,7 +491,17 @@ function getInputNode({
 
     case "text":
     default:
-      return <Input placeholder={placeholder} {...fieldProps} />;
+      return (
+        <Input
+          placeholder={placeholder}
+          style={{
+            height: "26px",
+            borderRadius: "7px",
+            minWidth: "80px",
+          }}
+          {...fieldProps}
+        />
+      );
   }
 }
 

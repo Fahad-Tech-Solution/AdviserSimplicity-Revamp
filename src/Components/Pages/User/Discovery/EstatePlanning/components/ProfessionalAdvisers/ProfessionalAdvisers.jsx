@@ -204,7 +204,7 @@ const InnerForm = ({ form, ownerKey, editing, initialOwnerData }) => {
                 }))}
                 onChange={handleTypeChange}
                 optionFilterProp="label"
-                style={{ width: "autp" }}
+                style={{ width: "autp", minWidth: "150px" }}
                 disabled={!editing}
               />
             </Form.Item>
@@ -381,6 +381,7 @@ export default function ProfessionalAdvisers({ modalData }) {
           <Col xs={24}>
             <Tabs
               defaultActiveKey="client"
+              
               items={[
                 {
                   key: "client",

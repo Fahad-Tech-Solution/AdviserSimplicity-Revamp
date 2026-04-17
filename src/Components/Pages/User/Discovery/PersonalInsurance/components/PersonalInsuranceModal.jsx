@@ -1,13 +1,22 @@
 import { Button, Col, Form, Row, Select, Tabs } from "antd";
 import { useAtomValue } from "jotai";
-import React, { useMemo, useState } from "react";
-import { discoveryDataAtom } from "../../../../../../store/authState.js";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  discoveryDataAtom,
+  InvestmentOffersData,
+} from "../../../../../../store/authState.js";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
+import SwitchPopupDisplay from "../../../../../Common/SwitchPopupDisplay.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
 import { GoArrowUpRight } from "react-icons/go";
 import PersonalInsuranceGroupCoverModal from "./PersonalInsuranceGroupCoverModal.jsx";
 import { renderModalContent } from "../../../../../Common/renderModalContent.jsx";
 import AppModal from "../../../../../Common/AppModal.jsx";
+import PersonalInsuranceLumpSumModal from "./PersonalInsuranceLumpSumModal.jsx";
+import PersonalInsuranceIncomeProtectionModal from "./PersonalInsuranceIncomeProtectionModal.jsx";
+import PersonalInsurancePremiumsModal from "./PersonalInsurancePremiumsModal.jsx";
+import EstatePlanningDescriptionModal from "../../EstatePlanning/components/wills/EstatePlanningDescriptionModal.jsx";
+import BeneficiariesModal from "../../FinancialInvestments/components/SuperFunds/BeneficiariesModal.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -18,15 +27,339 @@ const TABLE_PROPS = {
   bodyFontSize: 12,
 };
 
-function OwnerTabContent({ form, ownerKey, ownerLabel, editing }) {
+/** Stable fallbacks so useMemo/useEffect deps do not change every render. */
+const EMPTY_OBJECT = Object.freeze({});
+const EMPTY_SUPER_ANNUATION_ISSUES = Object.freeze({
+  client: [],
+  joint: [],
+  partner: [],
+});
+
+function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
   let [openModal, setOpenModal] = useState(false);
   let [modalData, setModalData] = useState(null);
+  const investmentOffers = useAtomValue(InvestmentOffersData);
+  const watchedPolicies = Form.useWatch([ownerKey, "policies"], form);
+  const providerOptions = useMemo(() => {
+    const funds = Array.isArray(investmentOffers?.PersonalInsurances)
+      ? investmentOffers.PersonalInsurances
+      : [];
 
-  const columns = [];
+    return funds.map((item) => ({
+      value: item?._id || item?.value || item?.platformName || item?.name || "",
+      label: item?.platformName || item?.label || item?.name || "Unknown",
+    }));
+  }, [investmentOffers]);
+
+  const handleRemoveRow = (rowIndex) => {
+    const currentPolicies = form.getFieldValue([ownerKey, "policies"]) || [];
+    const nextPolicies = currentPolicies.filter(
+      (_, index) => index !== rowIndex,
+    );
+
+    form.setFieldValue([ownerKey, "policies"], nextPolicies);
+    form.setFieldValue([ownerKey, "NumberOfMaps"], nextPolicies.length);
+  };
+
+  const handleOpenLoadingExclusion = (record) => {
+    const providerLabel =
+      providerOptions.find((option) => option.value === record.provider)
+        ?.label || "";
+    const fieldPath = record?.formPath;
+    setOpenModal(true);
+    setModalData({
+      title: `${ownerLabel}_${providerLabel}_Loading/ Exclusion`,
+      component: EstatePlanningDescriptionModal,
+      key: "loadingExclusion",
+      width: 1000,
+      parentForm: form,
+      owner: ownerKey,
+      record,
+      fieldPath,
+      initialValues:
+        (fieldPath ? form.getFieldValue(fieldPath) : null) || record || {},
+      rowDescriptionKey: "loadingExclusiondescription",
+      descriptionLabel: "Loading / Exclusion Description",
+      descriptionPlaceholder: "Enter loading or exclusion details",
+      closeModal: () => {
+        setOpenModal(false);
+        setEditing(true);
+      },
+    });
+  };
+
+  const handleOpenBeneficiary = (record) => {
+    const providerLabel =
+      providerOptions.find((option) => option.value === record.provider)
+        ?.label || "";
+    const fieldPath = record?.formPath;
+
+    setOpenModal(true);
+    setModalData({
+      title: `${ownerLabel}_${providerLabel}_Beneficiary`,
+      component: BeneficiariesModal,
+      key: "beneficiary",
+      width: 1000,
+      parentForm: form,
+      owner: ownerKey,
+      record,
+      fieldPath,
+      initialValues:
+        (fieldPath ? form.getFieldValue(fieldPath) : null) || record || {},
+      nominationType: record?.nominationType || undefined,
+      beneficiaries: Array.isArray(record?.beneficiaries)
+        ? record.beneficiaries
+        : Array.isArray(record?.beneficiaryArray)
+          ? record.beneficiaryArray
+          : [],
+      closeModal: () => {
+        setOpenModal(false);
+        setEditing(true);
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: "No#",
+      dataIndex: "index",
+      key: "index",
+      justText: true,
+      width: 40,
+    },
+    {
+      title: "Provider",
+      dataIndex: "provider",
+      key: "provider",
+      type: "select",
+      placeholder: "Select Provider",
+      options: providerOptions,
+    },
+    {
+      title: "Policy No",
+      dataIndex: "policyNo",
+      key: "policyNo",
+      type: "number",
+      width: 100,
+      placeholder: "Policy No",
+    },
+    {
+      title: "Owner",
+      dataIndex: "Owner",
+      key: "Owner",
+      type: "select",
+      placeholder: "Select Owner",
+      options: [
+        {
+          value: ownerKey,
+          label: ownerLabel,
+        },
+        { value: "SMSF", label: "SMSF" },
+        { value: "Super Trustees", label: "Super Trustees" },
+        { value: "Company (Pty Ltd)", label: "Company (Pty Ltd)" },
+        { value: "Family Trust", label: "Family Trust" },
+      ],
+    },
+    {
+      title: "Start Date",
+      dataIndex: "startDate",
+      key: "startDate",
+      type: "date",
+      width: 130,
+      placeholder: "dd/mm/yyyy",
+    },
+    {
+      title: "Smoker",
+      dataIndex: "smoker",
+      key: "smoker",
+      type: "yesNoSwitch",
+    },
+    {
+      title: "Life",
+      dataIndex: "life",
+      key: "life",
+      type: "text",
+      placeholder: "Life",
+      disabled: true,
+      width: 100,
+    },
+    {
+      title: "TPD",
+      dataIndex: "TPD",
+      key: "TPD",
+      type: "text",
+      placeholder: "TPD",
+      width: 100,
+      disabled: true,
+    },
+    {
+      title: "Trauma",
+      dataIndex: "trauma",
+      key: "trauma",
+      type: "input-action",
+      placeholder: "Trauma",
+      disabled: true,
+      action: {
+        name: "Open Trauma",
+        onClick: ({ record }) => {
+          setOpenModal(true);
+          setModalData({
+            title:
+              ownerLabel +
+              "_" +
+              providerOptions.find((option) => option.value === record.provider)
+                ?.label +
+              "_Lumpsum Cover (Life/TPD/Trauma)",
+            component: PersonalInsuranceLumpSumModal,
+            key: "trauma",
+            width: 1000,
+            parentForm: form,
+            owner: ownerKey,
+            record,
+            closeModal: () => {
+              setOpenModal(false);
+              setEditing(true);
+            },
+          });
+        },
+      },
+    },
+    {
+      title: "IP",
+      dataIndex: "IP",
+      key: "IP",
+      type: "input-action",
+      placeholder: "IP",
+      disabled: true,
+      action: {
+        name: "Open IP",
+        onClick: ({ record }) => {
+          setOpenModal(true);
+          setModalData({
+            title:
+              ownerLabel +
+              "_" +
+              providerOptions.find((option) => option.value === record.provider)
+                ?.label +
+              "_Income Protection",
+            component: PersonalInsuranceIncomeProtectionModal,
+            key: "IP",
+            width: 1500,
+            parentForm: form,
+            owner: ownerKey,
+            record,
+            closeModal: () => {
+              setOpenModal(false);
+              setEditing(true);
+            },
+          });
+        },
+      },
+    },
+    {
+      title: "Premiums p.a",
+      dataIndex: "premiums",
+      key: "premiums",
+      type: "input-action",
+      placeholder: "Premiums p.a",
+      disabled: true,
+      action: {
+        name: "Open Premiums",
+        onClick: ({ record }) => {
+          setOpenModal(true);
+          const providerLabel =
+            providerOptions.find((option) => option.value === record.provider)
+              ?.label || "";
+          setModalData({
+            title: `${ownerLabel}_${providerLabel}_Premiums`,
+            component: PersonalInsurancePremiumsModal,
+            key: "premiums",
+            width: 1200,
+            parentForm: form,
+            owner: ownerKey,
+            ownerLabel,
+            record,
+            closeModal: () => {
+              setOpenModal(false);
+              setEditing(true);
+            },
+          });
+        },
+      },
+    },
+    {
+      title: "Loading/ Exclusion",
+      dataIndex: "loadingExclusion",
+      key: "loadingExclusion",
+      type: "yesNoSwitchWithButton",
+      action: {
+        name: "Open Loading/ Exclusion",
+        onClick: ({ record }) => {
+          handleOpenLoadingExclusion(record);
+        },
+      },
+      renderView: ({ value, record }) => (
+        <SwitchPopupDisplay
+          value={value}
+          onClick={() => {
+            handleOpenLoadingExclusion(record);
+          }}
+        />
+      ),
+    },
+    {
+      title: "Beneficiary",
+      dataIndex: "beneficiary",
+      key: "beneficiary",
+      type: "yesNoSwitchWithButton",
+      action: {
+        name: "Open Beneficiary",
+        onClick: ({ record }) => {
+          handleOpenBeneficiary(record);
+        },
+      },
+      renderView: ({ value, record }) => (
+        <SwitchPopupDisplay
+          value={value}
+          onClick={() => {
+            handleOpenBeneficiary(record);
+          }}
+        />
+      ),
+    },
+    {
+      //action button
+      title: "Action",
+      dataIndex: "action",
+      key: "action",
+      type: "text",
+      editable: false,
+      renderView: () => "--",
+      renderEdit: ({ record }) => (
+        <Button
+          type="text"
+          danger
+          onClick={() => handleRemoveRow(record.rowIndex)}
+        >
+          🗑️
+        </Button>
+      ),
+    },
+  ];
 
   const rows = useMemo(() => {
-    return [];
-  }, []);
+    const sourcePolicies = Array.isArray(watchedPolicies)
+      ? watchedPolicies
+      : form.getFieldValue([ownerKey, "policies"]) || [];
+
+    return sourcePolicies.map((item, index) => ({
+      ...item,
+      key: `${ownerKey}-policy-${index}`,
+      rowIndex: index,
+      index: index + 1,
+      formPath: [ownerKey, "policies", index],
+    }));
+  }, [form, ownerKey, watchedPolicies]);
 
   const onOpenGroupCover = () => {
     setOpenModal(true);
@@ -53,7 +386,7 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing }) {
       </AppModal>
 
       <Col xs={24} md={6}>
-        <Form.Item name="NumberOfMaps" label="Number of Maps">
+        <Form.Item name={[ownerKey, "NumberOfMaps"]} label="Number of Maps">
           <Select
             options={Array.from({ length: 10 }, (_, index) => ({
               value: index + 1,
@@ -69,7 +402,7 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing }) {
             key="groupCover"
             type={"primary"}
             size={"small"}
-            style={{ width: "40%", padding: 0 }}
+            style={{ width: "25px", padding: 0 }}
             onClick={() => onOpenGroupCover(ownerKey)}
           >
             <GoArrowUpRight />
@@ -110,33 +443,48 @@ export default function PersonalInsuranceModal({ modalData }) {
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
   );
 
-  let PersonalInsuranceData = discoveryData?.personalInsurance || {};
+  const personalInsurance = discoveryData?.personalInsurance ?? EMPTY_OBJECT;
 
-  const superAnnuationIssues =
-    discoveryData?.superAnnuationIssues &&
-    Object.keys(discoveryData?.superAnnuationIssues).length > 0
-      ? discoveryData.superAnnuationIssues
-      : { client: [], joint: [], partner: [] };
+  const superAnnuationIssues = useMemo(() => {
+    const raw = discoveryData?.superAnnuationIssues;
+    if (raw && Object.keys(raw).length > 0) return raw;
+    return EMPTY_SUPER_ANNUATION_ISSUES;
+  }, [discoveryData?.superAnnuationIssues]);
 
-  const groupInsuranceDetailsAll = ["client", "partner", "joint"].reduce(
-    (acc, key) => {
+  const groupInsuranceDetailsAll = useMemo(() => {
+    return ["client", "partner", "joint"].reduce((acc, key) => {
       acc[key] = (superAnnuationIssues[key] || [])
         .filter((item) => item.groupInsurance === "Yes")
         .map((item) => item || {});
       return acc;
-    },
-    {},
-  );
+    }, {});
+  }, [superAnnuationIssues]);
 
-  let initialValues = useMemo(() => {
-    let groupCoverDetails = groupInsuranceDetailsAll[activeTab]?.[0] || {};
+  const initialValues = useMemo(() => {
+    const clientPolicies = personalInsurance?.client?.PersonalInsurance;
+    const partnerPolicies = personalInsurance?.partner?.PersonalInsurance;
+    const groupCoverDetails = groupInsuranceDetailsAll[activeTab]?.[0] || {};
+
     return {
-      numberOfPolicies:
-        PersonalInsuranceData?.[activeTab]?.numberOfPolicies || 0,
-      policies: PersonalInsuranceData?.[activeTab]?.PersonalInsurance || [],
+      client: {
+        NumberOfMaps: Array.isArray(clientPolicies) ? clientPolicies.length : 0,
+        policies: Array.isArray(clientPolicies) ? clientPolicies : [],
+      },
+      partner: allowPartner
+        ? {
+            NumberOfMaps: Array.isArray(partnerPolicies)
+              ? partnerPolicies.length
+              : 0,
+            policies: Array.isArray(partnerPolicies) ? partnerPolicies : [],
+          }
+        : undefined,
       groupCover: groupCoverDetails || {},
     };
-  }, [PersonalInsuranceData, activeTab]);
+  }, [personalInsurance, activeTab, allowPartner, groupInsuranceDetailsAll]);
+
+  useEffect(() => {
+    form.setFieldsValue(initialValues);
+  }, [form, initialValues]);
 
   const handleFinish = async (values) => {
     console.log(values);
@@ -167,6 +515,7 @@ export default function PersonalInsuranceModal({ modalData }) {
                       ownerKey="client"
                       ownerLabel={clientName}
                       editing={editing}
+                      setEditing={setEditing}
                     />
                   ),
                 },
@@ -181,6 +530,7 @@ export default function PersonalInsuranceModal({ modalData }) {
                             ownerKey="partner"
                             ownerLabel={partnerName}
                             editing={editing}
+                            setEditing={setEditing}
                           />
                         ),
                       },
