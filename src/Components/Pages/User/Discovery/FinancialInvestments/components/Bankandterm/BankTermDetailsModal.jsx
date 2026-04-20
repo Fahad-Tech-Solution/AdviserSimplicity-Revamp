@@ -91,6 +91,7 @@ export default function BankTermDetailsModal({ modalData }) {
       modalData?.ownerKey,
       "currentBalanceArray",
     ]) || [];
+
   const initialValues = useMemo(
     () => ({
       NumberOfMap: ownerArray.length || undefined,
@@ -98,10 +99,13 @@ export default function BankTermDetailsModal({ modalData }) {
     }),
     [ownerArray],
   );
+
   const institutionOptions = useMemo(
     () => buildInstitutionOptions(investmentOffers, initialValues),
     [initialValues, investmentOffers],
   );
+
+  console.log(ownerArray, "ownerArray");
 
   const count = Form.useWatch("NumberOfMap", form);
   const entries = Form.useWatch("entries", form) || initialValues.entries || [];
@@ -219,7 +223,7 @@ export default function BankTermDetailsModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}

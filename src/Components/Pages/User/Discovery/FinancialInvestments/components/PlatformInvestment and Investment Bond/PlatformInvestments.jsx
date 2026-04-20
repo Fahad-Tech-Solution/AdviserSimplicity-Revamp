@@ -94,7 +94,7 @@ function hasMeaningfulValues(initialValues = {}) {
 
 function buildPlatformOptions(investmentOffers, entries = [], key) {
   const platforms =
-    key === "managedFund"
+    ["managedFund", "familyMangedFunds","SMSFManagedFunds"].includes(key)
       ? investmentOffers?.InvestmentPlatforms
       : investmentOffers?.InvestmentBonds || [];
 
@@ -130,6 +130,8 @@ export default function PlatformInvestments({ modalData }) {
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
+  
+  // console.log(modalData?.sectionKey, "modalData?.sectionKey");
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -151,9 +153,9 @@ export default function PlatformInvestments({ modalData }) {
       buildPlatformOptions(
         investmentOffers,
         initialValues?.managedFunds || [],
-        modalData?.key,
+        modalData?.sectionKey,
       ),
-    [initialValues?.managedFunds, investmentOffers],
+    [initialValues?.managedFunds, investmentOffers, modalData],
   );
 
   useEffect(() => {
@@ -220,23 +222,24 @@ export default function PlatformInvestments({ modalData }) {
     ({ record, form: currentForm }) => {
       const rowValues = currentForm.getFieldValue(record?.formPath) || {};
 
-      console.log("rowValues", rowValues);
-
       const selectedPlatform = normalizeSelectValue(rowValues?.platformName);
 
       if (!selectedPlatform) {
         message.error("Please select platform name first");
         return;
       }
-
-      const platform =
-        modalData?.key === "managedFund"
-          ? investmentOffers?.InvestmentPlatforms?.find(
-              (item) => String(item?._id) === selectedPlatform,
-            ) || null
-          : investmentOffers?.InvestmentBonds?.find(
-              (item) => String(item?._id) === selectedPlatform,
-            ) || null;
+     
+      const platform = [
+        "managedFund",
+        "familyMangedFunds",
+        "SMSFManagedFunds",
+      ].includes(modalData?.sectionKey)
+        ? investmentOffers?.InvestmentPlatforms?.find(
+            (item) => String(item?._id) === selectedPlatform,
+          ) || null
+        : investmentOffers?.InvestmentBonds?.find(
+            (item) => String(item?._id) === selectedPlatform,
+          ) || null;
 
       setDetailModalOpen(true);
       setDetailModalData({

@@ -108,6 +108,7 @@ const SMSF = () => {
         <Row gutter={[16, 16]}>
           {CurrentRoute?.Cards?.map((card) => {
             const isYes = discoveryQuestions[card.key] === "Yes";
+
             if (isYes || card?.alwaysShow) {
               return (
                 <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
@@ -119,7 +120,7 @@ const SMSF = () => {
                       discoveryData.personalDetails?.client?.clientPreferredName
                     }
                     firstTotal={
-                      discoveryData?.[card.key]?.[
+                      discoveryData?.[card?.key]?.[
                         card?.firstTotalKey || "clientTotal"
                       ]
                     }
@@ -133,11 +134,29 @@ const SMSF = () => {
                         card?.secondTotalKey || "partnerTotal"
                       ]
                     }
-                    showPartner={card?.showSecondTotal || showPartner}
+                    showPartner={
+                      [
+                        "SMSFBank",
+                        "SMSFTermDeposits",
+                        "SMSFAustralianShares",
+                        "SMSFManagedFunds",
+                        "SMSFInvestmentLoan",
+                        "SMSFInvestmentProperties",
+                        "SMSFOtherInvestment",
+                      ].includes(card.key)
+                        ? card?.showSecondTotal
+                        : card?.showSecondTotal || showPartner
+                    }
                     OpenModal={() => {
                       setModalOpen(true);
                       setModalData({
-                        title: card.title,
+                        title: [
+                          "SMSFInvestmentLoan",
+                          "SMSFInvestmentProperties",
+                          "SMSFOtherInvestment",
+                        ].includes(card.key)
+                          ? "SMSF_" + card.title
+                          : card.title,
                         component: card.component,
                         icon: card.icon,
                         key: card.key,
