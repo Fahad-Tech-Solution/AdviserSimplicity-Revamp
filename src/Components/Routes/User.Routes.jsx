@@ -41,6 +41,8 @@ import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/P
 import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
 import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/PersonalInsurance.jsx";
 import PersonalInsuranceModal from "../Pages/User/Discovery/PersonalInsurance/components/PersonalInsuranceModal.jsx";
+import SMSF from "../Pages/User/Discovery/SMSF/SMSF.jsx";
+import FamilyTrust from "../Pages/User/Discovery/FamilyTrust/FamilyTrust.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -455,6 +457,26 @@ const PERSONAL_INSURANCE_CARDS = [
   },
 ];
 
+const SMSF_CARDS = [
+  {
+    title: "Life Insurance",
+    key: "lifeInsurance",
+    icon: "📋",
+    component: <PersonalInsuranceModal />,
+    modalWidth: "1800px",
+  },
+ 
+];
+const FAMILY_TRUST_CARDS = [
+  {
+    title: "Life Insurance",
+    key: "lifeInsurance",
+    icon: "📋",
+    component: <PersonalInsuranceModal />,
+    modalWidth: "1800px",
+  },
+];
+
 export const withSpacing = ({
   icon,
   label,
@@ -683,10 +705,11 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <SMSF/>,
     condition: (q) =>
       String(q?.SMSFManagedFundsTab ?? "").toLowerCase() === "yes",
-    isCompleted: createSectionCompletionCheck("smsf", "SMSF"),
+    isCompleted: createCardsCompletionCheck(SMSF_CARDS),
+    Cards: SMSF_CARDS,
   },
   {
     key: "/user/discovery/investment-trust",
@@ -702,13 +725,11 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <FamilyTrust/>,
     condition: (q) =>
       String(q?.businessAsInvestmentTab ?? "").toLowerCase() === "yes",
-    isCompleted: createSectionCompletionCheck(
-      "investmenttrust",
-      "investmentTrust",
-    ),
+    isCompleted: createCardsCompletionCheck(FAMILY_TRUST_CARDS),
+    Cards: FAMILY_TRUST_CARDS,
   },
   {
     key: "/user/discovery/goals-objectives",

@@ -1,5 +1,5 @@
-import { Button, Card, ConfigProvider, Input, Space, Spin } from "antd";
-import { useEffect, useState } from "react";
+import { Button, Card, ConfigProvider, Input, Spin } from "antd";
+import { memo, useEffect, useState } from "react";
 import { GoArrowUpRight } from "react-icons/go";
 import { toCommaAndDollar } from "../../hooks/helpers";
 import { FaRegSave } from "react-icons/fa";
@@ -184,7 +184,7 @@ function FormField({ name, value, callBackFunction }) {
   );
 }
 
-export default function DiscoveryTotalsCard({
+function DiscoveryTotalsCard({
   title,
   icon,
   firstName,
@@ -195,14 +195,23 @@ export default function DiscoveryTotalsCard({
   secondisFormInput = false,
   callBackFunction = () => {},
   OpenModal = () => {},
-  consoleHeading = null,
+  onOpenModal,
+  modalPayload,
 }) {
+  const handleOpen = () => {
+    if (typeof onOpenModal === "function") {
+      onOpenModal(modalPayload);
+      return;
+    }
+    OpenModal();
+  };
+
   return (
     <Card style={CARD_STYLE} styles={{ body: CARD_BODY_STYLE }}>
-      <h6 style={TITLE_STYLE} onClick={() => console.log(consoleHeading, "consoleHeading")}>{title}</h6>
+      <h6 style={TITLE_STYLE}>{title}</h6>
       <p style={ICON_WRAPPER_STYLE}>{renderIcon(icon)}</p>
       <div style={CONTENT_STYLE}>
-        <div role="button" style={BADGE_STYLE} onClick={() => OpenModal()}>
+        <div role="button" style={BADGE_STYLE} onClick={handleOpen}>
           <GoArrowUpRight />
         </div>
 
@@ -220,3 +229,5 @@ export default function DiscoveryTotalsCard({
     </Card>
   );
 }
+
+export default memo(DiscoveryTotalsCard);

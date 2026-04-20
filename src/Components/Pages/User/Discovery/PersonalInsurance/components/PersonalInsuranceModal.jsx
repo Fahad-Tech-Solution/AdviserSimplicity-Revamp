@@ -87,11 +87,66 @@ function computeOwnerTotals(policies, groupCoverDetails = {}) {
   };
 }
 
-function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
+/** Policies array length matches NumberOfMaps (1–10): pad with `{}` or slice. */
+function alignPoliciesToMapCount(policies, mapCount) {
+  const raw = Array.isArray(policies) ? [...policies] : [];
+  const n = Number(mapCount);
+  if (!Number.isFinite(n) || n < 1 || n > 10) {
+    return raw;
+  }
+  if (raw.length < n) {
+    const next = [...raw];
+    while (next.length < n) {
+      next.push({});
+    }
+    return next;
+  }
+  if (raw.length > n) {
+    return raw.slice(0, n);
+  }
+  return raw;
+}
+
+function setOwnerPoliciesToMapCount(form, ownerKey, mapCount) {
+  const n = Number(mapCount);
+  if (!Number.isFinite(n) || n < 1 || n > 10) return;
+  const ownerBlock = form.getFieldValue(ownerKey) || {};
+  const prev = Array.isArray(ownerBlock.policies)
+    ? ownerBlock.policies
+    : [];
+  const newPolicies = alignPoliciesToMapCount(prev, n);
+  if (
+    prev.length === newPolicies.length &&
+    Number(ownerBlock.NumberOfMaps) === n
+  ) {
+    return;
+  }
+  form.setFieldValue(ownerKey, {
+    ...ownerBlock,
+    NumberOfMaps: n,
+    policies: newPolicies,
+  });
+}
+
+function OwnerTabContent({
+  form,
+  ownerKey,
+  ownerLabel,
+  editing,
+  setEditing,
+  activeTabKey,
+}) {
   let [openModal, setOpenModal] = useState(false);
   let [modalData, setModalData] = useState(null);
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const watchedPolicies = Form.useWatch([ownerKey, "policies"], form);
+  const watchedMapCount = Form.useWatch([ownerKey, "NumberOfMaps"], form);
+
+  useEffect(() => {
+    if (!editing || activeTabKey !== ownerKey) return;
+    setOwnerPoliciesToMapCount(form, ownerKey, watchedMapCount);
+  }, [activeTabKey, editing, form, ownerKey, watchedMapCount]);
+
   const providerOptions = useMemo(() => {
     const funds = Array.isArray(investmentOffers?.PersonalInsurances)
       ? investmentOffers.PersonalInsurances
@@ -104,13 +159,19 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
   }, [investmentOffers]);
 
   const handleRemoveRow = (rowIndex) => {
-    const currentPolicies = form.getFieldValue([ownerKey, "policies"]) || [];
+    const ownerBlock = form.getFieldValue(ownerKey) || {};
+    const currentPolicies = Array.isArray(ownerBlock.policies)
+      ? ownerBlock.policies
+      : [];
     const nextPolicies = currentPolicies.filter(
       (_, index) => index !== rowIndex,
     );
 
-    form.setFieldValue([ownerKey, "policies"], nextPolicies);
-    form.setFieldValue([ownerKey, "NumberOfMaps"], nextPolicies.length);
+    form.setFieldValue(ownerKey, {
+      ...ownerBlock,
+      policies: nextPolicies,
+      NumberOfMaps: nextPolicies.length,
+    });
   };
 
   const handleOpenLoadingExclusion = (record) => {
@@ -395,9 +456,13 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
   ];
 
   const rows = useMemo(() => {
-    const sourcePolicies = Array.isArray(watchedPolicies)
+    const raw = Array.isArray(watchedPolicies)
       ? watchedPolicies
       : form.getFieldValue([ownerKey, "policies"]) || [];
+    const sourcePolicies =
+      editing && activeTabKey === ownerKey
+        ? alignPoliciesToMapCount(raw, watchedMapCount)
+        : raw;
 
     return sourcePolicies.map((item, index) => ({
       ...item,
@@ -406,7 +471,14 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
       index: index + 1,
       formPath: [ownerKey, "policies", index],
     }));
-  }, [form, ownerKey, watchedPolicies]);
+  }, [
+    activeTabKey,
+    editing,
+    form,
+    ownerKey,
+    watchedMapCount,
+    watchedPolicies,
+  ]);
 
   const onOpenGroupCover = () => {
     setOpenModal(true);
@@ -440,6 +512,11 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
               label: index + 1,
             }))}
             disabled={!editing}
+            onChange={(value) => {
+              if (editing && activeTabKey === ownerKey) {
+                setOwnerPoliciesToMapCount(form, ownerKey, value);
+              }
+            }}
           />
         </Form.Item>
       </Col>
@@ -457,13 +534,28 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
         </Form.Item>
       </Col>
       <Col xs={24} md={24}>
-        <EditableDynamicTable
-          form={form}
-          editing={editing}
-          columns={columns}
-          data={rows}
-          tableProps={TABLE_PROPS}
-        />
+        <Form.Item
+          // Add a dependency so this field re-renders when NumberOfMaps changes for this owner
+          shouldUpdate={(prevValues, currentValues) => {
+            return (
+              prevValues?.[ownerKey]?.NumberOfMaps !== currentValues?.[ownerKey]?.NumberOfMaps
+            );
+          }}
+          noStyle
+        >
+          {() => {
+            
+            return(
+            <EditableDynamicTable
+              key={`${ownerKey}-policies-${Array.isArray(watchedPolicies) ? watchedPolicies.length : 0}`}
+              form={form}
+              editing={editing}
+              columns={columns}
+              data={rows}
+              tableProps={TABLE_PROPS}
+            />
+          )}}
+        </Form.Item>
       </Col>
     </Row>
   );
@@ -514,8 +606,6 @@ export default function PersonalInsuranceModal({ modalData }) {
     const partnerPolicies = personalInsurance?.partner?.PersonalInsurance;
     const groupCoverDetails = groupInsuranceDetailsAll[activeTab]?.[0] || {};
 
-    console.log(personalInsurance, "personalInsurance");
-
     return {
       client: {
         NumberOfMaps: Array.isArray(clientPolicies) ? clientPolicies.length : 0,
@@ -558,10 +648,6 @@ export default function PersonalInsuranceModal({ modalData }) {
     const partnerTotals = allowPartner
       ? computeOwnerTotals(partnerPolicies, partnerGroupDetails)
       : null;
-
-      console.log(clientTotals, "clientTotals");
-      console.log(partnerTotals, "partnerTotals");
-      return false;
 
     const payload = {
       ...(pi._id ? { _id: pi._id } : {}),
@@ -665,6 +751,7 @@ export default function PersonalInsuranceModal({ modalData }) {
                       ownerLabel={clientName}
                       editing={editing}
                       setEditing={setEditing}
+                      activeTabKey={activeTab}
                     />
                   ),
                 },
@@ -680,6 +767,7 @@ export default function PersonalInsuranceModal({ modalData }) {
                             ownerLabel={partnerName}
                             editing={editing}
                             setEditing={setEditing}
+                            activeTabKey={activeTab}
                           />
                         ),
                       },
