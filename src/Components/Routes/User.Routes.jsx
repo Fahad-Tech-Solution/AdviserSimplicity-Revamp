@@ -24,6 +24,7 @@ import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/Cr
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
 import InvestmentLoanModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentLoanSection/InvestmentLoanModal.jsx";
+import InvestmentLoanModalSMSF from "../Pages/User/Discovery/SMSF/components/InvestmentLoanSection/InvestmentLoanModal.jsx";
 import BankTermDetailsModal from "../Pages/User/Discovery/FinancialInvestments/components/Bankandterm/BankTermDetailsModal.jsx";
 import AustralianShare from "../Pages/User/Discovery/FinancialInvestments/components/AustralianShare/AustralianShare.jsx";
 import PlatformInvestments from "../Pages/User/Discovery/FinancialInvestments/components/PlatformInvestment and Investment Bond/PlatformInvestments.jsx";
@@ -37,6 +38,7 @@ import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/component
 import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessEntities.jsx";
 import TradingCompanyModal from "../Pages/User/Discovery/BusinessEntities/coponents/TradingCompanySection/TradingCompanyModal.jsx";
 import BusinessTrustModal from "../Pages/User/Discovery/BusinessEntities/coponents/BusinessTrustSection/BusinessTrustModal.jsx";
+import OtherInvestmentsModalSMSF from "../Pages/User/Discovery/SMSF/components/OtherInvestmentsSection/OtherInvestmentsModal.jsx";
 import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/PowerOfAttorney/PowerOfAttorney.jsx";
 import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
 import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/PersonalInsurance.jsx";
@@ -466,57 +468,70 @@ const SMSF_CARDS = [
   },
   {
     title: "Accumulation Account",
-    Key: "SMSFAccumulationDetails",
+    key: "SMSFAccumulationDetails",
     icon: "🐷",
     component: null,
   },
   {
     title: "Pension Account",
-    Key: "SMSFPensionPhase",
+    key: "SMSFPensionPhase",
     icon: "🐷",
     component: null,
   },
   {
     title: "Bank Accounts",
-    Key: "SMSFBank",
+    key: "SMSFBank",
     icon: "🏦",
     component: null,
   },
   {
     title: "Term Deposits",
-    Key: "SMSFTermDeposits",
+    key: "SMSFTermDeposits",
     icon: "⏱️",
     component: null,
   },
   {
     title: "Australian Shares/ETFs",
-    Key: "SMSFAustralianShares",
+    key: "SMSFAustralianShares",
     icon: "📊",
     component: null,
   },
   {
     title: "Platform Investments",
-    Key: "SMSFManagedFunds",
+    key: "SMSFManagedFunds",
     icon: "💼",
     component: null,
   },
   {
     title: "Investment Loan",
-    Key: "SMSFInvestmentLoan",
+    key: "SMSFInvestmentLoan",
     icon: "📋",
-    component: null,
+    component: <InvestmentLoanModalSMSF />,
+    modalWidth: "1200px",
+    firstNameKey: "SMSF",
+    firstTotalKey: "SMSFTotal",
+    showSecondTotal: false,
+
   },
   {
     title: "Investment Properties",
-    Key: "SMSFInvestmentProperties",
+    key: "SMSFInvestmentProperties",
     icon: "🏘️",
-    component: null,
+    component: <InvestmentPropertiesModal />,
+    modalWidth: "1500px",
+    tableRows: 10,
+    firstNameKey: "Property Portfolio",
+    secondNameKey: "Total Debt",
+    firstTotalKey: "propertyPortfolio",
+    secondTotalKey: "totalDebt",
+    showSecondTotal: true,
   },
   {
     title: "Other Investments",
     key: "SMSFOtherInvestment",
-    icon: "💰",
-    component: null,
+    icon: "📈",
+    component: <OtherInvestmentsModalSMSF />,
+    modalWidth: "900px",
   },
  
 ];
@@ -555,19 +570,31 @@ const FAMILY_TRUST_CARDS = [
     title: "Investment Loan",
     key: "familyInvestmentHomeLoan",
     icon: "📋",
-    component: null,
+    component: <InvestmentLoanModalSMSF />,
+    modalWidth: "1200px",
+    firstNameKey: "Trust",
+    firstTotalKey: "trustTotal",
+    showSecondTotal: false,
   },
   {
     title: "Investment Property",
     key: "familyInvestmentProperties",
     icon: "🏘️",
-    component: null,
+    component: <InvestmentPropertiesModal />,
+    modalWidth: "1500px",
+    tableRows: 10,
+    firstNameKey: "Property Portfolio",
+    secondNameKey: "Total Debt",
+    firstTotalKey: "propertyPortfolio",
+    secondTotalKey: "totalDebt",
+    showSecondTotal: true,
   },
   {
     title: "Other Investments",
     key: "familyOtherInvestment",
     icon: "💰",
-    component: null,
+    component: <OtherInvestmentsModalSMSF />,
+    modalWidth: "900px",
   },
 ];
 
