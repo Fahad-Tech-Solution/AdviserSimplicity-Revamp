@@ -195,10 +195,11 @@ export default function DiscoveryTotalsCard({
   secondisFormInput = false,
   callBackFunction = () => {},
   OpenModal = () => {},
+  consoleHeading = null,
 }) {
   return (
     <Card style={CARD_STYLE} styles={{ body: CARD_BODY_STYLE }}>
-      <h6 style={TITLE_STYLE}>{title}</h6>
+      <h6 style={TITLE_STYLE} onClick={() => console.log(consoleHeading, "consoleHeading")}>{title}</h6>
       <p style={ICON_WRAPPER_STYLE}>{renderIcon(icon)}</p>
       <div style={CONTENT_STYLE}>
         <div role="button" style={BADGE_STYLE} onClick={() => OpenModal()}>

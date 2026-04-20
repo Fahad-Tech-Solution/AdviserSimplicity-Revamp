@@ -1,10 +1,12 @@
-import { Button, Col, Form, Row, Select, Tabs } from "antd";
-import { useAtomValue } from "jotai";
+import { Button, Col, Form, message, Row, Select, Tabs } from "antd";
+import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   discoveryDataAtom,
   InvestmentOffersData,
 } from "../../../../../../store/authState.js";
+import { toCommaAndDollar } from "../../../../../../hooks/helpers.js";
+import useApi from "../../../../../../hooks/useApi.js";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
 import SwitchPopupDisplay from "../../../../../Common/SwitchPopupDisplay.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -34,6 +36,56 @@ const EMPTY_SUPER_ANNUATION_ISSUES = Object.freeze({
   joint: [],
   partner: [],
 });
+
+function currencyToNumber(val) {
+  return Number(String(val ?? "$0").replace(/[^0-9.-]+/g, "")) || 0;
+}
+
+function slicePoliciesForOwner(branch) {
+  if (!branch || typeof branch !== "object") return [];
+  const policies = Array.isArray(branch.policies) ? branch.policies : [];
+  const n = Number(branch.NumberOfMaps);
+  const count =
+    Number.isFinite(n) && n > 0 ? Math.min(n, policies.length) : policies.length;
+  return policies.slice(0, count);
+}
+
+function computeOwnerTotals(policies, groupCoverDetails = {}) {
+  const gd = groupCoverDetails || {};
+  const LifeInsuranceTotal =
+    policies.reduce((sum, item) => sum + currencyToNumber(item?.life), 0) +
+    currencyToNumber(gd?.lifeCover);
+  const TPDTotal =
+    policies.reduce(
+      (sum, item) =>
+        sum +
+        currencyToNumber(
+          item?.LifeTPDTraumaDetails?.TPDDefinition !== "Split (Own)"
+            ? item?.TPD
+            : 0,
+        ),
+      0,
+    ) + currencyToNumber(gd?.TPDCover);
+  const TraumaTotal = policies.reduce(
+    (sum, item) => sum + currencyToNumber(item?.trauma),
+    0,
+  );
+  const IncomeProtectionTotal =
+    policies.reduce(
+      (sum, item) =>
+        sum +
+        currencyToNumber(
+          item?.IPDetails?.superlinked === "No" ? item?.IP : 0,
+        ),
+      0,
+    ) + currencyToNumber(gd?.monthlyIncome);
+  return {
+    LifeInsuranceTotal,
+    TPDTotal,
+    TraumaTotal,
+    IncomeProtectionTotal,
+  };
+}
 
 function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
   let [openModal, setOpenModal] = useState(false);
@@ -104,14 +156,9 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
       owner: ownerKey,
       record,
       fieldPath,
+      beneficiaryDetailsShape: "personalInsurance",
       initialValues:
         (fieldPath ? form.getFieldValue(fieldPath) : null) || record || {},
-      nominationType: record?.nominationType || undefined,
-      beneficiaries: Array.isArray(record?.beneficiaries)
-        ? record.beneficiaries
-        : Array.isArray(record?.beneficiaryArray)
-          ? record.beneficiaryArray
-          : [],
       closeModal: () => {
         setOpenModal(false);
         setEditing(true);
@@ -424,6 +471,8 @@ function OwnerTabContent({ form, ownerKey, ownerLabel, editing, setEditing }) {
 
 export default function PersonalInsuranceModal({ modalData }) {
   const discoveryData = useAtomValue(discoveryDataAtom);
+  const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const { post, patch } = useApi();
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("client");
   const [editing, setEditing] = useState(false);
@@ -465,6 +514,8 @@ export default function PersonalInsuranceModal({ modalData }) {
     const partnerPolicies = personalInsurance?.partner?.PersonalInsurance;
     const groupCoverDetails = groupInsuranceDetailsAll[activeTab]?.[0] || {};
 
+    console.log(personalInsurance, "personalInsurance");
+
     return {
       client: {
         NumberOfMaps: Array.isArray(clientPolicies) ? clientPolicies.length : 0,
@@ -487,7 +538,105 @@ export default function PersonalInsuranceModal({ modalData }) {
   }, [form, initialValues]);
 
   const handleFinish = async (values) => {
-    console.log(values);
+    const pi = personalInsurance && typeof personalInsurance === "object"
+      ? personalInsurance
+      : {};
+
+    const clientPolicies = slicePoliciesForOwner(values?.client);
+    const partnerPolicies = allowPartner
+      ? slicePoliciesForOwner(values?.partner)
+      : Array.isArray(pi?.partner?.PersonalInsurance)
+        ? pi.partner.PersonalInsurance
+        : [];
+
+    const clientGroupDetails =
+      groupInsuranceDetailsAll?.client?.[0]?.groupInsuranceDetails || {};
+    const partnerGroupDetails =
+      groupInsuranceDetailsAll?.partner?.[0]?.groupInsuranceDetails || {};
+
+    const clientTotals = computeOwnerTotals(clientPolicies, clientGroupDetails);
+    const partnerTotals = allowPartner
+      ? computeOwnerTotals(partnerPolicies, partnerGroupDetails)
+      : null;
+
+      console.log(clientTotals, "clientTotals");
+      console.log(partnerTotals, "partnerTotals");
+      return false;
+
+    const payload = {
+      ...(pi._id ? { _id: pi._id } : {}),
+      clientFK: pi.clientFK || discoveryData?.clientFK,
+      selectedStakeholders: Array.isArray(pi.selectedStakeholders)
+        ? pi.selectedStakeholders
+        : ["client"],
+      client: {
+        ...(pi.client && typeof pi.client === "object" ? pi.client : {}),
+        PersonalInsurance: clientPolicies,
+        numberOfPolicies: clientPolicies.length,
+      },
+      clientLifeInsuranceTotal: toCommaAndDollar(clientTotals.LifeInsuranceTotal),
+      clientTPDTotal: toCommaAndDollar(clientTotals.TPDTotal),
+      clientTraumaTotal: toCommaAndDollar(clientTotals.TraumaTotal),
+      clientIncomeProtectionTotal: toCommaAndDollar(
+        clientTotals.IncomeProtectionTotal,
+      ),
+      clientHasPersonalInsurance: clientPolicies.length > 0 ? "Yes" : "No",
+      ...(allowPartner && partnerTotals
+        ? {
+            partner: {
+              ...(pi.partner && typeof pi.partner === "object"
+                ? pi.partner
+                : {}),
+              PersonalInsurance: partnerPolicies,
+              numberOfPolicies: partnerPolicies.length,
+            },
+            partnerLifeInsuranceTotal: toCommaAndDollar(
+              partnerTotals.LifeInsuranceTotal,
+            ),
+            partnerTPDTotal: toCommaAndDollar(partnerTotals.TPDTotal),
+            partnerTraumaTotal: toCommaAndDollar(partnerTotals.TraumaTotal),
+            partnerIncomeProtectionTotal: toCommaAndDollar(
+              partnerTotals.IncomeProtectionTotal,
+            ),
+            partnerHasPersonalInsurance:
+              partnerPolicies.length > 0 ? "Yes" : "No",
+          }
+        : {
+            partner: pi.partner,
+            partnerLifeInsuranceTotal: pi.partnerLifeInsuranceTotal,
+            partnerTPDTotal: pi.partnerTPDTotal,
+            partnerTraumaTotal: pi.partnerTraumaTotal,
+            partnerIncomeProtectionTotal: pi.partnerIncomeProtectionTotal,
+            partnerHasPersonalInsurance: pi.partnerHasPersonalInsurance,
+          }),
+    };
+
+    try {
+      setSaving(true);
+      const saved = pi.clientFK
+        ? await patch("/api/personalInsurance/Update", payload)
+        : await post("/api/personalInsurance/Add", payload);
+
+      setDiscoveryData((prev) => ({
+        ...(prev && typeof prev === "object" ? prev : {}),
+        personalInsurance:
+          saved?.personalInsurance !== undefined
+            ? saved.personalInsurance
+            : saved ?? payload,
+      }));
+
+      message.success("Personal insurance saved successfully");
+      setEditing(false);
+      modalData?.closeModal?.();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to save personal insurance",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

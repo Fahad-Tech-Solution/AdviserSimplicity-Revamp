@@ -423,6 +423,8 @@ const PERSONAL_INSURANCE_CARDS = [
     icon: "📋",
     component: <PersonalInsuranceModal />,
     modalWidth: "1800px",
+    firstTotalKey: "clientLifeInsuranceTotal",
+    secondTotalKey: "partnerLifeInsuranceTotal",
   },
   {
     title: "TPD Insurance",
@@ -430,6 +432,8 @@ const PERSONAL_INSURANCE_CARDS = [
     icon: "♿",
     modalWidth: "1800px",
     component: <PersonalInsuranceModal />,
+    firstTotalKey: "clientTPDTotal",
+    secondTotalKey: "partnerTPDTotal",
   },
   {
     title: "Trauma Insurance",
@@ -437,6 +441,8 @@ const PERSONAL_INSURANCE_CARDS = [
     modalWidth: "1800px",
     icon: "⬜",
     component: <PersonalInsuranceModal />,
+    firstTotalKey: "clientTraumaTotal",
+    secondTotalKey: "partnerTraumaTotal",
   },
   {
     title: "Income Protection",
@@ -444,6 +450,8 @@ const PERSONAL_INSURANCE_CARDS = [
     modalWidth: "1800px",
     icon: "☂️",
     component: <PersonalInsuranceModal />,
+    firstTotalKey: "clientIncomeProtectionTotal",
+    secondTotalKey: "partnerIncomeProtectionTotal",
   },
 ];
 

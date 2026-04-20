@@ -59,22 +59,38 @@ function formatPercentValue(value, max = 100) {
   return `${limited}%`;
 }
 
-function buildInitialValues(rowValues = {}) {
+function getBeneficiaryStorageConfig(modalData) {
+  if (modalData?.beneficiaryDetailsShape === "personalInsurance") {
+    return {
+      detailsKey: "beneficiaryDetails",
+      arrayKey: "beneficiaryArray",
+      yesFieldKey: "beneficiary",
+    };
+  }
+  return {
+    detailsKey: "nominatedBeneficiariesDetails",
+    arrayKey: "nominatedBeneficiariesArray",
+    yesFieldKey: "nominatedBeneficiaries",
+  };
+}
+
+function buildInitialValues(rowValues = {}, storage) {
+  let rawDetails = rowValues?.[storage.detailsKey];
+  if (rawDetails == null || rawDetails === "") {
+    rawDetails = {};
+  }
   const details =
-    rowValues?.nominatedBeneficiariesDetails &&
-    typeof rowValues.nominatedBeneficiariesDetails === "object"
-      ? rowValues.nominatedBeneficiariesDetails
-      : {};
+    typeof rawDetails === "object" && rawDetails !== null ? rawDetails : {};
+
+  const list = details?.[storage.arrayKey];
 
   return {
     nominationType: normalizeSelectValue(details?.nominationType),
     NumberOfMap:
       Number(details?.NumberOfMap) ||
-      details?.nominatedBeneficiariesArray?.length ||
+      (Array.isArray(list) ? list.length : 0) ||
       1,
-    BeneficiariesDetails: Array.isArray(details?.nominatedBeneficiariesArray)
-      ? details.nominatedBeneficiariesArray
-      : [],
+    BeneficiariesDetails: Array.isArray(list) ? list : [],
   };
 }
 
@@ -98,9 +114,13 @@ function buildRows(count, entries = []) {
 
 export default function BeneficiariesModal({ modalData }) {
   const [form] = Form.useForm();
+  const storage = useMemo(
+    () => getBeneficiaryStorageConfig(modalData),
+    [modalData?.beneficiaryDetailsShape],
+  );
   const initialValues = useMemo(
-    () => buildInitialValues(modalData?.initialValues || {}),
-    [modalData],
+    () => buildInitialValues(modalData?.initialValues || {}, storage),
+    [modalData?.initialValues, storage],
   );
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
@@ -253,14 +273,16 @@ export default function BeneficiariesModal({ modalData }) {
 
     const currentRow =
       modalData?.parentForm?.getFieldValue?.(modalData?.fieldPath) || {};
+    const storageCfg = getBeneficiaryStorageConfig(modalData);
+    const detailsPayload = {
+      [storageCfg.arrayKey]: savedBeneficiaries,
+      nominationType: values?.nominationType || "",
+      NumberOfMap: values?.NumberOfMap || savedBeneficiaries.length,
+    };
     const updatedRow = {
       ...currentRow,
-      nominatedBeneficiaries: "Yes",
-      nominatedBeneficiariesDetails: {
-        nominatedBeneficiariesArray: savedBeneficiaries,
-        nominationType: values?.nominationType || "",
-        NumberOfMap: values?.NumberOfMap || savedBeneficiaries.length,
-      },
+      [storageCfg.yesFieldKey]: "Yes",
+      [storageCfg.detailsKey]: detailsPayload,
     };
 
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);

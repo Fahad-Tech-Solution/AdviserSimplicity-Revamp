@@ -236,9 +236,9 @@ function buildInitialOwnerData(entries = []) {
   };
 }
 
-function sanitizeAdvisers(entries = []) {
-  return (Array.isArray(entries) ? entries : []).map((item) => ({
-    POAType: item?.POAType || "",
+function sanitizeAdvisers(entries = [], types = []) {
+  return (Array.isArray(entries) ? entries : []).map((item, index) => ({
+    POAType: types[index] || item?.POAType || "",
     adviserName: item?.adviserName || "",
     company: item?.company || "",
     phone: item?.phone || "",
@@ -299,12 +299,16 @@ export default function ProfessionalAdvisers({ modalData }) {
       },
     };
 
+
     const clientAdvisers = sanitizeAdvisers(
       sourceValues?.professionalAdvisers?.client?.professionalAdviser,
+      sourceValues?.professionalAdvisers?.client?.professionalAdvisersTypes
     );
+
     const partnerAdvisers = allowPartner
       ? sanitizeAdvisers(
           sourceValues?.professionalAdvisers?.partner?.professionalAdviser,
+          sourceValues?.professionalAdvisers?.partner?.professionalAdvisersTypes
         )
       : [];
 
@@ -329,8 +333,8 @@ export default function ProfessionalAdvisers({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/professionalAdviser/Update", payload)
-        : await post("/api/professionalAdviser/Add", payload);
+        ? await patch("/api/professionalAdviser/revamp/Update", payload)
+        : await post("/api/professionalAdviser/revamp/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

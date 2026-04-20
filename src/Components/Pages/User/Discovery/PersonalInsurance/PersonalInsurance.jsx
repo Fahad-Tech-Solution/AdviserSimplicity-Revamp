@@ -110,12 +110,13 @@ const PersonalInsurance = () => {
                   <DiscoveryTotalsCard
                     title={card.title}
                     icon={card.icon}
+                    consoleHeading={discoveryData?.["personalInsurance"]}
                     firstName={
                       card?.firstNameKey ||
                       discoveryData.personalDetails?.client?.clientPreferredName
                     }
                     firstTotal={
-                      discoveryData?.[card.key]?.[
+                      discoveryData?.["personalInsurance"]?.[
                         card?.firstTotalKey || "clientTotal"
                       ]
                     }
@@ -125,7 +126,7 @@ const PersonalInsurance = () => {
                         ?.partnerPreferredName
                     }
                     secondTotal={
-                      discoveryData?.[card.key]?.[
+                      discoveryData?.["personalInsurance"]?.[
                         card?.secondTotalKey || "partnerTotal"
                       ]
                     }
