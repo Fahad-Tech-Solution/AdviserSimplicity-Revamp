@@ -459,21 +459,115 @@ const PERSONAL_INSURANCE_CARDS = [
 
 const SMSF_CARDS = [
   {
-    title: "Life Insurance",
-    key: "lifeInsurance",
+    title: "Details",
+    key: "SMSFDetails",
+    icon: "🔐",
+    component: null,
+  },
+  {
+    title: "Accumulation Account",
+    Key: "SMSFAccumulationDetails",
+    icon: "🐷",
+    component: null,
+  },
+  {
+    title: "Pension Account",
+    Key: "SMSFPensionPhase",
+    icon: "🐷",
+    component: null,
+  },
+  {
+    title: "Bank Accounts",
+    Key: "SMSFBank",
+    icon: "🏦",
+    component: null,
+  },
+  {
+    title: "Term Deposits",
+    Key: "SMSFTermDeposits",
+    icon: "⏱️",
+    component: null,
+  },
+  {
+    title: "Australian Shares/ETFs",
+    Key: "SMSFAustralianShares",
+    icon: "📊",
+    component: null,
+  },
+  {
+    title: "Platform Investments",
+    Key: "SMSFManagedFunds",
+    icon: "💼",
+    component: null,
+  },
+  {
+    title: "Investment Loan",
+    Key: "SMSFInvestmentLoan",
     icon: "📋",
-    component: <PersonalInsuranceModal />,
-    modalWidth: "1800px",
+    component: null,
+  },
+  {
+    title: "Investment Properties",
+    Key: "SMSFInvestmentProperties",
+    icon: "🏘️",
+    component: null,
+  },
+  {
+    title: "Other Investments",
+    key: "SMSFOtherInvestment",
+    icon: "💰",
+    component: null,
   },
  
 ];
 const FAMILY_TRUST_CARDS = [
   {
-    title: "Life Insurance",
-    key: "lifeInsurance",
+    title: "Details",
+    key: "familyDetails",
+    icon: "🔐",
+    component: null,
+  },
+  {
+    title: "Bank Accounts",
+    key: "familyBank",
+    icon: "🏦",
+    component: null,
+  },
+  {
+    title: "Term Deposits",
+    key: "familyTermDeposit",
+    icon: "⏱️",
+    component: null,
+  },
+  {
+    title: "Australian Shares/ETFs",
+    key: "familyAustralianShare",
+    icon: "📊",
+    component: null,
+  },
+  {
+    title: "Platform Investments",
+    key: "familyMangedFunds",
+    icon: "💼",
+    component: null,
+  },
+  {
+    title: "Investment Loan",
+    key: "familyInvestmentHomeLoan",
     icon: "📋",
-    component: <PersonalInsuranceModal />,
-    modalWidth: "1800px",
+    component: null,
+  },
+  {
+    title: "Investment Property",
+    key: "familyInvestmentProperties",
+    icon: "🏘️",
+    component: null,
+  },
+  {
+    title: "Other Investments",
+    key: "familyOtherInvestment",
+    icon: "💰",
+    component: null,
   },
 ];
 
