@@ -22,6 +22,152 @@ const TABLE_PROPS = {
   bodyFontSize: 12,
 };
 
+const HEADING_STYLE = { fontFamily: "Georgia,serif" };
+
+const customConfig = {
+  SMSF: {
+    noJoint: true,
+    noPartner: true,
+    customKeys: true,
+    Name: "SMSF",
+    TotalKey: "SMSFTotal",
+    innerkey: "SMSF",
+  },
+  Trust: {
+    noJoint: true,
+    noPartner: true,
+    customKeys: true,
+    Name: "Trust",
+    TotalKey: "trustTotal",
+    innerkey: "trust",
+  },
+};
+
+const MIDDLEWARE_CONFIG = {
+  bankAccountFinance: {
+    addEndpoint: "/api/bankAccountFinance/Add",
+    updateEndpoint: "/api/bankAccountFinance/Update",
+    countLabel: "Number of Bank Accounts",
+    width: 680,
+  },
+  termDepositsFinance: {
+    addEndpoint: "/api/termDepositsFinance/Add",
+    updateEndpoint: "/api/termDepositsFinance/Update",
+    countLabel: "Number of Term Deposits",
+    width: 680,
+  },
+  australianShareMarket: {
+    addEndpoint: "/api/australianShareMarket/Add",
+    updateEndpoint: "/api/australianShareMarket/Update",
+    countLabel: "Number of Australian Shares/ETFs",
+    width: 800,
+  },
+  managedFund: {
+    addEndpoint: "/api/managedFund/Add",
+    updateEndpoint: "/api/managedFund/Update",
+    countLabel: "Number of Platform Investments",
+    width: 800,
+  },
+  investmentBondFinance: {
+    addEndpoint: "/api/investmentBondFinance/Add",
+    updateEndpoint: "/api/investmentBondFinance/Update",
+    countLabel: "Number of Investment Bonds",
+    width: 800,
+  },
+  superAnnuationIssues: {
+    addEndpoint: "/api/superAnnuationIssues/Add",
+    updateEndpoint: "/api/superAnnuationIssues/Update",
+    countLabel: "Number of Super Funds",
+    width: 1000,
+    noJoint: true,
+  },
+  accountBasedPensionIssues: {
+    addEndpoint: "/api/accountBasedPensionIssues/Add",
+    updateEndpoint: "/api/accountBasedPensionIssues/Update",
+    countLabel: "Number of Account Based Pensions",
+    width: 1000,
+    noJoint: true,
+  },
+  annuitiesIssues: {
+    addEndpoint: "/api/annuitiesIssues/Add",
+    updateEndpoint: "/api/annuitiesIssues/Update",
+    countLabel: "Number of Annuities",
+    width: 1500,
+    noJoint: true,
+  },
+  BusinessAsCompanyStructure: {
+    addEndpoint: "/api/BusinessAsCompanyStructure/Add",
+    updateEndpoint: "/api/BusinessAsCompanyStructure/Update",
+    countLabel: "Number of Companies",
+    width: 1400,
+    noJoint: true,
+  },
+  BusinessAsTrusts: {
+    addEndpoint: "/api/BusinessAsTrusts/Add",
+    updateEndpoint: "/api/BusinessAsTrusts/Update",
+    countLabel: "Number of Trusts",
+    width: 1400,
+    noJoint: true,
+  },
+  SMSFBank: {
+    addEndpoint: "/api/SMSFBank/Add",
+    updateEndpoint: "/api/SMSFBank/Update",
+    countLabel: "Number of Bank Accounts",
+    width: 680,
+    ...customConfig.SMSF,
+  },
+  SMSFTermDeposits: {
+    addEndpoint: "/api/SMSFTermDeposits/Add",
+    updateEndpoint: "/api/SMSFTermDeposits/Update",
+    countLabel: "Number of Term Deposits",
+    width: 680,
+    ...customConfig.SMSF,
+  },
+  SMSFAustralianShares: {
+    addEndpoint: "/api/SMSFAustralianShares/Add",
+    updateEndpoint: "/api/SMSFAustralianShares/Update",
+    countLabel: "Number of Australian Shares/ETFs",
+    width: 800,
+    ...customConfig.SMSF,
+  },
+  SMSFManagedFunds: {
+    addEndpoint: "/api/SMSFManagedFunds/Add",
+    updateEndpoint: "/api/SMSFManagedFunds/Update",
+    countLabel: "Number of Platform Investments",
+    width: 1000,
+    ...customConfig.SMSF,
+  },
+
+  familyBank: {
+    addEndpoint: "/api/familyBank/Add",
+    updateEndpoint: "/api/familyBank/Update",
+    countLabel: "Number of Bank Accounts",
+    width: 680,
+    ...customConfig.Trust,
+  },
+  familyTermDeposit: {
+    addEndpoint: "/api/familyTermDeposit/Add",
+    updateEndpoint: "/api/familyTermDeposit/Update",
+    countLabel: "Number of Term Deposits",
+    width: 680,
+    ...customConfig.Trust,
+  },
+  familyAustralianShare: {
+    addEndpoint: "/api/familyAustralianShare/Add",
+    updateEndpoint: "/api/familyAustralianShare/Update",
+    countLabel: "Number of Australian Shares/ETFs",
+    width: 800,
+    ...customConfig.Trust,
+  },
+  familyMangedFunds: {
+    addEndpoint: "/api/familyMangedFunds/Add",
+    updateEndpoint: "/api/familyMangedFunds/Update",
+    countLabel: "Number of Platform Investments",
+    width: 1000,
+    ...customConfig.Trust,
+  },
+};
+
 function parseCurrencyValue(value) {
   if (value === null || value === undefined || value === "") return 0;
   const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
@@ -48,7 +194,35 @@ function buildOwnerLabel(type, discoveryData) {
   return `${clientName} & ${partnerName}`;
 }
 
-function buildInitialValues(sectionData = {}, noJoint = false) {
+function getCustomKeys(config = {}) {
+  return {
+    enabled: Boolean(config?.customKeys),
+    displayKey: config?.Name,
+    totalKey: config?.TotalKey,
+    valueKey: config?.innerkey,
+  };
+}
+
+function mergeBranch(formValues, values, key) {
+  return {
+    ...(formValues?.[key] || {}),
+    ...(values?.[key] || {}),
+  };
+}
+
+function buildInitialValues(sectionData = {}, noJoint = false, config = {}) {
+  const customKeys = getCustomKeys(config);
+  console.log(sectionData, "sectionData");
+  if (customKeys.enabled) {
+    return {
+      [customKeys.valueKey]: {
+        currentBalanceArray: sectionData?.[customKeys.valueKey] || [],
+        currentBalance: sectionData?.[customKeys.totalKey] || "",
+        costBase: sectionData?.[customKeys.totalKey] || "",
+      },
+    };
+  }
+
   return {
     client: {
       currentBalanceArray: sectionData?.client || [],
@@ -76,6 +250,124 @@ function calculateDisplayTotal(primaryBalance, jointBalance) {
   return formatCurrencyValue(primary + joint / 2);
 }
 
+function buildSourceValues(formValues = {}, values = {}, config = {}) {
+  const customKeys = getCustomKeys(config);
+
+  return {
+    ...formValues,
+    ...values,
+    client: mergeBranch(formValues, values, "client"),
+    partner: mergeBranch(formValues, values, "partner"),
+    joint: mergeBranch(formValues, values, "joint"),
+    ...(customKeys.enabled
+      ? {
+          [customKeys.valueKey]: mergeBranch(
+            formValues,
+            values,
+            customKeys.valueKey,
+          ),
+        }
+      : {}),
+  };
+}
+
+function buildStandardPayload({
+  sectionData,
+  discoveryData,
+  sourceValues,
+  showPartner,
+  includeJoint,
+  hasCostBase,
+}) {
+  return {
+    ...sectionData,
+    clientFK:
+      sectionData?.clientFK ||
+      discoveryData?.personalDetails?._id ||
+      discoveryData?.personaldetails?._id ||
+      undefined,
+    client: sourceValues?.client?.currentBalanceArray || [],
+    partner: showPartner
+      ? sourceValues?.partner?.currentBalanceArray || []
+      : [],
+    ...(includeJoint
+      ? {
+          joint:
+            showPartner && includeJoint
+              ? sourceValues?.joint?.currentBalanceArray || []
+              : [],
+          jointCurrentBalance:
+            showPartner && includeJoint
+              ? sourceValues?.joint?.currentBalance || ""
+              : "",
+        }
+      : {}),
+    clientCurrentBalance: sourceValues?.client?.currentBalance || "",
+    partnerCurrentBalance: showPartner
+      ? sourceValues?.partner?.currentBalance || ""
+      : "",
+    clientTotal:
+      showPartner && includeJoint
+        ? calculateDisplayTotal(
+            sourceValues?.client?.currentBalance,
+            sourceValues?.joint?.currentBalance,
+          )
+        : sourceValues?.client?.currentBalance || "",
+    partnerTotal:
+      showPartner && includeJoint
+        ? calculateDisplayTotal(
+            sourceValues?.partner?.currentBalance,
+            sourceValues?.joint?.currentBalance,
+          )
+        : showPartner
+          ? sourceValues?.partner?.currentBalance || ""
+          : "",
+    ...(hasCostBase
+      ? {
+          clientCostBaseTemp: sourceValues?.client?.costBase || "",
+          partnerCostBaseTemp: showPartner
+            ? sourceValues?.partner?.costBase || ""
+            : "",
+          ...(includeJoint
+            ? {
+                jointCostBaseTemp:
+                  showPartner && includeJoint
+                    ? sourceValues?.joint?.costBase || ""
+                    : "",
+              }
+            : {}),
+        }
+      : {}),
+      _id:undefined
+  };
+}
+
+function buildCustomPayload({
+  sectionData,
+  discoveryData,
+  sourceValues,
+  config,
+  hasCostBase,
+}) {
+  const customKeys = getCustomKeys(config);
+  const customSource = sourceValues?.[customKeys.valueKey] || {};
+
+  return {
+    clientFK:
+      sectionData?.clientFK ||
+      discoveryData?.personalDetails?._id ||
+      discoveryData?.personaldetails?._id ||
+      undefined,
+    [customKeys.valueKey]: customSource?.currentBalanceArray || [],
+    [customKeys.totalKey]: customSource?.currentBalance || "",
+    ...(hasCostBase
+      ? {
+          [`${customKeys.totalKey}CostBase`]: customSource?.costBase || "",
+        }
+      : {}),
+  };
+}
+
 const MiddleWare = ({ modalData }) => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
@@ -88,83 +380,20 @@ const MiddleWare = ({ modalData }) => {
 
   const { post, patch } = useApi();
 
-  const headingStyle = { fontFamily: "Georgia,serif" };
   const renderTitleBlock = useTitleBlock({
-    titleStyle: headingStyle,
+    titleStyle: HEADING_STYLE,
   });
-
-  const MIDDLEWARE_CONFIG = {
-    bankAccountFinance: {
-      addEndpoint: "/api/bankAccountFinance/Add",
-      updateEndpoint: "/api/bankAccountFinance/Update",
-      countLabel: "Number of Bank Accounts",
-      width: 680,
-    },
-    termDepositsFinance: {
-      addEndpoint: "/api/termDepositsFinance/Add",
-      updateEndpoint: "/api/termDepositsFinance/Update",
-      countLabel: "Number of Term Deposits",
-      width: 680,
-    },
-    australianShareMarket: {
-      addEndpoint: "/api/australianShareMarket/Add",
-      updateEndpoint: "/api/australianShareMarket/Update",
-      countLabel: "Number of Australian Shares/ETFs",
-      width: 800,
-    },
-    managedFund: {
-      addEndpoint: "/api/managedFund/Add",
-      updateEndpoint: "/api/managedFund/Update",
-      countLabel: "Number of Platform Investments",
-      width: 800,
-    },
-    investmentBondFinance: {
-      addEndpoint: "/api/investmentBondFinance/Add",
-      updateEndpoint: "/api/investmentBondFinance/Update",
-      countLabel: "Number of Investment Bonds",
-      width: 800,
-    },
-    superAnnuationIssues: {
-      addEndpoint: "/api/superAnnuationIssues/Add",
-      updateEndpoint: "/api/superAnnuationIssues/Update",
-      countLabel: "Number of Super Funds",
-      width: 1000,
-      noJoint: true,
-    },
-    accountBasedPensionIssues: {
-      addEndpoint: "/api/accountBasedPensionIssues/Add",
-      updateEndpoint: "/api/accountBasedPensionIssues/Update",
-      countLabel: "Number of Account Based Pensions",
-      width: 1000,
-      noJoint: true,
-    },
-    annuitiesIssues: {
-      addEndpoint: "/api/annuitiesIssues/Add",
-      updateEndpoint: "/api/annuitiesIssues/Update",
-      countLabel: "Number of Annuities",
-      width: 1500,
-      noJoint: true,
-    },
-    BusinessAsCompanyStructure: {
-      addEndpoint: "/api/BusinessAsCompanyStructure/Add",
-      updateEndpoint: "/api/BusinessAsCompanyStructure/Update",
-      countLabel: "Number of Companies",
-      width: 1400,
-      noJoint: true,
-    },
-    BusinessAsTrusts: {
-      addEndpoint: "/api/BusinessAsTrusts/Add",
-      updateEndpoint: "/api/BusinessAsTrusts/Update",
-      countLabel: "Number of Trusts",
-      width: 1400,
-      noJoint: true,
-    },
-  };
-
-  const config =
-    MIDDLEWARE_CONFIG[modalData?.key] || MIDDLEWARE_CONFIG.bankAccountFinance;
-  config.pageLimit = modalData?.tableRows || 10;
+  const config = useMemo(
+    () => ({
+      ...(MIDDLEWARE_CONFIG[modalData?.key] ||
+        MIDDLEWARE_CONFIG.bankAccountFinance),
+      pageLimit: modalData?.tableRows || 10,
+    }),
+    [modalData?.key, modalData?.tableRows],
+  );
   const includeJoint = !config.noJoint;
+  const includePartner = !config.noPartner;
+  const customKeys = useMemo(() => getCustomKeys(config), [config]);
   const hasCostBase = ["australianShareMarket", "managedFund"].includes(
     modalData?.key,
   );
@@ -175,8 +404,8 @@ const MiddleWare = ({ modalData }) => {
   const sectionData = discoveryData?.[modalData?.key] || {};
 
   const initialValues = useMemo(
-    () => buildInitialValues(sectionData, config.noJoint),
-    [sectionData],
+    () => buildInitialValues(sectionData, config.noJoint, config),
+    [config, sectionData],
   );
 
   const clientCurrentBalance = Form.useWatch(
@@ -187,6 +416,7 @@ const MiddleWare = ({ modalData }) => {
     ["partner", "currentBalance"],
     form,
   );
+
   const jointCurrentBalance = Form.useWatch(["joint", "currentBalance"], form);
   const clientCostBase = Form.useWatch(["client", "costBase"], form);
   const partnerCostBase = Form.useWatch(["partner", "costBase"], form);
@@ -216,7 +446,14 @@ const MiddleWare = ({ modalData }) => {
         },
       });
     },
-    [modalData?.innerComponent, modalData?.key, modalData?.title],
+    [
+      config.width,
+      modalData?.icon,
+      modalData?.innerComponent,
+      modalData?.key,
+      modalData?.tableRows,
+      modalData?.title,
+    ],
   );
 
   const tableColumns = useMemo(() => {
@@ -258,18 +495,37 @@ const MiddleWare = ({ modalData }) => {
   }, [hasCostBase, openInnerModal]);
 
   const rowData = useMemo(() => {
-    const rows = [
-      {
-        key: "client",
-        formPath: ["client"],
-        owner: buildOwnerLabel("client", discoveryData),
-        currentBalance:
-          clientCurrentBalance ?? initialValues?.client?.currentBalance,
-        costBase: clientCostBase ?? initialValues?.client?.costBase,
-      },
-    ];
+    let rows = [];
 
-    if (showPartner) {
+    if (customKeys.enabled) {
+      console.log(initialValues?.[customKeys.valueKey], "initialValues");
+      console.log(customKeys.valueKey, "customKeys.valueKey");
+      rows = [
+        {
+          key: customKeys.displayKey,
+          formPath: [customKeys.valueKey],
+          owner: customKeys.displayKey,
+          currentBalance:
+            clientCurrentBalance ??
+            initialValues?.[customKeys.valueKey]?.currentBalance,
+          costBase:
+            clientCostBase ?? initialValues?.[customKeys.valueKey]?.costBase,
+        },
+      ];
+    } else {
+      rows = [
+        {
+          key: "client",
+          formPath: ["client"],
+          owner: buildOwnerLabel("client", discoveryData),
+          currentBalance:
+            clientCurrentBalance ?? initialValues?.client?.currentBalance,
+          costBase: clientCostBase ?? initialValues?.client?.costBase,
+        },
+      ];
+    }
+
+    if (includePartner && showPartner) {
       rows.push({
         key: "partner",
         formPath: ["partner"],
@@ -296,7 +552,9 @@ const MiddleWare = ({ modalData }) => {
     clientCurrentBalance,
     clientCostBase,
     discoveryData,
+    customKeys,
     includeJoint,
+    includePartner,
     initialValues,
     jointCurrentBalance,
     jointCostBase,
@@ -307,83 +565,23 @@ const MiddleWare = ({ modalData }) => {
 
   const handleFinish = async (values) => {
     const formValues = form.getFieldsValue(true);
-    const sourceValues = {
-      ...formValues,
-      ...values,
-      client: {
-        ...(formValues?.client || {}),
-        ...(values?.client || {}),
-      },
-      partner: {
-        ...(formValues?.partner || {}),
-        ...(values?.partner || {}),
-      },
-      joint: {
-        ...(formValues?.joint || {}),
-        ...(values?.joint || {}),
-      },
-    };
-
-    const payload = {
-      ...sectionData,
-      clientFK:
-        sectionData?.clientFK ||
-        discoveryData?.personalDetails?._id ||
-        discoveryData?.personaldetails?._id ||
-        undefined,
-      client: sourceValues?.client?.currentBalanceArray || [],
-      partner: showPartner
-        ? sourceValues?.partner?.currentBalanceArray || []
-        : [],
-      joint:
-        showPartner && includeJoint
-          ? sourceValues?.joint?.currentBalanceArray || []
-          : [],
-      clientCurrentBalance: sourceValues?.client?.currentBalance || "",
-      partnerCurrentBalance: showPartner
-        ? sourceValues?.partner?.currentBalance || ""
-        : "",
-      jointCurrentBalance:
-        showPartner && includeJoint
-          ? sourceValues?.joint?.currentBalance || ""
-          : "",
-      clientTotal:
-        showPartner && includeJoint
-          ? calculateDisplayTotal(
-              sourceValues?.client?.currentBalance,
-              sourceValues?.joint?.currentBalance,
-            )
-          : sourceValues?.client?.currentBalance || "",
-      partnerTotal:
-        showPartner && includeJoint
-          ? calculateDisplayTotal(
-              sourceValues?.partner?.currentBalance,
-              sourceValues?.joint?.currentBalance,
-            )
-          : showPartner
-            ? sourceValues?.partner?.currentBalance || ""
-            : "",
-      ...(hasCostBase
-        ? {
-            clientCostBaseTemp: sourceValues?.client?.costBase || "",
-            partnerCostBaseTemp: showPartner
-              ? sourceValues?.partner?.costBase || ""
-              : "",
-            jointCostBaseTemp:
-              showPartner && includeJoint
-                ? sourceValues?.joint?.costBase || ""
-                : "",
-          }
-        : {}),
-    };
-
-    if (!includeJoint) {
-      payload._id = undefined;
-      payload.joint = undefined;
-      payload.jointCurrentBalance = undefined;
-      payload.jointCostBaseTemp = undefined;
-      payload.jointTotal = undefined;
-    }
+    const sourceValues = buildSourceValues(formValues, values, config);
+    const payload = customKeys.enabled
+      ? buildCustomPayload({
+          sectionData,
+          discoveryData,
+          sourceValues,
+          config,
+          hasCostBase,
+        })
+      : buildStandardPayload({
+          sectionData,
+          discoveryData,
+          sourceValues,
+          showPartner,
+          includeJoint,
+          hasCostBase,
+        });
 
     try {
       setSaving(true);
@@ -396,10 +594,6 @@ const MiddleWare = ({ modalData }) => {
         setDiscoveryData((prev) => ({
           ...(prev && typeof prev === "object" ? prev : {}),
           [modalData.key]: saved.superFunds || payload,
-        }));
-
-        setDiscoveryData((prev) => ({
-          ...(prev && typeof prev === "object" ? prev : {}),
           personalInsurance: saved.personalInsurance,
         }));
 
