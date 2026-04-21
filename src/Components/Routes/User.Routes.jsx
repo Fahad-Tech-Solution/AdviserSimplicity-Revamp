@@ -39,6 +39,7 @@ import BusinessEntities from "../Pages/User/Discovery/BusinessEntities/BusinessE
 import TradingCompanyModal from "../Pages/User/Discovery/BusinessEntities/coponents/TradingCompanySection/TradingCompanyModal.jsx";
 import BusinessTrustModal from "../Pages/User/Discovery/BusinessEntities/coponents/BusinessTrustSection/BusinessTrustModal.jsx";
 import OtherInvestmentsModalSMSF from "../Pages/User/Discovery/SMSF/components/OtherInvestmentsSection/OtherInvestmentsModal.jsx";
+import PensionAccountModal from "../Pages/User/Discovery/SMSF/components/PensionAccountSection/PensionAccountModal.jsx";
 import PowerOfAttorney from "../Pages/User/Discovery/EstatePlanning/components/PowerOfAttorney/PowerOfAttorney.jsx";
 import ProfessionalAdvisers from "../Pages/User/Discovery/EstatePlanning/components/ProfessionalAdvisers/ProfessionalAdvisers.jsx";
 import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/PersonalInsurance.jsx";
@@ -476,7 +477,10 @@ const SMSF_CARDS = [
     title: "Pension Account",
     key: "SMSFPensionPhase",
     icon: "🐷",
-    component: null,
+    component: <PensionAccountModal />,
+    modalWidth: "1280px",
+    firstTotalKey: "clientTotal",
+    secondTotalKey: "partnerTotal",
   },
   {
     title: "Bank Accounts",

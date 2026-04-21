@@ -34,7 +34,7 @@ function buildDirectorRows(count, entries = []) {
  * (same field name as legacy InnerDirectors for API compatibility).
  */
 export default function BusinessTrustTrusteeInnerModal({ modalData }) {
-  console.log("modalData", modalData);
+  // console.log("modalData", modalData);
   const {
     title = "Trustee / Directors",
     countLabel = countLabel ,
@@ -57,7 +57,7 @@ export default function BusinessTrustTrusteeInnerModal({ modalData }) {
       innerCount: count,
       directorRows: buildDirectorRows(Number(count) || 0, list),
     };
-    console.log("initialValues", initialValues);
+    // console.log("initialValues", initialValues);
   }, [valueArray]);
 
   const innerCount = Form.useWatch("innerCount", form);
