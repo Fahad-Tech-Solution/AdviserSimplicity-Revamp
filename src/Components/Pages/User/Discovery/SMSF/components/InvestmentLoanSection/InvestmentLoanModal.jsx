@@ -63,52 +63,62 @@ function formatNumericInput(value, { currency = false } = {}) {
   return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
 }
 
-
-
 function formatPercentValue(value) {
-    const digits = String(getChangedValue(value) ?? "").replace(/[^0-9]/g, "");
-    if (!digits) return "";
-    return `${Math.min(Number(digits), 100)}%`;
-  }
+  const digits = String(getChangedValue(value) ?? "").replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  return `${Math.min(Number(digits), 100)}%`;
+}
 
-
-
-
-
-function buildInitialPerson(person = {}, totalValue = "") {
+function buildInitialPerson(person = {}, totalValue = "", isMarginLoan = false) {
   return {
     lender: person?.lender || undefined,
     loanBalance: formatCurrencyValue(person?.loanBalance),
-    loanType: person?.loanType || undefined,
-    repaymentsAmount: formatCurrencyValue(person?.repaymentsAmount),
-    frequency: person?.frequency || undefined,
-    annualRepayments: formatCurrencyValue(person?.annualRepayments || totalValue),
-    monthlyContribution: formatCurrencyValue(person?.monthlyContribution),
-    annualLoan: formatCurrencyValue(person?.annualLoan),
+    loanType: isMarginLoan ? undefined : person?.loanType || undefined,
+    repaymentsAmount: isMarginLoan
+      ? ""
+      : formatCurrencyValue(person?.repaymentsAmount),
+    frequency: isMarginLoan ? undefined : person?.frequency || undefined,
+    annualRepayments: isMarginLoan
+      ? ""
+      : formatCurrencyValue(person?.annualRepayments || totalValue),
+    monthlyContribution: isMarginLoan
+      ? formatCurrencyValue(person?.monthlyContribution)
+      : "",
+    annualLoan: isMarginLoan ? formatCurrencyValue(person?.annualLoan) : "",
     interestRate: formatPercentValue(person?.interestRate),
     loanTerm: person?.loanTerm || undefined,
     loanTermRemaining: person?.loanTermRemaining || undefined,
-    deductibleLoanAmount: formatPercentValue(
-      person?.deductibleLoanAmount,
-      DEFAULT_DEDUCTIBLE,
-    ),
+    deductibleLoanAmount:
+      formatPercentValue(person?.deductibleLoanAmount) || DEFAULT_DEDUCTIBLE,
   };
 }
 
-function buildInitialValues(sectionData, allowPartner) {
+function buildInitialValues(sectionData, allowPartner, modalKey, isMarginLoan) {
+  // Forced owner flows (legacy behavior)
+  if (modalKey === "SMSFInvestmentLoan") {
+    return {
+      owner: ["SMSF"],
+      SMSF: buildInitialPerson(sectionData?.SMSF || {}, sectionData?.SMSFTotal, isMarginLoan),
+    };
+  }
+
+  if (modalKey === "familyInvestmentHomeLoan") {
+    return {
+      owner: ["trust"],
+      trust: buildInitialPerson(sectionData?.trust || {}, sectionData?.trustTotal, isMarginLoan),
+    };
+  }
+
   const rawOwner = Array.isArray(sectionData?.owner) ? sectionData.owner : [];
-  const owner = allowPartner
-    ? rawOwner
-    : rawOwner.filter((value) => value === "client");
+  const owner = allowPartner ? rawOwner : rawOwner.filter((v) => v === "client");
 
   return {
     owner,
-    client: buildInitialPerson(sectionData?.client, sectionData?.clientTotal),
-    partner: buildInitialPerson(sectionData?.partner, sectionData?.partnerTotal),
-    joint: buildInitialPerson(sectionData?.joint),
+    client: buildInitialPerson(sectionData?.client || {}, sectionData?.clientTotal, isMarginLoan),
+    partner: buildInitialPerson(sectionData?.partner || {}, sectionData?.partnerTotal, isMarginLoan),
+    joint: buildInitialPerson(sectionData?.joint || {}, "", isMarginLoan),
   };
 }
-
 function calculateAnnualRepayments(record, currentForm) {
   const repaymentsAmount = parseCurrencyValue(
     currentForm.getFieldValue([record.formPath, "repaymentsAmount"]),
@@ -191,12 +201,17 @@ export default function InvestmentLoanModal({ modalData }) {
 
   console.log("sectionData",sectionData);
   const isMarginLoan = modalData?.key === "managedFundsMarginLoan";
+  const isSmsfLoan = modalData?.key === "SMSFInvestmentLoan";
+  const isTrustLoan = modalData?.key === "familyInvestmentHomeLoan";
 
   const allowPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
   );
 
   const ownerOptions = useMemo(() => {
+    if (isSmsfLoan) return [{ label: "SMSF", value: "SMSF" }];
+    if (isTrustLoan) return [{ label: "Trust", value: "trust" }];
+
     const options = [
       {
         label: discoveryData?.personalDetails?.client?.clientPreferredName || "Client",
@@ -231,6 +246,8 @@ export default function InvestmentLoanModal({ modalData }) {
       sectionData?.client?.lender,
       sectionData?.partner?.lender,
       sectionData?.joint?.lender,
+      sectionData?.SMSF?.lender,
+      sectionData?.trust?.lender,
     ].filter(Boolean);
 
     existingValues.forEach((value) => {
@@ -455,11 +472,14 @@ export default function InvestmentLoanModal({ modalData }) {
   }, [isMarginLoan, lenderOption]);
 
   const initialValues = useMemo(
-    () => buildInitialValues(sectionData, allowPartner),
-    [allowPartner, sectionData],
+    () => buildInitialValues(sectionData, allowPartner, modalData?.key, isMarginLoan),
+    [allowPartner, isMarginLoan, modalData?.key, sectionData],
   );
 
   const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
+  // Ensure row render updates when form values are seeded/changed,
+  // so view-mode shows values (not just "--").
+  const formSnapshot = Form.useWatch([], form);
 
   const tableColumns = useMemo(
     () =>
@@ -475,41 +495,93 @@ export default function InvestmentLoanModal({ modalData }) {
     [columns],
   );
 
-  const rows = useMemo(
-    () =>
-      (selectedOwners || [])
-        .filter((owner) => allowPartner || owner === "client")
-        .map((owner) => ({
-          key: owner,
-          formPath: owner,
-          ownerLabel:
-            ownerOptions.find((option) => option.value === owner)?.label || owner,
-          lender: form.getFieldValue([owner, "lender"]),
-          loanBalance: form.getFieldValue([owner, "loanBalance"]),
-          loanType: form.getFieldValue([owner, "loanType"]),
-          repaymentsAmount: form.getFieldValue([owner, "repaymentsAmount"]),
-          frequency: form.getFieldValue([owner, "frequency"]),
-          annualRepayments: form.getFieldValue([owner, "annualRepayments"]),
-          monthlyContribution: form.getFieldValue([owner, "monthlyContribution"]),
-          annualLoan: form.getFieldValue([owner, "annualLoan"]),
-          interestRate: form.getFieldValue([owner, "interestRate"]),
-          loanTerm: form.getFieldValue([owner, "loanTerm"]),
-          loanTermRemaining: form.getFieldValue([owner, "loanTermRemaining"]),
-          deductibleLoanAmount: form.getFieldValue([owner, "deductibleLoanAmount"]),
-        })),
-    [allowPartner, form, ownerOptions, selectedOwners],
-  );
+  const rows = useMemo(() => {
+    const owners = Array.isArray(selectedOwners) ? selectedOwners : [];
+
+    if (isSmsfLoan) {
+      return [
+        {
+          key: "SMSF",
+          formPath: "SMSF",
+          ownerLabel: "SMSF",
+          lender: form.getFieldValue(["SMSF", "lender"]),
+          loanBalance: form.getFieldValue(["SMSF", "loanBalance"]),
+          loanType: form.getFieldValue(["SMSF", "loanType"]),
+          repaymentsAmount: form.getFieldValue(["SMSF", "repaymentsAmount"]),
+          frequency: form.getFieldValue(["SMSF", "frequency"]),
+          annualRepayments: form.getFieldValue(["SMSF", "annualRepayments"]),
+          monthlyContribution: form.getFieldValue(["SMSF", "monthlyContribution"]),
+          annualLoan: form.getFieldValue(["SMSF", "annualLoan"]),
+          interestRate: form.getFieldValue(["SMSF", "interestRate"]),
+          loanTerm: form.getFieldValue(["SMSF", "loanTerm"]),
+          loanTermRemaining: form.getFieldValue(["SMSF", "loanTermRemaining"]),
+          deductibleLoanAmount: form.getFieldValue(["SMSF", "deductibleLoanAmount"]),
+        },
+      ];
+    }
+
+    if (isTrustLoan) {
+      return [
+        {
+          key: "trust",
+          formPath: "trust",
+          ownerLabel: "Trust",
+          lender: form.getFieldValue(["trust", "lender"]),
+          loanBalance: form.getFieldValue(["trust", "loanBalance"]),
+          loanType: form.getFieldValue(["trust", "loanType"]),
+          repaymentsAmount: form.getFieldValue(["trust", "repaymentsAmount"]),
+          frequency: form.getFieldValue(["trust", "frequency"]),
+          annualRepayments: form.getFieldValue(["trust", "annualRepayments"]),
+          monthlyContribution: form.getFieldValue(["trust", "monthlyContribution"]),
+          annualLoan: form.getFieldValue(["trust", "annualLoan"]),
+          interestRate: form.getFieldValue(["trust", "interestRate"]),
+          loanTerm: form.getFieldValue(["trust", "loanTerm"]),
+          loanTermRemaining: form.getFieldValue(["trust", "loanTermRemaining"]),
+          deductibleLoanAmount: form.getFieldValue(["trust", "deductibleLoanAmount"]),
+        },
+      ];
+    }
+
+    return owners
+      .filter((owner) => allowPartner || owner === "client")
+      .map((owner) => ({
+        key: owner,
+        formPath: owner,
+        ownerLabel:
+          ownerOptions.find((option) => option.value === owner)?.label || owner,
+        lender: form.getFieldValue([owner, "lender"]),
+        loanBalance: form.getFieldValue([owner, "loanBalance"]),
+        loanType: form.getFieldValue([owner, "loanType"]),
+        repaymentsAmount: form.getFieldValue([owner, "repaymentsAmount"]),
+        frequency: form.getFieldValue([owner, "frequency"]),
+        annualRepayments: form.getFieldValue([owner, "annualRepayments"]),
+        monthlyContribution: form.getFieldValue([owner, "monthlyContribution"]),
+        annualLoan: form.getFieldValue([owner, "annualLoan"]),
+        interestRate: form.getFieldValue([owner, "interestRate"]),
+        loanTerm: form.getFieldValue([owner, "loanTerm"]),
+        loanTermRemaining: form.getFieldValue([owner, "loanTermRemaining"]),
+        deductibleLoanAmount: form.getFieldValue([owner, "deductibleLoanAmount"]),
+      }));
+  }, [allowPartner, form, formSnapshot, isSmsfLoan, isTrustLoan, ownerOptions, selectedOwners]);
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
   }, [form, initialValues]);
 
   useEffect(() => {
+    if (isSmsfLoan) {
+      form.setFieldValue("owner", ["SMSF"]);
+      return;
+    }
+    if (isTrustLoan) {
+      form.setFieldValue("owner", ["trust"]);
+      return;
+    }
     if (!allowPartner && selectedOwners?.includes("partner")) {
       const filtered = selectedOwners.filter((owner) => owner === "client");
       form.setFieldValue("owner", filtered);
     }
-  }, [allowPartner, form, selectedOwners]);
+  }, [allowPartner, form, isSmsfLoan, isTrustLoan, selectedOwners]);
 
   const handleFinish = async (values) => {
     const formValues = form.getFieldsValue(true);
@@ -525,6 +597,8 @@ export default function InvestmentLoanModal({ modalData }) {
     const clientSelected = owner.includes("client");
     const partnerSelected = allowPartner && owner.includes("partner");
     const jointSelected = allowPartner && owner.includes("joint");
+    const smsfSelected = owner.includes("SMSF");
+    const trustSelected = owner.includes("trust");
 
     const jointLoanBalance = parseCurrencyValue(sourceValues?.joint?.loanBalance) || 0;
     const jointHalf = jointSelected ? jointLoanBalance / 2 : 0;
@@ -538,18 +612,21 @@ export default function InvestmentLoanModal({ modalData }) {
         sectionData?.clientFK ||
         discoveryData?.personalDetails?._id ||
         undefined,
-
-        client: clientSelected
-  ? buildLoanPayload(sourceValues.client, sectionData.client, isMarginLoan)
-  : {},
-
-partner: partnerSelected
-  ? buildLoanPayload(sourceValues.partner, sectionData.partner, isMarginLoan)
-  : {},
-
-joint: jointSelected
-  ? buildLoanPayload(sourceValues.joint, sectionData.joint, isMarginLoan)
-  : {},
+      client: clientSelected
+        ? buildLoanPayload(sourceValues.client, sectionData.client, isMarginLoan)
+        : undefined,
+      partner: partnerSelected
+        ? buildLoanPayload(sourceValues.partner, sectionData.partner, isMarginLoan)
+        : undefined,
+      joint: jointSelected
+        ? buildLoanPayload(sourceValues.joint, sectionData.joint, isMarginLoan)
+        : undefined,
+      SMSF: smsfSelected
+        ? buildLoanPayload(sourceValues.SMSF, sectionData.SMSF, isMarginLoan)
+        : undefined,
+      trust: trustSelected
+        ? buildLoanPayload(sourceValues.trust, sectionData.trust, isMarginLoan)
+        : undefined,
     //   client: clientSelected
     //     ? {
     //         ...(sectionData?.client || {}),
@@ -642,6 +719,38 @@ joint: jointSelected
         : "",
     };
 
+    // SMSF / Trust totals (legacy behavior)
+    if (smsfSelected) {
+      const smsfLoanBalance = parseCurrencyValue(sourceValues?.SMSF?.loanBalance) || 0;
+      payload.SMSFTotal = formatCurrencyValue(smsfLoanBalance);
+    }
+    if (trustSelected) {
+      const trustLoanBalance = parseCurrencyValue(sourceValues?.trust?.loanBalance) || 0;
+      payload.trustTotal = formatCurrencyValue(trustLoanBalance);
+    }
+
+    // Cleanup for forced modals (match legacy)
+    if (isSmsfLoan) {
+      payload.owner = ["SMSF"];
+      payload.client = undefined;
+      payload.partner = undefined;
+      payload.joint = undefined;
+      payload.trust = undefined;
+      payload.clientTotal = undefined;
+      payload.partnerTotal = undefined;
+      payload.trustTotal = undefined;
+    }
+    if (isTrustLoan) {
+      payload.owner = ["trust"];
+      payload.client = undefined;
+      payload.partner = undefined;
+      payload.joint = undefined;
+      payload.SMSF = undefined;
+      payload.clientTotal = undefined;
+      payload.partnerTotal = undefined;
+      payload.SMSFTotal = undefined;
+    }
+
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
@@ -685,7 +794,7 @@ joint: jointSelected
         requiredMark={false}
       >
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={6}>
+          {/* <Col xs={24} md={6}>
             <Form.Item
               label={modalData?.title !== "Investment Loan" ? "Members" : "Owner"}
               name="owner"
@@ -700,7 +809,7 @@ joint: jointSelected
                 disabled={!editing}
               />
             </Form.Item>
-          </Col>
+          </Col> */}
 
           <Col xs={24}>
             <EditableDynamicTable
