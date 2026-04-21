@@ -9,4 +9,5 @@ export default defineConfig({
     port: 5173, // optional: choose your port
   },
   base: '/sandbox-adviser-simplicity/',
+  // base: '/AdviserSimplicity-Revamp/',
 });
