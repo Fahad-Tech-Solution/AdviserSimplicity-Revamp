@@ -142,6 +142,14 @@ export default function BankTermDetailsModal({ modalData }) {
       type: "select",
       options: institutionOptions,
       placeholder: "Name of Institution",
+      sorter: (a, b) => {
+        if (a.Institution && b.Institution) {
+          return a.Institution.localeCompare(b.Institution);
+        }
+        if (a.Institution) return -1;
+        if (b.Institution) return 1;
+        return 0;
+      },
     },
     {
       title: "Account Number",
