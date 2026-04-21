@@ -461,7 +461,7 @@ const SMSF_CARDS = [
   {
     title: "Details",
     key: "SMSFDetails",
-    icon: "🔐",
+    icon: "📄",
     component: null,
   },
   {
@@ -527,7 +527,7 @@ const SMSF_CARDS = [
   {
     title: "Investment Loan",
     key: "SMSFInvestmentLoan",
-    icon: "📋",
+    icon: "📉",
     component: null,
   },
   {
@@ -539,7 +539,7 @@ const SMSF_CARDS = [
   {
     title: "Other Investments",
     key: "SMSFOtherInvestment",
-    icon: "💰",
+    icon: "📈",
     component: null,
   },
 ];
@@ -547,7 +547,7 @@ const FAMILY_TRUST_CARDS = [
   {
     title: "Details",
     key: "familyDetails",
-    icon: "🔐",
+    icon: "📄",
     component: null,
   },
   {
@@ -613,7 +613,7 @@ const FAMILY_TRUST_CARDS = [
   {
     title: "Other Investments",
     key: "familyOtherInvestment",
-    icon: "💰",
+    icon: "📈",
     component: null,
   },
 ];
