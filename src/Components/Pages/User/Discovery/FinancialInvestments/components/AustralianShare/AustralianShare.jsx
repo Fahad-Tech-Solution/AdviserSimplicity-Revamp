@@ -78,6 +78,16 @@ function calculateCurrentBalance(sharePrice, shares) {
   return price && quantity ? toCommaAndDollar(price * quantity) : "";
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 async function fetchShareQuote(code) {
   const normalizedCode = normalizeAsxCode(code);
   if (!isValidAsxCode(normalizedCode)) return null;
@@ -112,6 +122,10 @@ export default function AustralianShare({ modalData }) {
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [updatingData, setUpdatingData] = useState(false);
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
       modalData?.ownerKey,
@@ -130,6 +144,14 @@ export default function AustralianShare({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
+
   const detailRows = useMemo(
     () =>
       buildEntries(Number(count) || 0, shares).map((item, index) => ({
@@ -140,6 +162,37 @@ export default function AustralianShare({ modalData }) {
       })),
     [count, modalData?.ownerKey, shares],
   );
+
+  const sortedDetailRows = useMemo(() => {
+    if (editing || !sortState?.columnKey || !sortState?.order) {
+      return detailRows;
+    }
+
+    const compareText = (left, right) => {
+      if (left && right) return String(left).localeCompare(String(right));
+      if (left) return -1;
+      if (right) return 1;
+      return 0;
+    };
+
+    const sorters = {
+      ASXCode: (a, b) => compareText(a?.ASXCode, b?.ASXCode),
+      companyName: (a, b) => compareText(a?.companyName, b?.companyName),
+      sharePrice: (a, b) =>
+        parseCurrencyValue(a?.sharePrice) - parseCurrencyValue(b?.sharePrice),
+      currentBalance: (a, b) =>
+        parseCurrencyValue(a?.currentBalance) -
+        parseCurrencyValue(b?.currentBalance),
+    };
+
+    const compare = sorters[sortState.columnKey];
+    if (typeof compare !== "function") {
+      return detailRows;
+    }
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...detailRows].sort((a, b) => compare(a, b) * multiplier);
+  }, [detailRows, editing, sortState]);
 
   const previousDataExists = useMemo(
     () => (initialValues?.shares || []).length > 0,
@@ -282,6 +335,16 @@ export default function AustralianShare({ modalData }) {
           console.error("Failed to fetch ASX quote", error);
         }
       },
+      sorter: (a, b) => {
+        if (a.ASXCode && b.ASXCode) {
+          return a.ASXCode.localeCompare(b.ASXCode);
+        }
+        if (a.ASXCode) return -1;
+        if (b.ASXCode) return 1;
+        return 0;
+      },
+      sortOrder:
+        sortState.columnKey === "ASXCode" ? sortState.order : undefined,
     },
     {
       title: "Company Name",
@@ -291,6 +354,17 @@ export default function AustralianShare({ modalData }) {
       type: "text",
       placeholder: "Company Name",
       disabled: true,
+      // INSERT_YOUR_CODE
+      sorter: (a, b) => {
+        if (a.companyName && b.companyName) {
+          return a.companyName.localeCompare(b.companyName);
+        }
+        if (a.companyName) return -1;
+        if (b.companyName) return 1;
+        return 0;
+      },
+      sortOrder:
+        sortState.columnKey === "companyName" ? sortState.order : undefined,
     },
     {
       title: "Share Price",
@@ -314,6 +388,16 @@ export default function AustralianShare({ modalData }) {
           ),
         );
       },
+      sorter: (a, b) => {
+        // Remove $ and commas for comparison, handle empty/null gracefully
+        const getNumeric = (val) => {
+          if (!val) return 0;
+          return Number(String(val).replace(/[^0-9.-]+/g, ""));
+        };
+        return getNumeric(a.sharePrice) - getNumeric(b.sharePrice);
+      },
+      sortOrder:
+        sortState.columnKey === "sharePrice" ? sortState.order : undefined,
     },
     {
       title: "Shares",
@@ -359,6 +443,16 @@ export default function AustralianShare({ modalData }) {
       type: "text",
       placeholder: "Current Balance",
       disabled: true,
+      sorter: (a, b) => {
+        // Remove all currency formatting and compare as numbers
+        const getNumeric = (val) =>
+          Number(String(val ?? "").replace(/[^0-9.-]+/g, "")) || 0;
+        return getNumeric(a.currentBalance) - getNumeric(b.currentBalance);
+      },
+      sortOrder:
+        sortState.columnKey === "currentBalance"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Action",
@@ -393,6 +487,14 @@ export default function AustralianShare({ modalData }) {
 
     setEditing(false);
     modalData?.closeModal?.();
+  };
+
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
   };
 
   return (
@@ -470,8 +572,11 @@ export default function AustralianShare({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={detailRows}
-              tableProps={TABLE_PROPS}
+              data={sortedDetailRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
 

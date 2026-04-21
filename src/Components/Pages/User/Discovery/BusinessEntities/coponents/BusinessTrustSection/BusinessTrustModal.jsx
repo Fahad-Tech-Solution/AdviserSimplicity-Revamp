@@ -137,7 +137,7 @@ export default function BusinessTrustModal({ modalData }) {
   const ownerKey = modalData?.ownerKey;
 
   const sectionData = parentForm?.getFieldValue?.(ownerKey) || {};
-  console.log("sectionData", sectionData);
+  // console.log("sectionData", sectionData);
   const initialValues = useMemo(
     () => buildInitialValues(sectionData),
     [sectionData?.currentBalanceArray, sectionData?.clientFK],

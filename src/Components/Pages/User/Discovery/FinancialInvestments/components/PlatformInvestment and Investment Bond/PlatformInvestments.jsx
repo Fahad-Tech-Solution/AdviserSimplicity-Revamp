@@ -93,10 +93,13 @@ function hasMeaningfulValues(initialValues = {}) {
 }
 
 function buildPlatformOptions(investmentOffers, entries = [], key) {
-  const platforms =
-    ["managedFund", "familyMangedFunds","SMSFManagedFunds"].includes(key)
-      ? investmentOffers?.InvestmentPlatforms
-      : investmentOffers?.InvestmentBonds || [];
+  const platforms = [
+    "managedFund",
+    "familyMangedFunds",
+    "SMSFManagedFunds",
+  ].includes(key)
+    ? investmentOffers?.InvestmentPlatforms
+    : investmentOffers?.InvestmentBonds || [];
 
   const options = platforms.map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
@@ -124,13 +127,27 @@ function getOptionLabel(options = [], value) {
   );
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 export default function PlatformInvestments({ modalData }) {
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
-  
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
+
   // console.log(modalData?.sectionKey, "modalData?.sectionKey");
 
   const ownerArray =
@@ -163,6 +180,14 @@ export default function PlatformInvestments({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
+
   const detailRows = useMemo(
     () =>
       buildManagedFundEntries(Number(count) || 0, managedFunds).map(
@@ -175,6 +200,40 @@ export default function PlatformInvestments({ modalData }) {
       ),
     [count, managedFunds, modalData?.ownerKey],
   );
+
+  const sortedDetailRows = useMemo(() => {
+    if (editing || !sortState?.columnKey || !sortState?.order) {
+      return detailRows;
+    }
+
+    const compareText = (left, right) => {
+      if (left && right) return String(left).localeCompare(String(right));
+      if (left) return -1;
+      if (right) return 1;
+      return 0;
+    };
+
+    const sorters = {
+      platformName: (a, b) => compareText(a?.platformName, b?.platformName),
+      accountNumber: (a, b) => compareText(a?.accountNumber, b?.accountNumber),
+      portfolioValue: (a, b) =>
+        parseCurrencyValue(a?.portfolioValue) -
+        parseCurrencyValue(b?.portfolioValue),
+      totalPortfolioCost: (a, b) =>
+        parseCurrencyValue(a?.totalPortfolioCost) -
+        parseCurrencyValue(b?.totalPortfolioCost),
+      serviceFee: (a, b) =>
+        parseCurrencyValue(a?.serviceFee) - parseCurrencyValue(b?.serviceFee),
+    };
+
+    const compare = sorters[sortState.columnKey];
+    if (typeof compare !== "function") {
+      return detailRows;
+    }
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...detailRows].sort((a, b) => compare(a, b) * multiplier);
+  }, [detailRows, editing, sortState]);
 
   const syncParentValues = (nextEntries) => {
     const totalBalance = nextEntries.reduce(
@@ -228,7 +287,7 @@ export default function PlatformInvestments({ modalData }) {
         message.error("Please select platform name first");
         return;
       }
-     
+
       const platform = [
         "managedFund",
         "familyMangedFunds",
@@ -322,6 +381,16 @@ export default function PlatformInvestments({ modalData }) {
           currentForm.setFieldValue([...record.formPath, "portfolioValue"], "");
         }
       },
+      sorter: (a, b) => {
+        if (a.platformName && b.platformName) {
+          return a.platformName.localeCompare(b.platformName);
+        }
+        if (a.platformName) return -1;
+        if (b.platformName) return 1;
+        return 0;
+      },
+      sortOrder:
+        sortState.columnKey === "platformName" ? sortState.order : undefined,
     },
     {
       title: "Account Number",
@@ -343,6 +412,13 @@ export default function PlatformInvestments({ modalData }) {
         name: "Open Portfolio Value",
         onClick: openPortfolioModal,
       },
+      sorter: (a, b) =>
+        parseCurrencyValue(a?.portfolioValue) -
+        parseCurrencyValue(b?.portfolioValue),
+      sortOrder:
+        sortState.columnKey === "portfolioValue"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Total Cost Base",
@@ -405,6 +481,14 @@ export default function PlatformInvestments({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
@@ -445,8 +529,11 @@ export default function PlatformInvestments({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={detailRows}
-              tableProps={TABLE_PROPS}
+              data={sortedDetailRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
 

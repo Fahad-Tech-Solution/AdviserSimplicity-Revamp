@@ -65,7 +65,7 @@ const MIDDLEWARE_CONFIG = {
   managedFund: {
     addEndpoint: "/api/managedFund/Add",
     updateEndpoint: "/api/managedFund/Update",
-    countLabel: "Number of Platform Investments",
+    countLabel: "Number of Platform",
     width: 800,
   },
   investmentBondFinance: {
@@ -212,7 +212,7 @@ function mergeBranch(formValues, values, key) {
 
 function buildInitialValues(sectionData = {}, noJoint = false, config = {}) {
   const customKeys = getCustomKeys(config);
-  console.log(sectionData, "sectionData");
+  // console.log(sectionData, "sectionData");
   if (customKeys.enabled) {
     return {
       [customKeys.valueKey]: {
@@ -338,7 +338,7 @@ function buildStandardPayload({
             : {}),
         }
       : {}),
-      _id:undefined
+    _id: undefined,
   };
 }
 
@@ -362,7 +362,7 @@ function buildCustomPayload({
     [customKeys.totalKey]: customSource?.currentBalance || "",
     ...(hasCostBase
       ? {
-          [`${customKeys.totalKey}CostBase`]: customSource?.costBase || "",
+          [`${customKeys.valueKey}CostBaseTemp`]: customSource?.costBase || "",
         }
       : {}),
   };
@@ -394,9 +394,12 @@ const MiddleWare = ({ modalData }) => {
   const includeJoint = !config.noJoint;
   const includePartner = !config.noPartner;
   const customKeys = useMemo(() => getCustomKeys(config), [config]);
-  const hasCostBase = ["australianShareMarket", "managedFund"].includes(
-    modalData?.key,
-  );
+  const hasCostBase = [
+    "australianShareMarket",
+    "managedFund",
+    "investmentBondFinance",
+    "SMSFAustralianShares",
+  ].includes(modalData?.key);
 
   const showPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
@@ -498,8 +501,8 @@ const MiddleWare = ({ modalData }) => {
     let rows = [];
 
     if (customKeys.enabled) {
-      console.log(initialValues?.[customKeys.valueKey], "initialValues");
-      console.log(customKeys.valueKey, "customKeys.valueKey");
+      // console.log(initialValues?.[customKeys.valueKey], "initialValues");
+      // console.log(customKeys.valueKey, "customKeys.valueKey");
       rows = [
         {
           key: customKeys.displayKey,

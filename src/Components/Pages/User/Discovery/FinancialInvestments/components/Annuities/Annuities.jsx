@@ -142,6 +142,16 @@ function getOptionLabel(options = [], value) {
   );
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 function SwitchPopupDisplay({ value, onClick }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -166,6 +176,10 @@ export default function Annuities({ modalData }) {
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -190,6 +204,14 @@ export default function Annuities({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
+
   const getStoredAnnuities = useCallback(
     () => form.getFieldValue("annuities") || initialValues.annuities || [],
     [form, initialValues.annuities],
@@ -207,6 +229,23 @@ export default function Annuities({ modalData }) {
       ),
     [count, getStoredAnnuities, modalData?.ownerKey, watchedAnnuities],
   );
+
+  const sortedRows = useMemo(() => {
+    if (
+      editing ||
+      sortState?.columnKey !== "originalInvestmentAmount" ||
+      !sortState?.order
+    ) {
+      return rows;
+    }
+
+    const compare = (a, b) =>
+      parseCurrencyValue(a?.originalInvestmentAmount) -
+      parseCurrencyValue(b?.originalInvestmentAmount);
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...rows].sort((a, b) => compare(a, b) * multiplier);
+  }, [editing, rows, sortState]);
 
   const syncParentValues = (nextEntries) => {
     const totalBalance = nextEntries.reduce(
@@ -353,6 +392,13 @@ export default function Annuities({ modalData }) {
           formatCurrencyValue(value?.target?.value),
         );
       },
+      sorter: (a, b) =>
+        parseCurrencyValue(a?.originalInvestmentAmount) -
+        parseCurrencyValue(b?.originalInvestmentAmount),
+      sortOrder:
+        sortState.columnKey === "originalInvestmentAmount"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Return of Capital Value",
@@ -506,6 +552,14 @@ export default function Annuities({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
@@ -542,8 +596,11 @@ export default function Annuities({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={rows}
-              tableProps={TABLE_PROPS}
+              data={sortedRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
           <Col xs={24}>

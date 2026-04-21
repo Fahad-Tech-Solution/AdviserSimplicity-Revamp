@@ -116,6 +116,16 @@ function getOptionLabel(options = [], value) {
   );
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 function SwitchPopupDisplay({ value, onClick }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -140,6 +150,10 @@ export default function AccountBasedPension({ modalData }) {
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -163,6 +177,14 @@ export default function AccountBasedPension({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
+
   const getStoredPensions = useCallback(
     () =>
       form.getFieldValue("accountBasedPensions") ||
@@ -184,6 +206,22 @@ export default function AccountBasedPension({ modalData }) {
       })),
     [count, getStoredPensions, modalData?.ownerKey, watchedPensions],
   );
+
+  const sortedRows = useMemo(() => {
+    if (
+      editing ||
+      sortState?.columnKey !== "balanceBenefit" ||
+      !sortState?.order
+    ) {
+      return rows;
+    }
+
+    const compare = (a, b) =>
+      parseCurrencyValue(a?.balanceBenefit) - parseCurrencyValue(b?.balanceBenefit);
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...rows].sort((a, b) => compare(a, b) * multiplier);
+  }, [editing, rows, sortState]);
 
   const syncParentValues = (nextEntries) => {
     const totalBalance = nextEntries.reduce(
@@ -347,6 +385,13 @@ export default function AccountBasedPension({ modalData }) {
         name: "Open Balance and Details",
         onClick: (payload) => openDetailModal("balanceBenefit", payload),
       },
+      sorter: (a, b) =>
+        parseCurrencyValue(a?.balanceBenefit) -
+        parseCurrencyValue(b?.balanceBenefit),
+      sortOrder:
+        sortState.columnKey === "balanceBenefit"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Annual Pension Payment",
@@ -426,6 +471,14 @@ export default function AccountBasedPension({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
@@ -462,8 +515,11 @@ export default function AccountBasedPension({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={rows}
-              tableProps={TABLE_PROPS}
+              data={sortedRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
           <Col xs={24}>

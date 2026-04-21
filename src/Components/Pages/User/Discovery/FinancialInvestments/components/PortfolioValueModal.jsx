@@ -73,6 +73,16 @@ function buildOfferOptions(platform, entries = []) {
   return options.filter((option) => option.value && option.label);
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 export default function PortfolioValueModal({ modalData }) {
   const [form] = Form.useForm();
   const initialValues = useMemo(
@@ -92,6 +102,10 @@ export default function PortfolioValueModal({ modalData }) {
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
 
   const count = Form.useWatch("NumberOfMap", form);
 
@@ -108,6 +122,14 @@ export default function PortfolioValueModal({ modalData }) {
     form.setFieldsValue(initialValues);
     setEditing(!(initialValues?.investments || []).length);
   }, [form, initialValues]);
+
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
 
   const getOfferCode = useCallback(
     (offerId) =>
@@ -129,6 +151,30 @@ export default function PortfolioValueModal({ modalData }) {
       ),
     [count, investments],
   );
+
+  const sortedDetailRows = useMemo(() => {
+    if (
+      editing ||
+      sortState?.columnKey !== "investmentOption" ||
+      !sortState?.order
+    ) {
+      return detailRows;
+    }
+
+    const compare = (a, b) => {
+      if (a?.investmentOption && b?.investmentOption) {
+        return String(a.investmentOption).localeCompare(
+          String(b.investmentOption),
+        );
+      }
+      if (a?.investmentOption) return -1;
+      if (b?.investmentOption) return 1;
+      return 0;
+    };
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...detailRows].sort((a, b) => compare(a, b) * multiplier);
+  }, [detailRows, editing, sortState]);
 
   const handleCountChange = (nextValue) => {
     const nextCount = Number(nextValue) || 0;
@@ -175,6 +221,20 @@ export default function PortfolioValueModal({ modalData }) {
           getOfferCode(selectedValue),
         );
       },
+      sorter: (a, b) => {
+        if (a.investmentOption && b.investmentOption) {
+          return String(a.investmentOption).localeCompare(
+            String(b.investmentOption),
+          );
+        }
+        if (a.investmentOption) return -1;
+        if (b.investmentOption) return 1;
+        return 0;
+      },
+      sortOrder:
+        sortState.columnKey === "investmentOption"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Investment Code",
@@ -198,6 +258,13 @@ export default function PortfolioValueModal({ modalData }) {
           formatCurrencyValue(value?.target?.value),
         );
       },
+      sorter: (a, b) =>
+        parseCurrencyValue(a?.investmentValue) -
+        parseCurrencyValue(b?.investmentValue),
+      sortOrder:
+        sortState.columnKey === "investmentValue"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Action",
@@ -250,6 +317,14 @@ export default function PortfolioValueModal({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
@@ -281,8 +356,11 @@ export default function PortfolioValueModal({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={detailRows}
-              tableProps={TABLE_PROPS}
+              data={sortedDetailRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
 

@@ -46,7 +46,7 @@ function parsePercentToNumber(value) {
 }
 
 function formatPercentDisplay(value) {
-  const n = parsePercentToNumber(value);
+  const n = Math.min(parsePercentToNumber(value), 100);
   return `${Number.isFinite(n) ? n.toFixed(2) : "0.00"}%`;
 }
 
@@ -100,15 +100,20 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
   const payeeWatch = Form.useWatch("payeeOfPremiums", form);
   const record = modalData?.record || {};
   const fieldPath = Array.isArray(record?.formPath) ? record.formPath : null;
+  const fieldPathKey = fieldPath?.join(".") || "";
   const ownerKey = modalData?.owner || "client";
   const ownerLabel = modalData?.ownerLabel || ownerKey;
-  const currentParentRow =
-    (fieldPath ? modalData?.parentForm?.getFieldValue?.(fieldPath) : null) ||
-    record;
-
-  const details = currentParentRow?.premiumsDetails || {};
+  const rowIdentity = `${fieldPathKey}:${record?.key ?? record?.rowNumber ?? "premiums-row"}`;
+  const currentParentRow = useMemo(
+    () =>
+      (fieldPath ? modalData?.parentForm?.getFieldValue?.(fieldPath) : null) ||
+      record,
+    [fieldPathKey, modalData?.parentForm, rowIdentity],
+  );
 
   const initialValues = useMemo(() => {
+    const details = currentParentRow?.premiumsDetails || {};
+
     return {
       life: formatCurrencyValue(details?.life ?? "$0"),
       tpd: formatCurrencyValue(details?.tpd ?? "$0"),
@@ -126,7 +131,7 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
         details?.commissionPayable ?? "$0",
       ),
     };
-  }, [currentParentRow, details, ownerKey]);
+  }, [currentParentRow, ownerKey]);
 
   const [editing, setEditing] = useState(
     () =>
@@ -145,7 +150,7 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
       recalculatePremiums(form);
     }, 0);
     return () => window.clearTimeout(timerId);
-  }, [form, initialValues, currentParentRow]);
+  }, [form, initialValues, rowIdentity]);
 
   const formatMoneyBlur = (event, _recordValue, column, currentForm) => {
     const name = column.field;

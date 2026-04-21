@@ -124,7 +124,7 @@ function buildInitialValues(sectionData = {},) {
         ? sectionData?.currentBalanceArray?.map(normalizeCompany)
         : [];
 
-    console.log("sectionData", sectionData);
+    // console.log("sectionData", sectionData);
 
     return {
         NumberOfMap: companies.length || undefined,
@@ -142,7 +142,7 @@ export default function TradingCompanyModal({ modalData }) {
     const [saving, setSaving] = useState(false);
 
     const sectionData = modalData.parentForm.getFieldValue(modalData?.ownerKey) || {};
-    console.log("sectionData", sectionData);
+    // console.log("sectionData", sectionData);
     // console.log("key",);
     const initialValues = useMemo(
         () => buildInitialValues(sectionData, modalData?.ownerKey),

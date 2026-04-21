@@ -173,13 +173,18 @@ const InnerForm = ({ form, ownerKey, editing, initialOwnerData }) => {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} md={24}>
-        <Row gutter={[16, 0]}>
-          <Col xs={24} md={3}>
+        <Row gutter={[16, 0]} align="stretch" justify="stretch">
+          <Col
+            xs={24}
+            md={3}
+            className=" h-100 w-100 d-flex align-items-center justify-content-start"
+          >
             <div
               style={{
                 fontWeight: "600",
                 fontSize: "13px",
                 fontFamily: "Arial, serif",
+                marginTop: 6,
               }}
             >
               Adviser Type
@@ -299,16 +304,16 @@ export default function ProfessionalAdvisers({ modalData }) {
       },
     };
 
-
     const clientAdvisers = sanitizeAdvisers(
       sourceValues?.professionalAdvisers?.client?.professionalAdviser,
-      sourceValues?.professionalAdvisers?.client?.professionalAdvisersTypes
+      sourceValues?.professionalAdvisers?.client?.professionalAdvisersTypes,
     );
 
     const partnerAdvisers = allowPartner
       ? sanitizeAdvisers(
           sourceValues?.professionalAdvisers?.partner?.professionalAdviser,
-          sourceValues?.professionalAdvisers?.partner?.professionalAdvisersTypes
+          sourceValues?.professionalAdvisers?.partner
+            ?.professionalAdvisersTypes,
         )
       : [];
 
@@ -385,7 +390,6 @@ export default function ProfessionalAdvisers({ modalData }) {
           <Col xs={24}>
             <Tabs
               defaultActiveKey="client"
-              
               items={[
                 {
                   key: "client",

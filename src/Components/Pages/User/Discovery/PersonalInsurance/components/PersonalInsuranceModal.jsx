@@ -632,9 +632,11 @@ export default function PersonalInsuranceModal({ modalData }) {
       ? personalInsurance
       : {};
 
-    const clientPolicies = slicePoliciesForOwner(values?.client);
+      let data = form.getFieldsValue(true);
+
+    const clientPolicies = slicePoliciesForOwner(data?.client);
     const partnerPolicies = allowPartner
-      ? slicePoliciesForOwner(values?.partner)
+      ? slicePoliciesForOwner(data?.partner)
       : Array.isArray(pi?.partner?.PersonalInsurance)
         ? pi.partner.PersonalInsurance
         : [];
@@ -696,6 +698,9 @@ export default function PersonalInsuranceModal({ modalData }) {
             partnerHasPersonalInsurance: pi.partnerHasPersonalInsurance,
           }),
     };
+
+    // console.log("payload", payload);
+    // return false;
 
     try {
       setSaving(true);

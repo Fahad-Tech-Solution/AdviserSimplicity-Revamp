@@ -1,10 +1,14 @@
 import { Alert, Button, Col, Form, Row, Select, Space } from "antd";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { useAtomValue } from "jotai";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import { RiEdit2Fill } from "react-icons/ri";
+import SwitchPopupDisplay from "../../../../../../Common/SwitchPopupDisplay";
+import AppModal from "../../../../../../Common/AppModal";
+import { renderModalContent } from "../../../../../../Common/renderModalContent";
+import ServiceFeeModal from "../ServiceFeeModal";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -33,11 +37,19 @@ function calculateTotalBalance(entries = []) {
   );
 }
 
-function buildEntries(count, entries = []) {
+function buildEntries(count, entries = [], sectionKey) {
   return Array.from({ length: count }, (_, index) => ({
+    ...(entries?.[index] || {}),
     Institution: entries?.[index]?.Institution || "",
     accountNumber: entries?.[index]?.accountNumber || "",
     currentBalance: entries?.[index]?.currentBalance || "",
+    ...(["SMSFBank", "familyBank"].includes(sectionKey)
+      ? {
+          serviceFee: entries?.[index]?.serviceFee || "",
+          serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
+          serviceFeeType: entries?.[index]?.serviceFeeType || "",
+        }
+      : {}),
   }));
 }
 
@@ -75,10 +87,26 @@ function buildInstitutionOptions(investmentOffers, initialValues) {
   return options.filter((option) => option.value && option.label);
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 export default function BankTermDetailsModal({ modalData }) {
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [openModalData, setOpenModalData] = useState(null);
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
   const config = {
     countLabel:
       modalData?.sectionKey === "bankAccountFinance"
@@ -105,8 +133,6 @@ export default function BankTermDetailsModal({ modalData }) {
     [initialValues, investmentOffers],
   );
 
-  console.log(ownerArray, "ownerArray");
-
   const count = Form.useWatch("NumberOfMap", form);
   const entries = Form.useWatch("entries", form) || initialValues.entries || [];
 
@@ -115,82 +141,181 @@ export default function BankTermDetailsModal({ modalData }) {
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
 
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
+
   const detailRows = useMemo(
     () =>
-      buildEntries(Number(count) || 0, entries).map((item, index) => ({
-        key: `${modalData?.ownerKey || "owner"}-${index}`,
-        formPath: ["entries", index],
-        rowNumber: index + 1,
-        ...item,
-      })),
+      buildEntries(Number(count) || 0, entries, modalData?.sectionKey).map(
+        (item, index) => ({
+          key: `${modalData?.ownerKey || "owner"}-${index}`,
+          formPath: ["entries", index],
+          rowNumber: index + 1,
+          ...item,
+        }),
+      ),
     [count, entries, modalData?.ownerKey],
   );
 
-  const detailColumns = [
-    {
-      title: "No#",
-      key: "rowNumber",
-      dataIndex: "rowNumber",
-      width: 60,
-      editable: false,
+  const sortedDetailRows = useMemo(() => {
+    if (editing || !sortState?.columnKey || !sortState?.order) {
+      return detailRows;
+    }
+
+    const compareText = (left, right) => {
+      if (left && right) return String(left).localeCompare(String(right));
+      if (left) return -1;
+      if (right) return 1;
+      return 0;
+    };
+
+    const sorters = {
+      Institution: (a, b) => compareText(a?.Institution, b?.Institution),
+      accountNumber: (a, b) => compareText(a?.accountNumber, b?.accountNumber),
+      currentBalance: (a, b) =>
+        parseCurrencyValue(a?.currentBalance) -
+        parseCurrencyValue(b?.currentBalance),
+    };
+
+    const compare = sorters[sortState.columnKey];
+    if (typeof compare !== "function") {
+      return detailRows;
+    }
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...detailRows].sort((a, b) => compare(a, b) * multiplier);
+  }, [detailRows, editing, sortState]);
+
+  const openDetailModal = useCallback(
+    (_key, payload = {}) => {
+      const currentForm = payload?.form || form;
+      const fieldPath = payload?.record?.formPath || [];
+      const rowValues =
+        currentForm?.getFieldValue?.(fieldPath) || payload?.record || {};
+
+      setOpenModal(true);
+      setOpenModalData({
+        title: "Ongoing Advice Fee",
+        width: 720,
+        component: <ServiceFeeModal />,
+        parentForm: currentForm,
+        fieldPath,
+        initialValues: rowValues,
+        closeModal: () => {
+          setOpenModal(false);
+          setEditing(true);
+        },
+      });
     },
-    {
-      title: "Name of Institution",
-      key: "Institution",
-      dataIndex: "Institution",
-      field: "Institution",
-      type: "select",
-      options: institutionOptions,
-      placeholder: "Name of Institution",
-      sorter: (a, b) => {
-        if (a.Institution && b.Institution) {
-          return a.Institution.localeCompare(b.Institution);
-        }
-        if (a.Institution) return -1;
-        if (b.Institution) return 1;
-        return 0;
+    [form],
+  );
+
+  const detailColumns = useMemo(() => {
+    const columns = [
+      {
+        title: "No#",
+        key: "rowNumber",
+        dataIndex: "rowNumber",
+        width: 60,
+        editable: false,
       },
-    },
-    {
-      title: "Account Number",
-      key: "accountNumber",
-      dataIndex: "accountNumber",
-      field: "accountNumber",
-      type: "text",
-      placeholder: "Account Number",
-    },
-    {
-      title: "Current Balance",
-      key: "currentBalance",
-      dataIndex: "currentBalance",
-      field: "currentBalance",
-      type: "text",
-      placeholder: "Current Balance",
-      onChange: (value, record, column, currentForm) => {
-        currentForm.setFieldValue(
-          [...(record?.formPath || []), column.field],
-          formatCurrencyValue(value?.target?.value),
-        );
+      {
+        title: "Name of Institution",
+        key: "Institution",
+        dataIndex: "Institution",
+        field: "Institution",
+        type: "select",
+        options: institutionOptions,
+        placeholder: "Name of Institution",
+        sorter: (a, b) => {
+          if (a.Institution && b.Institution) {
+            return a.Institution.localeCompare(b.Institution);
+          }
+          if (a.Institution) return -1;
+          if (b.Institution) return 1;
+          return 0;
+        },
+        sortOrder:
+          sortState.columnKey === "Institution" ? sortState.order : undefined,
       },
-    },
-    {
-      title: "Action",
-      key: "action",
-      dataIndex: "action",
-      editable: false,
-      renderView: () => "--",
-      renderEdit: ({ record }) => (
-        <Button
-          type="text"
-          danger
-          aria-label={`Remove row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
-        >
-          🗑️
-        </Button>
-      ),
-    },
-  ];
+      {
+        title: "Account Number",
+        key: "accountNumber",
+        dataIndex: "accountNumber",
+        field: "accountNumber",
+        type: "text",
+        placeholder: "Account Number",
+      },
+      {
+        title: "Current Balance",
+        key: "currentBalance",
+        dataIndex: "currentBalance",
+        field: "currentBalance",
+        type: "text",
+        placeholder: "Current Balance",
+        onChange: (value, record, column, currentForm) => {
+          currentForm.setFieldValue(
+            [...(record?.formPath || []), column.field],
+            formatCurrencyValue(value?.target?.value),
+          );
+        },
+      },
+      {
+        title: "Action",
+        key: "action",
+        dataIndex: "action",
+        editable: false,
+        renderView: () => "--",
+        renderEdit: ({ record }) => (
+          <Button
+            type="text"
+            danger
+            aria-label={`Remove row ${record?.rowNumber}`}
+            onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
+          >
+            🗑️
+          </Button>
+        ),
+      },
+    ];
+
+    if (["SMSFBank", "familyBank"].includes(modalData?.sectionKey)) {
+      columns.splice(columns.length - 1, 0, {
+        title: "Ongoing Advice Fee",
+        key: "ongoingAdviceFee",
+        dataIndex: "serviceFee",
+        field: "serviceFee",
+        type: "input-action",
+        placeholder: "Ongoing Advice Fee",
+        disabled: true,
+        action: {
+          name: "Open Ongoing Advice Fee",
+          onClick: (payload) => openDetailModal("ongoingAdviceFee", payload),
+        },
+        renderView: ({ value, record }) => (
+          <SwitchPopupDisplay
+            value={value}
+            onClick={() =>
+              openDetailModal("ongoingAdviceFee", { record, form })
+            }
+          />
+        ),
+      });
+    }
+
+    return columns;
+  }, [
+    form,
+    institutionOptions,
+    modalData?.sectionKey,
+    sortState.columnKey,
+    sortState.order,
+  ]);
 
   const validationErrors = form
     .getFieldsError()
@@ -199,7 +324,10 @@ export default function BankTermDetailsModal({ modalData }) {
   const handleCountChange = (nextValue) => {
     const numericValue = Number(nextValue) || 0;
     form.setFieldValue("NumberOfMap", nextValue);
-    form.setFieldValue("entries", buildEntries(numericValue, entries));
+    form.setFieldValue(
+      "entries",
+      buildEntries(numericValue, entries, modalData?.sectionKey),
+    );
   };
 
   const handleRemoveRow = (rowIndex) => {
@@ -212,9 +340,13 @@ export default function BankTermDetailsModal({ modalData }) {
   };
 
   const handleConfirmAndExit = async () => {
-    const values = await form.validateFields();
+    const values = await form.getFieldsValue(true);
     const countValue = Number(values?.NumberOfMap) || 0;
-    const savedEntries = buildEntries(countValue, values?.entries || []);
+    const savedEntries = buildEntries(
+      countValue,
+      values?.entries || [],
+      modalData?.sectionKey,
+    );
     const totalBalance = calculateTotalBalance(savedEntries);
 
     modalData?.parentForm?.setFieldValue?.(
@@ -230,8 +362,24 @@ export default function BankTermDetailsModal({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
+      <AppModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={openModalData?.title}
+        width={openModalData?.width || 1000}
+      >
+        {renderModalContent(openModalData)}
+      </AppModal>
       <Form
         form={form}
         initialValues={initialValues}
@@ -289,8 +437,11 @@ export default function BankTermDetailsModal({ modalData }) {
               form={form}
               editing={editing}
               columns={detailColumns}
-              data={detailRows}
-              tableProps={TABLE_PROPS}
+              data={sortedDetailRows}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
 

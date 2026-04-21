@@ -49,6 +49,16 @@ function parsePercentValue(value) {
   );
 }
 
+function resolveSorterKey(sorter) {
+  return (
+    sorter?.field ||
+    sorter?.columnKey ||
+    sorter?.column?.dataIndex ||
+    sorter?.column?.key ||
+    null
+  );
+}
+
 function hasMeaningfulValues(initialValues = {}) {
   return Object.values(initialValues || {}).some((value) => {
     if (Array.isArray(value)) return value.length > 0;
@@ -60,6 +70,10 @@ export default function AcountBalanceBenefit({ modalData }) {
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
+  const [sortState, setSortState] = useState({
+    columnKey: null,
+    order: null,
+  });
 
   const initialValues = useMemo(
     () => modalData?.initialValues?.balanceBenefitDetails || {},
@@ -89,6 +103,14 @@ export default function AcountBalanceBenefit({ modalData }) {
     form.setFieldsValue(initialValues);
     setEditing(!hasMeaningfulValues(initialValues));
   }, [form, initialValues]);
+
+  useEffect(() => {
+    if (!editing) return;
+    setSortState({
+      columnKey: null,
+      order: null,
+    });
+  }, [editing]);
 
   const rowData = useMemo(
     () => [
@@ -132,6 +154,22 @@ export default function AcountBalanceBenefit({ modalData }) {
       unrestrictedNonPreserved,
     ],
   );
+
+  const sortedRowData = useMemo(() => {
+    if (
+      editing ||
+      sortState?.columnKey !== "portfolioValue" ||
+      !sortState?.order
+    ) {
+      return rowData;
+    }
+
+    const compare = (a, b) =>
+      parseCurrencyValue(a?.portfolioValue) - parseCurrencyValue(b?.portfolioValue);
+
+    const multiplier = sortState.order === "descend" ? -1 : 1;
+    return [...rowData].sort((a, b) => compare(a, b) * multiplier);
+  }, [editing, rowData, sortState]);
 
   const recalculate = (currentForm, columnField, changedValue) => {
     if (columnField === "purchasePrice") {
@@ -231,6 +269,13 @@ export default function AcountBalanceBenefit({ modalData }) {
         name: "Open Portfolio Value",
         onClick: openPortfolioModal,
       },
+      sorter: (a, b) =>
+        parseCurrencyValue(a?.portfolioValue) -
+        parseCurrencyValue(b?.portfolioValue),
+      sortOrder:
+        sortState.columnKey === "portfolioValue"
+          ? sortState.order
+          : undefined,
     },
     {
       title: "Commencement Date",
@@ -330,6 +375,14 @@ export default function AcountBalanceBenefit({ modalData }) {
     modalData?.closeModal?.();
   };
 
+  const handleTableChange = (_pagination, _filters, sorter) => {
+    const nextSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    setSortState({
+      columnKey: resolveSorterKey(nextSorter),
+      order: nextSorter?.order || null,
+    });
+  };
+
   return (
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
@@ -348,8 +401,11 @@ export default function AcountBalanceBenefit({ modalData }) {
               form={form}
               editing={editing}
               columns={columns}
-              data={rowData}
-              tableProps={TABLE_PROPS}
+              data={sortedRowData}
+              tableProps={{
+                ...TABLE_PROPS,
+                onChange: handleTableChange,
+              }}
             />
           </Col>
           <Col xs={24}>

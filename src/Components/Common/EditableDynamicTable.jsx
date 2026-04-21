@@ -87,16 +87,43 @@ export default function EditableDynamicTable({
   getFieldName,
   tableProps = {},
 }) {
+  const {
+    title,
+    pageSize,
+    total,
+    bordered,
+    size,
+    primaryColor,
+    className,
+    cardStyle,
+    cardBodyStyle,
+    pagination,
+    showCount,
+    noPagination,
+    horizontalScroll,
+    wrapperStyle,
+    headerFontSize,
+    bodyFontSize,
+    tableStyle,
+    ...innerTableProps
+  } = tableProps || {};
+
   const resolvedColumns = useMemo(
     () =>
       (columns || []).map((column) => {
         const lockedWidthStyle = buildLockedWidthStyle(column.width);
 
         return {
+          ...column,
           title: column.title,
           key: column.key || column.dataIndex,
           width: column.width,
           dataIndex: column.dataIndex,
+          sorter: editing ? undefined : column.sorter,
+          sortOrder: editing ? undefined : column.sortOrder,
+          defaultSortOrder: editing ? undefined : column.defaultSortOrder,
+          filters: editing ? undefined : column.filters,
+          onFilter: editing ? undefined : column.onFilter,
           onCell: () => ({
             style: lockedWidthStyle,
           }),
@@ -211,6 +238,27 @@ export default function EditableDynamicTable({
   );
 
   return (
-    <DynamicDataTable columns={resolvedColumns} data={data} {...tableProps} />
+    <DynamicDataTable
+      columns={resolvedColumns}
+      data={data}
+      title={title}
+      pageSize={pageSize}
+      total={total}
+      bordered={bordered}
+      size={size}
+      primaryColor={primaryColor}
+      className={className}
+      cardStyle={cardStyle}
+      cardBodyStyle={cardBodyStyle}
+      pagination={pagination}
+      showCount={showCount}
+      noPagination={noPagination}
+      horizontalScroll={horizontalScroll}
+      wrapperStyle={wrapperStyle}
+      headerFontSize={headerFontSize}
+      bodyFontSize={bodyFontSize}
+      tableStyle={tableStyle}
+      tableProps={innerTableProps}
+    />
   );
 }

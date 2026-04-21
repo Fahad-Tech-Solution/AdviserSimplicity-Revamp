@@ -7,7 +7,10 @@ import {
   InvestmentOffersData,
   discoveryDataAtom,
 } from "../../../../../../../store/authState.js";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 
 const TABLE_PROPS = {
@@ -63,17 +66,11 @@ function formatNumericInput(value, { currency = false } = {}) {
   return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
 }
 
-
-
 function formatPercentValue(value) {
-    const digits = String(getChangedValue(value) ?? "").replace(/[^0-9]/g, "");
-    if (!digits) return "";
-    return `${Math.min(Number(digits), 100)}%`;
-  }
-
-
-
-
+  const digits = String(getChangedValue(value) ?? "").replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  return `${Math.min(Number(digits), 100)}%`;
+}
 
 function buildInitialPerson(person = {}, totalValue = "") {
   return {
@@ -82,7 +79,9 @@ function buildInitialPerson(person = {}, totalValue = "") {
     loanType: person?.loanType || undefined,
     repaymentsAmount: formatCurrencyValue(person?.repaymentsAmount),
     frequency: person?.frequency || undefined,
-    annualRepayments: formatCurrencyValue(person?.annualRepayments || totalValue),
+    annualRepayments: formatCurrencyValue(
+      person?.annualRepayments || totalValue,
+    ),
     monthlyContribution: formatCurrencyValue(person?.monthlyContribution),
     annualLoan: formatCurrencyValue(person?.annualLoan),
     interestRate: formatPercentValue(person?.interestRate),
@@ -104,7 +103,10 @@ function buildInitialValues(sectionData, allowPartner) {
   return {
     owner,
     client: buildInitialPerson(sectionData?.client, sectionData?.clientTotal),
-    partner: buildInitialPerson(sectionData?.partner, sectionData?.partnerTotal),
+    partner: buildInitialPerson(
+      sectionData?.partner,
+      sectionData?.partnerTotal,
+    ),
     joint: buildInitialPerson(sectionData?.joint),
   };
 }
@@ -144,38 +146,37 @@ function formulaSetting(record, currentForm) {
   );
 }
 
-
 function buildLoanPayload(source, existing = {}, isMarginLoan) {
-    const base = {
-      ...(existing || {}),
-      lender: source?.lender || "",
-      loanBalance: formatCurrencyValue(source?.loanBalance),
-      interestRate: formatPercentValue(source?.interestRate),
-      loanTerm: source?.loanTerm || "",
-      loanTermRemaining: source?.loanTermRemaining || "",
-      deductibleLoanAmount: formatPercentValue(
-        source?.deductibleLoanAmount,
-        DEFAULT_DEDUCTIBLE
-      ),
-    };
-  
-    if (isMarginLoan) {
-      return {
-        ...base,
-        monthlyContribution: formatCurrencyValue(source?.monthlyContribution),
-        annualLoan: formatCurrencyValue(source?.annualLoan),
-      };
-    }
-  
-    // Investment Loan
+  const base = {
+    ...(existing || {}),
+    lender: source?.lender || "",
+    loanBalance: formatCurrencyValue(source?.loanBalance),
+    interestRate: formatPercentValue(source?.interestRate),
+    loanTerm: source?.loanTerm || "",
+    loanTermRemaining: source?.loanTermRemaining || "",
+    deductibleLoanAmount: formatPercentValue(
+      source?.deductibleLoanAmount,
+      DEFAULT_DEDUCTIBLE,
+    ),
+  };
+
+  if (isMarginLoan) {
     return {
       ...base,
-      loanType: source?.loanType || "",
-      repaymentsAmount: formatCurrencyValue(source?.repaymentsAmount),
-      frequency: source?.frequency || "",
-      annualRepayments: formatCurrencyValue(source?.annualRepayments),
+      monthlyContribution: formatCurrencyValue(source?.monthlyContribution),
+      annualLoan: formatCurrencyValue(source?.annualLoan),
     };
   }
+
+  // Investment Loan
+  return {
+    ...base,
+    loanType: source?.loanType || "",
+    repaymentsAmount: formatCurrencyValue(source?.repaymentsAmount),
+    frequency: source?.frequency || "",
+    annualRepayments: formatCurrencyValue(source?.annualRepayments),
+  };
+}
 
 export default function InvestmentLoanModal({ modalData }) {
   // console.log("modalData",modalData);
@@ -189,7 +190,6 @@ export default function InvestmentLoanModal({ modalData }) {
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
 
-  console.log("sectionData",sectionData);
   const isMarginLoan = modalData?.key === "managedFundsMarginLoan";
 
   const allowPartner = !["Single", "Widowed"].includes(
@@ -199,7 +199,9 @@ export default function InvestmentLoanModal({ modalData }) {
   const ownerOptions = useMemo(() => {
     const options = [
       {
-        label: discoveryData?.personalDetails?.client?.clientPreferredName || "Client",
+        label:
+          discoveryData?.personalDetails?.client?.clientPreferredName ||
+          "Client",
         value: "client",
       },
     ];
@@ -208,10 +210,19 @@ export default function InvestmentLoanModal({ modalData }) {
       options.push(
         {
           label:
-            discoveryData?.personalDetails?.partner?.partnerPreferredName || "Partner",
+            discoveryData?.personalDetails?.partner?.partnerPreferredName ||
+            "Partner",
           value: "partner",
         },
-        { label: "Joint", value: "joint" },
+        {
+          label:
+            (discoveryData?.personalDetails?.client?.clientPreferredName ||
+              "Client") +
+            " & " +
+            (discoveryData?.personalDetails?.partner?.partnerPreferredName ||
+              "Partner"),
+          value: "joint",
+        },
       );
     }
 
@@ -223,7 +234,8 @@ export default function InvestmentLoanModal({ modalData }) {
     const mapped = institutions
       .map((item) => ({
         value: String(item?._id ?? item?.value ?? ""),
-        label: item?.platformName || item?.label || item?.name || item?._id || "",
+        label:
+          item?.platformName || item?.label || item?.name || item?._id || "",
       }))
       .filter((option) => option.value && option.label);
 
@@ -244,8 +256,11 @@ export default function InvestmentLoanModal({ modalData }) {
 
   const columns = useMemo(() => {
     const commonColumns = [
-      { title: "Owner", key: "owner", kind: "owner", 
-        // width: 150 
+      {
+        title: "Owner",
+        key: "owner",
+        kind: "owner",
+        // width: 150
       },
       {
         title: "Lender",
@@ -483,19 +498,26 @@ export default function InvestmentLoanModal({ modalData }) {
           key: owner,
           formPath: owner,
           ownerLabel:
-            ownerOptions.find((option) => option.value === owner)?.label || owner,
+            ownerOptions.find((option) => option.value === owner)?.label ||
+            owner,
           lender: form.getFieldValue([owner, "lender"]),
           loanBalance: form.getFieldValue([owner, "loanBalance"]),
           loanType: form.getFieldValue([owner, "loanType"]),
           repaymentsAmount: form.getFieldValue([owner, "repaymentsAmount"]),
           frequency: form.getFieldValue([owner, "frequency"]),
           annualRepayments: form.getFieldValue([owner, "annualRepayments"]),
-          monthlyContribution: form.getFieldValue([owner, "monthlyContribution"]),
+          monthlyContribution: form.getFieldValue([
+            owner,
+            "monthlyContribution",
+          ]),
           annualLoan: form.getFieldValue([owner, "annualLoan"]),
           interestRate: form.getFieldValue([owner, "interestRate"]),
           loanTerm: form.getFieldValue([owner, "loanTerm"]),
           loanTermRemaining: form.getFieldValue([owner, "loanTermRemaining"]),
-          deductibleLoanAmount: form.getFieldValue([owner, "deductibleLoanAmount"]),
+          deductibleLoanAmount: form.getFieldValue([
+            owner,
+            "deductibleLoanAmount",
+          ]),
         })),
     [allowPartner, form, ownerOptions, selectedOwners],
   );
@@ -526,10 +548,13 @@ export default function InvestmentLoanModal({ modalData }) {
     const partnerSelected = allowPartner && owner.includes("partner");
     const jointSelected = allowPartner && owner.includes("joint");
 
-    const jointLoanBalance = parseCurrencyValue(sourceValues?.joint?.loanBalance) || 0;
+    const jointLoanBalance =
+      parseCurrencyValue(sourceValues?.joint?.loanBalance) || 0;
     const jointHalf = jointSelected ? jointLoanBalance / 2 : 0;
-    const clientLoanBalance = parseCurrencyValue(sourceValues?.client?.loanBalance) || 0;
-    const partnerLoanBalance = parseCurrencyValue(sourceValues?.partner?.loanBalance) || 0;
+    const clientLoanBalance =
+      parseCurrencyValue(sourceValues?.client?.loanBalance) || 0;
+    const partnerLoanBalance =
+      parseCurrencyValue(sourceValues?.partner?.loanBalance) || 0;
 
     const payload = {
       ...sectionData,
@@ -539,107 +564,121 @@ export default function InvestmentLoanModal({ modalData }) {
         discoveryData?.personalDetails?._id ||
         undefined,
 
-        client: clientSelected
-  ? buildLoanPayload(sourceValues.client, sectionData.client, isMarginLoan)
-  : {},
+      client: clientSelected
+        ? buildLoanPayload(
+            sourceValues.client,
+            sectionData.client,
+            isMarginLoan,
+          )
+        : {},
 
-partner: partnerSelected
-  ? buildLoanPayload(sourceValues.partner, sectionData.partner, isMarginLoan)
-  : {},
+      partner: partnerSelected
+        ? buildLoanPayload(
+            sourceValues.partner,
+            sectionData.partner,
+            isMarginLoan,
+          )
+        : {},
 
-joint: jointSelected
-  ? buildLoanPayload(sourceValues.joint, sectionData.joint, isMarginLoan)
-  : {},
-    //   client: clientSelected
-    //     ? {
-    //         ...(sectionData?.client || {}),
-    //         lender: sourceValues?.client?.lender || "",
-    //         loanBalance: formatCurrencyValue(sourceValues?.client?.loanBalance),
-    //         loanType: isMarginLoan ? undefined : sourceValues?.client?.loanType || "",
-    //         repaymentsAmount: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.client?.repaymentsAmount),
-    //         frequency: isMarginLoan ? "" : sourceValues?.client?.frequency || "",
-    //         annualRepayments: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.client?.annualRepayments),
-    //         monthlyContribution: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.client?.monthlyContribution)
-    //           : "",
-    //         annualLoan: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.client?.annualLoan)
-    //           : "",
-    //         interestRate: formatPercentValue(sourceValues?.client?.interestRate),
-    //         loanTerm: sourceValues?.client?.loanTerm || "",
-    //         loanTermRemaining: sourceValues?.client?.loanTermRemaining || "",
-    //         deductibleLoanAmount: formatPercentValue(
-    //           sourceValues?.client?.deductibleLoanAmount,
-    //           DEFAULT_DEDUCTIBLE,
-    //         ),
-    //       }
-    //     : {},
-    //   partner: partnerSelected
-    //     ? {
-    //         ...(sectionData?.partner || {}),
-    //         lender: sourceValues?.partner?.lender || "",
-    //         loanBalance: formatCurrencyValue(sourceValues?.partner?.loanBalance),
-    //         loanType: isMarginLoan ? "" : sourceValues?.partner?.loanType || "",
-    //         repaymentsAmount: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.partner?.repaymentsAmount),
-    //         frequency: isMarginLoan ? "" : sourceValues?.partner?.frequency || "",
-    //         annualRepayments: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.partner?.annualRepayments),
-    //         monthlyContribution: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.partner?.monthlyContribution)
-    //           : "",
-    //         annualLoan: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.partner?.annualLoan)
-    //           : "",
-    //         interestRate: formatPercentValue(sourceValues?.partner?.interestRate),
-    //         loanTerm: sourceValues?.partner?.loanTerm || "",
-    //         loanTermRemaining: sourceValues?.partner?.loanTermRemaining || "",
-    //         deductibleLoanAmount: formatPercentValue(
-    //           sourceValues?.partner?.deductibleLoanAmount,
-    //           DEFAULT_DEDUCTIBLE,
-    //         ),
-    //       }
-    //     : {},
-    //   joint: jointSelected
-    //     ? {
-    //         ...(sectionData?.joint || {}),
-    //         lender: sourceValues?.joint?.lender || "",
-    //         loanBalance: formatCurrencyValue(sourceValues?.joint?.loanBalance),
-    //         loanType: isMarginLoan ? "" : sourceValues?.joint?.loanType || "",
-    //         repaymentsAmount: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.joint?.repaymentsAmount),
-    //         frequency: isMarginLoan ? "" : sourceValues?.joint?.frequency || "",
-    //         annualRepayments: isMarginLoan
-    //           ? ""
-    //           : formatCurrencyValue(sourceValues?.joint?.annualRepayments),
-    //         monthlyContribution: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.joint?.monthlyContribution)
-    //           : "",
-    //         annualLoan: isMarginLoan
-    //           ? formatCurrencyValue(sourceValues?.joint?.annualLoan)
-    //           : "",
-    //         interestRate: formatPercentValue(sourceValues?.joint?.interestRate),
-    //         loanTerm: sourceValues?.joint?.loanTerm || "",
-    //         loanTermRemaining: sourceValues?.joint?.loanTermRemaining || "",
-    //         deductibleLoanAmount: formatPercentValue(
-    //           sourceValues?.joint?.deductibleLoanAmount,
-    //           DEFAULT_DEDUCTIBLE,
-    //         ),
-    //       }
-    //     : {},
-      clientTotal: clientSelected || jointSelected
-        ? formatCurrencyValue((clientSelected ? clientLoanBalance : 0) + jointHalf)
-        : "",
-      partnerTotal: partnerSelected || jointSelected
-        ? formatCurrencyValue((partnerSelected ? partnerLoanBalance : 0) + jointHalf)
-        : "",
+      joint: jointSelected
+        ? buildLoanPayload(sourceValues.joint, sectionData.joint, isMarginLoan)
+        : {},
+      //   client: clientSelected
+      //     ? {
+      //         ...(sectionData?.client || {}),
+      //         lender: sourceValues?.client?.lender || "",
+      //         loanBalance: formatCurrencyValue(sourceValues?.client?.loanBalance),
+      //         loanType: isMarginLoan ? undefined : sourceValues?.client?.loanType || "",
+      //         repaymentsAmount: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.client?.repaymentsAmount),
+      //         frequency: isMarginLoan ? "" : sourceValues?.client?.frequency || "",
+      //         annualRepayments: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.client?.annualRepayments),
+      //         monthlyContribution: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.client?.monthlyContribution)
+      //           : "",
+      //         annualLoan: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.client?.annualLoan)
+      //           : "",
+      //         interestRate: formatPercentValue(sourceValues?.client?.interestRate),
+      //         loanTerm: sourceValues?.client?.loanTerm || "",
+      //         loanTermRemaining: sourceValues?.client?.loanTermRemaining || "",
+      //         deductibleLoanAmount: formatPercentValue(
+      //           sourceValues?.client?.deductibleLoanAmount,
+      //           DEFAULT_DEDUCTIBLE,
+      //         ),
+      //       }
+      //     : {},
+      //   partner: partnerSelected
+      //     ? {
+      //         ...(sectionData?.partner || {}),
+      //         lender: sourceValues?.partner?.lender || "",
+      //         loanBalance: formatCurrencyValue(sourceValues?.partner?.loanBalance),
+      //         loanType: isMarginLoan ? "" : sourceValues?.partner?.loanType || "",
+      //         repaymentsAmount: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.partner?.repaymentsAmount),
+      //         frequency: isMarginLoan ? "" : sourceValues?.partner?.frequency || "",
+      //         annualRepayments: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.partner?.annualRepayments),
+      //         monthlyContribution: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.partner?.monthlyContribution)
+      //           : "",
+      //         annualLoan: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.partner?.annualLoan)
+      //           : "",
+      //         interestRate: formatPercentValue(sourceValues?.partner?.interestRate),
+      //         loanTerm: sourceValues?.partner?.loanTerm || "",
+      //         loanTermRemaining: sourceValues?.partner?.loanTermRemaining || "",
+      //         deductibleLoanAmount: formatPercentValue(
+      //           sourceValues?.partner?.deductibleLoanAmount,
+      //           DEFAULT_DEDUCTIBLE,
+      //         ),
+      //       }
+      //     : {},
+      //   joint: jointSelected
+      //     ? {
+      //         ...(sectionData?.joint || {}),
+      //         lender: sourceValues?.joint?.lender || "",
+      //         loanBalance: formatCurrencyValue(sourceValues?.joint?.loanBalance),
+      //         loanType: isMarginLoan ? "" : sourceValues?.joint?.loanType || "",
+      //         repaymentsAmount: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.joint?.repaymentsAmount),
+      //         frequency: isMarginLoan ? "" : sourceValues?.joint?.frequency || "",
+      //         annualRepayments: isMarginLoan
+      //           ? ""
+      //           : formatCurrencyValue(sourceValues?.joint?.annualRepayments),
+      //         monthlyContribution: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.joint?.monthlyContribution)
+      //           : "",
+      //         annualLoan: isMarginLoan
+      //           ? formatCurrencyValue(sourceValues?.joint?.annualLoan)
+      //           : "",
+      //         interestRate: formatPercentValue(sourceValues?.joint?.interestRate),
+      //         loanTerm: sourceValues?.joint?.loanTerm || "",
+      //         loanTermRemaining: sourceValues?.joint?.loanTermRemaining || "",
+      //         deductibleLoanAmount: formatPercentValue(
+      //           sourceValues?.joint?.deductibleLoanAmount,
+      //           DEFAULT_DEDUCTIBLE,
+      //         ),
+      //       }
+      //     : {},
+      clientTotal:
+        clientSelected || jointSelected
+          ? formatCurrencyValue(
+              (clientSelected ? clientLoanBalance : 0) + jointHalf,
+            )
+          : "",
+      partnerTotal:
+        partnerSelected || jointSelected
+          ? formatCurrencyValue(
+              (partnerSelected ? partnerLoanBalance : 0) + jointHalf,
+            )
+          : "",
     };
 
     try {
@@ -687,7 +726,9 @@ joint: jointSelected
         <Row gutter={[16, 16]}>
           <Col xs={24} md={6}>
             <Form.Item
-              label={modalData?.title !== "Investment Loan" ? "Members" : "Owner"}
+              label={
+                modalData?.title !== "Investment Loan" ? "Members" : "Owner"
+              }
               name="owner"
               style={{ marginBottom: 0 }}
               rules={[{ required: true, message: "Owner is required" }]}
@@ -722,7 +763,9 @@ joint: jointSelected
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
                   <Button
                     type="primary"

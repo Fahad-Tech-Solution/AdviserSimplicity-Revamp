@@ -190,7 +190,7 @@ export default function PersonalInsuranceLumpSumModal({ modalData }) {
   }, [initialValues]);
 
   const handleFinish = async (values) => {
-    console.log(values, "values");
+    // console.log(values, "values");
     const normalizedValues = {
       life: formatCurrencyValue(values?.life),
       TPD: formatCurrencyValue(values?.TPD),
@@ -202,8 +202,8 @@ export default function PersonalInsuranceLumpSumModal({ modalData }) {
       superlinked: values?.superlinked || "No",
     };
 
-    console.log(normalizedValues, "normalizedValues");
-    console.log(!fieldPath, "fieldPath");
+    // console.log(normalizedValues, "normalizedValues");
+    // console.log(!fieldPath, "fieldPath");
 
     try {
       setSaving(true);
