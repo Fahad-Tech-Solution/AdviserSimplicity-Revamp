@@ -530,7 +530,11 @@ const SMSF_CARDS = [
     title: "Investment Loan",
     key: "SMSFInvestmentLoan",
     icon: "📉",
-    component: null,
+    component: <InvestmentLoanModalSMSF />,
+    modalWidth: "1200px",
+    firstNameKey: "SMSF",
+    firstTotalKey: "SMSFTotal",
+    showSecondTotal: false,
   },
   {
     title: "Investment Properties",
@@ -549,7 +553,8 @@ const SMSF_CARDS = [
     title: "Other Investments",
     key: "SMSFOtherInvestment",
     icon: "📈",
-    component: null,
+    component: <OtherInvestmentsModalSMSF />,
+    modalWidth: "900px",
   },
 ];
 const FAMILY_TRUST_CARDS = [
@@ -610,7 +615,7 @@ const FAMILY_TRUST_CARDS = [
   {
     title: "Investment Loan",
     key: "familyInvestmentHomeLoan",
-    icon: "📋",
+    icon: "📉",
     component: <InvestmentLoanModalSMSF />,
     modalWidth: "1200px",
     firstNameKey: "Trust",
@@ -634,7 +639,7 @@ const FAMILY_TRUST_CARDS = [
     title: "Other Investments",
     key: "familyOtherInvestment",
     icon: "📈",
-    component:  <OtherInvestmentsModalSMSF />,
+    component: <OtherInvestmentsModalSMSF />,
     modalWidth: "900px",
   },
 ];

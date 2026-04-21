@@ -75,17 +75,24 @@ export default function OtherInvestmentsModal({ modalData }) {
     setEditing(!sectionData?.clientFK || !hasMeaningfulValues(initialValues));
   }, [form, initialValues, sectionData?.clientFK]);
 
+  // Keep view-mode in sync (same approach as InvestmentLoanModal)
+  const formSnapshot = Form.useWatch([], form);
+
+  const investmentName = Form.useWatch("investmentName", form) ?? initialValues.investmentName;
+  const currentValue = Form.useWatch("currentValue", form) ?? initialValues.currentValue;
+  const costBase = Form.useWatch("costBase", form) ?? initialValues.costBase;
+
   const rows = useMemo(
     () => [
       {
         key: "other-investment",
         formPath: [],
-        investmentName: form.getFieldValue(["investmentName"]) ?? initialValues.investmentName,
-        currentValue: form.getFieldValue(["currentValue"]) ?? initialValues.currentValue,
-        costBase: form.getFieldValue(["costBase"]) ?? initialValues.costBase,
+        investmentName,
+        currentValue,
+        costBase,
       },
     ],
-    [form, initialValues],
+    [costBase, currentValue, formSnapshot, investmentName],
   );
 
   const columns = [
@@ -125,16 +132,22 @@ export default function OtherInvestmentsModal({ modalData }) {
   ];
 
   const handleFinish = async (values) => {
+    const formValues = form.getFieldsValue(true);
+    const sourceValues = {
+      ...formValues,
+      ...values,
+    };
+
     const payload = {
       ...sectionData,
       clientFK:
         sectionData?.clientFK ||
         discoveryData?.personalDetails?._id ||
         undefined,
-      investmentName: values?.investmentName || "",
-      currentValue: formatCurrencyValue(values?.currentValue),
-      costBase: formatCurrencyValue(values?.costBase),
-      clientTotal: formatCurrencyValue(values?.currentValue),
+      investmentName: sourceValues?.investmentName || "",
+      currentValue: formatCurrencyValue(sourceValues?.currentValue),
+      costBase: formatCurrencyValue(sourceValues?.costBase),
+      clientTotal: formatCurrencyValue(sourceValues?.currentValue),
     };
 
     try {
@@ -206,7 +219,17 @@ export default function OtherInvestmentsModal({ modalData }) {
                     Edit <RiEdit2Fill />
                   </Button>
                 ) : (
-                  <Button type="primary" htmlType="submit" loading={saving} disabled={saving}>
+                  <Button
+                    type="primary"
+                    htmlType="button"
+                    loading={saving}
+                    disabled={saving}
+                    onClick={(e) => {
+                      e?.preventDefault?.();
+                      e?.stopPropagation?.();
+                      form.submit();
+                    }}
+                  >
                     Save
                   </Button>
                 )}

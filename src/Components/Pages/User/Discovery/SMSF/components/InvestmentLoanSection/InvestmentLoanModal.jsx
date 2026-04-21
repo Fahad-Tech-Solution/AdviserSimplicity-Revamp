@@ -837,17 +837,26 @@ export default function InvestmentLoanModal({ modalData }) {
                     type="primary"
                     htmlType="button"
                     key="edit"
-                    onClick={() => setEditing(true)}
+                    onClick={(e) => {
+                      e?.preventDefault?.();
+                      e?.stopPropagation?.();
+                      setEditing(true);
+                    }}
                   >
                     Edit <RiEdit2Fill />
                   </Button>
                 ) : (
                   <Button
                     type="primary"
-                    htmlType="submit"
+                    htmlType="button"
                     key="save"
                     loading={saving}
                     disabled={saving}
+                    onClick={(e) => {
+                      e?.preventDefault?.();
+                      e?.stopPropagation?.();
+                      form.submit();
+                    }}
                   >
                     Save
                   </Button>
