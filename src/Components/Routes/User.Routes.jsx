@@ -46,6 +46,7 @@ import PersonalInsurance from "../Pages/User/Discovery/PersonalInsurance/Persona
 import PersonalInsuranceModal from "../Pages/User/Discovery/PersonalInsurance/components/PersonalInsuranceModal.jsx";
 import SMSF from "../Pages/User/Discovery/SMSF/SMSF.jsx";
 import FamilyTrust from "../Pages/User/Discovery/FamilyTrust/FamilyTrust.jsx";
+import FamilyInvestmentTrust from "../Pages/User/Discovery/FamilyTrust/components/FamilyInvestmentTrust.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -478,7 +479,7 @@ const SMSF_CARDS = [
     key: "SMSFPensionPhase",
     icon: "🐷",
     component: <PensionAccountModal />,
-    modalWidth: "1280px",
+    modalWidth: "600px",
     firstTotalKey: "clientTotal",
     secondTotalKey: "partnerTotal",
   },
@@ -566,7 +567,12 @@ const FAMILY_TRUST_CARDS = [
     title: "Details",
     key: "familyDetails",
     icon: "📄",
-    component: null,
+    component: <FamilyInvestmentTrust />,
+    modalWidth: "620px",
+    tableRows: 3,
+    firstNameKey: "trust",
+    firstTotalKey: "trustTotal",
+    showSecondTotal: false,
   },
   {
     title: "Bank Accounts",

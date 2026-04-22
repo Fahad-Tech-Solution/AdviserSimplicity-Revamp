@@ -86,7 +86,7 @@ export default function PensionAccountModal({ modalData }) {
     [clientName, partnerName],
   );
 
-  const selectedMembers = Form.useWatch("selectedMembers", form);
+  const selectedMembersWatch = Form.useWatch("selectedMembers", form);
   const pensionDataWatch = Form.useWatch("pensionData", form);
 
   const initialMembers = useMemo(() => {
@@ -104,6 +104,16 @@ export default function PensionAccountModal({ modalData }) {
     }),
     [initialMembers, phase],
   );
+
+  const selectedMembers =
+    Array.isArray(selectedMembersWatch) && selectedMembersWatch.length > 0
+      ? selectedMembersWatch
+      : initialValues.selectedMembers || [];
+
+  const pensionData =
+    Array.isArray(pensionDataWatch) && pensionDataWatch.length > 0
+      ? pensionDataWatch
+      : initialValues.pensionData || [];
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -134,7 +144,9 @@ export default function PensionAccountModal({ modalData }) {
           });
         }
       });
-      const ordered = list.map((m) => nextPensionData.find((r) => r.member === m)).filter(Boolean);
+      const ordered = list
+        .map((m) => nextPensionData.find((r) => r.member === m))
+        .filter(Boolean);
 
       form.setFieldValue("selectedMembers", list);
       form.setFieldValue("pensionData", ordered);
@@ -150,7 +162,7 @@ export default function PensionAccountModal({ modalData }) {
       setAccountsModalData({
         component: <SmsfPensionAccountsInnerModal />,
         title: `${memberLabel(member)} — Pension accounts`,
-        width: 1280,
+        width: 700,
         memberIndex,
         memberLabel: memberLabel(member),
         parentForm: form,
@@ -167,16 +179,14 @@ export default function PensionAccountModal({ modalData }) {
 
   const rows = useMemo(() => {
     const members = selectedMembers || [];
-    const pensionData = pensionDataWatch || [];
     return members.map((member, index) => ({
       key: `smsf-pension-phase-${member}-${index}`,
       formPath: ["pensionData", index],
       memberIndex: index,
       memberDisplay: memberLabel(member),
-      pensionBenefitsTotal:
-        pensionData?.[index]?.pensionBenefitsTotal || "",
+      pensionBenefitsTotal: pensionData?.[index]?.pensionBenefitsTotal || "",
     }));
-  }, [memberLabel, pensionDataWatch, selectedMembers]);
+  }, [memberLabel, pensionData, selectedMembers]);
 
   const columns = useMemo(
     () => [
@@ -211,10 +221,12 @@ export default function PensionAccountModal({ modalData }) {
 
   const handleFinish = async () => {
     const values = form.getFieldsValue(true);
+
     if (!(values.selectedMembers || []).length) {
       message.warning("Select at least one member");
       return;
     }
+
     const pensionData = values.pensionData || [];
     const submissionData = {
       ...sectionData,
@@ -268,7 +280,7 @@ export default function PensionAccountModal({ modalData }) {
       const saved = sectionData?.clientFK
         ? await patch(`/api/${sectionKey}/Update`, submissionData)
         : await post(`/api/${sectionKey}/Add`, submissionData);
-
+   
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         [sectionKey]: saved || submissionData,
@@ -346,9 +358,15 @@ export default function PensionAccountModal({ modalData }) {
               }}
             >
               <Space>
-                <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                <Button onClick={() => modalData?.closeModal?.()}>
+                  Cancel
+                </Button>
                 {!editing ? (
-                  <Button type="primary" htmlType="button" onClick={() => setEditing(true)}>
+                  <Button
+                    type="primary"
+                    htmlType="button"
+                    onClick={() => setEditing(true)}
+                  >
                     Edit <RiEdit2Fill />
                   </Button>
                 ) : (
