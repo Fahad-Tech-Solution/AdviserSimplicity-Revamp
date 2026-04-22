@@ -28,10 +28,10 @@ function normalizeSelectValue(value) {
 }
 
 function getRelationshipOptions(nominationType) {
+ 
   if (nominationType === "Reversionary Beneficiary") {
     return [{ value: "Spouse/De-facto", label: "Spouse/De-facto" }];
   }
-
   return [
     {
       value: "Legal Personal Representive (Your Estate)",
