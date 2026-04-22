@@ -154,6 +154,7 @@ const SMSF = () => {
                           "SMSFInvestmentLoan",
                           "SMSFInvestmentProperties",
                           "SMSFOtherInvestment",
+                          "SMSFPensionPhase",
                         ].includes(card.key)
                           ? "SMSF_" + card.title
                           : card.title,
