@@ -200,6 +200,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       const [yesNoQuestionsResult, fullDetailsResult] = await Promise.allSettled([
         get(`/api/questions/${row?._id}`),
         get(`/api/dataOfAllSection/${row?._id}`),
+        // Goals and Objectives Questions and Details
       ]);
 
       if (yesNoQuestionsResult.status === "fulfilled") {
@@ -218,6 +219,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
+      // Goals and Objectives Questions and Details
       setSelectedClient(row);
 
       const displayName = getClientLastName(row?.client || {}) || "Client";

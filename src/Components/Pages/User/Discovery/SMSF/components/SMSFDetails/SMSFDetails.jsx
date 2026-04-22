@@ -2,12 +2,14 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { Button, Col, Form, Row, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
-import AppModal from "../../../../../Common/AppModal.jsx";
-import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
-import { renderModalContent } from "../../../../../Common/renderModalContent.jsx";
-import useApi from "../../../../../../hooks/useApi.js";
-import { discoveryDataAtom } from "../../../../../../store/authState.js";
-import BusinessTrustTrusteeInnerModal from "../../BusinessEntities/coponents/BusinessTrustSection/BusinessTrustTrusteeInnerModal.jsx";
+import AppModal from "../../../../../../Common/AppModal.jsx";
+import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
+import SwitchPopupDisplay from "../../../../../../Common/SwitchPopupDisplay.jsx";
+import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
+import useApi from "../../../../../../../hooks/useApi.js";
+import { discoveryDataAtom } from "../../../../../../../store/authState.js";
+import BusinessTrustTrusteeInnerModal from "../../../BusinessEntities/coponents/BusinessTrustSection/BusinessTrustTrusteeInnerModal.jsx";
+import SMSFBareTrustInnerModal from "./SMSFBareTrustInnerModal.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -17,11 +19,6 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
-
-const TRUST_TYPE_OPTIONS = [
-  { value: "Discretionary", label: "Discretionary" },
-  { value: "Other", label: "Other" },
-];
 
 const TRUSTEE_TYPE_OPTIONS = [
   { value: "Corporate", label: "Corporate" },
@@ -44,22 +41,6 @@ function normalizeDateValue(value) {
   return String(value);
 }
 
-function buildEmptyTrustDetails() {
-  return {
-    trustName: "",
-    trustType: undefined,
-    ABN: "",
-    registeredOffice: "",
-    placeOfBusiness: "",
-    establishmentDate: "",
-    trusteeType: undefined,
-    trusteeName: "",
-    ACN: "",
-    nameOfAccountant: "",
-    directorsOfCorporateTrustee: [],
-  };
-}
-
 function normalizeDirectorRows(value) {
   if (!Array.isArray(value)) return [];
   return value.map((item) => ({
@@ -67,10 +48,46 @@ function normalizeDirectorRows(value) {
   }));
 }
 
-function normalizeTrustDetails(entry = {}) {
+function normalizeBareTrust(value = {}) {
+  const count =
+    Number(value?.NumberOfDirectors) ||
+    (Array.isArray(value?.directorNameArray) ? value.directorNameArray.length : 0);
+
   return {
-    trustName: entry?.trustName || "",
-    trustType: entry?.trustType || undefined,
+    NumberOfDirectors: count,
+    bareTrusteeName: value?.bareTrusteeName || "",
+    ACN: parseDigitsValue(value?.ACN),
+    directorNameArray: Array.isArray(value?.directorNameArray)
+      ? value.directorNameArray.map((item) => String(item ?? "").trim())
+      : [],
+  };
+}
+
+function buildEmptySmsfOwner() {
+  return {
+    fundName: "",
+    ABN: "",
+    registeredOffice: "",
+    placeOfBusiness: "",
+    establishmentDate: "",
+    trusteeType: undefined,
+    trusteeName: "",
+    ACN: "",
+    bareTrust: "No",
+    nameOfAccountant: "",
+    directorsOfCorporateTrustee: [],
+    directorsOfBareTrust: {
+      NumberOfDirectors: 0,
+      bareTrusteeName: "",
+      ACN: "",
+      directorNameArray: [],
+    },
+  };
+}
+
+function normalizeSmsfOwner(entry = {}) {
+  return {
+    fundName: entry?.fundName || "",
     ABN: parseDigitsValue(entry?.ABN),
     registeredOffice: entry?.registeredOffice || "",
     placeOfBusiness: entry?.placeOfBusiness || "",
@@ -78,17 +95,18 @@ function normalizeTrustDetails(entry = {}) {
     trusteeType: entry?.trusteeType || undefined,
     trusteeName: entry?.trusteeName || "",
     ACN: parseDigitsValue(entry?.ACN),
+    bareTrust: entry?.bareTrust === "Yes" ? "Yes" : "No",
     nameOfAccountant: entry?.nameOfAccountant || "",
     directorsOfCorporateTrustee: normalizeDirectorRows(
       entry?.directorsOfCorporateTrustee,
     ),
+    directorsOfBareTrust: normalizeBareTrust(entry?.directorsOfBareTrust),
   };
 }
 
 function hasMeaningfulValues(initialValues = {}) {
   return [
-    initialValues?.trustName,
-    initialValues?.trustType,
+    initialValues?.fundName,
     initialValues?.ABN,
     initialValues?.registeredOffice,
     initialValues?.placeOfBusiness,
@@ -97,10 +115,17 @@ function hasMeaningfulValues(initialValues = {}) {
     initialValues?.trusteeName,
     initialValues?.ACN,
     initialValues?.nameOfAccountant,
+    initialValues?.bareTrust === "Yes" ? "Yes" : "",
+    ...(initialValues?.directorsOfCorporateTrustee || []).map(
+      (item) => item?.directorName,
+    ),
+    initialValues?.directorsOfBareTrust?.bareTrusteeName,
+    initialValues?.directorsOfBareTrust?.ACN,
+    ...(initialValues?.directorsOfBareTrust?.directorNameArray || []),
   ].some((value) => String(value ?? "").trim() !== "");
 }
 
-export default function FamilyInvestmentTrust({ modalData }) {
+export default function SMSFDetails({ modalData }) {
   const [form] = Form.useForm();
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
@@ -111,15 +136,12 @@ export default function FamilyInvestmentTrust({ modalData }) {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
 
-  const sectionKey = modalData?.key || "familyDetails";
+  const sectionKey = modalData?.key || "SMSFDetails";
   const sectionData = discoveryData?.[sectionKey] || {};
 
   const initialValues = useMemo(
-    () =>
-      normalizeTrustDetails(
-        sectionData?.familyTrustOwner || buildEmptyTrustDetails(),
-      ),
-    [sectionData?.clientFK, sectionData?.familyTrustOwner],
+    () => normalizeSmsfOwner(sectionData?.SMSFOwner || buildEmptySmsfOwner()),
+    [sectionData?.SMSFOwner, sectionData?.clientFK],
   );
 
   useEffect(() => {
@@ -128,8 +150,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
   }, [form, initialValues, sectionData?.clientFK]);
 
   const formSnapshot = Form.useWatch([], form);
-  const trustName = Form.useWatch("trustName", form) ?? initialValues.trustName;
-  const trustType = Form.useWatch("trustType", form) ?? initialValues.trustType;
+  const fundName = Form.useWatch("fundName", form) ?? initialValues.fundName;
   const ABN = Form.useWatch("ABN", form) ?? initialValues.ABN;
   const registeredOffice =
     Form.useWatch("registeredOffice", form) ?? initialValues.registeredOffice;
@@ -142,17 +163,17 @@ export default function FamilyInvestmentTrust({ modalData }) {
   const trusteeName =
     Form.useWatch("trusteeName", form) ?? initialValues.trusteeName;
   const ACN = Form.useWatch("ACN", form) ?? initialValues.ACN;
+  const bareTrust = Form.useWatch("bareTrust", form) ?? initialValues.bareTrust;
   const nameOfAccountant =
     Form.useWatch("nameOfAccountant", form) ?? initialValues.nameOfAccountant;
 
   const rows = useMemo(
     () => [
       {
-        key: "family-trust-details",
+        key: "smsf-details-row",
         rowNumber: 1,
         formPath: [],
-        trustName,
-        trustType,
+        fundName,
         ABN,
         registeredOffice,
         placeOfBusiness,
@@ -160,22 +181,31 @@ export default function FamilyInvestmentTrust({ modalData }) {
         trusteeType,
         trusteeName,
         ACN,
+        bareTrust,
         nameOfAccountant,
       },
     ],
     [
       ABN,
       ACN,
+      bareTrust,
       establishmentDate,
       formSnapshot,
+      fundName,
       nameOfAccountant,
       placeOfBusiness,
       registeredOffice,
-      trustName,
-      trustType,
       trusteeName,
       trusteeType,
     ],
+  );
+
+  const corporateDirectorOptions = useMemo(
+    () =>
+      (form.getFieldValue("directorsOfCorporateTrustee") || [])
+        .map((item) => String(item?.directorName ?? "").trim())
+        .filter(Boolean),
+    [form, formSnapshot],
   );
 
   const openTrusteeInnerModal = useCallback(
@@ -185,6 +215,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
       if (!nextTrusteeType) return;
 
       const isCorporate = nextTrusteeType === "Corporate";
+
       setDetailModalOpen(true);
       setDetailModalData({
         type: "trusteeInner",
@@ -196,8 +227,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
         width: 500,
         component: <BusinessTrustTrusteeInnerModal />,
         editing,
-        valueArray:
-          activeForm.getFieldValue("directorsOfCorporateTrustee") || [],
+        valueArray: activeForm.getFieldValue("directorsOfCorporateTrustee") || [],
         onSave: (nextRows) => {
           activeForm.setFieldValue(
             "directorsOfCorporateTrustee",
@@ -209,7 +239,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
             ),
           });
         },
-        maxCount: 4,
+        maxCount: 6,
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
@@ -217,6 +247,34 @@ export default function FamilyInvestmentTrust({ modalData }) {
       });
     },
     [editing, form],
+  );
+
+  const openBareTrustInnerModal = useCallback(
+    ({ form: currentForm } = {}) => {
+      const activeForm = currentForm || form;
+
+      setDetailModalOpen(true);
+      setDetailModalData({
+        type: "bareTrustInner",
+        title: "Directors Of Bare Trust",
+        width: 900,
+        component: <SMSFBareTrustInnerModal />,
+        editing,
+        value: activeForm.getFieldValue("directorsOfBareTrust") || {},
+        directorOptions: corporateDirectorOptions,
+        onSave: (nextValue) => {
+          activeForm.setFieldValue("directorsOfBareTrust", normalizeBareTrust(nextValue));
+          activeForm.setFieldsValue({
+            directorsOfBareTrust: activeForm.getFieldValue("directorsOfBareTrust"),
+          });
+        },
+        closeModal: () => {
+          setDetailModalOpen(false);
+          setEditing(true);
+        },
+      });
+    },
+    [corporateDirectorOptions, editing, form],
   );
 
   const columns = useMemo(
@@ -229,21 +287,12 @@ export default function FamilyInvestmentTrust({ modalData }) {
         editable: false,
       },
       {
-        title: "Trust Name",
-        dataIndex: "trustName",
-        key: "trustName",
-        field: "trustName",
+        title: "Fund Name",
+        dataIndex: "fundName",
+        key: "fundName",
+        field: "fundName",
         type: "text",
-        placeholder: "Trust Name",
-      },
-      {
-        title: "Trust Type",
-        dataIndex: "trustType",
-        key: "trustType",
-        field: "trustType",
-        type: "select",
-        options: TRUST_TYPE_OPTIONS,
-        placeholder: "Select Trust Type",
+        placeholder: "Fund Name",
       },
       {
         title: "ABN",
@@ -290,9 +339,9 @@ export default function FamilyInvestmentTrust({ modalData }) {
         field: "trusteeType",
         type: "select-action",
         options: TRUSTEE_TYPE_OPTIONS,
-        placeholder: "Select Trustee Type",
+        placeholder: "Trustee Type",
         action: {
-          name: "Open Trustee Names",
+          name: "Open Trustee Name",
           onClick: (payload) => openTrusteeInnerModal(payload),
         },
         onChange: (value, _record, column, currentForm) => {
@@ -330,6 +379,23 @@ export default function FamilyInvestmentTrust({ modalData }) {
         },
       },
       {
+        title: "Bare Trust",
+        dataIndex: "bareTrust",
+        key: "bareTrust",
+        field: "bareTrust",
+        type: "yesNoSwitchWithButton",
+        action: {
+          name: "Open Bare Trust",
+          onClick: (payload) => openBareTrustInnerModal(payload),
+        },
+        renderView: ({ value, record }) => (
+          <SwitchPopupDisplay
+            value={value}
+            onClick={() => openBareTrustInnerModal({ record, form })}
+          />
+        ),
+      },
+      {
         title: "Name of Accountant",
         dataIndex: "nameOfAccountant",
         key: "nameOfAccountant",
@@ -338,13 +404,13 @@ export default function FamilyInvestmentTrust({ modalData }) {
         placeholder: "Name of Accountant",
       },
     ],
-    [openTrusteeInnerModal],
+    [form, openBareTrustInnerModal, openTrusteeInnerModal],
   );
 
   const handleConfirmAndExit = async () => {
     await form.validateFields();
     const values = form.getFieldsValue(true);
-    const normalizedTrust = normalizeTrustDetails(values);
+    const normalizedOwner = normalizeSmsfOwner(values);
 
     const payload = {
       ...sectionData,
@@ -352,32 +418,28 @@ export default function FamilyInvestmentTrust({ modalData }) {
         sectionData?.clientFK ||
         discoveryData?.personalDetails?._id ||
         undefined,
-      familyTrustOwner: normalizedTrust,
+      SMSFOwner: normalizedOwner,
     };
 
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch("/api/familyDetails/Update", payload)
-        : await post("/api/familyDetails/Add", payload);
+        ? await patch("/api/SMSFDetails/Update", payload)
+        : await post("/api/SMSFDetails/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
-        [sectionKey]: {
-          ...(saved && typeof saved === "object" ? saved : payload),
-        },
+        [sectionKey]: saved && typeof saved === "object" ? saved : payload,
       }));
 
-      message.success(
-        `${modalData?.title || "Family trust details"} saved successfully`,
-      );
+      message.success(`${modalData?.title || "SMSF details"} saved successfully`);
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
           error?.message ||
-          `Failed to save ${modalData?.title || "Family trust details"}`,
+          `Failed to save ${modalData?.title || "SMSF details"}`,
       );
     } finally {
       setSaving(false);
@@ -390,6 +452,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
       setEditing(false);
       return;
     }
+
     modalData?.closeModal?.();
   };
 

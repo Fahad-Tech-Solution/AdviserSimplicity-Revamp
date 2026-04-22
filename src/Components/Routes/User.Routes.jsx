@@ -32,6 +32,7 @@ import SuperFunds from "../Pages/User/Discovery/FinancialInvestments/components/
 import InvestmentPropertiesModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentProperties/InvestmentPropertiesModal.jsx";
 import AccountBasedPension from "../Pages/User/Discovery/FinancialInvestments/components/AccountBasedPension/AccountBasedPension.jsx";
 import superFundsIcon from "../../assets/image/SectionImages/SuperFunds.jpeg";
+import accumulationAccountIcon from "../../assets/image/SectionImages/piggy-bank-new.svg";
 import Annuities from "../Pages/User/Discovery/FinancialInvestments/components/Annuities/Annuities.jsx";
 import EstatePlanning from "../Pages/User/Discovery/EstatePlanning/EstatePlanning.jsx";
 import EstatePlanningWill from "../Pages/User/Discovery/EstatePlanning/components/wills/EstatePlanningWill.jsx";
@@ -47,6 +48,9 @@ import PersonalInsuranceModal from "../Pages/User/Discovery/PersonalInsurance/co
 import SMSF from "../Pages/User/Discovery/SMSF/SMSF.jsx";
 import FamilyTrust from "../Pages/User/Discovery/FamilyTrust/FamilyTrust.jsx";
 import FamilyInvestmentTrust from "../Pages/User/Discovery/FamilyTrust/components/FamilyInvestmentTrust.jsx";
+import SMSFDetails from "../Pages/User/Discovery/SMSF/components/SMSFDetails/SMSFDetails.jsx";
+import SMSFAccumulationAccount from "../Pages/User/Discovery/SMSF/components/SMSFAccumulationAccount/SMSFAccumulationAccount.jsx";
+import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObjectives.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -466,13 +470,25 @@ const SMSF_CARDS = [
     title: "Details",
     key: "SMSFDetails",
     icon: "📄",
-    component: null,
+    component: <SMSFDetails />,
+    modalWidth: "1500px",
+    firstNameKey: "SMSF",
+    showSecondTotal: false,
   },
   {
     title: "Accumulation Account",
     key: "SMSFAccumulationDetails",
-    icon: "🐷",
-    component: null,
+    icon: (
+      <img
+        src={accumulationAccountIcon}
+        alt="Accumulation Account"
+        width={40}
+        height={42}
+        style={{ mixBlendMode: "multiply" }}
+      />
+    ),
+    component: <SMSFAccumulationAccount />,
+    modalWidth: "800px",
   },
   {
     title: "Pension Account",
@@ -536,7 +552,7 @@ const SMSF_CARDS = [
     key: "SMSFInvestmentLoan",
     icon: "📉",
     component: <InvestmentLoanModalSMSF />,
-    modalWidth: "1200px",
+    modalWidth: "1500px",
     firstNameKey: "SMSF",
     firstTotalKey: "SMSFTotal",
     showSecondTotal: false,
@@ -562,15 +578,16 @@ const SMSF_CARDS = [
     modalWidth: "900px",
   },
 ];
+
 const FAMILY_TRUST_CARDS = [
   {
     title: "Details",
     key: "familyDetails",
     icon: "📄",
     component: <FamilyInvestmentTrust />,
-    modalWidth: "620px",
+    modalWidth: "1500px",
     tableRows: 3,
-    firstNameKey: "trust",
+    firstNameKey: "Trust",
     firstTotalKey: "trustTotal",
     showSecondTotal: false,
   },
@@ -582,7 +599,7 @@ const FAMILY_TRUST_CARDS = [
     innerComponent: <BankTermDetailsModal />,
     modalWidth: "620px",
     tableRows: 3,
-    firstNameKey: "trust",
+    firstNameKey: "Trust",
     firstTotalKey: "trustTotal",
     showSecondTotal: false,
   },
@@ -594,7 +611,7 @@ const FAMILY_TRUST_CARDS = [
     innerComponent: <BankTermDetailsModal />,
     modalWidth: "620px",
     tableRows: 5,
-    firstNameKey: "trust",
+    firstNameKey: "Trust",
     firstTotalKey: "trustTotal",
     showSecondTotal: false,
   },
@@ -606,7 +623,7 @@ const FAMILY_TRUST_CARDS = [
     innerComponent: <AustralianShare />,
     modalWidth: "620px",
     tableRows: 50,
-    firstNameKey: "trust",
+    firstNameKey: "Trust",
     firstTotalKey: "trustTotal",
     showSecondTotal: false,
   },
@@ -618,7 +635,7 @@ const FAMILY_TRUST_CARDS = [
     innerComponent: <PlatformInvestments />,
     modalWidth: "620px",
     tableRows: 5,
-    firstNameKey: "trust",
+    firstNameKey: "Trust",
     firstTotalKey: "trustTotal",
     showSecondTotal: false,
   },
@@ -651,6 +668,18 @@ const FAMILY_TRUST_CARDS = [
     icon: "📈",
     component: <OtherInvestmentsModalSMSF />,
     modalWidth: "900px",
+    firstNameKey: "Trust",
+    showSecondTotal: false,
+  },
+];
+
+const GOALS_OBJECTIVES_CARDS = [
+  {
+    title: "Goals",
+    key: "goals",
+    icon: "🎯",
+    component: null,
+    modalWidth: "800px",
   },
 ];
 
@@ -916,7 +945,7 @@ export const discoveryRoutes = [
     relativePath: "goals-objectives",
     stepTitle: "Goals & Objectives",
     stepIcon: "🎯",
-    showDiscoveryAddButton: true,
+    showDiscoveryAddButton: false,
     path: "/user/discovery/goals-objectives",
     ...withSpacing({
       icon: "🎯",
@@ -924,17 +953,16 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <GoalsObjectives />,
     condition: () => true,
-    isCompleted: createSectionCompletionCheck(
-      "goalsobjectives",
-      "goalsObjectives",
-    ),
+    isCompleted: createCardsCompletionCheck(GOALS_OBJECTIVES_CARDS),
+    Cards: GOALS_OBJECTIVES_CARDS,
   },
   {
     key: "/user/discovery/risk-profile",
     relativePath: "risk-profile",
     stepTitle: "Risk Profile",
+    showInDiscoveryStepper: false,
     stepIcon: "🌐",
     path: "/user/discovery/risk-profile",
     ...withSpacing({

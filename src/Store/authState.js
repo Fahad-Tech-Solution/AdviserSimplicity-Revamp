@@ -31,3 +31,6 @@ export const discoverySectionQuestionsAtom = atomWithStorage(
 
 /** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
 export const addDiscoverySectionsModalOpen = atom(false);
+
+
+/** Goals and Objectives Questions and Details */

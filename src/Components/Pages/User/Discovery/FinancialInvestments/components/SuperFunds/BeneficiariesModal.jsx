@@ -206,7 +206,6 @@ export default function BeneficiariesModal({ modalData }) {
       field: "relationshipStatus",
       type: "select",
       options: relationshipOptions,
-      width: 220,
       onChange: (value, record, column, currentForm) => {
         const selected = normalizeSelectValue(value);
         currentForm.setFieldValue([...record.formPath, column.field], selected);
@@ -224,7 +223,6 @@ export default function BeneficiariesModal({ modalData }) {
       key: "beneficiaryName",
       field: "beneficiaryName",
       type: "text",
-      width: 200,
     },
     {
       title: "DOB",
@@ -232,7 +230,6 @@ export default function BeneficiariesModal({ modalData }) {
       key: "DOB",
       field: "DOB",
       type: "date",
-      width: 150,
     },
     {
       title: "Share of Benefit",
@@ -240,7 +237,6 @@ export default function BeneficiariesModal({ modalData }) {
       key: "shareBenefit",
       field: "shareBenefit",
       type: "text",
-      width: 150,
       onChange: formatShareChange,
     },
   ];

@@ -15,6 +15,7 @@ import useApi from "../../../../../hooks/useApi.js";
 import AppModal from "../../../../Common/AppModal.jsx";
 import { renderModalContent } from "../../../../Common/renderModalContent.jsx";
 import useTitleBlock from "../../../../../hooks/useTitleBlock.jsx";
+import { toCommaAndDollar } from "../../../../../hooks/helpers.js";
 
 const FamilyTrust = () => {
   const location = useLocation();
@@ -54,6 +55,79 @@ const FamilyTrust = () => {
       }),
     [CurrentRoute?.Cards, discoveryQuestions],
   );
+
+  const FamilyTotal = useMemo(() => {
+    try {
+      const parseNum = (val) =>
+        val && typeof val === "string"
+          ? parseFloat(val.replace(/[^0-9.-]+/g, "")) || 0
+          : typeof val === "number"
+            ? val
+            : 0;
+
+      const pickTotal = (
+        obj,
+        prefer = [
+          "trustTotal",
+          "propertyPortfolio",
+          "totalDebt",
+          "clientTotal",
+          "partnerTotal",
+          "jointTotal",
+        ],
+      ) => {
+        if (!obj || typeof obj !== "object") {
+          return 0;
+        }
+
+        for (const field of prefer) {
+          if (obj[field] !== undefined && obj[field] !== null) {
+            return parseNum(obj[field]);
+          }
+        }
+
+        return 0;
+      };
+
+      const assetKeys = [
+        "familyBank",
+        "familyTermDeposit",
+        "familyAustralianShare",
+        "familyMangedFunds",
+        "familyInvestmentProperties",
+        "familyOtherInvestment",
+      ];
+
+      const liabilityKeys = [
+        "familyInvestmentHomeLoan",
+        "familyInvestmentProperties",
+      ];
+
+      const assetsSum = assetKeys.reduce((acc, key) => {
+        return (
+          acc +
+          pickTotal(
+            discoveryQuestions?.[key] === "Yes" ? discoveryData?.[key] : "$0",
+          )
+        );
+      }, 0);
+
+      const liabilitiesSum = liabilityKeys.reduce((acc, key) => {
+        return (
+          acc +
+          pickTotal(
+            discoveryQuestions?.[key] === "Yes" ? discoveryData?.[key] : "$0",
+            ["totalDebt", "trustTotal", "propertyPortfolio"],
+          )
+        );
+      }, 0);
+
+      return toCommaAndDollar(assetsSum - liabilitiesSum);
+    } catch (error) {
+      console.error("Error calculating Family total:", error);
+      return "$0";
+    }
+  }, [discoveryData, discoveryQuestions]);
 
   return (
     <div>
@@ -113,16 +187,22 @@ const FamilyTrust = () => {
               return (
                 <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
                   <DiscoveryTotalsCard
-                    title={card.title}
+                    title={
+                      card?.key === "familyDetails"
+                        ? discoveryData?.familyDetails?.familyTrustOwner?.trustName || "Trust"
+                        : card.title
+                    }
                     icon={card.icon}
                     firstName={
                       card?.firstNameKey ||
                       discoveryData.personalDetails?.client?.clientPreferredName
                     }
                     firstTotal={
-                      discoveryData?.[card?.key]?.[
-                        card?.firstTotalKey || "clientTotal"
-                      ]
+                      card?.key === "familyDetails"
+                        ? FamilyTotal
+                        : discoveryData?.[card?.key]?.[
+                            card?.firstTotalKey || "clientTotal"
+                          ]
                     }
                     secondName={
                       card?.secondNameKey ||
@@ -136,6 +216,7 @@ const FamilyTrust = () => {
                     }
                     showPartner={
                       [
+                        "familyDetails",
                         "familyBank",
                         "familyTermDeposit",
                         "familyAustralianShare",
