@@ -190,7 +190,7 @@ export default function DiscoveryFlowLayout() {
   const pageTitle = matched?.stepTitle ?? "Discovery";
   const showDiscoveryAddButton = Boolean(matched?.showDiscoveryAddButton);
 
-  if (matched?.noDiscoveryLayout === true) {
+  if (location.pathname.includes("/user/discovery/risk-profile")) {
     return <Outlet />;
   } else {
     return (

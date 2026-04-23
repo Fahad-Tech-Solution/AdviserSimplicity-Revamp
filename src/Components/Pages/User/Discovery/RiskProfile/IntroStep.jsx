@@ -1,14 +1,20 @@
-import { Card, Radio } from "antd";
+import { Button, Card, Radio } from "antd";
 import React from "react";
-import RiskProfileInfoSVG from "../../../../../assets/image/SectionImages/RiskProfileInfoSVG.svg";
+import { useNavigate } from "react-router-dom";
 
-const IntroStep = ({ joinedProfile, onJoinedProfileChange, showPartner }) => {
+const IntroStep = ({
+  joinedProfile,
+  onJoinedProfileChange,
+  showPartner,
+  onClick,
+}) => {
+  const navigate = useNavigate();
   return (
     <div style={{ paddingTop: 56 }}>
       <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
         <h2
           style={{
-            marginBottom: 8,
+            marginBottom: 28,
             fontFamily: "Arial, sans-serif",
             fontSize: 26,
             fontWeight: 900,
@@ -17,12 +23,7 @@ const IntroStep = ({ joinedProfile, onJoinedProfileChange, showPartner }) => {
         >
           <strong>RISK PROFILE QUESTIONNAIRE</strong>
         </h2>
-        <div style={{ fontSize: 52, marginBottom: 8 }}>
-          {/* <img
-            src={RiskProfileInfoSVG}
-            alt="Risk Profile Questionnaire"
-            style={{ width: "100px", height: "130px" }}
-          /> */}
+        <div style={{ fontSize: 52, marginBottom: 28 }}>
           <svg
             width="180"
             height="130"
@@ -161,25 +162,126 @@ const IntroStep = ({ joinedProfile, onJoinedProfileChange, showPartner }) => {
         >
           RISK PROFILER: YOUR ATTITUDE TO INVESTING
         </div>
-        <p style={{ color: "#6b7280", marginBottom: 24 }}>
-          This questionnaire helps estimate investment risk tolerance. It should
-          be considered together with time horizon, cash flow needs, existing
-          commitments, and broader advice objectives.
+        <p
+          style={{
+            color: "#6b7280",
+            marginBottom: 28,
+            fontSize: "12.5px",
+            color: "rgb(55, 65, 81)",
+            fontFamily: "Arial, sans-serif",
+            lineHeight: "1.75",
+            margin: "0px auto 14px",
+            maxWidth: "700px",
+          }}
+        >
+          A Risk Profiler is a tool that can assist you in determining your
+          tolerance to risk and how that relates to particular investments. Your
+          risk profile is not the only information you should take into account
+          before making an investment decision. These tools do not take into
+          account your individual investment objectives, financial situation or
+          particular needs.
+          <br />
+          <br />
+          Because of this, before making any investment decision you should
+          consider whether the funds matched to your risk profile are
+          appropriate in light of your individual investment objectives,
+          financial circumstances and needs. This may include your need to
+          access funds, any pre-existing financial commitments you may have and
+          what other financial assets that you own.
+          <br />
+          <br />
+          This Risk Profiler questionnaire poses a series of questions and
+          assigns a weighting (score) against your responses. Your overall score
+          will reflect your approximate Risk profile based on certain industry
+          standards.
         </p>
-        <div style={{ marginBottom: 12, fontWeight: 600 }}>
-          Would you like to answer individually or as a couple?
+        <div
+          style={{
+            color: "#6b7280",
+            marginBottom: 12,
+            fontSize: "12.5px",
+            color: "rgb(55, 65, 81)",
+            fontFamily: "Arial, sans-serif",
+            lineHeight: "1.75",
+            margin: "0px auto 14px",
+            maxWidth: "700px",
+          }}
+        >
+          Would you like to answer this questionnaire individually or as a
+          couple?
         </div>
         <Radio.Group
           value={joinedProfile}
           onChange={(event) => onJoinedProfileChange(event.target.value)}
           optionType="button"
           buttonStyle="solid"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+          }}
         >
-          <Radio.Button value="Yes">Individually</Radio.Button>
-          <Radio.Button value="No" disabled={!showPartner}>
-            As a Couple
+          <Radio.Button
+            value="Yes"
+            style={{
+              border: "1px solid #22C55E",
+              color: joinedProfile === "No" ? "rgb(23 163 74)" : "#ffffff",
+              width: "180px",
+              height: "40px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "14px",
+              fontWeight: "700",
+              fontFamily: "Arial",
+            }}
+          >
+            No
+          </Radio.Button>
+          <Radio.Button
+            value="No"
+            disabled={!showPartner}
+            style={{
+              border: "1px solid #22C55E",
+              color: joinedProfile === "Yes" ? "rgb(23 163 74)" : "#ffffff",
+              width: "180px",
+              height: "40px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "14px",
+              fontWeight: "700",
+              fontFamily: "Arial",
+            }}
+          >
+            Yes
           </Radio.Button>
         </Radio.Group>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 12,
+          alignItems: "center",
+        }}
+      >
+        <Button
+          type="primary"
+          size="large"
+          style={{
+            marginTop: 0,
+            width: "360px",
+            fontsize: "14px",
+            fontWeight: "700",
+            fontFamily: "Arial",
+            borderRadius: "8px",
+            padding: "12px 24px",
+            boxShadow: " rgba(34, 197, 94, 0.3) 0px 2px 8px",
+          }}
+          onClick={onClick}
+        >
+          Submit
+        </Button>
       </div>
     </div>
   );

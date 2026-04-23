@@ -31,6 +31,8 @@ import Text from "antd/es/typography/Text.js";
 import Title from "antd/es/typography/Title.js";
 import RiskProfileSteps from "./RiskProfileSteps.jsx";
 import IntroStep from "./IntroStep.jsx";
+import QuestionStep from "./QuestionStep.jsx";
+import DetectionMatrixStep from "./DetectionMatrixStep.jsx";
 
 const { TextArea } = Input;
 
@@ -94,18 +96,19 @@ const QUESTION_STEPS = [
     question:
       "Would you like to answer this questionnaire individually or as a couple?",
     choices: [],
+    showInSteps: false,
   },
   {
     route: "q1",
     key: "question1",
     icon: "🏦",
-    title: "Question 1",
+    title: "Desired Liquidity",
     question:
-      "Accessibility of your funds. Based on your stated goals, how long can these funds remain invested before you require access to them?",
+      "Question 1: Accessibility of your Funds - Desired Liquidity. Based on your stated goals, how long do you envisage these funds can be invested before you require access to them?",
     choices: [
       "Less than one year",
-      "1 - 3 years",
-      "3 - 5 years",
+      "1 – 3 years",
+      "3 – 5 years",
       "More than 5 years",
     ],
   },
@@ -113,31 +116,32 @@ const QUESTION_STEPS = [
     route: "q2",
     icon: "💲",
     key: "question2",
-    title: "Question 2",
+    title: "Rate of return",
     question:
-      "What annual rate of return do you expect your investments to achieve in order to satisfy your previously stated goals?",
+      "Question 2: Your desired rate of return. What annual rate of return do you expect your investments to achieve in order to satisfy your previously stated goals?",
     choices: ["Less than 5%", "5% - 10%", "More than 10%"],
   },
   {
     route: "q3",
     icon: "📉",
     key: "question3",
-    title: "Question 3",
-    question: "Which response best describes your attitude toward investing?",
+    title: "Capital Risk",
+    question:
+      "Question 3: Your attitude to Capital Risk. Which response best describes your attitude toward investing?",
     choices: [
-      "The safety of my capital is of primary importance. I am happier to achieve a lower rate of return rather than risk a significant loss of capital.",
+      "The safety of my capital is of primary importance to me. I am happier to achieve a lower rate of return rather than risk any significant loss of my capital.",
       "I would like the value of my capital to remain relatively stable but it is important that my investments meet my income requirements.",
-      "I am comfortable with the value of my investment going up and down over time to try and achieve higher returns over the long term.",
-      "I am comfortable and prepared to take on high risk for the chance of getting higher returns over the long term.",
+      "I am comfortable with the value of my investment going up and down in value over time to try and achieve higher returns over the long term.",
+      "I'm comfortable and prepared to take on high risk for the chance of getting higher returns on my money over the long term.",
     ],
   },
   {
     route: "q4",
     icon: "🛒",
     key: "question4",
-    title: "Question 4",
+    title: "Inflation",
     question:
-      "How concerned are you with your savings being eroded due to inflation and the rising cost of necessities?",
+      "Question 4: Your concerns about inflation. How concerned are you with your savings being eroded due to inflation and the rising costs of necessities such as groceries, utilities, and healthcare.",
     choices: [
       "Not concerned",
       "Slightly concerned",
@@ -150,63 +154,66 @@ const QUESTION_STEPS = [
     route: "q5",
     icon: "📋",
     key: "question5",
-    title: "Question 5",
+    title: "Legislative Risk",
     question:
-      "Would you rearrange your finances to qualify for government benefits or tax advantages despite the risk of being worse off after future legislative changes?",
+      "Question 5: Your concerns about Legislative Risk. Investors often arrange their finances in order to qualify for government benefits and / or tax advantages. However, potential changes in the law risk leaving them worse off after those rearrangements have been made. Would you still rearrange your investments to qualify for these benefits, despite the risks of being worse off?",
     choices: [
-      "No, I would not do it if there is a risk I will be worse off.",
+      "No, I wouldn't do it if there's a risk, I'd be worse off.",
       "I would only do it if there is a slight risk I would be worse off.",
       "If there are potential changes in the law, I am willing to adjust my finances to protect my financial situation.",
-      "If it improves my situation now, I am willing to rearrange my finances regardless of future changes in the law.",
+      "If it improves my situation now, I'm willing to rearrange my investments and finances, regardless of future changes in the law.",
     ],
   },
   {
     route: "q6",
     icon: "💡",
     key: "question6",
-    title: "Question 6",
-    question: "How familiar are you with investment markets?",
+    title: "Investment knowledge",
+    question:
+      "Question 6: Your investment knowledge & experience. How familiar are you with Investment Markets?",
     choices: [
-      "I do not understand anything about investment markets.",
-      "I have a basic understanding. I know markets go up and down but I am not sure why.",
-      "I understand markets, diversification, and that different assets have different growth, income, and tax characteristics.",
-      "I am experienced with investment sectors and have previously invested in assets such as shares, ETFs, and managed funds.",
+      "I don’t understand anything about investment markets.",
+      "I have a basic understanding of investment markets. I know they go up and down but I'm not sure about the reasons behind these fluctuations.",
+      "I understand that markets like the Australian ASX 200 and US S&P 500 and others can go up and down, each with different income, growth, and tax characteristics. I understand the importance of diversification to help me reduce risk and avoid putting all my eggs in the one basket.",
+      "I am experienced with all investment sectors and understand the various factors that can impact investment performance. In the past, I have invested in some or all of the following assets: shares, ETFs, and managed funds.",
     ],
   },
   {
     route: "q7",
     icon: "📊",
     key: "question7",
-    title: "Question 7",
+    title: "Volatility",
     question:
-      "If you invested $100,000 a year ago and today it was worth $80,000, how would you feel?",
+      "Question 7: Your concern about volatility - The changes in how much money your investments make, and the chance of losing money. If you invested $100,000 a year ago and you find out today it's worth $80,000 how would you feel?",
     choices: [
-      "I would panic and sell my investment and move the remaining amount to cash.",
-      "I would feel nervous and might consider moving some or all of my money to a safer option.",
-      "I would stay confident in my strategy and stick to my long-term plan.",
-      "I would see this as an opportunity and, if I had more money, invest more into growth assets.",
+      "I would panic and sell my investment and then put the remaining amount in cash.",
+      "I would feel nervous, and I might consider moving some or all of my money to a safer option.",
+      "I would be confident in my investment strategy and keep my money where it is and stick to my long-term plan.",
+      "I would see this as an opportunity and if I had more money, invest into more growth assets such as Australian and international shares. ",
     ],
   },
   {
     route: "q8",
     icon: "🥧",
     key: "question8",
-    title: "Question 8",
-    question: "What level of investment risk are you comfortable with?",
+    title: "Asset allocation",
+    question:
+      "Question 8: Your investment preferences – Asset allocation. What level of investment risk are you comfortable with?",
     choices: [
-      "No risk. I do not want my capital to fall at all, even if I get a 0% return.",
-      "Low risk. I am comfortable allocating a small portion of money to the share market aiming for better returns than cash.",
-      "Medium risk. I am comfortable with a mix between growth assets and defensive assets.",
-      "I prefer a well diversified portfolio with more than 60% in Australian and international shares and property.",
-      "I prefer at least 80% in Australian and international shares and may go to 100% for higher long-term returns.",
+      "No risk and I don’t want my capital to go down at all even if I get a 0% return on my money.",
+      "I prefer low risk and am comfortable allocating a small portion (up to 40%) of my money to the share market aiming for better returns than the cash rate.",
+      "I am comfortable with a medium level of risk and have my money allocated with similar amounts between the share market and cash and fixed interest/term deposits.",
+      "I would prefer to have my money invested in a well diversified portfolio which includes more than 600% to Australian and international shares and property with the balance to cash and fixed interest/term deposits.",
+      "I would prefer to have a minimum of  80% of my money invested in   Australian and international shares, possibly up to 100% if needed, aiming for higher returns even if there are significant ups and downs and wild swings like recent market events such as  COVID (2020), or the Global Financial Crises (2008)  because I won't need the money for a long time (10 years minimum).",
     ],
   },
   {
     route: "detection-matrix",
     key: "detectionMatrix",
     title: "Detection Matrix",
+    icon: "🔲",
   },
-  { route: "cards", key: "cards", title: "Risk Profile Result" },
+  { route: "cards", key: "cards", title: "Risk Result", icon: "✅" },
 ];
 
 const QUESTION_KEYS = [
@@ -240,14 +247,14 @@ const CONFIRMATION_LABELS = [
 
 function buildParticipantDefaults() {
   return {
-    question1: null,
-    question2: null,
-    question3: null,
-    question4: null,
-    question5: null,
-    question6: null,
-    question7: null,
-    question8: null,
+    question1: 1,
+    question2: 1,
+    question3: 1,
+    question4: 1,
+    question5: 1,
+    question6: 1,
+    question7: 1,
+    question8: 1,
     riskGoal: "",
     riskDescription: "",
     happyWithResult: false,
@@ -333,6 +340,7 @@ function getQuestionChoice(stepKey, selectedIndex) {
 function buildConflictRows(values, includePartner) {
   const conflictRules = [
     {
+      affectedSteps: ["question2", "question3"],
       relationship: "Q2 Desired Return ↔ Q3 Capital Risk",
       check: (profile) =>
         getQuestionChoice("question2", profile.question2) === "More than 10%" &&
@@ -345,6 +353,7 @@ function buildConflictRows(values, includePartner) {
         "Higher returns generally require accepting more volatility. Confirm whether preserving capital or pursuing growth is the real priority.",
     },
     {
+      affectedSteps: ["question2", "question8"],
       relationship: "Q2 Desired Return ↔ Q8 Asset Allocation",
       check: (profile) =>
         getQuestionChoice("question2", profile.question2) === "More than 10%" &&
@@ -359,6 +368,7 @@ function buildConflictRows(values, includePartner) {
         "Cash and low-risk investments rarely deliver high returns. Confirm whether growth assets and their higher volatility are acceptable.",
     },
     {
+      affectedSteps: ["question1", "question8"],
       relationship: "Q1 Timeframe ↔ Q8 Asset Allocation",
       check: (profile) =>
         getQuestionChoice("question1", profile.question1) ===
@@ -374,6 +384,7 @@ function buildConflictRows(values, includePartner) {
         "Money needed in the short term is generally better suited to lower-risk and more liquid assets.",
     },
     {
+      affectedSteps: ["question3", "question7"],
       relationship: "Q3 Capital Risk ↔ Q7 Reaction to Volatility",
       check: (profile) =>
         ["comfortable", "high risk"].some((text) =>
@@ -392,6 +403,7 @@ function buildConflictRows(values, includePartner) {
         "Confirm emotional tolerance for market falls. A lower-risk profile may be more suitable if likely reactions do not match stated tolerance.",
     },
     {
+      affectedSteps: ["question6", "question8"],
       relationship: "Q6 Knowledge ↔ Q8 Asset Allocation",
       check: (profile) =>
         getQuestionChoice("question6", profile.question6)
@@ -421,118 +433,8 @@ function buildConflictRows(values, includePartner) {
         relationship: rule.relationship,
         inconsistency: rule.message,
         explanation: rule.explanation,
+        affectedSteps: rule.affectedSteps || [],
       })),
-  );
-}
-
-function QuestionStep({
-  step,
-  values,
-  includePartner,
-  clientName,
-  partnerName,
-  onAnswerChange,
-}) {
-  const participantCards = [
-    { key: "client", name: clientName || "Client" },
-    ...(includePartner
-      ? [{ key: "partner", name: partnerName || "Partner" }]
-      : []),
-  ];
-
-  return (
-    <div>
-      <Alert
-        type="info"
-        showIcon
-        style={{ marginBottom: 16 }}
-        message={step.title}
-        description={step.question}
-      />
-      <Row gutter={[16, 16]}>
-        {participantCards.map((participant) => (
-          <Col xs={24} lg={includePartner ? 12 : 24} key={participant.key}>
-            <Card
-              title={participant.name}
-              bordered
-              style={{ borderRadius: 16 }}
-            >
-              <Radio.Group
-                value={values?.[participant.key]?.[step.key]}
-                onChange={(event) =>
-                  onAnswerChange(participant.key, step.key, event.target.value)
-                }
-                style={{ width: "100%" }}
-              >
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  {step.choices.map((choice, index) => (
-                    <Radio
-                      key={`${participant.key}-${step.key}-${index}`}
-                      value={index}
-                    >
-                      {choice}
-                    </Radio>
-                  ))}
-                </Space>
-              </Radio.Group>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </div>
-  );
-}
-
-function DetectionMatrixStep({ conflicts, clientName, partnerName }) {
-  const columns = [
-    {
-      title: "Profile",
-      dataIndex: "profile",
-      key: "profile",
-      width: 140,
-      render: (value) => (
-        <Tag color="gold">
-          {value === "partner"
-            ? partnerName || "Partner"
-            : clientName || "Client"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Question Relationship",
-      dataIndex: "relationship",
-      key: "relationship",
-      width: 240,
-    },
-    {
-      title: "Inconsistency Detected",
-      dataIndex: "inconsistency",
-      key: "inconsistency",
-    },
-    {
-      title: "Adviser Explanation",
-      dataIndex: "explanation",
-      key: "explanation",
-    },
-  ];
-
-  return (
-    <Card bordered style={{ borderRadius: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Detection Matrix</h3>
-      <p style={{ color: "#6b7280" }}>
-        This matrix highlights potential inconsistencies between answers so they
-        can be discussed before finalising the profile.
-      </p>
-      <Table
-        columns={columns}
-        dataSource={conflicts}
-        pagination={false}
-        bordered
-        locale={{
-          emptyText: "No inconsistencies detected.",
-        }}
-      />
-    </Card>
   );
 }
 
@@ -766,6 +668,12 @@ export default function RiskProfile() {
     () => buildConflictRows(values, includePartner),
     [includePartner, values],
   );
+  const lockedStepKeys = useMemo(
+    () => [
+      ...new Set(conflicts.flatMap((conflict) => conflict.affectedSteps || [])),
+    ],
+    [conflicts],
+  );
 
   const handleJoinedProfileChange = (nextValue) => {
     setValues((prev) => ({
@@ -840,7 +748,9 @@ export default function RiskProfile() {
   const moveToStep = (stepIndex) => {
     const nextStep = QUESTION_STEPS[stepIndex];
     if (!nextStep) return;
-    navigate(nextStep.route || ".", { replace: false });
+    navigate(`/user/discovery/risk-profile/${nextStep.route || "."}`, {
+      replace: false,
+    });
   };
 
   const handleBack = () => {
@@ -959,6 +869,7 @@ export default function RiskProfile() {
         joinedProfile={values.joinedProfile}
         onJoinedProfileChange={handleJoinedProfileChange}
         showPartner={showPartner}
+        onClick={handleNext}
       />
     );
   }
@@ -1006,7 +917,11 @@ export default function RiskProfile() {
             </Title>
           </div>
         </div>
-        <RiskProfileSteps steps={QUESTION_STEPS} />
+        <RiskProfileSteps
+          currentStep={currentStep}
+          steps={QUESTION_STEPS}
+          lockedStepKeys={lockedStepKeys}
+        />
       </div>
 
       <Routes>
@@ -1066,7 +981,20 @@ export default function RiskProfile() {
         }}
       >
         {normalizedStepIndex > 0 ? (
-          <Button onClick={handleBack}>
+          <Button
+            onClick={handleBack}
+            style={{
+              padding: "20px 32px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 700,
+              fontFamily: "Arial",
+              color: "rgb(55, 65, 81)",
+              background: "rgb(255, 255, 255)",
+              cursor: "pointer",
+              transition: "0.2s",
+            }}
+          >
             <Space>
               <FaArrowLeftLong />
               Back
@@ -1079,7 +1007,21 @@ export default function RiskProfile() {
             Save Risk Profile
           </Button>
         ) : (
-          <Button type="primary" onClick={handleNext}>
+          <Button
+            type="primary"
+            onClick={handleNext}
+            style={{
+              padding: "20px 32px",
+              borderRadius: 8,
+              background: "rgb(34, 197, 94)",
+              color: "rgb(255, 255, 255)",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+              transition: "0.2s",
+            }}
+          >
             <Space>
               {normalizedStepIndex === 0 ? "Start" : "Next"}
               <FaArrowRightLong />
