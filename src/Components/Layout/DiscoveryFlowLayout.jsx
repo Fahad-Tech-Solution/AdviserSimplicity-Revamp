@@ -190,81 +190,87 @@ export default function DiscoveryFlowLayout() {
   const pageTitle = matched?.stepTitle ?? "Discovery";
   const showDiscoveryAddButton = Boolean(matched?.showDiscoveryAddButton);
 
-  return (
-    <div style={{ maxWidth: 1100, margin: "21px auto", padding: "0px 0 24px" }}>
-      <Text
-        style={{
-          display: "block",
-          fontSize: 11,
-          letterSpacing: 3,
-          color: PRIMARY_GREEN,
-          textTransform: "uppercase",
-          marginBottom: 8,
-          fontWeight: 400,
-          fontFamily: "Arial, sans-serif",
-        }}
+  if (matched?.noDiscoveryLayout === true) {
+    return <Outlet />;
+  } else {
+    return (
+      <div
+        style={{ maxWidth: 1100, margin: "21px auto", padding: "0px 0 24px" }}
       >
-        Discovery
-      </Text>
-      <Title
-        level={2}
-        style={{
-          marginTop: 18,
-          marginBottom: 24,
-          fontFamily: "Georgia, serif",
-          fontWeight: 400,
-          fontSize: 28,
-          color: "#111827",
-        }}
-        onClick={() => console.log(discoveryQuestions, discoveryData)}
-      >
-        {pageTitle}
-      </Title>
-
-      <DiscoveryStepper
-        pathname={location.pathname}
-        visibleRoutes={stepperRoutes}
-        onNavigate={handleStepNavigate}
-        discoveryData={discoveryData}
-        discoveryQuestions={discoveryQuestions}
-      />
-
-      {showDiscoveryAddButton ? (
-        <div
+        <Text
           style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 24,
+            display: "block",
+            fontSize: 11,
+            letterSpacing: 3,
+            color: PRIMARY_GREEN,
+            textTransform: "uppercase",
+            marginBottom: 8,
+            fontWeight: 400,
+            fontFamily: "Arial, sans-serif",
           }}
         >
-          <Button
-            type="primary"
-            shape="circle"
-            onClick={() => {
-              setModalOpen(true);
-              console.log(stepperRoutes, CurrentRoute);
-            }}
-            style={DISCOVERY_ADD_BUTTON_STYLE}
-          >
-            <PlusOutlined style={{ fontSize: 18, fontWeight: 700 }} />
-          </Button>
-        </div>
-      ) : null}
+          Discovery
+        </Text>
+        <Title
+          level={2}
+          style={{
+            marginTop: 18,
+            marginBottom: 24,
+            fontFamily: "Georgia, serif",
+            fontWeight: 400,
+            fontSize: 28,
+            color: "#111827",
+          }}
+          onClick={() => console.log(discoveryQuestions, discoveryData)}
+        >
+          {pageTitle}
+        </Title>
 
-      <AppModal
-        open={ModalOpen}
-        onClose={() => setModalOpen(false)}
-        title={CurrentRoute?.cardsSelectionTitle || ""}
-        width={780}
-        footer={null}
-      >
-        <CardsSelection
-          Cards={CurrentRoute?.Cards || []}
-          setModalOpen={setModalOpen}
+        <DiscoveryStepper
+          pathname={location.pathname}
+          visibleRoutes={stepperRoutes}
+          onNavigate={handleStepNavigate}
+          discoveryData={discoveryData}
+          discoveryQuestions={discoveryQuestions}
         />
-      </AppModal>
 
-      <Outlet />
-    </div>
-  );
+        {showDiscoveryAddButton ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 24,
+            }}
+          >
+            <Button
+              type="primary"
+              shape="circle"
+              onClick={() => {
+                setModalOpen(true);
+                console.log(stepperRoutes, CurrentRoute);
+              }}
+              style={DISCOVERY_ADD_BUTTON_STYLE}
+            >
+              <PlusOutlined style={{ fontSize: 18, fontWeight: 700 }} />
+            </Button>
+          </div>
+        ) : null}
+
+        <AppModal
+          open={ModalOpen}
+          onClose={() => setModalOpen(false)}
+          title={CurrentRoute?.cardsSelectionTitle || ""}
+          width={780}
+          footer={null}
+        >
+          <CardsSelection
+            Cards={CurrentRoute?.Cards || []}
+            setModalOpen={setModalOpen}
+          />
+        </AppModal>
+
+        <Outlet />
+      </div>
+    );
+  }
 }

@@ -51,6 +51,7 @@ import FamilyInvestmentTrust from "../Pages/User/Discovery/FamilyTrust/component
 import SMSFDetails from "../Pages/User/Discovery/SMSF/components/SMSFDetails/SMSFDetails.jsx";
 import SMSFAccumulationAccount from "../Pages/User/Discovery/SMSF/components/SMSFAccumulationAccount/SMSFAccumulationAccount.jsx";
 import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObjectives.jsx";
+import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -961,8 +962,10 @@ export const discoveryRoutes = [
   {
     key: "/user/discovery/risk-profile",
     relativePath: "risk-profile",
+    routePath: "risk-profile/*",
     stepTitle: "Risk Profile",
     showInDiscoveryStepper: false,
+    noDiscoveryLayout: true,
     stepIcon: "🌐",
     path: "/user/discovery/risk-profile",
     ...withSpacing({
@@ -971,7 +974,7 @@ export const discoveryRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <RiskProfile />,
     condition: () => true,
     isCompleted: createSectionCompletionCheck("riskprofile", "riskProfile"),
   },
