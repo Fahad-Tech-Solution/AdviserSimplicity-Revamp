@@ -280,7 +280,7 @@ export default function PensionAccountModal({ modalData }) {
       const saved = sectionData?.clientFK
         ? await patch(`/api/${sectionKey}/Update`, submissionData)
         : await post(`/api/${sectionKey}/Add`, submissionData);
-   
+
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         [sectionKey]: saved || submissionData,

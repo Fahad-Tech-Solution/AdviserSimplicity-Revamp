@@ -243,6 +243,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
+      // Goals and Objectives Questions and Details
       setSelectedClient(row);
 
       setGoalsSectionQuestions(goalsYesNoQuestionsRes);

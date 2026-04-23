@@ -339,7 +339,7 @@ export default function ProfessionalAdvisers({ modalData }) {
 
       const saved = sectionData?.clientFK
         ? await patch("/api/professionalAdviser/revamp/Update", payload)
-        : await post("/api/professionalAdviser/revamp/Add", payload);
+        : await post("/api/professionalAdviser/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

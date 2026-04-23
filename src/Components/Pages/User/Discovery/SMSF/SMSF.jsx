@@ -15,6 +15,7 @@ import useApi from "../../../../../hooks/useApi.js";
 import AppModal from "../../../../Common/AppModal.jsx";
 import { renderModalContent } from "../../../../Common/renderModalContent.jsx";
 import useTitleBlock from "../../../../../hooks/useTitleBlock.jsx";
+import { toCommaAndDollar } from "../../../../../hooks/helpers.js";
 
 const SMSF = () => {
   const location = useLocation();
@@ -54,6 +55,76 @@ const SMSF = () => {
       }),
     [CurrentRoute?.Cards, discoveryQuestions],
   );
+
+  const SMSFTotal = useMemo(() => {
+    try {
+      const parseNum = (val) =>
+        val && typeof val === "string"
+          ? parseFloat(val.replace(/[^0-9.-]+/g, "")) || 0
+          : typeof val === "number"
+            ? val
+            : 0;
+
+      const pickTotal = (
+        obj,
+        prefer = [
+          "SMSFTotal",
+          "propertyPortfolio",
+          "totalDebt",
+          "clientTotal",
+          "partnerTotal",
+          "jointTotal",
+        ],
+      ) => {
+        if (!obj || typeof obj !== "object") {
+          return 0;
+        }
+
+        for (const field of prefer) {
+          if (obj[field] !== undefined && obj[field] !== null) {
+            return parseNum(obj[field]);
+          }
+        }
+
+        return 0;
+      };
+
+      const assetKeys = [
+        "SMSFBank",
+        "SMSFTermDeposits",
+        "SMSFAustralianShares",
+        "SMSFManagedFunds",
+        "SMSFInvestmentProperties",
+        "SMSFOtherInvestment",
+      ];
+
+      const liabilityKeys = ["SMSFInvestmentLoan", "SMSFInvestmentProperties"];
+
+      const assetsSum = assetKeys.reduce((acc, key) => {
+        return (
+          acc +
+          pickTotal(
+            discoveryQuestions?.[key] === "Yes" ? discoveryData?.[key] : "$0",
+          )
+        );
+      }, 0);
+
+      const liabilitiesSum = liabilityKeys.reduce((acc, key) => {
+        return (
+          acc +
+          pickTotal(
+            discoveryQuestions?.[key] === "Yes" ? discoveryData?.[key] : "$0",
+            ["totalDebt", "SMSFTotal", "propertyPortfolio"],
+          )
+        );
+      }, 0);
+
+      return toCommaAndDollar(assetsSum - liabilitiesSum);
+    } catch (error) {
+      console.error("Error calculating SMSF totals:", error);
+      return "$0";
+    }
+  }, [discoveryData, discoveryQuestions]);
 
   return (
     <div>
@@ -120,9 +191,11 @@ const SMSF = () => {
                       discoveryData.personalDetails?.client?.clientPreferredName
                     }
                     firstTotal={
-                      discoveryData?.[card?.key]?.[
-                        card?.firstTotalKey || "clientTotal"
-                      ]
+                      card?.key === "SMSFDetails"
+                        ? SMSFTotal
+                        : discoveryData?.[card?.key]?.[
+                            card?.firstTotalKey || "clientTotal"
+                          ]
                     }
                     secondName={
                       card?.secondNameKey ||
@@ -136,6 +209,7 @@ const SMSF = () => {
                     }
                     showPartner={
                       [
+                        "SMSFDetails",
                         "SMSFBank",
                         "SMSFTermDeposits",
                         "SMSFAustralianShares",

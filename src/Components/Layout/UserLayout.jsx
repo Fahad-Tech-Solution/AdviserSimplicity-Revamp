@@ -286,7 +286,7 @@ export default function UserLayout() {
                   .map((r) => (
                     <Route
                       key={r.key}
-                      path={r.relativePath}
+                      path={r.routePath || r.relativePath}
                       element={
                         r.component ?? <Navigate to="/user" replace />
                       }
