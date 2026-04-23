@@ -10,6 +10,8 @@ import {
   MyClientsData,
   SelectedClient,
   userDashboardLoading,
+  goalsDataAtom,
+  goalsSectionQuestionsAtom,
 } from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
@@ -173,6 +175,8 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const setDiscoverySectionQuestions = useSetAtom(
     discoverySectionQuestionsAtom,
   );
+  const setGoalsData = useSetAtom(goalsDataAtom);
+  const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
 
   const { get } = useApi();
 
@@ -196,11 +200,32 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     console.log("row", row);
     let yesNoQuestionsRes = [];
     let fullDetailsRes = {};
+    let goalsYesNoQuestionsRes = [];
+    let goalsFullDetailsRes = {};
     try {
-      const [yesNoQuestionsResult, fullDetailsResult] = await Promise.allSettled([
+      const [yesNoQuestionsResult, fullDetailsResult, goalsYesNoQuestionsResult, goalsFullDetailsResult] = await Promise.allSettled([
         get(`/api/questions/${row?._id}`),
         get(`/api/dataOfAllSection/${row?._id}`),
+
+        get(`/api/goalsQuestions/getByClient/${row?._id}`),
+        get(`/api/CombinedGoalsAndObjectives/${row?._id}`),
+
       ]);
+
+
+
+      if (goalsYesNoQuestionsResult.status === "fulfilled") {
+        goalsYesNoQuestionsRes = goalsYesNoQuestionsResult.value;
+      } else {
+        // Assign default values for failed API call
+        goalsYesNoQuestionsRes = {};
+      }
+      if (goalsFullDetailsResult.status === "fulfilled") {
+        goalsFullDetailsRes = goalsFullDetailsResult.value;
+      } else {
+        // Assign default values for failed API call
+        goalsFullDetailsRes = {};
+      }
 
       if (yesNoQuestionsResult.status === "fulfilled") {
         yesNoQuestionsRes = yesNoQuestionsResult.value;
@@ -219,6 +244,21 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
       setSelectedClient(row);
+
+      setGoalsSectionQuestions(goalsYesNoQuestionsRes);
+      setGoalsData(goalsFullDetailsRes);
+
+      console.log(goalsYesNoQuestionsRes, "goalsYesNoQuestionsRes");
+      console.log(goalsFullDetailsRes, "goalsFullDetailsRes");
+
+
+
+
+
+
+
+
+
 
       const displayName = getClientLastName(row?.client || {}) || "Client";
       message.success(`"${displayName.toUpperCase()}" is active now`);

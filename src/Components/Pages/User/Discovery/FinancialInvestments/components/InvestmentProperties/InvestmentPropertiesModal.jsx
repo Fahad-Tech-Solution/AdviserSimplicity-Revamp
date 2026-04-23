@@ -160,7 +160,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
     const sectionData = discoveryData?.[modalData?.key] || {};
     const collectionKey = getCollectionKey(modalData?.key);
     const isOwnershipEnabled =
-        modalData?.key === "investmentPropertyDetails" 
+        modalData?.key === "investmentPropertyDetails"
     const pageLimit = modalData?.title === "SMSF_Investment Properties" ? 5 : 10;
 
     const lenderOptions = useMemo(() => {

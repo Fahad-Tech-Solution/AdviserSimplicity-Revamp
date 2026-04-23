@@ -47,7 +47,7 @@ import PersonalInsuranceModal from "../Pages/User/Discovery/PersonalInsurance/co
 import SMSF from "../Pages/User/Discovery/SMSF/SMSF.jsx";
 import FamilyTrust from "../Pages/User/Discovery/FamilyTrust/FamilyTrust.jsx";
 import FamilyInvestmentTrust from "../Pages/User/Discovery/FamilyTrust/components/FamilyInvestmentTrust.jsx";
-
+// import GoalsObjectives from "../Pages/User/Discovery/";
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
   import("../Pages/User/Discovery/PersonalDetails/PersonalDetails.jsx").then(
