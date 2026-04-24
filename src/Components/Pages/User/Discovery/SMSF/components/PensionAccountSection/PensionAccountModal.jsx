@@ -161,7 +161,7 @@ export default function PensionAccountModal({ modalData }) {
       const row = form.getFieldValue(["pensionData", memberIndex]) || {};
       setAccountsModalData({
         component: <SmsfPensionAccountsInnerModal />,
-        title: `${memberLabel(member)} — Pension accounts`,
+        title: `${memberLabel(member)}_Pension Benefits`,
         width: 700,
         memberIndex,
         memberLabel: memberLabel(member),

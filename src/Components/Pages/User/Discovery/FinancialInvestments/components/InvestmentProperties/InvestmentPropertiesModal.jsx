@@ -160,8 +160,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
     const sectionData = discoveryData?.[modalData?.key] || {};
     const collectionKey = getCollectionKey(modalData?.key);
     const isOwnershipEnabled =
-        modalData?.key === "investmentPropertyDetails" ||
-        modalData?.key === "familyInvestmentProperties";
+        modalData?.key === "investmentPropertyDetails"
     const pageLimit = modalData?.title === "SMSF_Investment Properties" ? 5 : 10;
 
     const lenderOptions = useMemo(() => {
@@ -636,7 +635,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
                 requiredMark={false}
             >
                 <Row gutter={[16, 16]}>
-                    <Col xs={24} md={6}>
+                    <Col xs={24} md={7}>
                         <Form.Item
                             label={`Number of ${modalData?.title || "Investment Properties"}`}
                             name="numberOfProperties"

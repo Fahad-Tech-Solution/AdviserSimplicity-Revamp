@@ -150,17 +150,17 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
 
       const detailMap = {
         pensionBenefits: {
-          title: `${memberLabel} Pension Benefits`,
+          title: `${memberLabel}_Pension Benefits`,
           width: 1500,
           component: <PensionBenefitsDetailsModal />,
         },
         pensionPayment: {
-          title: `${memberLabel} Annual Pension Payment`,
+          title: `${memberLabel}_Trust_Annual Pension Payment`,
           width: 900,
           component: <SmsfAnnualPensionPaymentModal />,
         },
         nominatedBeneficiaries: {
-          title: `${memberLabel} Beneficiaries`,
+          title: `${memberLabel}_Beneficiaries`,
           width: 1180,
           component: <BeneficiariesModal />,
         },
@@ -300,7 +300,7 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
               }}
             >
               <span style={{ fontWeight: 600 }}>
-                How many pension accounts does {memberLabel} have?
+              Number of Pension Benefits
               </span>
               <Form.Item name="NumberOfMap" style={{ marginBottom: 0 }}>
                 <Select

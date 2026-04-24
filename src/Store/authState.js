@@ -27,6 +27,14 @@ export const discoveryDataAtom = atomWithStorage("discoveryDataAtom", {});
 export const discoverySectionQuestionsAtom = atomWithStorage(
   "discoverySectionQuestionsAtom",
   {},
+  
+);
+
+export const goalsDataAtom = atomWithStorage("goalsDataAtom", {});
+export const goalsSectionQuestionsAtom = atomWithStorage(
+  "goalsSectionQuestionsAtom",
+  {},
+  
 );
 
 /** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
