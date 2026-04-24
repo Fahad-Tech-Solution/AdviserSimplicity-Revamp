@@ -220,7 +220,8 @@ export default function FamilyInvestmentTrust({ modalData }) {
   );
 
   const columns = useMemo(
-    () => [
+    () => {
+      const baseColumns = [
       {
         title: "No#",
         dataIndex: "rowNumber",
@@ -295,13 +296,13 @@ export default function FamilyInvestmentTrust({ modalData }) {
           name: "Open Trustee Names",
           onClick: (payload) => openTrusteeInnerModal(payload),
         },
-        onChange: (value, _record, column, currentForm) => {
-          currentForm.setFieldValue(column.field, value);
-          if (value === "Individual") {
-            currentForm.setFieldValue("trusteeName", "");
-            currentForm.setFieldValue("ACN", "");
-          }
-        },
+        // onChange: (value, _record, column, currentForm) => {
+        //   currentForm.setFieldValue(column.field, value);
+        //   if (value === "Individual") {
+        //     currentForm.setFieldValue("trusteeName", "");
+        //     currentForm.setFieldValue("ACN", "");
+        //   }
+        // },
       },
       {
         title: "Trustee Name",
@@ -337,8 +338,16 @@ export default function FamilyInvestmentTrust({ modalData }) {
         type: "text",
         placeholder: "Name of Accountant",
       },
-    ],
-    [openTrusteeInnerModal],
+    ];
+      if (trusteeType === "Individual") {
+        return baseColumns.filter(
+          (col) => col.key !== "trusteeName" && col.key !== "ACN",
+        );
+      }
+
+      return baseColumns;
+    },
+    [openTrusteeInnerModal, trusteeType],
   );
 
   const handleConfirmAndExit = async () => {

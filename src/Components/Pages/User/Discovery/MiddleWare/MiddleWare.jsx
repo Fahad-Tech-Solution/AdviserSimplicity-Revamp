@@ -237,10 +237,10 @@ function buildInitialValues(sectionData = {}, noJoint = false, config = {}) {
     joint: noJoint
       ? undefined
       : {
-          currentBalanceArray: sectionData?.joint || [],
-          currentBalance: sectionData?.jointCurrentBalance || "",
-          costBase: sectionData?.jointCostBaseTemp || "",
-        },
+        currentBalanceArray: sectionData?.joint || [],
+        currentBalance: sectionData?.jointCurrentBalance || "",
+        costBase: sectionData?.jointCostBaseTemp || "",
+      },
   };
 }
 
@@ -261,12 +261,12 @@ function buildSourceValues(formValues = {}, values = {}, config = {}) {
     joint: mergeBranch(formValues, values, "joint"),
     ...(customKeys.enabled
       ? {
-          [customKeys.valueKey]: mergeBranch(
-            formValues,
-            values,
-            customKeys.valueKey,
-          ),
-        }
+        [customKeys.valueKey]: mergeBranch(
+          formValues,
+          values,
+          customKeys.valueKey,
+        ),
+      }
       : {}),
   };
 }
@@ -292,15 +292,15 @@ function buildStandardPayload({
       : [],
     ...(includeJoint
       ? {
-          joint:
-            showPartner && includeJoint
-              ? sourceValues?.joint?.currentBalanceArray || []
-              : [],
-          jointCurrentBalance:
-            showPartner && includeJoint
-              ? sourceValues?.joint?.currentBalance || ""
-              : "",
-        }
+        joint:
+          showPartner && includeJoint
+            ? sourceValues?.joint?.currentBalanceArray || []
+            : [],
+        jointCurrentBalance:
+          showPartner && includeJoint
+            ? sourceValues?.joint?.currentBalance || ""
+            : "",
+      }
       : {}),
     clientCurrentBalance: sourceValues?.client?.currentBalance || "",
     partnerCurrentBalance: showPartner
@@ -309,34 +309,34 @@ function buildStandardPayload({
     clientTotal:
       showPartner && includeJoint
         ? calculateDisplayTotal(
-            sourceValues?.client?.currentBalance,
-            sourceValues?.joint?.currentBalance,
-          )
+          sourceValues?.client?.currentBalance,
+          sourceValues?.joint?.currentBalance,
+        )
         : sourceValues?.client?.currentBalance || "",
     partnerTotal:
       showPartner && includeJoint
         ? calculateDisplayTotal(
-            sourceValues?.partner?.currentBalance,
-            sourceValues?.joint?.currentBalance,
-          )
+          sourceValues?.partner?.currentBalance,
+          sourceValues?.joint?.currentBalance,
+        )
         : showPartner
           ? sourceValues?.partner?.currentBalance || ""
           : "",
     ...(hasCostBase
       ? {
-          clientCostBaseTemp: sourceValues?.client?.costBase || "",
-          partnerCostBaseTemp: showPartner
-            ? sourceValues?.partner?.costBase || ""
-            : "",
-          ...(includeJoint
-            ? {
-                jointCostBaseTemp:
-                  showPartner && includeJoint
-                    ? sourceValues?.joint?.costBase || ""
-                    : "",
-              }
-            : {}),
-        }
+        clientCostBaseTemp: sourceValues?.client?.costBase || "",
+        partnerCostBaseTemp: showPartner
+          ? sourceValues?.partner?.costBase || ""
+          : "",
+        ...(includeJoint
+          ? {
+            jointCostBaseTemp:
+              showPartner && includeJoint
+                ? sourceValues?.joint?.costBase || ""
+                : "",
+          }
+          : {}),
+      }
       : {}),
     _id: undefined,
   };
@@ -362,8 +362,8 @@ function buildCustomPayload({
     [customKeys.totalKey]: customSource?.currentBalance || "",
     ...(hasCostBase
       ? {
-          [`${customKeys.valueKey}CostBaseTemp`]: customSource?.costBase || "",
-        }
+        [`${customKeys.valueKey}CostBaseTemp`]: customSource?.costBase || "",
+      }
       : {}),
   };
 }
@@ -399,6 +399,10 @@ const MiddleWare = ({ modalData }) => {
     "managedFund",
     "investmentBondFinance",
     "SMSFAustralianShares",
+    "familyMangedFunds",
+    "familyAustralianShare",
+    "SMSFManagedFunds"
+
   ].includes(modalData?.key);
 
   const showPartner = !["Single", "Widowed"].includes(
@@ -443,6 +447,7 @@ const MiddleWare = ({ modalData }) => {
         parentForm: currentForm,
         sectionKey: modalData?.key,
         tableRows: modalData?.tableRows || 10,
+        countLabel: MIDDLEWARE_CONFIG[modalData?.key]?.countLabel || "",
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
@@ -571,20 +576,20 @@ const MiddleWare = ({ modalData }) => {
     const sourceValues = buildSourceValues(formValues, values, config);
     const payload = customKeys.enabled
       ? buildCustomPayload({
-          sectionData,
-          discoveryData,
-          sourceValues,
-          config,
-          hasCostBase,
-        })
+        sectionData,
+        discoveryData,
+        sourceValues,
+        config,
+        hasCostBase,
+      })
       : buildStandardPayload({
-          sectionData,
-          discoveryData,
-          sourceValues,
-          showPartner,
-          includeJoint,
-          hasCostBase,
-        });
+        sectionData,
+        discoveryData,
+        sourceValues,
+        showPartner,
+        includeJoint,
+        hasCostBase,
+      });
 
     try {
       setSaving(true);
@@ -618,8 +623,8 @@ const MiddleWare = ({ modalData }) => {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Financial section"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Financial section"}`,
       );
     } finally {
       setSaving(false);
