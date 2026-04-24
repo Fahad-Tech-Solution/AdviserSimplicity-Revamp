@@ -434,7 +434,7 @@ const MiddleWare = ({ modalData }) => {
     ({ record, form: currentForm }) => {
       setDetailModalOpen(true);
       setDetailModalData({
-        title: `${record?.owner || "Owner"} ${modalData?.title || ""}`.trim(),
+        title: `${record?.owner || "Owner"}_${modalData?.title || ""}`.trim(),
         component: modalData?.innerComponent || null,
         icon: modalData?.icon || null,
         width: config.width || 680,

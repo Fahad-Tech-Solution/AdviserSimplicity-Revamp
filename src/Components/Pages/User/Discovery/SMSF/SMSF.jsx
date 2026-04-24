@@ -184,7 +184,10 @@ const SMSF = () => {
               return (
                 <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
                   <DiscoveryTotalsCard
-                    title={card.title}
+                    title={
+                      card.key === "SMSFDetails" ?
+                        discoveryData?.SMSFDetails?.SMSFOwner?.fundName || "SMSF" :
+                        card.title}
                     icon={card.icon}
                     firstName={
                       card?.firstNameKey ||
@@ -194,8 +197,8 @@ const SMSF = () => {
                       card?.key === "SMSFDetails"
                         ? SMSFTotal
                         : discoveryData?.[card?.key]?.[
-                            card?.firstTotalKey || "clientTotal"
-                          ]
+                        card?.firstTotalKey || "clientTotal"
+                        ]
                     }
                     secondName={
                       card?.secondNameKey ||
@@ -204,7 +207,7 @@ const SMSF = () => {
                     }
                     secondTotal={
                       discoveryData?.[card.key]?.[
-                        card?.secondTotalKey || "partnerTotal"
+                      card?.secondTotalKey || "partnerTotal"
                       ]
                     }
                     showPartner={
@@ -224,14 +227,16 @@ const SMSF = () => {
                     OpenModal={() => {
                       setModalOpen(true);
                       setModalData({
-                        title: [
-                          "SMSFInvestmentLoan",
-                          "SMSFInvestmentProperties",
-                          "SMSFOtherInvestment",
-                          "SMSFPensionPhase",
-                        ].includes(card.key)
-                          ? "SMSF_" + card.title
-                          : card.title,
+                        title:
+                          card.key === "SMSFAccumulationDetails" ?
+                            discoveryData?.SMSFDetails?.SMSFOwner?.fundName + "_" + card.title :
+                            [
+                              "SMSFInvestmentLoan",
+                              "SMSFInvestmentProperties",
+                              "SMSFOtherInvestment",
+                            ].includes(card.key)
+                              ? "SMSF_" + card.title
+                              : card.title,
                         component: card.component,
                         icon: card.icon,
                         key: card.key,

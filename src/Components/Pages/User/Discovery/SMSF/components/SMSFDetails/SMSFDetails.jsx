@@ -277,8 +277,8 @@ export default function SMSFDetails({ modalData }) {
     [corporateDirectorOptions, editing, form],
   );
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const baseColumns = [
       {
         title: "No#",
         dataIndex: "rowNumber",
@@ -344,14 +344,15 @@ export default function SMSFDetails({ modalData }) {
           name: "Open Trustee Name",
           onClick: (payload) => openTrusteeInnerModal(payload),
         },
-        onChange: (value, _record, column, currentForm) => {
-          currentForm.setFieldValue(column.field, value);
-          if (value === "Individual") {
-            currentForm.setFieldValue("trusteeName", "");
-            currentForm.setFieldValue("ACN", "");
-          }
-        },
+        // onChange: (value, _record, column, currentForm) => {
+        //   currentForm.setFieldValue(column.field, value);
+          // if (value === "Individual") {
+          //   currentForm.setFieldValue("trusteeName", "");
+          //   currentForm.setFieldValue("ACN", "");
+          // }
+        // },
       },
+      
       {
         title: "Trustee Name",
         dataIndex: "trusteeName",
@@ -403,9 +404,16 @@ export default function SMSFDetails({ modalData }) {
         type: "text",
         placeholder: "Name of Accountant",
       },
-    ],
-    [form, openBareTrustInnerModal, openTrusteeInnerModal],
-  );
+    ];
+
+    if (trusteeType === "Individual") {
+      return baseColumns.filter(
+        (col) => col.key !== "trusteeName" && col.key !== "ACN",
+      );
+    }
+
+    return baseColumns;
+  }, [form, openBareTrustInnerModal, openTrusteeInnerModal, trusteeType]);
 
   const handleConfirmAndExit = async () => {
     await form.validateFields();

@@ -232,7 +232,8 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       editable: false,
     },
     {
-      title: "Accumulation Balance",
+      // title: "Accumulation Balance",
+      title: "Current Balance",
       dataIndex: "accountBalance",
       key: "accountBalance",
       field: "accountBalance",
@@ -241,16 +242,16 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       onChange: (value, record, column, currentForm) =>
         recalculate(currentForm, column.field, value?.target?.value),
     },
-    {
-      title: "Tax Free %",
-      dataIndex: "taxFree",
-      key: "taxFree",
-      field: "taxFree",
-      type: "text",
-      placeholder: "Tax Free %",
-      onChange: (value, record, column, currentForm) =>
-        recalculate(currentForm, column.field, value?.target?.value),
-    },
+    // {
+    //   title: "Tax Free %",
+    //   dataIndex: "taxFree",
+    //   key: "taxFree",
+    //   field: "taxFree",
+    //   type: "text",
+    //   placeholder: "Tax Free %",
+    //   onChange: (value, record, column, currentForm) =>
+    //     recalculate(currentForm, column.field, value?.target?.value),
+    // },
     {
       title: "Commencement Date",
       dataIndex: "commencementDate",
@@ -283,15 +284,7 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       disabled: true,
       placeholder: "Taxable Component",
     },
-    {
-      title: "Unrestricted Non Preserved",
-      dataIndex: "unrestrictedNonPreserved",
-      key: "unrestrictedNonPreserved",
-      field: "unrestrictedNonPreserved",
-      type: "text",
-      disabled: true,
-      placeholder: "Unrestricted Non Preserved",
-    },
+  
     {
       title: "Restricted Non Preserved",
       dataIndex: "restrictedNonPreserved",
@@ -301,6 +294,15 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       placeholder: "Restricted Non Preserved",
       onChange: (value, record, column, currentForm) =>
         recalculate(currentForm, column.field, value?.target?.value),
+    },
+    {
+      title: "Unrestricted Non Preserved",
+      dataIndex: "unrestrictedNonPreserved",
+      key: "unrestrictedNonPreserved",
+      field: "unrestrictedNonPreserved",
+      type: "text",
+      disabled: true,
+      placeholder: "Unrestricted Non Preserved",
     },
     {
       title: "Preserved Amount",
