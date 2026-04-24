@@ -1013,17 +1013,31 @@ export default function RiskProfile() {
             style={{
               padding: "20px 32px",
               borderRadius: 8,
-              background: "rgb(34, 197, 94)",
-              color: "rgb(255, 255, 255)",
+              background:
+                conflicts.length > 0
+                  ? "rgb(209, 213, 219)"
+                  : "rgb(34, 197, 94)",
+              color:
+                conflicts.length > 0
+                  ? "rgb(156, 163, 175)"
+                  : "rgb(255, 255, 255)",
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+              boxShadow:
+                conflicts.length > 0
+                  ? "none"
+                  : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
               transition: "0.2s",
             }}
+            disabled={conflicts.length > 0}
           >
             <Space>
-              {normalizedStepIndex === 0 ? "Start" : "Next"}
+              {conflicts.length > 0
+                ? " 🔒 Review Inconsistencies"
+                : normalizedStepIndex === 0
+                  ? "Start"
+                  : "Next"}
               <FaArrowRightLong />
             </Space>
           </Button>
