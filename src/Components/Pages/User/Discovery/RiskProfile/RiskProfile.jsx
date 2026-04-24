@@ -26,13 +26,18 @@ import {
 } from "react-router-dom";
 import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
 import useApi from "../../../../../hooks/useApi.js";
-import { discoveryDataAtom } from "../../../../../store/authState.js";
+import {
+  discoveryDataAtom,
+  riskProfileDataAtom,
+} from "../../../../../store/authState.js";
 import Text from "antd/es/typography/Text.js";
 import Title from "antd/es/typography/Title.js";
 import RiskProfileSteps from "./RiskProfileSteps.jsx";
 import IntroStep from "./IntroStep.jsx";
 import QuestionStep from "./QuestionStep.jsx";
 import DetectionMatrixStep from "./DetectionMatrixStep.jsx";
+import ResultsStep from "./ResultsStep.jsx";
+import ResultsStepV2 from "./ResultsStep copy.jsx";
 
 const { TextArea } = Input;
 
@@ -43,7 +48,8 @@ const RISK_GOALS = [
     range: { lowest: 9, highest: 13 },
     description:
       "Your responses indicate an extremely low tolerance to investment risk or a short investment time frame. The only appropriate investment for this profile or time frame is a cash-based investment such as bank accounts, cash management trusts and term deposits.",
-    chart: [90, 10, 0, 0],
+    chart: [100],
+    goalColor: "34, 197, 94",
   },
   {
     title: "Conservative",
@@ -51,7 +57,8 @@ const RISK_GOALS = [
     range: { lowest: 14, highest: 18 },
     description:
       "As a Conservative investor, you are primarily focused on preserving capital and are prepared to accept lower returns to reduce the chance of losses. A defensive mix with more cash and fixed interest and a smaller allocation to growth assets would generally suit this profile. Minimum investment term: 2 years.",
-    chart: [70, 20, 10, 0],
+    chart: [13, 13, 4, 35, 15, 20],
+    goalColor: "34, 197, 94",
   },
   {
     title: "Moderately Conservative",
@@ -59,7 +66,8 @@ const RISK_GOALS = [
     range: { lowest: 19, highest: 23 },
     description:
       "As a Moderately Conservative investor, you seek steady growth with a preference for smaller short-term fluctuations. A diversified portfolio with a balance of defensive assets and growth assets would generally suit this profile. Minimum investment term: 3 years.",
-    chart: [55, 25, 20, 0],
+    chart: [22.5, 22.5, 5, 25, 10, 15],
+    goalColor: "253, 224, 71",
   },
   {
     title: "Balanced",
@@ -67,7 +75,8 @@ const RISK_GOALS = [
     range: { lowest: 24, highest: 28 },
     description:
       "As a Balanced investor, you are prepared to accept moderate short-term fluctuations for the opportunity of better medium to long-term returns. A diversified portfolio with a bias toward growth assets would generally suit this profile. Minimum investment term: 5 years.",
-    chart: [35, 25, 30, 10],
+    chart: [31.5, 31.5, 7, 14, 7, 9],
+    goalColor: "251, 146, 60",
   },
   {
     title: "Growth",
@@ -75,7 +84,8 @@ const RISK_GOALS = [
     range: { lowest: 29, highest: 33 },
     description:
       "As a Growth investor, you focus on assets with stronger long-term growth potential and accept higher short-term volatility to pursue stronger returns. A diversified portfolio with a strong bias to growth investments would generally suit this profile. Minimum investment term: 5 years.",
-    chart: [20, 15, 45, 20],
+    chart: [39, 39, 7, 7.5, 4.5, 3],
+    goalColor: "248, 113, 113",
   },
   {
     title: "High Growth",
@@ -83,7 +93,8 @@ const RISK_GOALS = [
     range: { lowest: 34, highest: 100 },
     description:
       "As a High Growth investor, you are comfortable with significant short-term fluctuations in performance in pursuit of stronger long-term gains. A portfolio dominated by growth assets such as shares and property would generally suit this profile. Minimum investment term: 7 years.",
-    chart: [5, 10, 55, 30],
+    chart: [45, 45, 8, 0, 0, 2],
+    goalColor: "248, 113, 113",
   },
 ];
 
@@ -255,7 +266,7 @@ function buildParticipantDefaults() {
     question6: 1,
     question7: 1,
     question8: 1,
-    riskGoal: "",
+    riskGoal: "Conservative",
     riskDescription: "",
     happyWithResult: false,
     confirmRiskProfileCheck1: false,
@@ -330,6 +341,12 @@ function buildValuesFromApi(data, showPartner) {
     client: syncComputedGoal(nextValues.client),
     partner: syncComputedGoal(nextValues.partner),
   };
+}
+
+function hasRiskProfileData(data) {
+  return Boolean(
+    data && typeof data === "object" && Object.keys(data).length > 0,
+  );
 }
 
 function getQuestionChoice(stepKey, selectedIndex) {
@@ -438,161 +455,15 @@ function buildConflictRows(values, includePartner) {
   );
 }
 
-function ResultCard({
-  title,
-  participantKey,
-  participantName,
-  participant,
-  onGoalChange,
-  onTextChange,
-  onCheckboxChange,
-}) {
-  const goalOptions = RISK_GOALS.map((goal) => ({
-    label: goal.value,
-    value: goal.value,
-  }));
-
-  const selectedGoal = getRiskGoalByValue(participant?.riskGoal);
-  const chart = selectedGoal?.chart || [25, 25, 25, 25];
-  const chartLabels = ["Cash", "Fixed Interest", "Shares", "Property"];
-
-  return (
-    <Card bordered style={{ borderRadius: 16, height: "100%" }}>
-      <div style={{ textAlign: "center", marginBottom: 12 }}>
-        <h3 style={{ marginBottom: 4 }}>{participantName}</h3>
-        <Tag color="green">{participant?.riskGoal || "Not Calculated"}</Tag>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        {chart.map((value, index) => (
-          <div
-            key={`${participantKey}-chart-${index}`}
-            style={{ marginBottom: 8 }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 12,
-                marginBottom: 4,
-              }}
-            >
-              <span>{chartLabels[index]}</span>
-              <span>{value}%</span>
-            </div>
-            <Progress percent={value} showInfo={false} strokeColor="#22c55e" />
-          </div>
-        ))}
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Risk Goal</div>
-        <Select
-          style={{ width: "100%" }}
-          options={goalOptions}
-          value={participant?.riskGoal || undefined}
-          onChange={(value) => onGoalChange(participantKey, value)}
-        />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Description</div>
-        <Alert
-          type="success"
-          showIcon
-          message={participant?.riskDescription || "No description available"}
-        />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Adviser Note</div>
-        <TextArea
-          rows={4}
-          value={participant?.addNoteDescription || ""}
-          onChange={(event) =>
-            onTextChange(
-              participantKey,
-              "addNoteDescription",
-              event.target.value,
-            )
-          }
-          placeholder="Add note"
-        />
-      </div>
-
-      <Space direction="vertical" size={10} style={{ width: "100%" }}>
-        <Checkbox
-          checked={participant?.happyWithResult}
-          onChange={(event) =>
-            onCheckboxChange(
-              participantKey,
-              "happyWithResult",
-              event.target.checked,
-            )
-          }
-        >
-          I confirm that I am happy with this risk result.
-        </Checkbox>
-        {CONFIRMATION_LABELS.map((item) => (
-          <Checkbox
-            key={`${participantKey}-${item.key}`}
-            checked={participant?.[item.key]}
-            onChange={(event) =>
-              onCheckboxChange(participantKey, item.key, event.target.checked)
-            }
-          >
-            {item.label}
-          </Checkbox>
-        ))}
-      </Space>
-    </Card>
-  );
-}
-
-function ResultsStep({
-  values,
-  includePartner,
-  clientName,
-  partnerName,
-  onGoalChange,
-  onTextChange,
-  onCheckboxChange,
-}) {
-  return (
-    <Row gutter={[16, 16]}>
-      <Col xs={24} lg={includePartner ? 12 : 24}>
-        <ResultCard
-          title="Client"
-          participantKey="client"
-          participantName={clientName}
-          participant={values.client}
-          onGoalChange={onGoalChange}
-          onTextChange={onTextChange}
-          onCheckboxChange={onCheckboxChange}
-        />
-      </Col>
-      {includePartner ? (
-        <Col xs={24} lg={12}>
-          <ResultCard
-            title="Partner"
-            participantKey="partner"
-            participantName={partnerName}
-            participant={values.partner}
-            onGoalChange={onGoalChange}
-            onTextChange={onTextChange}
-            onCheckboxChange={onCheckboxChange}
-          />
-        </Col>
-      ) : null}
-    </Row>
-  );
-}
-
 export default function RiskProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+
+  const riskProfileData = useAtomValue(riskProfileDataAtom);
+  const setRiskProfileData = useSetAtom(riskProfileDataAtom);
+
   const { get, post, patch } = useApi();
 
   const showPartner = !["Single", "Widowed"].includes(
@@ -603,10 +474,25 @@ export default function RiskProfile() {
   const partnerName =
     discoveryData?.personalDetails?.partner?.partnerPreferredName || "Partner";
 
-  const [values, setValues] = useState(() => getInitialFormValues(showPartner));
-  const [loading, setLoading] = useState(true);
+  const hasPreloadedRiskProfile = hasRiskProfileData(riskProfileData);
+  const [values, setValues] = useState(() =>
+    hasPreloadedRiskProfile
+      ? buildValuesFromApi(riskProfileData, showPartner)
+      : getInitialFormValues(showPartner),
+  );
+  const [loading, setLoading] = useState(() => !hasPreloadedRiskProfile);
   const [submitting, setSubmitting] = useState(false);
-  const [recordId, setRecordId] = useState("");
+  const [recordId, setRecordId] = useState(() => riskProfileData?._id || "");
+
+  useEffect(() => {
+    if (!hasRiskProfileData(riskProfileData)) {
+      return;
+    }
+
+    setValues(buildValuesFromApi(riskProfileData, showPartner));
+    setRecordId(riskProfileData?._id || "");
+    setLoading(false);
+  }, [riskProfileData, showPartner]);
 
   useEffect(() => {
     const loadRiskProfile = async () => {
@@ -621,6 +507,7 @@ export default function RiskProfile() {
         if (result && result._id) {
           setRecordId(result._id);
           setValues(buildValuesFromApi(result, showPartner));
+          setRiskProfileData(result);
           if (
             location.pathname === "/user/discovery/risk-profile" ||
             location.pathname === "/user/discovery/risk-profile/"
@@ -831,6 +718,7 @@ export default function RiskProfile() {
         response && typeof response === "object" ? response : payload;
       setValues(buildValuesFromApi(saved, showPartner));
       setRecordId(saved?._id || recordId);
+      setRiskProfileData(saved);
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         riskProfile: saved,
@@ -956,15 +844,34 @@ export default function RiskProfile() {
         <Route
           path="cards"
           element={
-            <ResultsStep
-              values={values}
-              includePartner={includePartner}
-              clientName={clientName}
-              partnerName={partnerName}
-              onGoalChange={handleGoalChange}
-              onTextChange={handleTextChange}
-              onCheckboxChange={handleCheckboxChange}
-            />
+            <>
+              <ResultsStep
+                riskGoals={RISK_GOALS}
+                values={values}
+                includePartner={includePartner}
+                clientName={clientName}
+                partnerName={partnerName}
+                onGoalChange={handleGoalChange}
+                onTextChange={handleTextChange}
+                onCheckboxChange={handleCheckboxChange}
+                getRiskGoalByValue={getRiskGoalByValue}
+                CONFIRMATION_LABELS={CONFIRMATION_LABELS}
+                calculateScore={calculateScore}
+              />
+              {/* <ResultsStepV2
+                riskGoals={RISK_GOALS}
+                values={values}
+                includePartner={includePartner}
+                clientName={clientName}
+                partnerName={partnerName}
+                onGoalChange={handleGoalChange}
+                onTextChange={handleTextChange}
+                onCheckboxChange={handleCheckboxChange}
+                getRiskGoalByValue={getRiskGoalByValue}
+                CONFIRMATION_LABELS={CONFIRMATION_LABELS}
+                calculateScore={calculateScore}
+              /> */}
+            </>
           }
         />
         <Route path="*" element={<Navigate to="." replace />} />
@@ -1003,8 +910,24 @@ export default function RiskProfile() {
         ) : null}
 
         {currentStep?.route === "cards" ? (
-          <Button type="primary" loading={submitting} onClick={handleSubmit}>
-            Save Risk Profile
+          <Button
+            type="primary"
+            loading={submitting}
+            onClick={handleSubmit}
+            style={{
+              padding: "20px 32px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow:
+                conflicts.length > 0
+                  ? "none"
+                  : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+              transition: "0.2s",
+            }}
+          >
+            Submit
           </Button>
         ) : (
           <Button

@@ -12,6 +12,7 @@ import {
   userDashboardLoading,
   goalsDataAtom,
   goalsSectionQuestionsAtom,
+  riskProfileDataAtom,
 } from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
@@ -181,6 +182,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const { get } = useApi();
 
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
+  const setRiskProfileData = useSetAtom(riskProfileDataAtom);
   const [openDropdownRowId, setOpenDropdownRowId] = useState(null);
   const [selectLoadingRowId, setSelectLoadingRowId] = useState(null);
   /** Sync guard so onOpenChange cannot close the menu before Select loading state is applied. */
@@ -202,17 +204,21 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     let fullDetailsRes = {};
     let goalsYesNoQuestionsRes = [];
     let goalsFullDetailsRes = {};
+    let riskProfileRes = {};
     try {
-      const [yesNoQuestionsResult, fullDetailsResult, goalsYesNoQuestionsResult, goalsFullDetailsResult] = await Promise.allSettled([
+      const [
+        yesNoQuestionsResult,
+        fullDetailsResult,
+        goalsYesNoQuestionsResult,
+        goalsFullDetailsResult,
+        riskProfileResult,
+      ] = await Promise.allSettled([
         get(`/api/questions/${row?._id}`),
         get(`/api/dataOfAllSection/${row?._id}`),
-
         get(`/api/goalsQuestions/getByClient/${row?._id}`),
         get(`/api/CombinedGoalsAndObjectives/${row?._id}`),
-
+        get(`/api/riskProfile/${row?._id}`),
       ]);
-
-
 
       if (goalsYesNoQuestionsResult.status === "fulfilled") {
         goalsYesNoQuestionsRes = goalsYesNoQuestionsResult.value;
@@ -241,6 +247,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         fullDetailsRes = {};
       }
 
+      if (riskProfileResult.status === "fulfilled") {
+        riskProfileRes = riskProfileResult.value;
+      } else {
+        // Assign default values for failed API call
+        riskProfileRes = {};
+      }
+
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
       // Goals and Objectives Questions and Details
@@ -249,17 +262,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       setGoalsSectionQuestions(goalsYesNoQuestionsRes);
       setGoalsData(goalsFullDetailsRes);
 
-      console.log(goalsYesNoQuestionsRes, "goalsYesNoQuestionsRes");
-      console.log(goalsFullDetailsRes, "goalsFullDetailsRes");
-
-
-
-
-
-
-
-
-
+      setRiskProfileData(riskProfileRes);
 
       const displayName = getClientLastName(row?.client || {}) || "Client";
       message.success(`"${displayName.toUpperCase()}" is active now`);

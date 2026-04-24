@@ -14,7 +14,6 @@ export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
 /** Team / employees list from GET /api/user/Employees (bootstrap). */
 export const MyTeamData = atomWithStorage("MyTeamData", []);
 
-
 export const InvestmentOffersData = atomWithStorage("InvestmentOffersData", []);
 
 /** Currently selected household row from My Clients (set when user chooses Select). */
@@ -27,18 +26,17 @@ export const discoveryDataAtom = atomWithStorage("discoveryDataAtom", {});
 export const discoverySectionQuestionsAtom = atomWithStorage(
   "discoverySectionQuestionsAtom",
   {},
-  
 );
 
 export const goalsDataAtom = atomWithStorage("goalsDataAtom", {});
 export const goalsSectionQuestionsAtom = atomWithStorage(
   "goalsSectionQuestionsAtom",
   {},
-  
 );
+
+export const riskProfileDataAtom = atomWithStorage("riskProfileDataAtom", {});
 
 /** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
 export const addDiscoverySectionsModalOpen = atom(false);
-
 
 /** Goals and Objectives Questions and Details */
