@@ -1,9 +1,10 @@
-import { Button, Col, DatePicker, Form, Row, Space } from "antd";
+import { Button, Col, DatePicker, Divider, Form, Row, Space } from "antd";
 import dayjs from "dayjs";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -70,6 +71,7 @@ function buildContributionEntries(financialYears, entries = []) {
 
 export default function ContributionsModal({ modalData }) {
   const [form] = Form.useForm();
+  const renderTitleBlock = useTitleBlock();
   const initialValues = useMemo(() => {
     const values = buildInitialValues(modalData?.initialValues || {});
     return {
@@ -218,10 +220,21 @@ export default function ContributionsModal({ modalData }) {
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24}>

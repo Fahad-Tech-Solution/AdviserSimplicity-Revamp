@@ -95,6 +95,24 @@ function buildInitialValues(sectionData, allowPartner) {
   };
 }
 
+function SwitchPopupDisplay({ value, onClick }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span>{value || "No"}</span>
+      {value === "Yes" ? (
+        <Button
+          type="primary"
+          size="small"
+          style={{ width: 25, padding: 0 }}
+          onClick={onClick}
+        >
+          ↗
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function EmploymentModal({ modalData }) {
   const [form] = Form.useForm();
   const ownerOptions = useOwnerOptions();
@@ -174,10 +192,12 @@ export default function EmploymentModal({ modalData }) {
             key: "salaryDetail",
             width: 900,
             closeModal: () => setOpenModal(false),
+            switchToEditMode: () => setEditing(true),
             parentForm: form,
             ownerKey,
             ownerLabel,
             totalValue: form.getFieldValue([ownerKey, "grossSalary"]) || "",
+            noCancelButton: true,
           });
         },
       },
@@ -204,12 +224,39 @@ export default function EmploymentModal({ modalData }) {
             key: "salaryPackaging",
             width: 900,
             closeModal: () => setOpenModal(false),
+            switchToEditMode: () => setEditing(true),
             parentForm: form,
             ownerKey,
             ownerLabel,
+            noCancelButton: true,
           });
         },
       },
+
+      renderView: ({ value, record }) => (
+        <SwitchPopupDisplay
+          value={value}
+          onClick={() => {
+            const ownerKey = record?.formPath;
+            const ownerLabel = record?.ownerLabel || ownerKey;
+
+            setOpenModal(true);
+            setOpenModalData({
+              title: `${ownerLabel} Salary Packaging`,
+              component: <SalaryPackageModal />,
+              icon: null,
+              key: "salaryPackaging",
+              width: 900,
+              closeModal: () => setOpenModal(false),
+              switchToEditMode: () => setEditing(true),
+              parentForm: form,
+              ownerKey,
+              ownerLabel,
+              noCancelButton: true,
+            });
+          }}
+        />
+      ),
     },
     {
       title: "Leave Entitlements",
@@ -232,12 +279,39 @@ export default function EmploymentModal({ modalData }) {
             key: "leaveEntitlements",
             width: 900,
             closeModal: () => setOpenModal(false),
+            switchToEditMode: () => setEditing(true),
             parentForm: form,
             ownerKey,
             ownerLabel,
+            noCancelButton: true,
           });
         },
       },
+
+      renderView: ({ value, record }) => (
+        <SwitchPopupDisplay
+          value={value}
+          onClick={() => {
+            const ownerKey = record?.formPath;
+            const ownerLabel = record?.ownerLabel || ownerKey;
+
+            setOpenModal(true);
+            setOpenModalData({
+              title: `${ownerLabel} Leave Entitlements`,
+              component: <LeaveEntitlements />,
+              icon: null,
+              key: "leaveEntitlements",
+              width: 900,
+              closeModal: () => setOpenModal(false),
+              switchToEditMode: () => setEditing(true),
+              parentForm: form,
+              ownerKey,
+              ownerLabel,
+              noCancelButton: true,
+            });
+          }}
+        />
+      ),
     },
     {
       title: "Choice of Fund",
@@ -469,9 +543,10 @@ export default function EmploymentModal({ modalData }) {
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
-        title={openModalData?.title || "N/A"}
+        onClose={openModalData?.closeModal || (() => setOpenModal(false))}
+        // title={openModalData?.title || "N/A"}
         width={openModalData?.width || 1000}
+        noCancelButton={openModalData?.noCancelButton || false}
       >
         {renderModalContent(openModalData)}
       </AppModal>

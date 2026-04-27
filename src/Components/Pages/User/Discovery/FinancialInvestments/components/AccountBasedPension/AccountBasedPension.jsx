@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space, message } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -10,6 +10,7 @@ import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import AnnualAdviceModal from "../SuperFunds/AnnualAdviceModal.jsx";
 import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
 import AcountBalanceBenefit from "./AcountBalanceBenefit.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -54,7 +55,8 @@ function buildAccountBasedPensionEntries(count, entries = []) {
           : {},
       pensionPayment: entry?.pensionPayment || "",
       pensionPaymentArray:
-        entry?.pensionPaymentArray && typeof entry.pensionPaymentArray === "object"
+        entry?.pensionPaymentArray &&
+        typeof entry.pensionPaymentArray === "object"
           ? entry.pensionPaymentArray
           : {},
       nominatedBeneficiaries: entry?.nominatedBeneficiaries || "No",
@@ -146,6 +148,7 @@ function SwitchPopupDisplay({ value, onClick }) {
 
 export default function AccountBasedPension({ modalData }) {
   const investmentOffers = useAtomValue(InvestmentOffersData);
+  const renderTitleBlock = useTitleBlock();
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -168,7 +171,11 @@ export default function AccountBasedPension({ modalData }) {
   const count = Form.useWatch("NumberOfMap", form);
   const watchedPensions = Form.useWatch("accountBasedPensions", form);
   const fundOptions = useMemo(
-    () => buildFundOptions(investmentOffers, initialValues?.accountBasedPensions || []),
+    () =>
+      buildFundOptions(
+        investmentOffers,
+        initialValues?.accountBasedPensions || [],
+      ),
     [initialValues?.accountBasedPensions, investmentOffers],
   );
 
@@ -217,7 +224,8 @@ export default function AccountBasedPension({ modalData }) {
     }
 
     const compare = (a, b) =>
-      parseCurrencyValue(a?.balanceBenefit) - parseCurrencyValue(b?.balanceBenefit);
+      parseCurrencyValue(a?.balanceBenefit) -
+      parseCurrencyValue(b?.balanceBenefit);
 
     const multiplier = sortState.order === "descend" ? -1 : 1;
     return [...rows].sort((a, b) => compare(a, b) * multiplier);
@@ -281,8 +289,9 @@ export default function AccountBasedPension({ modalData }) {
         platform: fund,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       };
 
       const detailMap = {
@@ -322,7 +331,11 @@ export default function AccountBasedPension({ modalData }) {
         ...(detailMap[type] || {}),
       });
     },
-    [fundOptions, investmentOffers?.AccountBasedPensions, modalData?.ownerLabel],
+    [
+      fundOptions,
+      investmentOffers?.AccountBasedPensions,
+      modalData?.ownerLabel,
+    ],
   );
 
   const columns = [
@@ -347,7 +360,10 @@ export default function AccountBasedPension({ modalData }) {
           currentForm.getFieldValue([...record.formPath, column.field]),
         );
 
-        currentForm.setFieldValue([...record.formPath, column.field], nextValue);
+        currentForm.setFieldValue(
+          [...record.formPath, column.field],
+          nextValue,
+        );
 
         if (currentValue && currentValue !== nextValue) {
           currentForm.setFieldValue([...record.formPath], {
@@ -389,9 +405,7 @@ export default function AccountBasedPension({ modalData }) {
         parseCurrencyValue(a?.balanceBenefit) -
         parseCurrencyValue(b?.balanceBenefit),
       sortOrder:
-        sortState.columnKey === "balanceBenefit"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "balanceBenefit" ? sortState.order : undefined,
     },
     {
       title: "Annual Pension Payment",
@@ -469,6 +483,7 @@ export default function AccountBasedPension({ modalData }) {
     syncParentValues(savedEntries);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -480,11 +495,22 @@ export default function AccountBasedPension({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
+
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 1000}
       >
         {renderModalContent(detailModalData)}

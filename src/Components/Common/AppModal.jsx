@@ -17,6 +17,7 @@ export default function AppModal({
   centered = true,
   blur = true,
   destroyOnClose = true,
+  noCancelButton = false,
 }) {
   return (
     <Modal
@@ -28,6 +29,7 @@ export default function AppModal({
       width={width}
       centered={centered}
       footer={footer}
+      closable={!noCancelButton}
       mask={{ enabled: true, blur: blur, closable: false }}
       destroyOnHidden={destroyOnClose} // ❗ new prop
       className={`${className}`.trim()}

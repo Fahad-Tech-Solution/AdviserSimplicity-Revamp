@@ -1,8 +1,9 @@
-import { Button, Col, Form, Row, Select, Space } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../hooks/helpers";
+import useTitleBlock from "../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -85,13 +86,15 @@ function resolveSorterKey(sorter) {
 
 export default function PortfolioValueModal({ modalData }) {
   const [form] = Form.useForm();
+  const renderTitleBlock = useTitleBlock();
   const initialValues = useMemo(
     () => ({
       NumberOfMap:
-        (modalData?.initialValues?.portfolioArray ||
+        (
+          modalData?.initialValues?.portfolioArray ||
           modalData?.initialValues?.portfolioValueArray ||
-          []).length ||
-        undefined,
+          []
+        ).length || undefined,
       investments:
         modalData?.initialValues?.portfolioArray ||
         modalData?.initialValues?.portfolioValueArray ||
@@ -111,7 +114,7 @@ export default function PortfolioValueModal({ modalData }) {
 
   const investments =
     Form.useWatch("investments", form) || initialValues.investments || [];
-    
+
   const offerOptions = useMemo(
     () =>
       buildOfferOptions(modalData?.platform, initialValues?.investments || []),
@@ -262,9 +265,7 @@ export default function PortfolioValueModal({ modalData }) {
         parseCurrencyValue(a?.investmentValue) -
         parseCurrencyValue(b?.investmentValue),
       sortOrder:
-        sortState.columnKey === "investmentValue"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "investmentValue" ? sortState.order : undefined,
     },
     {
       title: "Action",
@@ -315,6 +316,7 @@ export default function PortfolioValueModal({ modalData }) {
 
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -326,7 +328,17 @@ export default function PortfolioValueModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24} md={10}>

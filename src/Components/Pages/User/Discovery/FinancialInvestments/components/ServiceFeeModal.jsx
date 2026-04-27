@@ -1,8 +1,9 @@
-import { Button, Col, Form, Row, Space } from "antd";
+import { Button, Col, Divider, Form, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../hooks/helpers";
+import useTitleBlock from "../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -79,6 +80,7 @@ export default function ServiceFeeModal({ modalData }) {
     () => buildServiceFeeInitialValues(modalData?.initialValues || {}),
     [modalData],
   );
+  const renderTitleBlock = useTitleBlock();
   const [editing, setEditing] = useState(
     () => !hasServiceFeeValues(initialValues),
   );
@@ -187,10 +189,21 @@ export default function ServiceFeeModal({ modalData }) {
 
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24}>

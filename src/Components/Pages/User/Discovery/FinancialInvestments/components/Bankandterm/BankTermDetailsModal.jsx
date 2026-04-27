@@ -1,4 +1,4 @@
-import { Alert, Button, Col, Form, Row, Select, Space } from "antd";
+import { Alert, Button, Col, Divider, Form, Row, Select, Space } from "antd";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { useAtomValue } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import SwitchPopupDisplay from "../../../../../../Common/SwitchPopupDisplay";
 import AppModal from "../../../../../../Common/AppModal";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import ServiceFeeModal from "../ServiceFeeModal";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -45,10 +46,10 @@ function buildEntries(count, entries = [], sectionKey) {
     currentBalance: entries?.[index]?.currentBalance || "",
     ...(["SMSFBank", "familyBank"].includes(sectionKey)
       ? {
-        serviceFee: entries?.[index]?.serviceFee || "",
-        serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
-        serviceFeeType: entries?.[index]?.serviceFeeType || "",
-      }
+          serviceFee: entries?.[index]?.serviceFee || "",
+          serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
+          serviceFeeType: entries?.[index]?.serviceFeeType || "",
+        }
       : {}),
   }));
 }
@@ -102,14 +103,14 @@ export default function BankTermDetailsModal({ modalData }) {
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const renderTitleBlock = useTitleBlock();
   const [openModalData, setOpenModalData] = useState(null);
   const [sortState, setSortState] = useState({
     columnKey: null,
     order: null,
   });
   const config = {
-    countLabel:
-      modalData?.countLabel || "no count label",
+    countLabel: modalData?.countLabel || "no count label",
     pageLimit: modalData?.tableRows || 10,
   };
   const ownerArray =
@@ -195,7 +196,7 @@ export default function BankTermDetailsModal({ modalData }) {
       const fieldPath = payload?.record?.formPath || [];
       const rowValues =
         currentForm?.getFieldValue?.(fieldPath) || payload?.record || {};
-console.log(modalData?.ownerLabel)
+
       setOpenModal(true);
       setOpenModalData({
         title: `${modalData?.ownerLabel || "Owner"}_Ongoing Annual Fee`,
@@ -208,6 +209,8 @@ console.log(modalData?.ownerLabel)
           setOpenModal(false);
           setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
     },
     [form],
@@ -266,7 +269,9 @@ console.log(modalData?.ownerLabel)
           parseCurrencyValue(a?.currentBalance) -
           parseCurrencyValue(b?.currentBalance),
         sortOrder:
-          sortState.columnKey === "currentBalance" ? sortState.order : undefined,
+          sortState.columnKey === "currentBalance"
+            ? sortState.order
+            : undefined,
       },
       {
         title: "Action",
@@ -363,6 +368,7 @@ console.log(modalData?.ownerLabel)
 
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -374,15 +380,27 @@ console.log(modalData?.ownerLabel)
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={openModalData?.title}
         width={openModalData?.width || 1000}
+        noCancelButton={openModalData?.noCancelButton || false}
       >
         {renderModalContent(openModalData)}
       </AppModal>
+
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
+
       <Form
         form={form}
         initialValues={initialValues}

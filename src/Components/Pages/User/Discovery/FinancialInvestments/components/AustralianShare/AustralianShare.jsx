@@ -1,4 +1,14 @@
-import { Alert, Button, Col, Form, Row, Select, Space, Tooltip } from "antd";
+import {
+  Alert,
+  Button,
+  Col,
+  Divider,
+  Form,
+  Row,
+  Select,
+  Space,
+  Tooltip,
+} from "antd";
 import axios from "axios";
 import React, { useEffect, useMemo, useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
@@ -6,6 +16,7 @@ import { IoReload, IoWarning } from "react-icons/io5";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -126,6 +137,8 @@ export default function AustralianShare({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const renderTitleBlock = useTitleBlock();
+
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
       modalData?.ownerKey,
@@ -450,9 +463,7 @@ export default function AustralianShare({ modalData }) {
         return getNumeric(a.currentBalance) - getNumeric(b.currentBalance);
       },
       sortOrder:
-        sortState.columnKey === "currentBalance"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "currentBalance" ? sortState.order : undefined,
     },
     {
       title: "Action",
@@ -498,7 +509,17 @@ export default function AustralianShare({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form
         form={form}
         initialValues={initialValues}

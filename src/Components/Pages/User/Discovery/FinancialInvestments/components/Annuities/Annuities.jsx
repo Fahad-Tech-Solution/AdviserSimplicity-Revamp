@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space, message } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -10,6 +10,7 @@ import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import AnnualAdviceModal from "../SuperFunds/AnnualAdviceModal.jsx";
 import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -180,6 +181,7 @@ export default function Annuities({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const renderTitleBlock = useTitleBlock();
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -306,8 +308,9 @@ export default function Annuities({ modalData }) {
         platform: provider,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       };
 
       const detailMap = {
@@ -550,6 +553,7 @@ export default function Annuities({ modalData }) {
     syncParentValues(savedEntries);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -561,15 +565,26 @@ export default function Annuities({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 1000}
       >
         {renderModalContent(detailModalData)}
       </AppModal>
+
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>

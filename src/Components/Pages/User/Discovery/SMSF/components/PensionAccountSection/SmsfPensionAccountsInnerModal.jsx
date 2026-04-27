@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space, message } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal.jsx";
@@ -8,6 +8,7 @@ import BeneficiariesModal from "../../../FinancialInvestments/components/SuperFu
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 import PensionBenefitsDetailsModal from "./PensionBenefitsDetailsModal.jsx";
 import SmsfAnnualPensionPaymentModal from "./SmsfAnnualPensionPaymentModal.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -77,6 +78,7 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
   const [editing, setEditing] = useState(true);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
+  const renderTitleBlock = useTitleBlock();
 
   const memberIndex = modalData?.memberIndex ?? 0;
   const memberLabel = modalData?.memberLabel || "Member";
@@ -106,15 +108,14 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
 
   const rows = useMemo(
     () =>
-      buildPensionAccountEntries(
-        Number(count) || 0,
-        getStoredAccounts(),
-      ).map((item, index) => ({
-        key: `smsf-pension-acct-${memberIndex}-${index}`,
-        formPath: ["pensionAccounts", index],
-        rowNumber: index + 1,
-        ...item,
-      })),
+      buildPensionAccountEntries(Number(count) || 0, getStoredAccounts()).map(
+        (item, index) => ({
+          key: `smsf-pension-acct-${memberIndex}-${index}`,
+          formPath: ["pensionAccounts", index],
+          rowNumber: index + 1,
+          ...item,
+        }),
+      ),
     [count, getStoredAccounts, memberIndex, watchedAccounts],
   );
 
@@ -144,8 +145,9 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
         initialValues: rowValues,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       };
 
       const detailMap = {
@@ -275,14 +277,26 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
 
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
+
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 1000}
       >
         {renderModalContent(detailModalData)}
@@ -300,7 +314,7 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
               }}
             >
               <span style={{ fontWeight: 600 }}>
-              Number of Pension Benefits
+                Number of Pension Benefits
               </span>
               <Form.Item name="NumberOfMap" style={{ marginBottom: 0 }}>
                 <Select
