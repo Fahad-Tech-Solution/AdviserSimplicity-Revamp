@@ -181,9 +181,10 @@ export default function CreditCardModal({ modalData }) {
   const creditCards =
     Form.useWatch("creditCards", form) || initialValues.creditCards;
 
-  useEffect(() => {
-    form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    useEffect(() => {
+      form.setFieldsValue(initialValues);
+      setEditing(!sectionData?._id);
+    }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
     const count = Number(numberOfCards) || 1;
@@ -212,6 +213,10 @@ export default function CreditCardModal({ modalData }) {
     form.setFieldValue("numberOfCards", filtered.length);
   };
 
+  function requiredRule(message) {
+    return { required: true, message };
+  }
+
   const columns = useMemo(
     () => [
       {
@@ -237,6 +242,7 @@ export default function CreditCardModal({ modalData }) {
         key: "LoanBalance",
         field: "LoanBalance",
         type: "text",
+        rules: [requiredRule("Outstanding Balance is required")],
         placeholder: "Outstanding Balance",
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
@@ -244,6 +250,8 @@ export default function CreditCardModal({ modalData }) {
             formatNumericInput(value, { currency: true }),
           );
         },
+       
+
       },
       {
         title: "Loan Type",

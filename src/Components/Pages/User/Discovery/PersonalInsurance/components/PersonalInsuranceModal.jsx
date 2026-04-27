@@ -196,8 +196,9 @@ function OwnerTabContent({
       descriptionPlaceholder: "Enter loading or exclusion details",
       closeModal: () => {
         setOpenModal(false);
-        setEditing(true);
       },
+      switchToEditMode: () => setEditing(true),
+      noCancelButton: true,
     });
   };
 
@@ -222,8 +223,9 @@ function OwnerTabContent({
         (fieldPath ? form.getFieldValue(fieldPath) : null) || record || {},
       closeModal: () => {
         setOpenModal(false);
-        setEditing(true);
       },
+      switchToEditMode: () => setEditing(true),
+      noCancelButton: true,
     });
   };
 
@@ -326,8 +328,9 @@ function OwnerTabContent({
             record,
             closeModal: () => {
               setOpenModal(false);
-              setEditing(true);
             },
+            switchToEditMode: () => setEditing(true),
+            noCancelButton: true,
           });
         },
       },
@@ -358,8 +361,9 @@ function OwnerTabContent({
             record,
             closeModal: () => {
               setOpenModal(false);
-              setEditing(true);
             },
+            switchToEditMode: () => setEditing(true),
+            noCancelButton: true,
           });
         },
       },
@@ -389,8 +393,10 @@ function OwnerTabContent({
             record,
             closeModal: () => {
               setOpenModal(false);
-              setEditing(true);
             },
+            switchToEditMode: () => setEditing(true),
+            noCancelButton: true,
+            
           });
         },
       },
@@ -498,7 +504,8 @@ function OwnerTabContent({
       <AppModal
         open={openModal}
         onClose={modalData?.closeModal}
-        title={modalData?.title}
+        // title={modalData?.title}
+        noCancelButton={modalData?.noCancelButton || false}
         width={modalData?.width}
       >
         {renderModalContent(modalData)}
@@ -625,7 +632,10 @@ export default function PersonalInsuranceModal({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    setEditing(!discoveryData?.personalInsurance?._id);
+  }, [form, initialValues, discoveryData?.personalInsurance?._id]);
+
+ 
 
   const handleFinish = async (values) => {
     const pi = personalInsurance && typeof personalInsurance === "object"

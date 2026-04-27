@@ -1,7 +1,8 @@
-import { Button, Col, Form, Row, Select, Space } from "antd";
+import { Button, Col, Form, Divider, Row, Select, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -71,6 +72,7 @@ function hasMeaningfulValues(initialValues = {}) {
 }
 
 export default function SMSFBareTrustInnerModal({ modalData }) {
+  const renderTitleBlock = useTitleBlock();
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
 
@@ -200,7 +202,17 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form
         form={form}
         initialValues={initialValues}

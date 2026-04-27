@@ -331,7 +331,7 @@ export default function ProfessionalAdvisers({ modalData }) {
         ? partnerAdvisers.length > 0
           ? "Yes"
           : "No"
-        : "",
+        : undefined,
     };
 
     try {

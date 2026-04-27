@@ -1,11 +1,13 @@
-import { Button, Col, Form, Input, Row, Space } from "antd";
+import { Button, Col,Divider, Form, Input, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const { TextArea } = Input;
 
 export default function EstatePlanningDescriptionModal({ modalData }) {
   const [form] = Form.useForm();
+  const renderTitleBlock = useTitleBlock();
   const rowDescriptionKey =
     modalData?.rowDescriptionKey || "estatePlanningdescription";
   const descriptionLabel = modalData?.descriptionLabel || "Description";
@@ -42,20 +44,31 @@ export default function EstatePlanningDescriptionModal({ modalData }) {
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} requiredMark={false}
-      colon={false}
-      layout="vertical"
-      styles={{
-        label: {
-          fontWeight: "600",
-          fontSize: "13px",
-          fontFamily: "Arial, serif",
-        },
-      }}
+        colon={false}
+        layout="vertical"
+        styles={{
+          label: {
+            fontWeight: "600",
+            fontSize: "13px",
+            fontFamily: "Arial, serif",
+          },
+        }}
       >
         <Row gutter={[16, 16]}>
           <Col xs={24}>

@@ -254,8 +254,9 @@ export default function SMSFDetails({ modalData }) {
         maxCount: 6,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
     },
     [editing, form],
@@ -281,9 +282,11 @@ export default function SMSFDetails({ modalData }) {
         },
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
+    
     },
     [corporateDirectorOptions, editing, form],
   );
@@ -480,7 +483,8 @@ export default function SMSFDetails({ modalData }) {
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        // title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 720}
       >
         {renderModalContent(detailModalData)}

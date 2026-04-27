@@ -524,7 +524,8 @@ export default function InvestmentLoanModal({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    setEditing(!sectionData?._id);
+  }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
     if (!allowPartner && selectedOwners?.includes("partner")) {

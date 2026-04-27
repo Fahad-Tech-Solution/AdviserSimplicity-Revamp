@@ -139,10 +139,12 @@ export default function InvestmentPropertyLoanBalanceModal({ modalData }) {
     };
   }, [resolvedValueArray]);
 
+
+
   useEffect(() => {
     form.setFieldsValue(initialValues);
     setLocalEditing(!hasMeaningfulValues(initialValues));
-  }, [form, initialValues]);
+  }, [form, initialValues, modalData?._id]);
 
   const columns = useMemo(
     () => [
