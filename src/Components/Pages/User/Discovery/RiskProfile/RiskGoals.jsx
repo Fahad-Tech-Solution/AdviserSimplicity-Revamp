@@ -5,13 +5,26 @@ import goal3 from "../../../../../assets/image/METER/3- Moderate.png";
 import goal4 from "../../../../../assets/image/METER/4- Moderately high.png";
 import goal5 from "../../../../../assets/image/METER/5-  High.png";
 import goal6 from "../../../../../assets/image/METER/6- Very High.png";
-import { Button, Col, Row } from "antd";
+import { Button, Col, Divider, Row } from "antd";
+import useTitleBlock from "../../../../../hooks/useTitleBlock";
+import { IoCloseOutline } from "react-icons/io5";
+import { GoArrowRight } from "react-icons/go";
+import TextArea from "antd/es/input/TextArea";
 
 const RiskGoals = ({ modalData }) => {
   const { onGoalChange } = modalData;
+  const renderTitleBlock = useTitleBlock();
+
   const [selectedGoal, setSelectedGoal] = useState(
     modalData?.participant?.riskGoal,
   );
+  const [riskDescription, setRiskDescription] = useState(
+    modalData?.participant?.riskDescription,
+  );
+  const [addNoteDescription, setAddNoteDescription] = useState(
+    modalData?.participant?.addNoteDescription,
+  );
+
   const Profiles = {
     "Cash Management": {
       title: "Cash Management",
@@ -521,38 +534,285 @@ const RiskGoals = ({ modalData }) => {
 
   const profile = Profiles[modalData?.participant?.riskGoal];
 
+  if (modalData?.participant?.riskGoal !== selectedGoal) {
+    return (
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          {renderTitleBlock({
+            title: "Change Risk Profile",
+            titleStyle: {
+              fontSize: "16px",
+              fontWeight: "600",
+              color: "rgb(17, 24, 39)",
+            },
+            clossButton: true,
+            onClose: () => modalData?.closeModal?.(),
+            isEditing: true,
+          })}
+          <Divider style={{ margin: "12px 0px 0px 0px" }} />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "20px",
+            padding: "12px 16px",
+            background: "rgb(249, 250, 251)",
+            borderRadius: "10px",
+            border: "1px solid rgb(229, 231, 235)",
+          }}
+        >
+          <div
+            style={{
+              flex: "1 1 0%",
+              textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "Arial",
+                fontSize: "10px",
+                color: "rgb(156, 163, 175)",
+                marginBottom: "4px",
+                textTransform: "uppercase",
+                letterSpacing: "0.8px",
+              }}
+            >
+              FROM
+            </span>
+            <span
+              style={{
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: "700",
+                color: "rgb(55, 65, 81)",
+              }}
+            >
+              {modalData?.participant?.riskGoal}
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: "20px",
+              color: "rgb(34, 197, 94)",
+            }}
+          >
+            <GoArrowRight size={20} />
+          </div>
+          <div
+            style={{
+              flex: "1 1 0%",
+              textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "Arial",
+                fontSize: "10px",
+                color: "rgb(156, 163, 175)",
+              }}
+            >
+              TO
+            </span>
+            <span
+              style={{
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: "700",
+                color: "rgb(22, 163, 74)",
+              }}
+            >
+              {selectedGoal}
+            </span>
+          </div>
+        </div>
+
+        <Row>
+          <Col xs={24} md={24} lg={24}>
+            <label
+              style={{
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "rgb(17, 24, 39)",
+              }}
+              className="mb-1"
+            >
+              Please provide a reason/description of why you are changing the
+              Risk Profile:{" "}
+            </label>
+            <TextArea
+              style={{
+                width: "100%",
+                border: "1.5px solid rgba(34, 197, 94, 0.4)",
+                borderRadius: "9px",
+                padding: "10px 13px",
+                fontFamily: "Arial",
+                fontSize: "13px",
+                color: "rgb(55, 65, 81)",
+                outline: "none",
+                resize: "vertical",
+                boxSizing: "border-box",
+                background: "rgb(250, 255, 254)",
+              }}
+              rows={4}
+              value={riskDescription}
+              onChange={(e) => {
+                setRiskDescription(e.target.value);
+              }}
+            />
+          </Col>
+          <Col xs={24} md={24} lg={24} className="mt-3">
+            <label
+              style={{
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "rgb(17, 24, 39)",
+              }}
+              className="mb-1"
+            >
+              Add Note
+            </label>
+            <TextArea
+              rows={4}
+              value={addNoteDescription}
+              onChange={(e) => {
+                setAddNoteDescription(e.target.value);
+              }}
+              style={{
+                width: "100%",
+                border: "1.5px solid rgba(34, 197, 94, 0.4)",
+                borderRadius: "9px",
+                padding: "10px 13px",
+                fontFamily: "Arial",
+                fontSize: "13px",
+                color: "rgb(55, 65, 81)",
+                outline: "none",
+                resize: "vertical",
+                boxSizing: "border-box",
+                background: "rgb(250, 255, 254)",
+              }}
+            />
+          </Col>
+          <Col
+            xs={24}
+            md={24}
+            lg={24}
+            className="mt-3 d-flex justify-content-end align-items-center gap-2"
+          >
+            <Button
+              onClick={() => {
+                modalData?.closeModal?.();
+              }}
+              style={{
+                padding: "17px 24px",
+                borderWidth: "medium",
+                borderStyle: "none",
+                borderColor: "currentcolor",
+                borderImage: "initial",
+                borderRadius: "10px",
+                background: "rgb(75, 85, 99)",
+                color: "rgb(255, 255, 255)",
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "rgba(75, 85, 99, 0.3) 0px 3px 12px",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              style={{
+                padding: "17px 24px",
+                borderWidth: "medium",
+                borderStyle: "none",
+                borderColor: "currentcolor",
+                borderImage: "initial",
+                borderRadius: "10px",
+                background:
+                  "linear-gradient(135deg, rgb(34, 197, 94), rgb(22, 163, 74))",
+                color: "rgb(255, 255, 255)",
+                fontFamily: "Arial",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "rgba(34, 197, 94, 0.3) 0px 3px 12px",
+              }}
+              onClick={() => {
+                onGoalChange(
+                  modalData?.participantKey,
+                  selectedGoal,
+                  riskDescription,
+                  addNoteDescription,
+                );
+                modalData?.closeModal?.();
+              }}
+            >
+              Submit
+            </Button>
+          </Col>
+        </Row>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "start",
-          justifyContent: "start",
-          height: "100%",
-        }}
-      >
+      <div className="d-flex align-items-center justify-content-between position-relative">
         <div
           style={{
-            fontFamily: "Arial",
-            fontSize: "10px",
-            letterSpacing: "2px",
-            color: "rgb(34, 197, 94)",
-            textTransform: "uppercase",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "start",
+            justifyContent: "start",
+            height: "100%",
           }}
         >
-          Risk Profile{" "}
+          <div
+            style={{
+              fontFamily: "Arial",
+              fontSize: "10px",
+              letterSpacing: "2px",
+              color: "rgb(34, 197, 94)",
+              textTransform: "uppercase",
+            }}
+          >
+            Risk Profile{" "}
+          </div>
+          <div
+            style={{
+              fontFamily: "Georgia, serif",
+              fontSize: "20px",
+              fontWeight: "700",
+              color: "rgb(17, 24, 39)",
+            }}
+          >
+            {" "}
+            {modalData?.participantName} — Select Profile
+          </div>
         </div>
-        <div
-          style={{
-            fontFamily: "Georgia, serif",
-            fontSize: "20px",
-            fontWeight: "700",
-            color: "rgb(17, 24, 39)",
-          }}
-        >
-          {" "}
-          {modalData?.participantName} — Select Profile
+        <div>
+          <Button
+            className="ModalCloseButtonHover"
+            onClick={() => {
+              modalData?.closeModal?.();
+            }}
+          >
+            <IoCloseOutline size={25} />
+          </Button>
         </div>
       </div>
 
@@ -564,6 +824,7 @@ const RiskGoals = ({ modalData }) => {
           alignItems: "center",
           justifyContent: "center",
           gap: "10px 15px",
+          marginTop: "16px",
         }}
       >
         {Object.values(Profiles).map((profile) => (
@@ -620,12 +881,47 @@ const RiskGoals = ({ modalData }) => {
         ))}
       </div>
       <Row>
-        <Col xs={24} lg={24} className="d-flex mt-3">
+        <Col xs={24} md={24} lg={24} className="mt-3">
+          <div
+            style={{
+              padding: "14px 18px",
+              background: "rgb(249, 250, 251)",
+              borderRadius: "12px",
+              border: "1px solid rgb(229, 231, 235)",
+              marginBottom: "16px",
+              fontFamily: "Arial",
+              fontSize: "12px",
+              color: "rgb(107, 114, 128)",
+              lineHeight: "1.65",
+            }}
+          >
+            {modalData?.participant?.riskDescription}
+          </div>
+        </Col>
+        <Col xs={24} lg={24} className="d-flex">
           <Button
             type="primary"
             className="w-100"
             onClick={() => {
               onGoalChange(selectedGoal);
+            }}
+            style={{
+              width: "100%",
+              padding: "13px",
+              borderWidth: "medium",
+              borderStyle: "none",
+              borderColor: "currentcolor",
+              borderImage: "initial",
+              borderRadius: "10px",
+              background:
+                "linear-gradient(135deg, rgb(34, 197, 94), rgb(22, 163, 74))",
+              color: "rgb(255, 255, 255)",
+              fontFamily: "Arial",
+              fontSize: "14px",
+              fontWeight: 800,
+              cursor: "pointer",
+              boxShadow: "rgba(34, 197, 94, 0.3) 0px 3px 12px",
+              height: "46px",
             }}
           >
             Close

@@ -29,6 +29,7 @@ import useApi from "../../../../../hooks/useApi.js";
 import {
   discoveryDataAtom,
   riskProfileDataAtom,
+  SelectedClient,
 } from "../../../../../store/authState.js";
 import Text from "antd/es/typography/Text.js";
 import Title from "antd/es/typography/Title.js";
@@ -38,6 +39,7 @@ import QuestionStep from "./QuestionStep.jsx";
 import DetectionMatrixStep from "./DetectionMatrixStep.jsx";
 import ResultsStep from "./ResultsStep.jsx";
 import ResultsStepV2 from "./ResultsStep copy.jsx";
+import { FaDownload } from "react-icons/fa";
 
 const { TextArea } = Input;
 
@@ -48,7 +50,13 @@ const RISK_GOALS = [
     range: { lowest: 9, highest: 13 },
     description:
       "Your responses indicate an extremely low tolerance to investment risk or a short investment time frame. The only appropriate investment for this profile or time frame is a cash-based investment such as bank accounts, cash management trusts and term deposits.",
-    chart: [100],
+    chart: [
+      {
+        title: "Cash",
+        value: 100,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "34, 197, 94",
   },
   {
@@ -57,7 +65,38 @@ const RISK_GOALS = [
     range: { lowest: 14, highest: 18 },
     description:
       "As a Conservative investor, you are primarily focused on preserving capital and are prepared to accept lower returns to reduce the chance of losses. A defensive mix with more cash and fixed interest and a smaller allocation to growth assets would generally suit this profile. Minimum investment term: 2 years.",
-    chart: [13, 13, 4, 35, 15, 20],
+    chart: [
+      {
+        title: "Australian Equities",
+        value: 13,
+        color: "rgb(30, 58, 95)",
+      },
+      {
+        title: "International Equities",
+        value: 13,
+        color: "rgb(45, 106, 79)",
+      },
+      {
+        title: "Property & Infrastructure",
+        value: 4,
+        color: "rgb(64, 145, 108)",
+      },
+      {
+        title: "Australian Fixed Interest",
+        value: 35,
+        color: "rgb(116, 198, 157)",
+      },
+      {
+        title: "International Fixed Interest",
+        value: 15,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "Cash",
+        value: 20,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "34, 197, 94",
   },
   {
@@ -66,7 +105,38 @@ const RISK_GOALS = [
     range: { lowest: 19, highest: 23 },
     description:
       "As a Moderately Conservative investor, you seek steady growth with a preference for smaller short-term fluctuations. A diversified portfolio with a balance of defensive assets and growth assets would generally suit this profile. Minimum investment term: 3 years.",
-    chart: [22.5, 22.5, 5, 25, 10, 15],
+    chart: [
+      {
+        title: "Australian Equities",
+        value: 22.5,
+        color: "rgb(30, 58, 95)",
+      },
+      {
+        title: "International Equities",
+        value: 22.5,
+        color: "rgb(45, 106, 79)",
+      },
+      {
+        title: "Property & Infrastructure",
+        value: 5,
+        color: "rgb(64, 145, 108)",
+      },
+      {
+        title: "Australian Fixed Interest",
+        value: 25,
+        color: "rgb(116, 198, 157)",
+      },
+      {
+        title: "International Fixed Interest",
+        value: 10,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "Cash",
+        value: 15,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "253, 224, 71",
   },
   {
@@ -75,7 +145,38 @@ const RISK_GOALS = [
     range: { lowest: 24, highest: 28 },
     description:
       "As a Balanced investor, you are prepared to accept moderate short-term fluctuations for the opportunity of better medium to long-term returns. A diversified portfolio with a bias toward growth assets would generally suit this profile. Minimum investment term: 5 years.",
-    chart: [31.5, 31.5, 7, 14, 7, 9],
+    chart: [
+      {
+        title: "Australian Equities",
+        value: 31.5,
+        color: "rgb(30, 58, 95)",
+      },
+      {
+        title: "International Equities",
+        value: 31.5,
+        color: "rgb(45, 106, 79)",
+      },
+      {
+        title: "Property & Infrastructure",
+        value: 7,
+        color: "rgb(64, 145, 108)",
+      },
+      {
+        title: "Australian Fixed Interest",
+        value: 14,
+        color: "rgb(116, 198, 157)",
+      },
+      {
+        title: "International Fixed Interest",
+        value: 7,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "Cash",
+        value: 9,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "251, 146, 60",
   },
   {
@@ -84,7 +185,38 @@ const RISK_GOALS = [
     range: { lowest: 29, highest: 33 },
     description:
       "As a Growth investor, you focus on assets with stronger long-term growth potential and accept higher short-term volatility to pursue stronger returns. A diversified portfolio with a strong bias to growth investments would generally suit this profile. Minimum investment term: 5 years.",
-    chart: [39, 39, 7, 7.5, 4.5, 3],
+    chart: [
+      {
+        title: "Australian Equities",
+        value: 39,
+        color: "rgb(30, 58, 95)",
+      },
+      {
+        title: "International Equities",
+        value: 39,
+        color: "rgb(45, 106, 79)",
+      },
+      {
+        title: "Property & Infrastructure",
+        value: 7,
+        color: "rgb(64, 145, 108)",
+      },
+      {
+        title: "Australian Fixed Interest",
+        value: 7.5,
+        color: "rgb(116, 198, 157)",
+      },
+      {
+        title: "International Fixed Interest",
+        value: 4.5,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "Cash",
+        value: 3,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "248, 113, 113",
   },
   {
@@ -93,7 +225,38 @@ const RISK_GOALS = [
     range: { lowest: 34, highest: 100 },
     description:
       "As a High Growth investor, you are comfortable with significant short-term fluctuations in performance in pursuit of stronger long-term gains. A portfolio dominated by growth assets such as shares and property would generally suit this profile. Minimum investment term: 7 years.",
-    chart: [45, 45, 8, 0, 0, 2],
+    chart: [
+      {
+        title: "Australian Equities",
+        value: 45,
+        color: "rgb(30, 58, 95)",
+      },
+      {
+        title: "International Equities",
+        value: 45,
+        color: "rgb(45, 106, 79)",
+      },
+      {
+        title: "Property & Infrastructure",
+        value: 8,
+        color: "rgb(64, 145, 108)",
+      },
+      {
+        title: "Australian Fixed Interest",
+        value: 0,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "International Fixed Interest",
+        value: 0,
+        color: "rgb(183, 228, 199)",
+      },
+      {
+        title: "Cash",
+        value: 2,
+        color: "rgb(216, 243, 220)",
+      },
+    ],
     goalColor: "248, 113, 113",
   },
 ];
@@ -242,17 +405,17 @@ const CONFIRMATION_LABELS = [
   {
     key: "confirmRiskProfileCheck1",
     label:
-      "I understand that investment returns and capital values can rise and fall over time.",
+      "I acknowledge and understand my Adviser can't be held personally responsible for the outcome of any money which is invested in accordance with my selected risk profile. I acknowledge and understand that any potential gains or losses on any money with is invested in accordance with my selected risk profile will be impacted by such factors as tax, inflation, changes in legislation and governments and impact on the world economies, which are all things out my Advisers control.",
   },
   {
     key: "confirmRiskProfileCheck2",
     label:
-      "I understand that inflation, taxation, legislation, and market conditions can affect outcomes.",
+      "I acknowledge that my Adviser has explained to me the trade off between risk and return and the effects of this on any investments made in accordance with my selected risk profile.",
   },
   {
     key: "confirmRiskProfileCheck3",
     label:
-      "I understand that my selected risk profile should align with my goals, timeframe, and ability to accept volatility.",
+      'By pressing "Accept" I confirm and acknowledge that I am comfortable with the selected risk profile',
   },
 ];
 
@@ -460,6 +623,7 @@ export default function RiskProfile() {
   const location = useLocation();
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const selected = useAtomValue(SelectedClient);
 
   const riskProfileData = useAtomValue(riskProfileDataAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -496,14 +660,14 @@ export default function RiskProfile() {
 
   useEffect(() => {
     const loadRiskProfile = async () => {
-      const userId = localStorage.getItem("UserID");
-      if (!userId) {
+      setLoading(true);
+      if (!selected?._id || recordId === selected?._id) {
         setLoading(false);
         return;
       }
 
       try {
-        const result = await get(`/api/riskProfile/${userId}`);
+        const result = await get(`/api/riskProfile/${selected?._id}`);
         if (result && result._id) {
           setRecordId(result._id);
           setValues(buildValuesFromApi(result, showPartner));
@@ -512,7 +676,7 @@ export default function RiskProfile() {
             location.pathname === "/user/discovery/risk-profile" ||
             location.pathname === "/user/discovery/risk-profile/"
           ) {
-            navigate("detection-matrix", { replace: true });
+            navigate("/user/discovery/risk-profile/detection-matrix");
           }
           setDiscoveryData((prev) => ({
             ...(prev && typeof prev === "object" ? prev : {}),
@@ -527,8 +691,10 @@ export default function RiskProfile() {
       }
     };
 
+    // Run only once on mount
     loadRiskProfile();
-  }, [get, location.pathname, navigate, setDiscoveryData, showPartner]);
+    // eslint-disable-next-line
+  }, []);
 
   useEffect(() => {
     if (!showPartner && values.joinedProfile !== "Yes") {
@@ -579,14 +745,21 @@ export default function RiskProfile() {
     }));
   };
 
-  const handleGoalChange = (participantKey, goalValue) => {
+  const handleGoalChange = (
+    participantKey,
+    goalValue,
+    riskDescription,
+    addNoteDescription,
+  ) => {
     const goal = getRiskGoalByValue(goalValue);
     setValues((prev) => ({
       ...prev,
       [participantKey]: {
         ...prev[participantKey],
         riskGoal: goal?.value || "",
-        riskDescription: goal?.description || "",
+        riskDescription: riskDescription || goal?.description || "",
+        addNoteDescription:
+          addNoteDescription || prev[participantKey]?.addNoteDescription || "",
       },
     }));
   };
@@ -705,8 +878,12 @@ export default function RiskProfile() {
     const payload = {
       ...nextValues,
       _id: recordId || undefined,
-      clientFK: localStorage.getItem("UserID") || undefined,
+      clientFK: selected?._id || undefined,
+      createdAt: undefined,
+      updatedAt: undefined,
     };
+
+    console.log("payload", payload);
 
     try {
       setSubmitting(true);
@@ -734,6 +911,10 @@ export default function RiskProfile() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDownload = () => {
+    console.log("download");
   };
 
   if (loading) {
@@ -858,19 +1039,6 @@ export default function RiskProfile() {
                 CONFIRMATION_LABELS={CONFIRMATION_LABELS}
                 calculateScore={calculateScore}
               />
-              {/* <ResultsStepV2
-                riskGoals={RISK_GOALS}
-                values={values}
-                includePartner={includePartner}
-                clientName={clientName}
-                partnerName={partnerName}
-                onGoalChange={handleGoalChange}
-                onTextChange={handleTextChange}
-                onCheckboxChange={handleCheckboxChange}
-                getRiskGoalByValue={getRiskGoalByValue}
-                CONFIRMATION_LABELS={CONFIRMATION_LABELS}
-                calculateScore={calculateScore}
-              /> */}
             </>
           }
         />
@@ -908,6 +1076,28 @@ export default function RiskProfile() {
             </Space>
           </Button>
         ) : null}
+
+        {currentStep?.route === "cards" && (
+          //Download Button
+          <Button
+            type="primary"
+            onClick={handleDownload}
+            style={{
+              padding: "20px 32px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow:
+                conflicts.length > 0
+                  ? "none"
+                  : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+              transition: "0.2s",
+            }}
+          >
+            Download Risk Profile <FaDownload />
+          </Button>
+        )}
 
         {currentStep?.route === "cards" ? (
           <Button

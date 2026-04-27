@@ -19,6 +19,7 @@ import PieChartComponent from "./PieChartComponent";
 import AppModal from "../../../../Common/AppModal";
 import { renderModalContent } from "../../../../Common/renderModalContent";
 import RiskGoals from "./RiskGoals";
+import RiskCheckBoxConfirmation from "./RiskCheckBoxConfirmation";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -44,27 +45,18 @@ function ResultCard({
     value: goal.value,
   }));
 
+  const extractChartData = (goal) => {
+    return {
+      chart: goal?.chart?.map((item) => item.value),
+      chartLabels: goal?.chart?.map((item) => item.title),
+      colors: goal?.chart?.map((item) => item.color),
+    };
+  };
+
   const selectedGoal = getRiskGoalByValue(participant?.riskGoal);
-  const chart = selectedGoal?.chart || [25, 25, 25, 25];
-  const chartLabels = [
-    "Australian Equities",
-    "International Equities",
-    "Property & Infrastructure",
-    "Australian Fixed Interest",
-    "International Fixed Interest",
-    "Cash",
-  ];
+  const { chart, chartLabels, colors } = extractChartData(selectedGoal);
 
   const ParticipentScore = calculateScore(participant);
-
-  const colors = [
-    "rgb(30, 58, 95)",
-    "rgb(45, 106, 79)",
-    "rgb(64, 145, 108)",
-    "rgb(116, 198, 157)",
-    "rgb(183, 228, 199)",
-    "rgb(216, 243, 220)",
-  ];
 
   return (
     <div>
@@ -72,6 +64,7 @@ function ResultCard({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         width={modalData?.width || 1000}
+        noCancelButton={true}
       >
         {renderModalContent(modalData)}
       </AppModal>
@@ -102,7 +95,6 @@ function ResultCard({
             gap: 10,
           }}
         >
-          {/* <Tag color="green">{participant?.riskGoal || "Not Calculated"}</Tag> */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
@@ -184,7 +176,9 @@ function ResultCard({
                 width: 680,
                 participantName: participantName,
                 participant: participant,
+                participantKey: participantKey,
                 onGoalChange: onGoalChange,
+                closeModal: () => setModalOpen(false),
               });
             }}
             role="button"
@@ -217,7 +211,7 @@ function ResultCard({
 
         <Row>
           <Col xs={24} lg={8} className="py-3">
-            <PieChartComponent data={selectedGoal?.chart} colors={colors} />
+            <PieChartComponent data={chart} colors={colors} />
           </Col>
           <Col
             xs={24}
@@ -226,7 +220,7 @@ function ResultCard({
               ps-4
             "
           >
-            {selectedGoal?.chart.map((item, index) => (
+            {selectedGoal?.chart?.map((item, index) => (
               <div
                 key={`${participantKey}-chart-${index}`}
                 className="d-flex justify-content-between align-items-center gap-2 w-100"
@@ -242,13 +236,13 @@ function ResultCard({
                 >
                   <div
                     style={{
-                      background: colors[index],
+                      background: item.color,
                       color: "#fff",
                       padding: "4px",
                       borderRadius: 2,
                     }}
                   />
-                  {chartLabels[index]}
+                  {item.title}
                 </div>
                 <div
                   style={{
@@ -258,7 +252,7 @@ function ResultCard({
                     color: "rgb(22, 163, 74)",
                   }}
                 >
-                  {item}%
+                  {item.value}%
                 </div>
               </div>
             ))}
@@ -317,13 +311,38 @@ function ResultCard({
         <div className="mt-auto">
           <Checkbox
             checked={participant?.happyWithResult}
-            onChange={(event) =>
-              onCheckboxChange(
-                participantKey,
-                "happyWithResult",
-                event.target.checked,
-              )
-            }
+            onChange={(event) => {
+              if (participant?.happyWithResult) {
+                CONFIRMATION_LABELS.forEach((item) => {
+                  onCheckboxChange(participantKey, item.key, false);
+                });
+                onCheckboxChange(participantKey, "happyWithResult", false);
+                return;
+              }
+              setModalOpen(true);
+              setModalData({
+                component: <RiskCheckBoxConfirmation />,
+                width: 680,
+                participantName: participantName,
+                participant: participant,
+                participantKey: participantKey,
+                onGoalChange: onGoalChange,
+                CONFIRMATION_LABELS: CONFIRMATION_LABELS,
+                closeModal: ({ values: confirmationValues } = {}) => {
+                  setModalOpen(false);
+                  if (confirmationValues) {
+                    CONFIRMATION_LABELS.forEach((item) => {
+                      onCheckboxChange(
+                        participantKey,
+                        item.key,
+                        Boolean(confirmationValues?.[item.key]),
+                      );
+                    });
+                    onCheckboxChange(participantKey, "happyWithResult", true);
+                  }
+                },
+              });
+            }}
             style={{
               display: "flex",
               alignItems: "center",
