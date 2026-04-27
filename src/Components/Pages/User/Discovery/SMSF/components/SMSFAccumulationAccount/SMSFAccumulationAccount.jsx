@@ -168,17 +168,17 @@ export default function SMSFAccumulationAccount({ modalData }) {
 
       const detailMap = {
         accumulationBenefits: {
-          title: `${memberName} Accumulation Benefits`,
+          title: `${memberName}_Accumulation Benefits`,
           width: 1280,
           component: <SMSFAccumulationBenefitsModal />,
         },
         contributions: {
-          title: `${memberName} Contributions`,
+          title: `${memberName}_Contributions`,
           width: 1000,
           component: <ContributionsModal />,
         },
         nominatedBeneficiaries: {
-          title: `${memberName} Beneficiaries`,
+          title: `${memberName}_Beneficiaries`,
           width: 800,
           component: <BeneficiariesModal />,
         },

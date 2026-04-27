@@ -637,7 +637,8 @@ export default function InvestmentPropertiesModal({ modalData }) {
                 <Row gutter={[16, 16]}>
                     <Col xs={24} md={7}>
                         <Form.Item
-                            label={`Number of ${modalData?.title || "Investment Properties"}`}
+                            // label={`Number of ${modalData?.title || "Investment Properties"}`}
+                            label="Number of Investment Properties"
                             name="numberOfProperties"
                             style={{ marginBottom: 0 }}
                             rules={[{ required: true, message: "Number is required" }]}

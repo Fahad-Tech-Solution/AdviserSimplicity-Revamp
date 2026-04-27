@@ -294,19 +294,19 @@ export default function PlatformInvestments({ modalData }) {
         "SMSFManagedFunds",
       ].includes(modalData?.sectionKey)
         ? investmentOffers?.InvestmentPlatforms?.find(
-            (item) => String(item?._id) === selectedPlatform,
-          ) || null
+          (item) => String(item?._id) === selectedPlatform,
+        ) || null
         : investmentOffers?.InvestmentBonds?.find(
-            (item) => String(item?._id) === selectedPlatform,
-          ) || null;
+          (item) => String(item?._id) === selectedPlatform,
+        ) || null;
 
       setDetailModalOpen(true);
       setDetailModalData({
         type: "portfolio",
-        title: `${modalData?.ownerLabel || "Owner"} ${getOptionLabel(
+        title: `${modalData?.ownerLabel || "Owner"}_${getOptionLabel(
           platformOptions,
           selectedPlatform,
-        )} Portfolio Value`.trim(),
+        )}_Portfolio Value`.trim(),
         width: 900,
         parentForm: currentForm,
         component: <PortfolioValueModal />,
@@ -317,6 +317,7 @@ export default function PlatformInvestments({ modalData }) {
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
+          setDetailModalData({})
         },
       });
     },
@@ -329,12 +330,24 @@ export default function PlatformInvestments({ modalData }) {
 
   const openServiceFeeModal = useCallback(
     ({ record, form: currentForm }) => {
+
       const rowValues = currentForm.getFieldValue(record?.formPath) || {};
+
+      const selectedPlatform = normalizeSelectValue(rowValues?.platformName);
+
+      if (!selectedPlatform) {
+        message.error("Please select platform name first");
+        return;
+      }
 
       setDetailModalOpen(true);
       setDetailModalData({
         type: "serviceFee",
-        title: `${modalData?.ownerLabel || "Owner"} Ongoing Annual Fee`,
+        // title: `${modalData?.ownerLabel || "Owner"} Ongoing Annual Fee`,
+        title: `${modalData?.ownerLabel || "Owner"}_${getOptionLabel(
+          platformOptions,
+          selectedPlatform,
+        )}_Ongoing Annual Fee`.trim(),
         width: 720,
         component: <ServiceFeeModal />,
         parentForm: currentForm,
@@ -343,6 +356,7 @@ export default function PlatformInvestments({ modalData }) {
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
+          setDetailModalData({})
         },
       });
     },
@@ -502,9 +516,9 @@ export default function PlatformInvestments({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={6}>
             <Form.Item
-              label="Number of Platform Investments"
+              label="Number of Platforms"
               name="NumberOfMap"
               style={{ marginBottom: 0 }}
             >

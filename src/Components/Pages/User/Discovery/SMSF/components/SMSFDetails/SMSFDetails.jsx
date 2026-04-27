@@ -208,6 +208,18 @@ export default function SMSFDetails({ modalData }) {
     [form, formSnapshot],
   );
 
+  // If Bare Trust modal is already open, keep its dropdown options in sync
+  useEffect(() => {
+    if (!detailModalOpen) return;
+    if (detailModalData?.type !== "bareTrustInner") return;
+
+    setDetailModalData((prev) =>
+      prev && typeof prev === "object"
+        ? { ...prev, directorOptions: corporateDirectorOptions }
+        : prev,
+    );
+  }, [corporateDirectorOptions, detailModalData?.type, detailModalOpen]);
+
   const openTrusteeInnerModal = useCallback(
     ({ form: currentForm } = {}) => {
       const activeForm = currentForm || form;
@@ -252,7 +264,6 @@ export default function SMSFDetails({ modalData }) {
   const openBareTrustInnerModal = useCallback(
     ({ form: currentForm } = {}) => {
       const activeForm = currentForm || form;
-
       setDetailModalOpen(true);
       setDetailModalData({
         type: "bareTrustInner",
@@ -346,13 +357,13 @@ export default function SMSFDetails({ modalData }) {
         },
         // onChange: (value, _record, column, currentForm) => {
         //   currentForm.setFieldValue(column.field, value);
-          // if (value === "Individual") {
-          //   currentForm.setFieldValue("trusteeName", "");
-          //   currentForm.setFieldValue("ACN", "");
-          // }
+        // if (value === "Individual") {
+        //   currentForm.setFieldValue("trusteeName", "");
+        //   currentForm.setFieldValue("ACN", "");
+        // }
         // },
       },
-      
+
       {
         title: "Trustee Name",
         dataIndex: "trusteeName",
@@ -446,8 +457,8 @@ export default function SMSFDetails({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to save ${modalData?.title || "SMSF details"}`,
+        error?.message ||
+        `Failed to save ${modalData?.title || "SMSF details"}`,
       );
     } finally {
       setSaving(false);

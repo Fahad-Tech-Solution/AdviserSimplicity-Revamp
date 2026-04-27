@@ -45,10 +45,10 @@ function buildEntries(count, entries = [], sectionKey) {
     currentBalance: entries?.[index]?.currentBalance || "",
     ...(["SMSFBank", "familyBank"].includes(sectionKey)
       ? {
-          serviceFee: entries?.[index]?.serviceFee || "",
-          serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
-          serviceFeeType: entries?.[index]?.serviceFeeType || "",
-        }
+        serviceFee: entries?.[index]?.serviceFee || "",
+        serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
+        serviceFeeType: entries?.[index]?.serviceFeeType || "",
+      }
       : {}),
   }));
 }
@@ -109,9 +109,7 @@ export default function BankTermDetailsModal({ modalData }) {
   });
   const config = {
     countLabel:
-      modalData?.sectionKey === "bankAccountFinance"
-        ? "Number of Bank Accounts"
-        : "Number of Term Deposits",
+      modalData?.countLabel || "no count label",
     pageLimit: modalData?.tableRows || 10,
   };
   const ownerArray =
@@ -197,10 +195,10 @@ export default function BankTermDetailsModal({ modalData }) {
       const fieldPath = payload?.record?.formPath || [];
       const rowValues =
         currentForm?.getFieldValue?.(fieldPath) || payload?.record || {};
-
+console.log(modalData?.ownerLabel)
       setOpenModal(true);
       setOpenModalData({
-        title: "Ongoing Advice Fee",
+        title: `${modalData?.ownerLabel || "Owner"}_Ongoing Annual Fee`,
         width: 720,
         component: <ServiceFeeModal />,
         parentForm: currentForm,
@@ -264,6 +262,11 @@ export default function BankTermDetailsModal({ modalData }) {
             formatCurrencyValue(value?.target?.value),
           );
         },
+        sorter: (a, b) =>
+          parseCurrencyValue(a?.currentBalance) -
+          parseCurrencyValue(b?.currentBalance),
+        sortOrder:
+          sortState.columnKey === "currentBalance" ? sortState.order : undefined,
       },
       {
         title: "Action",

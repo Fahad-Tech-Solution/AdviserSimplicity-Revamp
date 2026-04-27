@@ -16,20 +16,18 @@ function parseDigitsValue(value) {
   return String(value ?? "").replace(/[^0-9]/g, "");
 }
 
-function buildInitialValues(value = {}, directorOptions = []) {
+function buildInitialValues(value = {}) {
   const count =
     Number(value?.NumberOfDirectors) ||
     (Array.isArray(value?.directorNameArray)
       ? value.directorNameArray.length
       : 0);
 
-  const maxCount = Math.min(Math.max(count, 0), directorOptions.length || 6);
-
   return {
     bareTrusteeName: value?.bareTrusteeName || "",
     ACN: parseDigitsValue(value?.ACN),
-    NumberOfDirectors: maxCount || undefined,
-    directorNameArray: Array.from({ length: maxCount }, (_, index) => ({
+    NumberOfDirectors: count || undefined,
+    directorNameArray: Array.from({ length: count }, (_, index) => ({
       directorName: value?.directorNameArray?.[index] || "",
     })),
   };
@@ -77,8 +75,9 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
   const [editing, setEditing] = useState(false);
 
   const directorOptions = useMemo(
-    () =>
-      (Array.isArray(modalData?.directorOptions)
+    () => {
+      console.log(modalData?.directorOptions, "modalData?.directorOptions, in Bare Trust Inner Modal");
+      return (Array.isArray(modalData?.directorOptions)
         ? modalData.directorOptions
         : []
       )
@@ -86,13 +85,13 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
         .map((value) => ({
           label: value,
           value,
-        })),
-    [modalData?.directorOptions],
-  );
+        }));
+    }
+    , [modalData?.directorOptions]);
 
   const initialValues = useMemo(
-    () => buildInitialValues(modalData?.value, directorOptions),
-    [directorOptions, modalData?.value],
+    () => buildInitialValues(modalData?.value),
+    [modalData?.value],
   );
 
   const countWatch = Form.useWatch("NumberOfDirectors", form);
@@ -227,6 +226,8 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
                 disabled={!editing}
                 onChange={handleCountChange}
                 style={{ width: "100%", borderRadius: "8px" }}
+
+
                 options={Array.from(
                   { length: Math.min(directorOptions.length || 6, 6) },
                   (_, index) => ({
@@ -242,11 +243,11 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
               noStyle
               shouldUpdate={(prevValues, currentValues) =>
                 prevValues?.NumberOfDirectors !==
-                  currentValues?.NumberOfDirectors ||
+                currentValues?.NumberOfDirectors ||
                 prevValues?.directorNameArray !==
-                  currentValues?.directorNameArray ||
+                currentValues?.directorNameArray ||
                 prevValues?.bareTrusteeName !==
-                  currentValues?.bareTrusteeName ||
+                currentValues?.bareTrusteeName ||
                 prevValues?.ACN !== currentValues?.ACN
               }
             >
