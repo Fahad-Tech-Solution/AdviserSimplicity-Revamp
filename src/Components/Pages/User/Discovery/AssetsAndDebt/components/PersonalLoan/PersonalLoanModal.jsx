@@ -147,6 +147,7 @@ export default function PersonalLoanModal({ modalData }) {
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
+  console.log("sectionData",sectionData);
 
   const lenderOptions = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];

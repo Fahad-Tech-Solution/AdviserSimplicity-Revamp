@@ -1,9 +1,11 @@
-import { Button, Col, Form, Row, Space } from "antd";
+import { Button, Col, Form,Divider, Row, Space } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable.jsx";
+import useTitleBlock from "../../../../../../hooks/useTitleBlock.jsx";
 
-const TABLE_PROPS = {
+
+const TABLE_PROPS  = {
   showCount: false,
   noPagination: true,
   horizontalScroll: true,
@@ -96,6 +98,7 @@ function isPremiumsDetailsMissing(row) {
 }
 
 export default function PersonalInsurancePremiumsModal({ modalData }) {
+  const renderTitleBlock = useTitleBlock();
   const [form] = Form.useForm();
   const payeeWatch = Form.useWatch("payeeOfPremiums", form);
   const record = modalData?.record || {};
@@ -345,6 +348,7 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
       );
       setEditing(false);
       modalData?.closeModal?.();
+      modalData?.switchToEditMode?.();
     } finally {
       setSaving(false);
     }
@@ -363,6 +367,17 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
   };
 
   return (
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
     <Form
       form={form}
       layout="vertical"
@@ -414,5 +429,6 @@ export default function PersonalInsurancePremiumsModal({ modalData }) {
         </Col>
       </Row>
     </Form>
+    </div>
   );
 }

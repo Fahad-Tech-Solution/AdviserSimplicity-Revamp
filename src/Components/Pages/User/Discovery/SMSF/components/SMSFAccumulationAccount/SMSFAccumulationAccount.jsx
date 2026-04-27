@@ -171,16 +171,22 @@ export default function SMSFAccumulationAccount({ modalData }) {
           title: `${memberName}_Accumulation Benefits`,
           width: 1280,
           component: <SMSFAccumulationBenefitsModal />,
+          switchToEditMode: () => setEditing(true),
+          noCancelButton: true,
         },
         contributions: {
           title: `${memberName}_Contributions`,
           width: 1000,
           component: <ContributionsModal />,
+          switchToEditMode: () => setEditing(true),
+          noCancelButton: true,
         },
         nominatedBeneficiaries: {
           title: `${memberName}_Beneficiaries`,
           width: 800,
           component: <BeneficiariesModal />,
+          switchToEditMode: () => setEditing(true),
+          noCancelButton: true,
         },
       };
 
@@ -368,7 +374,8 @@ export default function SMSFAccumulationAccount({ modalData }) {
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        // title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 1000}
       >
         {renderModalContent(detailModalData)}

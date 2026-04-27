@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space } from "antd";
+import { Button, Col, Form, Divider, Row, Select, Space } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal.jsx";
@@ -6,6 +6,7 @@ import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.
 import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 import BusinessTrustTrusteeInnerModal from "./BusinessTrustTrusteeInnerModal.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -128,6 +129,7 @@ function trusteeTypeLabel(value) {
 }
 
 export default function BusinessTrustModal({ modalData }) {
+  const renderTitleBlock = useTitleBlock();
   const [form] = Form.useForm();
   const [editing, setEditing] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -194,6 +196,8 @@ export default function BusinessTrustModal({ modalData }) {
         countLabel: isCorporate ? "Number of Directors :" : "Number of Trustees :",
         width: 500,
         component: <BusinessTrustTrusteeInnerModal />,
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
         editing,
         valueArray:
           currentForm?.getFieldValue?.([
@@ -424,14 +428,27 @@ export default function BusinessTrustModal({ modalData }) {
 
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
+    modalData?.noCancelButton?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        // title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 720}
       >
         {renderModalContent(detailModalData)}

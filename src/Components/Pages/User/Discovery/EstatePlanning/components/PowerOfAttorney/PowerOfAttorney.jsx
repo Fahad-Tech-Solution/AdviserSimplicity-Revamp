@@ -200,8 +200,10 @@ export default function PowerOfAttorney({ modalData }) {
       initialValues: rowValues,
       closeModal: () => {
         setDetailModalOpen(false);
-        setEditing(true);
       },
+
+      switchToEditMode: () => setEditing(true),
+      noCancelButton: true,
     });
   };
 
@@ -337,7 +339,8 @@ export default function PowerOfAttorney({ modalData }) {
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        // title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 900}
       >
         {renderModalContent(detailModalData)}

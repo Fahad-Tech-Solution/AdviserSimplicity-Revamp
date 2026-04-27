@@ -46,7 +46,6 @@ const FinancialInvestments = () => {
     discoveryData.personalDetails?.client?.clientMaritalStatus,
     
   );
-  console.log("showPartner",showPartner);
 
   const visibleCards = useMemo(
     () =>

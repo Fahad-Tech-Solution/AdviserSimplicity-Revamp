@@ -41,13 +41,13 @@ function buildOwnerOptions(discoveryData, allowPartner) {
 
   return allowPartner
     ? [
-        { value: "client", label: clientName },
-        { value: "partner", label: partnerName },
-        {
-          value: "together",
-          label: `Together (${clientName} & ${partnerName})`,
-        },
-      ]
+      { value: "client", label: clientName },
+      { value: "partner", label: partnerName },
+      {
+        value: "together",
+        label: `Together (${clientName} & ${partnerName})`,
+      },
+    ]
     : [{ value: "client", label: clientName }];
 }
 
@@ -166,7 +166,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedClient?.willsCurrent || "No",
         executorDisplay:
           Array.isArray(watchedClient?.executor) &&
-          watchedClient.executor.length
+            watchedClient.executor.length
             ? String(watchedClient.executor.length)
             : "",
         enduringGuardianship: watchedClient?.enduringGuardianship || "No",
@@ -184,7 +184,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedPartner?.willsCurrent || "No",
         executorDisplay:
           Array.isArray(watchedPartner?.executor) &&
-          watchedPartner.executor.length
+            watchedPartner.executor.length
             ? String(watchedPartner.executor.length)
             : "",
         enduringGuardianship: watchedPartner?.enduringGuardianship || "No",
@@ -202,7 +202,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedClient?.willsCurrent || "",
         executorDisplay:
           Array.isArray(watchedClient?.executor) &&
-          watchedClient.executor.length
+            watchedClient.executor.length
             ? String(watchedClient.executor.length)
             : "",
         enduringGuardianship: watchedClient?.enduringGuardianship || "",
@@ -222,11 +222,17 @@ export default function EstatePlanningWill({ modalData }) {
         title: `${record?.ownerLabel || "Owner"} Executor`,
         width: 900,
         question: "Number of Executors",
+        closeModal: () => setDetailModalOpen(false),
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
         component: <ExecutorDetailsModal />,
       },
       estatePlanning: {
         title: `${record?.ownerLabel || "Owner"} Estate Planning`,
         width: 760,
+        closeModal: () => setDetailModalOpen(false),
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
         component: <EstatePlanningDescriptionModal />,
       },
     };
@@ -238,7 +244,6 @@ export default function EstatePlanningWill({ modalData }) {
       initialValues: rowValues,
       closeModal: () => {
         setDetailModalOpen(false);
-        setEditing(true);
       },
       ...(detailMap[type] || {}),
     });
@@ -275,6 +280,7 @@ export default function EstatePlanningWill({ modalData }) {
       type: "input-action",
       disabled: true,
       placeholder: "Executor",
+
       action: {
         name: "Open Executor",
         onClick: ({ record }) => openInnerModal("executor", record),
@@ -393,8 +399,8 @@ export default function EstatePlanningWill({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Wills"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Wills"}`,
       );
     } finally {
       setSaving(false);
@@ -405,8 +411,8 @@ export default function EstatePlanningWill({ modalData }) {
     <div style={{ padding: "16px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
-        onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        onClose={() => detailModalData?.closeModal?.()}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 900}
       >
         {renderModalContent(detailModalData)}

@@ -1,6 +1,7 @@
-import { Button, Col, Form, Row, Select, Space } from "antd";
+import { Button, Col, Form, Row,Divider, Select, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -34,6 +35,8 @@ function buildDirectorRows(count, entries = []) {
  * (same field name as legacy InnerDirectors for API compatibility).
  */
 export default function BusinessTrustTrusteeInnerModal({ modalData }) {
+
+  const renderTitleBlock = useTitleBlock();
   // console.log("modalData", modalData);
   const {
     title = "Trustee / Directors",
@@ -142,10 +145,22 @@ export default function BusinessTrustTrusteeInnerModal({ modalData }) {
     onSave?.(rows);
     setEditing(false);
     closeModal?.();
+    switchToEditMode?.();
+    noCancelButton?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form
         form={form}
         initialValues={initialValues}
