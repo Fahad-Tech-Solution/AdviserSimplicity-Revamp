@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Space } from "antd";
+import { Button, Col, Divider, Form, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
@@ -6,6 +6,7 @@ import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable"
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import PortfolioValueModal from "../PortfolioValueModal.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -68,6 +69,7 @@ function hasMeaningfulValues(initialValues = {}) {
 
 export default function AcountBalanceBenefit({ modalData }) {
   const [form] = Form.useForm();
+  const renderTitleBlock = useTitleBlock();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailModalData, setDetailModalData] = useState(null);
   const [sortState, setSortState] = useState({
@@ -79,7 +81,7 @@ export default function AcountBalanceBenefit({ modalData }) {
     () => modalData?.initialValues?.balanceBenefitDetails || {},
     [modalData],
   );
-  
+
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
@@ -136,7 +138,8 @@ export default function AcountBalanceBenefit({ modalData }) {
           "",
         restrictedNonPreserved:
           restrictedNonPreserved ?? initialValues?.restrictedNonPreserved ?? "",
-        preservedAmount: preservedAmount ?? initialValues?.preservedAmount ?? "",
+        preservedAmount:
+          preservedAmount ?? initialValues?.preservedAmount ?? "",
       },
     ],
     [
@@ -165,7 +168,8 @@ export default function AcountBalanceBenefit({ modalData }) {
     }
 
     const compare = (a, b) =>
-      parseCurrencyValue(a?.portfolioValue) - parseCurrencyValue(b?.portfolioValue);
+      parseCurrencyValue(a?.portfolioValue) -
+      parseCurrencyValue(b?.portfolioValue);
 
     const multiplier = sortState.order === "descend" ? -1 : 1;
     return [...rowData].sort((a, b) => compare(a, b) * multiplier);
@@ -173,7 +177,10 @@ export default function AcountBalanceBenefit({ modalData }) {
 
   const recalculate = (currentForm, columnField, changedValue) => {
     if (columnField === "purchasePrice") {
-      currentForm.setFieldValue("purchasePrice", formatCurrencyValue(changedValue));
+      currentForm.setFieldValue(
+        "purchasePrice",
+        formatCurrencyValue(changedValue),
+      );
     }
     if (columnField === "taxFree") {
       currentForm.setFieldValue("taxFree", formatPercentValue(changedValue));
@@ -204,9 +211,11 @@ export default function AcountBalanceBenefit({ modalData }) {
       currentForm.getFieldValue("preservedAmount"),
     );
 
-    const nextTaxFreeComponent = nextPortfolioValue * (nextTaxFreePercent / 100);
+    const nextTaxFreeComponent =
+      nextPortfolioValue * (nextTaxFreePercent / 100);
     const nextTaxableComponent = nextPortfolioValue - nextTaxFreeComponent;
-    const nextUnrestricted = nextPortfolioValue - (nextRestricted + nextPreserved);
+    const nextUnrestricted =
+      nextPortfolioValue - (nextRestricted + nextPreserved);
 
     currentForm.setFieldValue(
       "taxFreeComponent",
@@ -235,8 +244,9 @@ export default function AcountBalanceBenefit({ modalData }) {
       tableRows: 50,
       closeModal: () => {
         setDetailModalOpen(false);
-        setEditing(true);
       },
+      switchToEditMode: () => setEditing(true),
+      noCancelButton: true,
     });
   };
 
@@ -273,9 +283,7 @@ export default function AcountBalanceBenefit({ modalData }) {
         parseCurrencyValue(a?.portfolioValue) -
         parseCurrencyValue(b?.portfolioValue),
       sortOrder:
-        sortState.columnKey === "portfolioValue"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "portfolioValue" ? sortState.order : undefined,
     },
     {
       title: "Commencement Date",
@@ -373,6 +381,7 @@ export default function AcountBalanceBenefit({ modalData }) {
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -384,15 +393,26 @@ export default function AcountBalanceBenefit({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 900}
       >
         {renderModalContent(detailModalData)}
       </AppModal>
+
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>

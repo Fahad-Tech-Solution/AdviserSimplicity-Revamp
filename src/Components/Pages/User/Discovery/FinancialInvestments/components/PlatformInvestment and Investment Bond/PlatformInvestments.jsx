@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space, message } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -9,6 +9,7 @@ import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import PortfolioValueModal from ".././PortfolioValueModal";
 import ServiceFeeModal from ".././ServiceFeeModal";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -147,6 +148,7 @@ export default function PlatformInvestments({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const renderTitleBlock = useTitleBlock();
 
   // console.log(modalData?.sectionKey, "modalData?.sectionKey");
 
@@ -294,11 +296,11 @@ export default function PlatformInvestments({ modalData }) {
         "SMSFManagedFunds",
       ].includes(modalData?.sectionKey)
         ? investmentOffers?.InvestmentPlatforms?.find(
-          (item) => String(item?._id) === selectedPlatform,
-        ) || null
+            (item) => String(item?._id) === selectedPlatform,
+          ) || null
         : investmentOffers?.InvestmentBonds?.find(
-          (item) => String(item?._id) === selectedPlatform,
-        ) || null;
+            (item) => String(item?._id) === selectedPlatform,
+          ) || null;
 
       setDetailModalOpen(true);
       setDetailModalData({
@@ -316,9 +318,11 @@ export default function PlatformInvestments({ modalData }) {
         tableRows: 50,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
-          setDetailModalData({})
+          // setEditing(true);
+          setDetailModalData({});
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
     },
     [
@@ -330,7 +334,6 @@ export default function PlatformInvestments({ modalData }) {
 
   const openServiceFeeModal = useCallback(
     ({ record, form: currentForm }) => {
-
       const rowValues = currentForm.getFieldValue(record?.formPath) || {};
 
       const selectedPlatform = normalizeSelectValue(rowValues?.platformName);
@@ -356,8 +359,10 @@ export default function PlatformInvestments({ modalData }) {
         closeModal: () => {
           setDetailModalOpen(false);
           setEditing(true);
-          setDetailModalData({})
+          setDetailModalData({});
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
     },
     [modalData?.ownerLabel],
@@ -430,9 +435,7 @@ export default function PlatformInvestments({ modalData }) {
         parseCurrencyValue(a?.portfolioValue) -
         parseCurrencyValue(b?.portfolioValue),
       sortOrder:
-        sortState.columnKey === "portfolioValue"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "portfolioValue" ? sortState.order : undefined,
     },
     {
       title: "Total Cost Base",
@@ -493,6 +496,7 @@ export default function PlatformInvestments({ modalData }) {
     syncParentValues(savedEntries);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -504,19 +508,30 @@ export default function PlatformInvestments({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 900}
       >
         {renderModalContent(detailModalData)}
       </AppModal>
 
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
+
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={7}>
             <Form.Item
               label="Number of Platforms"
               name="NumberOfMap"

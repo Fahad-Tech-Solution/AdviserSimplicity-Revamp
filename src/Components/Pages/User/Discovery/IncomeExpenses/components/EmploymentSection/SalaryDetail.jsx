@@ -1,8 +1,9 @@
-import { Button, Col, Form, Row, Space } from "antd";
+import { Button, Col, Divider, Form, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import { RiEdit2Fill } from "react-icons/ri";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -73,10 +74,7 @@ function getInitialValues(modalData) {
     ...buildInitialValues({
       ...detail,
       amount:
-        detail?.amount ||
-        modalData?.totalValue ||
-        detail?.grossSalary ||
-        "",
+        detail?.amount || modalData?.totalValue || detail?.grossSalary || "",
       grossSalary: detail?.grossSalary || modalData?.totalValue || "",
     }),
     _hasExistingDetail: hasExistingDetail,
@@ -207,10 +205,7 @@ const SALARY_DETAIL_COLUMNS = [
 
 export default function SalaryDetail({ modalData }) {
   const [form] = Form.useForm();
-  const initialValues = useMemo(
-    () => getInitialValues(modalData),
-    [modalData],
-  );
+  const initialValues = useMemo(() => getInitialValues(modalData), [modalData]);
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
@@ -227,6 +222,7 @@ export default function SalaryDetail({ modalData }) {
     "afterTaxContributions",
     form,
   );
+  const renderTitleBlock = useTitleBlock();
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -254,8 +250,7 @@ export default function SalaryDetail({ modalData }) {
           salarySacrificeContributionsValue ??
           initialValues.salarySacrificeContributions,
         afterTaxContributions:
-          afterTaxContributionsValue ??
-          initialValues.afterTaxContributions,
+          afterTaxContributionsValue ?? initialValues.afterTaxContributions,
       },
     ],
     [
@@ -282,11 +277,22 @@ export default function SalaryDetail({ modalData }) {
       values?.grossSalary || "",
     );
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
     setEditing(false);
   };
 
   return (
-    <div style={{ padding: "16px 0px 0px 0px" }}>
+    <div style={{ padding: "0px 0px 0px 0px" }}>
+       <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <Row gutter={[16, 16]}>
           <Col xs={24}>

@@ -450,8 +450,9 @@ const MiddleWare = ({ modalData }) => {
         countLabel: MIDDLEWARE_CONFIG[modalData?.key]?.countLabel || "",
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       });
     },
     [
@@ -636,11 +637,13 @@ const MiddleWare = ({ modalData }) => {
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={renderTitleBlock({
-          title: detailModalData?.title,
-          icon: detailModalData?.icon,
-        })}
+        // title={renderTitleBlock({
+        //   title: detailModalData?.title,
+        //   icon: detailModalData?.icon,
+        // })}
         width={detailModalData?.width}
+        noCancelButton={detailModalData?.noCancelButton || false}
+      
       >
         {renderModalContent(detailModalData)}
       </AppModal>

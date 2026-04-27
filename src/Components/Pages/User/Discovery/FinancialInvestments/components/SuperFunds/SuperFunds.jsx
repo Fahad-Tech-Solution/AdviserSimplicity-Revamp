@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row, Select, Space, message } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -12,6 +12,7 @@ import SuperFundsGroupInsuranceModal from "./SuperFundsGroupInsuranceModal.jsx";
 import BeneficiariesModal from "./BeneficiariesModal.jsx";
 import ContributionsModal from "./ContributionsModal.jsx";
 import AnnualAdviceModal from "./AnnualAdviceModal.jsx";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -163,7 +164,7 @@ export default function SuperFunds({ modalData }) {
     columnKey: null,
     order: null,
   });
-
+  const renderTitleBlock = useTitleBlock();
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
       modalData?.ownerKey,
@@ -222,7 +223,8 @@ export default function SuperFunds({ modalData }) {
     }
 
     const compare = (a, b) =>
-      parseCurrencyValue(a?.balanceBenefit) - parseCurrencyValue(b?.balanceBenefit);
+      parseCurrencyValue(a?.balanceBenefit) -
+      parseCurrencyValue(b?.balanceBenefit);
 
     const multiplier = sortState.order === "descend" ? -1 : 1;
     return [...rows].sort((a, b) => compare(a, b) * multiplier);
@@ -287,8 +289,9 @@ export default function SuperFunds({ modalData }) {
         platform: fund,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
         },
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
       };
 
       const detailMap = {
@@ -398,9 +401,7 @@ export default function SuperFunds({ modalData }) {
         parseCurrencyValue(a?.balanceBenefit) -
         parseCurrencyValue(b?.balanceBenefit),
       sortOrder:
-        sortState.columnKey === "balanceBenefit"
-          ? sortState.order
-          : undefined,
+        sortState.columnKey === "balanceBenefit" ? sortState.order : undefined,
     },
     {
       title: "Insurance",
@@ -499,6 +500,7 @@ export default function SuperFunds({ modalData }) {
     syncParentValues(savedEntries);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const handleTableChange = (_pagination, _filters, sorter) => {
@@ -510,15 +512,26 @@ export default function SuperFunds({ modalData }) {
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 1000}
       >
         {renderModalContent(detailModalData)}
       </AppModal>
+
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>

@@ -1,8 +1,9 @@
-import { Button, Col, Form, Row, Select, Space } from "antd";
+import { Button, Col, Divider, Form, Row, Select, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -91,6 +92,7 @@ function hasMeaningfulValues(initialValues = {}) {
 
 export default function AnnualAdviceModal({ modalData }) {
   const [form] = Form.useForm();
+  const renderTitleBlock = useTitleBlock();
   const valueField = getValueField(modalData);
   const arrayField = getArrayField(modalData);
   const feeLabel = getFeeLabel(modalData);
@@ -99,11 +101,16 @@ export default function AnnualAdviceModal({ modalData }) {
     () => buildInitialValues(modalData?.initialValues || {}, modalData),
     [arrayField, modalData, valueField],
   );
-  const [editing, setEditing] = useState(() => !hasMeaningfulValues(initialValues));
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(initialValues),
+  );
 
   const serviceFee = Form.useWatch("serviceFee", form);
   const frequency = Form.useWatch("frequency", form);
-  const annualAdviserServiceFee = Form.useWatch("annualAdviserServiceFee", form);
+  const annualAdviserServiceFee = Form.useWatch(
+    "annualAdviserServiceFee",
+    form,
+  );
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -119,7 +126,9 @@ export default function AnnualAdviceModal({ modalData }) {
         serviceFee: serviceFee ?? initialValues?.serviceFee ?? "",
         frequency: frequency ?? initialValues?.frequency ?? "",
         annualAdviserServiceFee:
-          annualAdviserServiceFee ?? initialValues?.annualAdviserServiceFee ?? "",
+          annualAdviserServiceFee ??
+          initialValues?.annualAdviserServiceFee ??
+          "",
       },
     ],
     [annualAdviserServiceFee, frequency, initialValues, serviceFee],
@@ -211,10 +220,21 @@ export default function AnnualAdviceModal({ modalData }) {
     modalData?.parentForm?.setFieldValue?.(modalData?.fieldPath, updatedRow);
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           <Col xs={24}>
@@ -227,11 +247,15 @@ export default function AnnualAdviceModal({ modalData }) {
             />
           </Col>
           <Col xs={24}>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
               <Space>
                 {!editing ? (
                   <>
-                    <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>
+                    <Button onClick={() => modalData?.closeModal?.()}>
+                      Cancel
+                    </Button>
                     <Button type="primary" onClick={() => setEditing(true)}>
                       Edit <RiEdit2Fill />
                     </Button>

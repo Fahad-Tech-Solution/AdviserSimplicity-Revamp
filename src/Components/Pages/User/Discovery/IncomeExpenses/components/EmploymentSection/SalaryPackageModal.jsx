@@ -1,8 +1,9 @@
-import { Alert, Button, Col, Form, Row, Space } from "antd";
+import { Alert, Button, Col, Divider, Form, Row, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import { RiEdit2Fill } from "react-icons/ri";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -123,14 +124,11 @@ const SALARY_PACKAGING_COLUMNS = [
 
 export default function SalaryPackageModal({ modalData }) {
   const [form] = Form.useForm();
-  const initialValues = useMemo(
-    () => getInitialValues(modalData),
-    [modalData],
-  );
+  const initialValues = useMemo(() => getInitialValues(modalData), [modalData]);
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
-
+  const renderTitleBlock = useTitleBlock();
   const employerFBTStatus = Form.useWatch("employerFBTStatus", form);
   const creditCardMortgageRepayments = Form.useWatch(
     "creditCardMortgageRepayments",
@@ -150,8 +148,7 @@ export default function SalaryPackageModal({ modalData }) {
       {
         key: modalData?.ownerKey || "salaryPackaging",
         formPath: [],
-        employerFBTStatus:
-          employerFBTStatus ?? initialValues.employerFBTStatus,
+        employerFBTStatus: employerFBTStatus ?? initialValues.employerFBTStatus,
         creditCardMortgageRepayments:
           creditCardMortgageRepayments ??
           initialValues.creditCardMortgageRepayments,
@@ -187,6 +184,7 @@ export default function SalaryPackageModal({ modalData }) {
     );
     setEditing(false);
     modalData?.closeModal?.();
+    modalData?.switchToEditMode?.();
   };
 
   const validationErrors = form
@@ -194,7 +192,17 @@ export default function SalaryPackageModal({ modalData }) {
     .filter((field) => field.errors.length > 0);
 
   return (
-    <div style={{ padding: "16px 0px 0px 0px" }}>
+    <div style={{ padding: "0px 0px 0px 0px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: null,
+          clossButton: true,
+          onClose: handleCancel,
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <Row gutter={[16, 16]}>
           {editing && validationErrors.length > 0 ? (

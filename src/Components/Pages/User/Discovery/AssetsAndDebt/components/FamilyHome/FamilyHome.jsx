@@ -209,6 +209,8 @@ export default function FamilyHome({ modalData }) {
             key: "familyHomeLoan",
             width: 1200,
             closeModal: () => setOpenModal(false),
+            switchToEditMode: () => setEditing(true),
+            noCancelButton: true,
             parentForm: currentForm,
           });
         },
@@ -305,7 +307,7 @@ export default function FamilyHome({ modalData }) {
       <AppModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={openModalData?.title || "N/A"}
+        noCancelButton={openModalData?.noCancelButton || false}
         width={openModalData?.width || 1000}
       >
         {renderModalContent(openModalData)}

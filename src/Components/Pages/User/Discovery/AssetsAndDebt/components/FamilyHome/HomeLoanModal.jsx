@@ -1,4 +1,4 @@
-import { Alert, Button, Col, Form, Row, Space } from "antd";
+import { Alert, Button, Col, Divider, Form, Row, Space } from "antd";
 import { useAtomValue } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -8,6 +8,7 @@ import {
   InvestmentOffersData,
   loggedInUser,
 } from "../../../../../../../store/authState";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -132,7 +133,7 @@ export default function HomeLoanModal({ modalData }) {
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
-
+  const renderTitleBlock = useTitleBlock();
   const lender = Form.useWatch("lender", form);
   const loanBalance = Form.useWatch("loanBalance", form);
   const loanType = Form.useWatch("loanType", form);
@@ -331,7 +332,17 @@ export default function HomeLoanModal({ modalData }) {
     .filter((field) => field.errors.length > 0);
 
   return (
-    <div style={{ padding: "16px 0px 0px 0px" }}>
+    <div style={{ padding: "0px 0px 0px 0px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: null,
+          clossButton: true,
+          onClose: handleCancel,
+          isEditing: editing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <Row gutter={[16, 16]}>
           {editing && validationErrors.length > 0 ? (
