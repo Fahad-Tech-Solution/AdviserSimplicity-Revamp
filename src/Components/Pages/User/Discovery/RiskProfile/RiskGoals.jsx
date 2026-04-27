@@ -903,7 +903,7 @@ const RiskGoals = ({ modalData }) => {
             type="primary"
             className="w-100"
             onClick={() => {
-              onGoalChange(selectedGoal);
+              modalData?.closeModal?.();
             }}
             style={{
               width: "100%",
