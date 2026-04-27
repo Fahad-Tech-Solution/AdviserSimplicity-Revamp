@@ -195,6 +195,8 @@ export default function FamilyInvestmentTrust({ modalData }) {
         columnHead: isCorporate ? "Director Name" : "Trustee Name",
         width: 500,
         component: <BusinessTrustTrusteeInnerModal />,
+        noCancelButton: true,
+        switchToEditMode: () => setEditing(true),
         editing,
         valueArray:
           activeForm.getFieldValue("directorsOfCorporateTrustee") || [],
@@ -407,7 +409,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
       <AppModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        title={detailModalData?.title}
+        noCancelButton={detailModalData?.noCancelButton || false}
         width={detailModalData?.width || 720}
       >
         {renderModalContent(detailModalData)}
