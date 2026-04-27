@@ -159,7 +159,10 @@ export default function PensionAccountModal({ modalData }) {
       const members = form.getFieldValue("selectedMembers") || [];
       const member = members[memberIndex];
       const row = form.getFieldValue(["pensionData", memberIndex]) || {};
+
       setAccountsModalData({
+        switchToEditMode: () => setEditing(true),
+        noCancelButton: true,
         component: <SmsfPensionAccountsInnerModal />,
         title: `${memberLabel(member)}_Pension Benefits`,
         width: 700,
@@ -169,11 +172,11 @@ export default function PensionAccountModal({ modalData }) {
         initialAccounts: row?.pensionBenefitsTotalArray || [],
         closeModal: () => {
           setAccountsModalOpen(false);
-          setEditing(true);
         },
       });
       setAccountsModalOpen(true);
     },
+
     [form, memberLabel],
   );
 
@@ -307,7 +310,7 @@ export default function PensionAccountModal({ modalData }) {
       <AppModal
         open={accountsModalOpen}
         onClose={() => setAccountsModalOpen(false)}
-        title={accountsModalData?.title || "Pension accounts"}
+        noCancelButton={accountsModalData?.noCancelButton || false}
         width={accountsModalData?.width || 1200}
       >
         {renderModalContent(accountsModalData)}

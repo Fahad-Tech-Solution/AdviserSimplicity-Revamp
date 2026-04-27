@@ -1,7 +1,11 @@
-import { Button, Form, Space } from "antd";
+import { Button, Divider, Form, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
+import {
+  formatNumber,
+  toCommaAndDollar,
+} from "../../../../../../../hooks/helpers.js";
+import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -112,10 +116,8 @@ function calculateAnnualRepayments(record, currentForm) {
   );
 }
 
-export default function InvestmentPropertyLoanBalanceModal({
-  modalData
-}) {
-
+export default function InvestmentPropertyLoanBalanceModal({ modalData }) {
+  const renderTitleBlock = useTitleBlock();
   console.log("modalData", modalData);
 
   const resolvedValueArray = modalData?.valueArray ?? valueArray ?? [];
@@ -281,6 +283,7 @@ export default function InvestmentPropertyLoanBalanceModal({
       });
       // setLocalEditing(false);
       resolvedOnClose?.();
+      modalData?.switchToEditMode?.();
     } finally {
       setSaving(false);
     }
@@ -296,7 +299,17 @@ export default function InvestmentPropertyLoanBalanceModal({
   };
 
   return (
-    <div style={{ padding: "16px 4px 0px 4px" }}>
+    <div style={{ padding: "0px 4px 0px 4px" }}>
+      <div style={{ marginBottom: 12 }}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon: modalData?.icon || null,
+          clossButton: true,
+          onClose: () => modalData?.closeModal?.(),
+          isEditing: localEditing,
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </div>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <EditableDynamicTable
           form={form}
@@ -306,19 +319,30 @@ export default function InvestmentPropertyLoanBalanceModal({
           tableProps={TABLE_PROPS}
           rowPathKey="formPath"
         />
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}
+        >
           <Space>
             {!localEditing ? (
               <>
                 <Button onClick={handleCancel} disabled={saving}>
                   Cancel
                 </Button>
-                <Button type="primary" onClick={() => setLocalEditing(true)} disabled={saving}>
+                <Button
+                  type="primary"
+                  onClick={() => setLocalEditing(true)}
+                  disabled={saving}
+                >
                   Edit
                 </Button>
               </>
             ) : (
-              <Button type="primary" onClick={handleOk} loading={saving} disabled={saving}>
+              <Button
+                type="primary"
+                onClick={handleOk}
+                loading={saving}
+                disabled={saving}
+              >
                 Confirm and Exit
               </Button>
             )}
@@ -328,4 +352,3 @@ export default function InvestmentPropertyLoanBalanceModal({
     </div>
   );
 }
-
