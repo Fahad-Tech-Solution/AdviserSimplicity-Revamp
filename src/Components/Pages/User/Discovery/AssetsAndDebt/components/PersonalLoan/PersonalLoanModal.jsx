@@ -143,6 +143,7 @@ export default function PersonalLoanModal({ modalData }) {
   const [saving, setSaving] = useState(false);
   const { post, patch } = useApi();
 
+
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
@@ -181,9 +182,14 @@ export default function PersonalLoanModal({ modalData }) {
   const personalLoans =
     Form.useWatch("personalLoans", form) || initialValues.personalLoans;
 
+  // useEffect(() => {
+  //   form.setFieldsValue(initialValues);
+  // }, [form, initialValues]);
+
   useEffect(() => {
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    setEditing(!sectionData?._id);
+  }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
     const count = Number(numberOfLoans) || 1;
@@ -211,6 +217,9 @@ export default function PersonalLoanModal({ modalData }) {
     form.setFieldValue("personalLoans", filtered);
     form.setFieldValue("numberOfLoans", filtered.length);
   };
+  function requiredRule(message) {
+    return { required: true, message };
+  }
 
   const columns = useMemo(
     () => [
@@ -239,6 +248,7 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanBalance",
         type: "text",
         placeholder: "Loan Balance",
+        rules: [requiredRule("Loan Balance is required")],
         onChange: (value, record, column, currentForm) => {
           currentForm.setFieldValue(
             [...record.formPath, column.field],
@@ -410,7 +420,7 @@ console.log("payload",payload);
   };
 
   return (
-    <div style={{ padding: "16px 4px" }}>
+    <div style={{ padding: "16px 4px 0px 4px" }}>
       <Form
         form={form}
         initialValues={initialValues}

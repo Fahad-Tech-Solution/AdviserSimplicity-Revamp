@@ -625,7 +625,10 @@ export default function PersonalInsuranceModal({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    setEditing(!discoveryData?.personalInsurance?._id);
+  }, [form, initialValues, discoveryData?.personalInsurance?._id]);
+
+ 
 
   const handleFinish = async (values) => {
     const pi = personalInsurance && typeof personalInsurance === "object"

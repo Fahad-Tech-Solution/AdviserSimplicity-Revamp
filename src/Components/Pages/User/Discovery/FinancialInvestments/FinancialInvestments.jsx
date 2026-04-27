@@ -44,7 +44,9 @@ const FinancialInvestments = () => {
 
   const showPartner = !["Single", "Widowed"].includes(
     discoveryData.personalDetails?.client?.clientMaritalStatus,
+    
   );
+  console.log("showPartner",showPartner);
 
   const visibleCards = useMemo(
     () =>
@@ -133,6 +135,7 @@ const FinancialInvestments = () => {
                         card?.secondTotalKey || "partnerTotal"
                       ]
                     }
+
                     showPartner={card?.showSecondTotal || showPartner}
                     OpenModal={() => {
                       setModalOpen(true);

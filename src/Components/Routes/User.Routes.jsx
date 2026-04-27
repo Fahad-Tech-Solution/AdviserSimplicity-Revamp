@@ -372,6 +372,7 @@ const FINANCIAL_INVESTMENTS_CARDS = [
     icon: "📋",
     component: <InvestmentLoanModal />,
     modalWidth: "1300px",
+     showSecondTotal: false,
   },
   {
     title: "Margin Loan",
@@ -379,6 +380,7 @@ const FINANCIAL_INVESTMENTS_CARDS = [
     icon: "📉",
     component: <InvestmentLoanModal />,
     modalWidth: "1200px",
+    showSecondTotal: false,
   },
 ];
 
