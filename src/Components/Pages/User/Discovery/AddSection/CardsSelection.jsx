@@ -17,14 +17,6 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
   const selectedClient = useAtomValue(SelectedClient);
 
   const onClick = (key) => {
-    // setDiscoveryQuestions((prev) => ({
-    //   ...prev,
-    //   [key]: "Yes" === discoveryQuestions[key] ? "No" : "Yes",
-    // }));
-
-    // console.log(key);
-    // console.log(questionTemp);
-
     setQuestionTemp((prev) => ({
       ...prev,
       [key]: "Yes" === questionTemp[key] ? "No" : "Yes",

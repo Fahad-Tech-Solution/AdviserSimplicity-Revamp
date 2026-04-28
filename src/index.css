@@ -1,15 +1,24 @@
 .ModalCloseButtonHover {
-    padding: 0px 5px;
-    position: absolute;
-    right: -10px;
-    top: -10px;
-    color: rgba(0, 0, 0, 0.45);
-    border: none;
-    background: transparent;
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04) !important;
-      color: rgba(0, 0, 0, 0.75) !important;
-      border: none !important;
-    }
+  padding: 0px 5px;
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  color: rgba(0, 0, 0, 0.45);
+  border: none;
+  background: transparent;
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    color: rgba(0, 0, 0, 0.75) !important;
+    border: none !important;
   }
-  
+}
+
+.GoalsFromDiscription:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.GoalsFromDiscription span {
+  color: red !important;
+}

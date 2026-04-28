@@ -1,7 +1,19 @@
-import { App as AntdApp, Alert, Button, Form, Input, Modal, Spin } from "antd";
+import {
+  App as AntdApp,
+  Alert,
+  Button,
+  Col,
+  Divider,
+  Form,
+  Input,
+  Modal,
+  Row,
+  Spin,
+} from "antd";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useApi from "../../../../../hooks/useApi";
+import AdviceGoalCard from "../../../../Common/AdviceGoalCard";
 import {
   addDiscoverySectionsModalOpen,
   discoverySectionQuestionsAtom,
@@ -279,31 +291,15 @@ export default function AddDiscoverySectionsModal() {
       onCancel={handleClose}
       afterClose={() => form.resetFields()}
       footer={
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            paddingTop: 4,
-            borderTop: "1px solid #f0f0f0",
-            marginTop: 8,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
             htmlType="submit"
             form="add-discovery-sections-form"
-            size="large"
             loading={saving}
             disabled={!clientId || loading}
-            style={{
-              background: PRIMARY_GREEN,
-              borderColor: PRIMARY_GREEN,
-              fontWeight: 700,
-              borderRadius: 8,
-              minWidth: 140,
-            }}
           >
-            Save and Exit
+            Submit
           </Button>
         </div>
       }
@@ -351,55 +347,38 @@ export default function AddDiscoverySectionsModal() {
             <Spin size="large" />
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 16,
-            }}
-          >
-            {SECTION_CARDS.map((elem) => {
-              const on = isYes(elem.key);
-              return (
-                <button
-                  key={elem.key}
-                  type="button"
-                  onClick={() => handleCardClick(elem)}
-                  disabled={!clientId}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 12,
-                    padding: "22px 16px",
-                    minHeight: 120,
-                    borderRadius: 12,
-                    border: `2px solid ${
-                      on ? CARD_BORDER_SELECTED : CARD_BORDER
-                    }`,
-                    background: on ? CARD_BG_SELECTED : "#fff",
-                    cursor: clientId ? "pointer" : "not-allowed",
-                    opacity: clientId ? 1 : 0.6,
-                    transition: "border-color 0.15s, background 0.15s",
-                  }}
-                >
-                  <span style={{ fontSize: 32 }}>{elem.icon}</span>
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: "#111827",
-                      textAlign: "center",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {elem.title}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <>
+            <div style={{ padding: "20px 0 0 0" }}>
+              <Row gutter={[16, 16]} justify="center">
+                {SECTION_CARDS.map((elem) => {
+                  if (!elem?.alwaysShow) {
+                    return (
+                      <Col key={elem.key} xs={24} sm={12} md={12}>
+                        <div
+                          style={{
+                            opacity: clientId ? 1 : 0.6,
+                            pointerEvents: clientId ? "auto" : "none",
+                          }}
+                        >
+                          <AdviceGoalCard
+                            label={elem.title}
+                            Icon={elem.icon}
+                            status={cardWatchMap[elem.key] || "No"}
+                            key={elem.key}
+                            onClick={() => {
+                              handleCardClick(elem);
+                            }}
+                          />
+                        </div>
+                      </Col>
+                    );
+                  }
+                  return null;
+                })}
+              </Row>
+              <Divider />
+            </div>
+          </>
         )}
       </Form>
     </Modal>

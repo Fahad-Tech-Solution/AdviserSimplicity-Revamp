@@ -13,7 +13,6 @@ const CARD_STYLE = {
 
 const CARD_BODY_STYLE = {
   padding: "24px 16px 18px",
-  height: "262px",
 };
 
 const TITLE_STYLE = {
@@ -96,14 +95,14 @@ function getTotalStyle(hasValue) {
   };
 }
 
-function TotalValue({ name, value }) {
+function TotalValue({ name, value, placeholder = "$0" }) {
   const hasValue = Boolean(value);
 
   return (
     <>
       <p style={NAME_STYLE}>{name || "N/A"}</p>
       <div className="w-100 p-0">
-        <div style={getTotalStyle(hasValue)}>{value || "$0"}</div>
+        <div style={getTotalStyle(hasValue)}>{value || placeholder}</div>
       </div>
     </>
   );
@@ -197,6 +196,9 @@ function DiscoveryTotalsCard({
   OpenModal = () => {},
   onOpenModal,
   modalPayload,
+  firstPlaceholder = "$0",
+  secondPlaceholder = "$0",
+  cardHeight = "262px",
 }) {
   const handleOpen = () => {
     if (typeof onOpenModal === "function") {
@@ -207,15 +209,19 @@ function DiscoveryTotalsCard({
   };
 
   return (
-    <Card style={CARD_STYLE} styles={{ body: CARD_BODY_STYLE }}>
-      <h6 style={TITLE_STYLE}>{title}</h6>
+    <Card style={CARD_STYLE} styles={{ body: {...CARD_BODY_STYLE, height: cardHeight} }}>
+      <h6 style={TITLE_STYLE} >{title}</h6>
       <p style={ICON_WRAPPER_STYLE}>{renderIcon(icon)}</p>
       <div style={CONTENT_STYLE}>
         <div role="button" style={BADGE_STYLE} onClick={handleOpen}>
           <GoArrowUpRight />
         </div>
 
-        <TotalValue name={firstName} value={firstTotal} />
+        <TotalValue
+          name={firstName}
+          value={firstTotal}
+          placeholder={firstPlaceholder}
+        />
         {secondisFormInput ? (
           <FormField
             name={secondName}
@@ -223,7 +229,11 @@ function DiscoveryTotalsCard({
             callBackFunction={callBackFunction}
           />
         ) : showPartner ? (
-          <TotalValue name={secondName} value={secondTotal} />
+          <TotalValue
+            name={secondName}
+            value={secondTotal}
+            placeholder={secondPlaceholder}
+          />
         ) : null}
       </div>
     </Card>

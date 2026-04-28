@@ -21,6 +21,9 @@ import { renderModalContent } from "../../../../Common/renderModalContent";
 import RiskGoals from "./RiskGoals";
 import RiskCheckBoxConfirmation from "./RiskCheckBoxConfirmation";
 
+import { Grid } from "antd";
+const { useBreakpoint } = Grid;
+
 const { TextArea } = Input;
 const { Text } = Typography;
 
@@ -39,12 +42,7 @@ function ResultCard({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
-
-  const goalOptions = riskGoals.map((goal) => ({
-    label: goal.value,
-    value: goal.value,
-  }));
-
+  const screens = useBreakpoint();
   const extractChartData = (goal) => {
     return {
       chart: goal?.chart?.map((item) => item.value),
@@ -126,6 +124,7 @@ function ResultCard({
           </div>
         </div>
       </Card>
+
       <Card
         style={{
           background: "rgb(255, 255, 255)",
@@ -140,7 +139,7 @@ function ResultCard({
           display: "flex",
           flexDirection: "column",
           gap: 14,
-          height: "48vh",
+          height: screens.xxl ? "48vh" : "80vh",
         }}
         styles={{
           body: {
