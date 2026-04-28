@@ -40,6 +40,8 @@ import DetectionMatrixStep from "./DetectionMatrixStep.jsx";
 import ResultsStep from "./ResultsStep.jsx";
 import ResultsStepV2 from "./ResultsStep copy.jsx";
 import { FaDownload } from "react-icons/fa";
+import { loggedInUser } from "../../../../../store/authState.js";
+import { generateRiskProfileDocument } from "../../../../Common/docx/generateRiskProfileDocument.js";
 
 const { TextArea } = Input;
 
@@ -624,6 +626,7 @@ export default function RiskProfile() {
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const selected = useAtomValue(SelectedClient);
+  const session = useAtomValue(loggedInUser);
 
   const riskProfileData = useAtomValue(riskProfileDataAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -914,7 +917,29 @@ export default function RiskProfile() {
   };
 
   const handleDownload = () => {
-    console.log("download");
+    console.log("values", values);
+    // return
+  
+    const personalDetails = discoveryData?.personalDetails || {};
+
+    generateRiskProfileDocument({
+      values,
+      personalDetails,
+      sessionUser: session?.user || null,
+      calculateScore,
+      templateFileName: "riskprofiletemplate.docx",
+      downloadFileName: `Risk Profile - ${
+        personalDetails?.client?.clientPreferredName || "Client"
+      }.docx`,
+    })
+      .then(() => {
+        message.success("Risk profile document downloaded.");
+      })
+      .catch((error) => {
+        message.error(
+          error?.message || "Failed to generate/download risk profile document.",
+        );
+      });
   };
 
   if (loading) {
