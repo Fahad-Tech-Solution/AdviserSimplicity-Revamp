@@ -6,11 +6,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   discoveryDataAtom,
   discoverySectionQuestionsAtom,
+  goalsDataAtom,
+  goalsSectionQuestionsAtom,
+  riskProfileDataAtom,
   SelectedClient,
 } from "../../../../../store/authState";
+import { loggedInUser } from "../../../../../store/authState.js";
 import { getNextDiscoveryNavKey } from "../../../../Routes/User.Routes.jsx";
 import { PRIMARY_GREEN, ProfileCard } from "./components/ProfileCard.jsx";
 import PersonalDetailsFrom from "./components/PersonalDetailsFrom.jsx";
+import { generatePersonalDetailsDocument } from "../../../../Common/docx/generatePersonalDetailsDocument.js";
 
 const { Text } = Typography;
 
@@ -40,7 +45,11 @@ export function PersonalDetails() {
   const { pathname } = useLocation();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
+  const goalsQuestions = useAtomValue(goalsSectionQuestionsAtom);
+  const goalsData = useAtomValue(goalsDataAtom);
+  const riskProfileData = useAtomValue(riskProfileDataAtom);
   const selected = useAtomValue(SelectedClient);
+  const session = useAtomValue(loggedInUser);
   const [step, setStep] = useState(1);
 
   const pd = getPersonalDetailsFromDiscovery(discoveryData);
@@ -125,9 +134,32 @@ export function PersonalDetails() {
             </Button>
             <Button
               icon={<DownloadOutlined />}
-              onClick={() =>
-                message.info("Download — connect when export API is ready.")
-              }
+              onClick={() => {
+                if (!pd) {
+                  message.error("Personal details not available to export yet.");
+                  return;
+                }
+
+                generatePersonalDetailsDocument({
+                  personalDetails: pd,
+                  discoveryData,
+                  discoveryQuestions,
+                  goalsData,
+                  goalsQuestions,
+                  riskProfileData,
+                  sessionUser: session?.user || null,
+                  templateFileName: "template.docx",
+                  downloadFileName: `Personal Details - ${
+                    pd?.client?.clientPreferredName || "Client"
+                  }.docx`,
+                })
+                  .then(() => message.success("Document downloaded."))
+                  .catch((error) => {
+                    message.error(
+                      error?.message || "Failed to generate/download document.",
+                    );
+                  });
+              }}
               style={{ borderRadius: 8, minWidth: 140 }}
             >
               Download Doc
