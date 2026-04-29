@@ -17,6 +17,7 @@ import {
 } from "../Routes/User.Routes.jsx";
 import CardsSelection from "../Pages/User/Discovery/AddSection/CardsSelection.jsx";
 import AppModal from "../Common/AppModal.jsx";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 const { Text, Title } = Typography;
 
@@ -186,11 +187,28 @@ export default function DiscoveryFlowLayout() {
     [discoveryQuestions, location.pathname],
   );
 
+  const previousRoute = useMemo(() => {
+    const currentIndex = stepperRoutes.findIndex((r) =>
+      location.pathname.includes(r.key),
+    );
+    return stepperRoutes[currentIndex - 1];
+  }, [stepperRoutes, location.pathname]);
+
+  const nextRoute = useMemo(() => {
+    const currentIndex = stepperRoutes.findIndex((r) =>
+      location.pathname.includes(r.key),
+    );
+    return stepperRoutes[currentIndex + 1];
+  }, [stepperRoutes, location.pathname]);
+
   const matched = matchDiscoveryRoute(location.pathname, discoveryQuestions);
   const pageTitle = matched?.stepTitle ?? "Discovery";
   const showDiscoveryAddButton = Boolean(matched?.showDiscoveryAddButton);
 
-  if (location.pathname.includes("/user/discovery/risk-profile")) {
+  if (
+    location.pathname.includes("/user/discovery/risk-profile") ||
+    matched?.noDiscoveryLayout
+  ) {
     return <Outlet />;
   } else {
     return (
@@ -270,6 +288,31 @@ export default function DiscoveryFlowLayout() {
         </AppModal>
 
         <Outlet />
+        {matched?.showNavigationButtons && (
+          <div className="d-flex justify-content-between align-items-center mt-3">
+            <Button
+              onClick={() => {
+                navigate(
+                  "/user/discovery/" + previousRoute?.relativePath || "",
+                );
+              }}
+            >
+              <FaArrowLeft /> Back
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                if(nextRoute?.relativePath==="add-section"){
+                  navigate("/user/discovery/risk-profile" || "");
+                  return;
+                }
+                navigate("/user/discovery/" + nextRoute?.relativePath || "");
+              }}
+            >
+              Next <FaArrowRight />
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

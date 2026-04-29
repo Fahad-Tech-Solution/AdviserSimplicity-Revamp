@@ -22,3 +22,16 @@
 .GoalsFromDiscription span {
   color: red !important;
 }
+
+
+.client-summary-additional-discovery-section {
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: #f9fafb;
+  cursor: pointer;
+  &:hover {
+    background: #f0f0f0;
+    border: 1px solid #d1d5db;
+  }
+}

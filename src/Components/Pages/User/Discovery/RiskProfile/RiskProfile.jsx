@@ -886,8 +886,6 @@ export default function RiskProfile() {
       updatedAt: undefined,
     };
 
-    console.log("payload", payload);
-
     try {
       setSubmitting(true);
       const response = recordId
@@ -919,7 +917,7 @@ export default function RiskProfile() {
   const handleDownload = () => {
     console.log("values", values);
     // return
-  
+
     const personalDetails = discoveryData?.personalDetails || {};
 
     generateRiskProfileDocument({
@@ -937,10 +935,15 @@ export default function RiskProfile() {
       })
       .catch((error) => {
         message.error(
-          error?.message || "Failed to generate/download risk profile document.",
+          error?.message ||
+            "Failed to generate/download risk profile document.",
         );
       });
   };
+
+  const showReviewInconsistenciesButton =
+    conflicts.length > 0 &&
+    location.pathname.includes("/user/discovery/risk-profile/detection-matrix");
 
   if (loading) {
     return (
@@ -1015,6 +1018,7 @@ export default function RiskProfile() {
           currentStep={currentStep}
           steps={QUESTION_STEPS}
           lockedStepKeys={lockedStepKeys}
+          conflicts={conflicts}
         />
       </div>
 
@@ -1151,27 +1155,24 @@ export default function RiskProfile() {
             style={{
               padding: "20px 32px",
               borderRadius: 8,
-              background:
-                conflicts.length > 0
-                  ? "rgb(209, 213, 219)"
-                  : "rgb(34, 197, 94)",
-              color:
-                conflicts.length > 0
-                  ? "rgb(156, 163, 175)"
-                  : "rgb(255, 255, 255)",
+              background: showReviewInconsistenciesButton
+                ? "rgb(209, 213, 219)"
+                : "rgb(34, 197, 94)",
+              color: showReviewInconsistenciesButton
+                ? "rgb(156, 163, 175)"
+                : "rgb(255, 255, 255)",
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow:
-                conflicts.length > 0
-                  ? "none"
-                  : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+              boxShadow: showReviewInconsistenciesButton
+                ? "none"
+                : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
               transition: "0.2s",
             }}
-            disabled={conflicts.length > 0}
+            disabled={showReviewInconsistenciesButton}
           >
             <Space>
-              {conflicts.length > 0
+              {showReviewInconsistenciesButton
                 ? " 🔒 Review Inconsistencies"
                 : normalizedStepIndex === 0
                   ? "Start"

@@ -52,6 +52,7 @@ import SMSFDetails from "../Pages/User/Discovery/SMSF/components/SMSFDetails/SMS
 import SMSFAccumulationAccount from "../Pages/User/Discovery/SMSF/components/SMSFAccumulationAccount/SMSFAccumulationAccount.jsx";
 import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObjectives.jsx";
 import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
+// import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
 const PersonalDetailsLazy = lazy(() =>
@@ -60,17 +61,26 @@ const PersonalDetailsLazy = lazy(() =>
   ),
 );
 
-const personalDetailsElement = (
-  <Suspense
-    fallback={
-      <div style={{ padding: 48, textAlign: "center" }}>
-        <Spin size="large" />
-      </div>
-    }
-  >
-    <PersonalDetailsLazy />
-  </Suspense>
+const ClientSummaryLazy = lazy(
+  () => import("../Pages/User/Discovery/ClientSummary/ClientSummary.jsx"),
 );
+
+function renderLazyRouteElement(LazyComponent) {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ padding: 48, textAlign: "center" }}>
+          <Spin size="large" />
+        </div>
+      }
+    >
+      <LazyComponent />
+    </Suspense>
+  );
+}
+
+const personalDetailsElement = renderLazyRouteElement(PersonalDetailsLazy);
+const clientSummaryElement = renderLazyRouteElement(ClientSummaryLazy);
 
 const DISCOVERY_SECTION_METADATA_KEYS = new Set([
   "_id",
@@ -855,7 +865,7 @@ const GOALS_OBJECTIVES_CARDS = [
       {
         title: "Pay off Home Loan",
         key: "homeLoanGoal",
-        icon:"🔑",
+        icon: "🔑",
         scopeOfAdvice: "Debt Management",
         whenScopeIs: "Debt Management",
         descriptionArray: [
@@ -866,7 +876,7 @@ const GOALS_OBJECTIVES_CARDS = [
       {
         title: "Pay off Credit Card/Debt",
         key: "creditCardGoal",
-        icon:"💳",
+        icon: "💳",
         scopeOfAdvice: "Debt Management",
         whenScopeIs: "Debt Management",
         descriptionArray: [
@@ -883,14 +893,14 @@ const GOALS_OBJECTIVES_CARDS = [
       {
         title: "Estate Planning",
         key: "estatePlanningGoal",
-        icon:"📄",
+        icon: "📄",
         whenScopeIs: "",
         scopeOfAdvice: "Estate Planning",
         descriptionArray: [],
       },
       {
         title: "Leave an Inheritance",
-        icon:"🎁",
+        icon: "🎁",
         key: "leaveInheritanceGoal",
         whenScopeIs: "",
         scopeOfAdvice: "Estate Planning",
@@ -899,7 +909,7 @@ const GOALS_OBJECTIVES_CARDS = [
       {
         title: "Reduce Tax to my Beneficiaries",
         key: "reduceTaxBeneficiaries",
-        icon:"🌱",
+        icon: "🌱",
         whenScopeIs: "Estate Planning",
         scopeOfAdvice: "Estate Planning",
         descriptionArray: [
@@ -916,7 +926,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Set up an Investment Portfolio",
         key: "investmentPortfolioGoal",
         whenScopeIs: "Investments",
-        icon:"📊",
+        icon: "📊",
         descriptionArray: [
           "<span>I/We</span> like to  Invest an amount of <span>$XXX,000</span> from <span>our/my</span> cash sitting in <span>my/our</span> bank account into managed investments where <span>our/my</span> money will  grow in value over time. <span>I/We</span> want to start slow and <span>are/am</span> happy to invest a regular amount of <span>$XXX</span> per month as <span>I/we</span> can  afford to spare this amount of money each month <span>I/we</span> would like to keep building up this investment.",
         ],
@@ -926,7 +936,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Review Investment Portfolio",
         key: "reviewInvestmentPortfolioGoal",
         whenScopeIs: "Investment",
-        icon:"🔍",
+        icon: "🔍",
         descriptionArray: [
           "<span>I/We/Client Name</span> would like to review <span>our/my/his/her</span> current investment portfolio to ensure it remains aligned with <span>our/my/his/her</span> goals, timeframes, and comfort with risk. <span>I/We/Client Name</span> want to make sure <span>our/my/his/her</span> investments are well diversified and positioned to achieve long-term growth while balancing risk appropriately. <span>I/We/Client Name</span> would also like guidance on whether any changes are needed to help <span>us/me/him/her</span> reduce <span>our/my/his/her</span> goals.",
         ],
@@ -937,7 +947,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "inheritanceGoal",
         whenScopeIs: "Investment",
         scopeOfAdvice: "Investment",
-        icon:"🏺",
+        icon: "🏺",
         descriptionArray: [
           "<span>I/We</span> expect to receive an inheritance in the near future and would like guidance on how best to manage and invest these funds. <span>I/We</span> want to make sure the money is used wisely to support <span>our/my</span> long-term goals. <span>I/We</span> would like advice on the most effective and tax-efficient way to use this inheritance to strengthen <span>our/my</span> overall financial position.",
           "<span>I/We</span> would like to understand how receiving an inheritance will affect <span>our/my</span> Centrelink entitlements. <span>I/We</span> want to know whether this money will impact any current Centrelink payments. <span>I/We</span> would like advice on the best way to manage the inheritance to minimise any reduction in payments if possible.",
@@ -948,7 +958,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "payLessTaxGoal",
         whenScopeIs: "Investment",
         scopeOfAdvice: "Investment",
-        icon:"💲",
+        icon: "💲",
         descriptionArray: [
           "<span>I/We</span> would like to find ways to reduce <span>our/my</span> overall tax liability and make <span>our/my</span> money work more effectively. <span>I/We</span> want to understand what strategies or structures could help minimise tax — such as making super contributions, using investments more efficiently, or reviewing ownership structures while still aligning with <span>our/my</span> broader financial goals.",
         ],
@@ -958,7 +968,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "childrenEducationGoal",
         whenScopeIs: "Investment",
         scopeOfAdvice: "Investment",
-        icon:"🎓",
+        icon: "🎓",
         descriptionArray: [
           "<span>I/We</span> would like to start saving for <span>our/my</span> children's education to help cover future/current school or university costs. <span>I/We</span> want to build a dedicated fund that can be used to support their studies and provide them with more opportunities as they grow. <span>I/We</span> are looking for a simple and effective savings or investment strategy that helps grow these funds over time, while keeping the money accessible when it's needed for education expenses.",
         ],
@@ -968,7 +978,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "regularSavingsGoal",
         whenScopeIs: "Investment",
         scopeOfAdvice: "Investment",
-        icon:"📅",
+        icon: "📅",
         descriptionArray: [
           "<span>I/We</span> would like to set up a regular savings plan to help build <span>our/my</span> savings over time. <span>I/We</span> want to put aside a set amount each week/fortnight/month to create a habit of saving and work towards future goals such as travel, a new home, or general financial security. <span>I/We</span> are looking for a simple and consistent approach that helps grow <span>our/my</span> savings while keeping the funds flexible and accessible if needed.",
         ],
@@ -976,7 +986,7 @@ const GOALS_OBJECTIVES_CARDS = [
       {
         title: "Set up a Family Trust",
         key: "familyTrustGoal",
-        icon:"⚖️",
+        icon: "⚖️",
         whenScopeIs: "",
         descriptionArray: [],
         scopeOfAdvice: "Investment",
@@ -992,7 +1002,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "financialAdviceGoal",
         whenScopeIs: "Other",
         scopeOfAdvice: "Other",
-        icon:"💬",
+        icon: "💬",
         descriptionArray: [
           "<span>I/We</span> would like to have someone help <span>us/me</span> manage <span>our/my</span> money in <span>our/my</span> retirement to make sure that <span>our/my</span>  money will last <span>us/me</span> and that <span>I/We are/am</span> adjusting our strategy every year so we continue to meet <span>our/my</span> goals.",
         ],
@@ -1001,14 +1011,14 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Start a Family",
         key: "startFamilyGoal",
         whenScopeIs: "",
-        icon:"👨‍👩‍👧‍👦",
+        icon: "👨‍👩‍👧‍👦",
         descriptionArray: [],
         scopeOfAdvice: "Other",
       },
       {
         title: "Start a Business",
         key: "businessGoal",
-        icon:"🏢",
+        icon: "🏢",
         whenScopeIs: "",
         descriptionArray: [],
         scopeOfAdvice: "Other",
@@ -1024,7 +1034,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "familyLifeStyleGoal",
         whenScopeIs: "Personal Insurance",
         scopeOfAdvice: "Personal Insurance",
-        icon:"🛡️",
+        icon: "🛡️",
         descriptionArray: [
           "<span>I/We</span> want  to make sure in  the event <span>we/I were/was</span>  to  die prematurely or <span>are/am</span> unable to work due to sickness, injury or every again that <span>our/my</span> family will be protected financially. <span>I/We</span> would like to consider all types of personal insurance cover. <span>I/We are  able/happy to  spend up to $XX0 per month from our/my  own  personal cashflow and were possible we would like to have any insurance cover funded an paid through our/my super.</span> <strong>(Full Insurance review)</strong>.",
           "<span>I/We</span> would specifically like to take out <span>Life cover of $XXX,XXX and TPD of $XXX,XXX</span> to make sure <span>that our/my</span> family is protected if <span>I/we to</span> die or become total and permanently disabled. <span>This would also us/me to pay off our /my current home loan/debts and be debt free. Where possible I/we would like to have these premiums funded via super.</span> <strong>(Life and TPD cover)</strong>",
@@ -1037,7 +1047,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "reviewPersonalInsuranceCoverGoal",
         whenScopeIs: "Personal Insurance",
         scopeOfAdvice: "Personal Insurance",
-        icon:"☂️",
+        icon: "☂️",
         descriptionArray: [
           "<span>We/I</span> would like to Review <span>my/our</span> current levels of personal insurance cover <span>I/we</span> have in place and consider what would be the right levels and types of cover for <span>us/me</span>.",
         ],
@@ -1047,7 +1057,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "analysisOfPersonalInsuranceGoal",
         whenScopeIs: "Personal Insurance",
         scopeOfAdvice: "Personal Insurance",
-        icon:"🩺",
+        icon: "🩺",
         descriptionArray: [
           "<span>I/We</span> want  to make sure in  the event <span>we/I were/was</span> to die prematurely or <span>are/am</span> unable to work due to sickness, injury or every again that <span>our/my</span> family will be protected financially. <span>I/We</span> would like to consider all types of personal insurance cover. <span>I/We are able/happy to spend up to $XX0 per month from our/my own personal cashflow and were possible we would like to have any insurance cover funded an paid through our/my  super.</span> <strong>(Full Insurance review)</strong>.",
         ],
@@ -1057,7 +1067,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "retainCurrentPersonalInsurancesGoal",
         whenScopeIs: "Personal Insurance",
         scopeOfAdvice: "Personal Insurance",
-        icon:"🤲",
+        icon: "🤲",
         descriptionArray: [
           "<span>We/I</span> would like to retain our current personal insurances  with <span>XXXX</span> as they are for now and not have these reviewed. We would like you to take over the servicing rights of <span>our/my</span> polices so <span>we/I</span> can obtain all relevant policy details as required.",
         ],
@@ -1067,7 +1077,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "reducePersonalInsuranceCoverGoal",
         whenScopeIs: "Personal Insurance",
         scopeOfAdvice: "Personal Insurance",
-        icon:"⬇️",
+        icon: "⬇️",
         descriptionArray: [
           "<span>We/I</span> would like to Reduce <span>our/my Life cover down to $XXX, XXX and   TPD to $XXX,XXX</span> so <span>we/I can</span> reduce the premiums down as they are now starting to get costly. <span>Given our/my current</span> financial situation now <span>I/we don’t</span>  need this level of cover anymore <span>as this was taken out a long time ago when our/my situation was different and the kids were younger.</span>  <strong>(Reduce Life and TPD)</strong>",
           "<span>We/I</span> would like to Reduce <span>our/my</span> Trauma cover down to <span>$XXX,XXX</span> so <span>we/I</span> can reduce the premiums down as they are now starting to get costly. <strong>( Reduce Trauma cover)</strong>",
@@ -1085,7 +1095,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "retirementIncomeStreamGoal",
         whenScopeIs: "Retirement Planning",
         scopeOfAdvice: "Retirement Planning",
-        icon:"📋",
+        icon: "📋",
         descriptionArray: [
           "<span>I/We</span> like to use be able to receive an amount of <span>$X,000</span> per <span>week/fortnight/month</span> for <span>us/me</span> to be comfortable in <span>my/our</span> retirement and live the way <span>I/We</span> want to.",
           "<span>I/We</span> would like to be able to receive an amount of <span>$X,000 per week/fortnight/month</span> for <span>us/me</span> to be comfortable in <span>our/my</span> retirement and live the way <span>I/we</span> want to. This amount will allow <span>us/me</span> to maintain <span>our/my</span> current lifestyle, cover regular living costs, <span>and have the freedom to enjoy activities such as travel, dining out, or spending time with family and friends</span>. The goal is to create a steady and reliable income that provides peace of mind and supports the lifestyle <span>we/I</span> value most throughout retirement. As part of this <span>I/we</span> want to know how long our money will last us.",
@@ -1097,7 +1107,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "setSuperIncomeStreamGoal",
         whenScopeIs: "Retirement Planning",
         scopeOfAdvice: "Retirement Planning",
-        icon:"🐷",
+        icon: "🐷",
         descriptionArray: [
           "<span>I/We</span> like to use my super to draw an income from it like a regular wage to help <span>us/me meet our/my</span> living expenses. <span>I/We</span> feel that we need an amount of <span>$X,000</span> per <span>week/fortnight/month</span> for <span>us/me</span> to be comfortable in <span>my/our</span> retirement and live the way <span>I/We</span> want to.",
         ],
@@ -1107,7 +1117,7 @@ const GOALS_OBJECTIVES_CARDS = [
         key: "planForRetirementGoal",
         scopeOfAdvice: "Retirement Planning",
         whenScopeIs: "Retirement Planning",
-        icon:"🕐",
+        icon: "🕐",
         descriptionArray: [
           "<span>I/We</span> would like to plan for <span>our/my</span> retirement to ensure <span>we/I</span> have enough income to live comfortably and enjoy the lifestyle <span>we/I</span> want. <span>I/We</span> would like to be able to receive an income of <span>$X,000 per week/fortnight/month</span> for <span>us/me</span> to be comfortable in <span>our/my</span> retirement and live the way <span>I/we</span> want to. This amount will allow <span>us/me</span> to maintain <span>our/my</span> current lifestyle, cover regular living costs, and have the freedom to enjoy activities such as travel, dining out, or spending time with family and friends. <span>I/We</span> want to understand how much will be needed to retire, how long <span>our/my</span> money will last, and what steps can be taken now to achieve this.",
         ],
@@ -1122,7 +1132,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Set up an SMSF",
         key: "SMSFGoal",
         whenScopeIs: "Superannuation",
-        icon:"🦊",
+        icon: "🦊",
         descriptionArray: [
           "We would like set up our own Self-Managed Super Fund (SMSF) and combine our superannuation money and have it invested together as a <span>couple/family. I/We</span> feel this will provide <span>us/me</span> with more flexibility and control of <span>our/my</span> retirement savings. <span>I/We</span> would like to retain the insurances <span>I/we</span> have attached to <span>our/my</span> current fund/s.",
           "<span>I/We</span> would like set up our own Self-Managed Super Fund (SMSF) and use <span>our/my</span> superannuation money to buy a <span>business premises/factory</span> so <span>I/we</span> can use it to run <span>our/my</span> business from. <span>I/We</span> feel this will provide <span>us/me</span> with more flexibility and control of <span>our/my</span> retirement savings. <span>I/We</span> would like to retain the insurances <span>I/we</span> have attached to <span>our/my</span> current fund/s.",
@@ -1133,7 +1143,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Review my Super",
         key: "reviewSuperGoal",
         whenScopeIs: "Superannuation",
-        icon:"🔎",
+        icon: "🔎",
         descriptionArray: [
           "<span>I/We</span> would like to review <span>our/my</span> current super fund/s and considering other products that are more suitable for <span>us/me</span> and give <span>us/me</span> more flexibility and ease of use when <span>I/We</span> are dealing with the product. <span>I/We</span> would like to retain the insurances <span>I/we</span> have attached to <span>our/my</span> current fund/s. <strong>(Consider a better product)</strong>",
           "<span>I/We</span> would like to review <span>our/my</span> current super fund/s and considering other products that are more suitable for <span>us/me</span> and help <span>us/me</span> reduce the overall fees if possible. <span>I/We</span> would like to retain the insurances <span>I/we</span> have attached to <span>our/my</span> current fund/s. <strong>(Consider a more cost effective product)</strong>",
@@ -1146,7 +1156,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Combine my Super into One",
         key: "combinedSuperIntoOneGoal",
         whenScopeIs: "Superannuation",
-        icon:"🔄",
+        icon: "🔄",
         descriptionArray: [
           "I would like to consider rolling my <span>X super funds</span> into the one if possible to help me reduce the fees and statements that I currently receive so it can help me track my super better.",
         ],
@@ -1156,7 +1166,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Contribute Money into Super",
         key: "contributeMoneyIntoSuperGoal",
         whenScopeIs: "Superannuation",
-        icon:"➕",
+        icon: "➕",
         descriptionArray: [
           "<span>I/We</span> would like to build up <span>our/my</span> super as much as <span>I/we</span> can before <span>I/we</span> retire so <span>I/we</span> can have more for <span>our/my</span> retirement and if possible, allow us to reduce the amount to tax <span>I/we</span> currently pay. <strong>(concessional contributions)</strong>",
           "<span>I/We</span> would like to start contributing some money into <span>our/my</span> super so <span>I/we</span> can start building it up. For now we are happy to contribute an net amount of <span>$X,000</span> per <span>week/fortnight/month</span> as this is how much <span>I/We</span> are <span>able/comfortable</span> to contribute based upon <span>my/our</span> own cashflow perspective. <strong>(regular contributions concessional or non-concessional)</strong>",
@@ -1170,7 +1180,7 @@ const GOALS_OBJECTIVES_CARDS = [
         title: "Lump Sum Contribution to Super",
         key: "lumpSumContributionSuper",
         whenScopeIs: "Superannuation",
-        icon:"💎",
+        icon: "💎",
         descriptionArray: [
           "<span>I/We/Client Name </span>would like to add extra money into <span>our/my/his/her </span> super from <span>our/my/his/her </span> current cash reserves or from the sale of  <span>our/my/his/her </span>property.  <span>I/We/Client Name </span> feel this will help grow our/my/his/her savings for the future and make the most of<span>our/my/his/her</span> money before in <span>our/my/his/her </span> retirement.",
         ],
@@ -1246,13 +1256,14 @@ export const discoveryRoutes = [
     stepIcon: "📄",
     path: "/user/discovery/client-summary",
     showInDiscoveryStepper: false,
+    noDiscoveryLayout: true,
     ...withSpacing({
       icon: "📄",
       label: "Client Summary",
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: clientSummaryElement,
     condition: () => true,
   },
   {
@@ -1269,6 +1280,7 @@ export const discoveryRoutes = [
     }),
     component: personalDetailsElement,
     condition: () => true,
+    showNavigationButtons: false,
     isCompleted: createSectionCompletionCheck(
       "personaldetails",
       "personalDetails",
@@ -1282,6 +1294,7 @@ export const discoveryRoutes = [
     stepIcon: "💲",
     showDiscoveryAddButton: true,
     path: "/user/discovery/income-expenses",
+    showNavigationButtons: true,
     ...withSpacing({
       icon: "💲",
       label: "Income & Expenses",
@@ -1300,6 +1313,7 @@ export const discoveryRoutes = [
     cardsSelectionTitle: "Personal Assets & Liabilities",
     stepIcon: "🏡",
     showDiscoveryAddButton: true,
+    showNavigationButtons: true,
     path: "/user/discovery/assets-debt",
     ...withSpacing({
       icon: "🏡",
@@ -1318,6 +1332,7 @@ export const discoveryRoutes = [
     stepTitle: "Financial Investments",
     cardsSelectionTitle: "Financial Investments",
     stepIcon: "📈",
+    showNavigationButtons: true,
     showDiscoveryAddButton: true,
     path: "/user/discovery/financial-investments",
     ...withSpacing({
@@ -1337,6 +1352,7 @@ export const discoveryRoutes = [
     stepTitle: "Estate Planning",
     cardsSelectionTitle: "Estate Planning & Professional Adviser",
     stepIcon: "📋",
+    showNavigationButtons: true,
     showDiscoveryAddButton: true,
     path: "/user/discovery/estate-planning",
     ...withSpacing({
@@ -1356,6 +1372,7 @@ export const discoveryRoutes = [
     stepTitle: "Personal Insurance",
     cardsSelectionTitle: "Personal Insurance",
     stepIcon: "🛡️",
+    showNavigationButtons: true,
     showDiscoveryAddButton: true,
     path: "/user/discovery/personal-insurance",
     ...withSpacing({
@@ -1379,6 +1396,7 @@ export const discoveryRoutes = [
     stepTitle: "Business Entities",
     cardsSelectionTitle: "Business Entities",
     stepIcon: "🏢",
+    showNavigationButtons: true,
     showDiscoveryAddButton: true,
     path: "/user/discovery/business-entities",
     ...withSpacing({
@@ -1404,6 +1422,7 @@ export const discoveryRoutes = [
     stepIcon: "🔐",
     cardsSelectionTitle: "Self Manged Super Fund",
     showDiscoveryAddButton: true,
+    showNavigationButtons: true,
     path: "/user/discovery/smsf",
     ...withSpacing({
       icon: "🔐",
@@ -1424,6 +1443,7 @@ export const discoveryRoutes = [
     cardsSelectionTitle: "Family Trust",
     stepIcon: "📊",
     showDiscoveryAddButton: true,
+    showNavigationButtons: true,
     path: "/user/discovery/investment-trust",
     ...withSpacing({
       icon: "📊",
@@ -1442,6 +1462,7 @@ export const discoveryRoutes = [
     relativePath: "goals-objectives",
     stepTitle: "Goals & Objectives",
     stepIcon: "🎯",
+    showNavigationButtons: true,
     showDiscoveryAddButton: false,
     path: "/user/discovery/goals-objectives",
     ...withSpacing({

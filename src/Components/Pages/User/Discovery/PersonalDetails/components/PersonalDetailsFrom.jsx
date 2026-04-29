@@ -62,21 +62,22 @@ const MARITAL_OPTIONS = [
   "Single",
   "Married",
   "De Facto",
-  "Divorced",
   "Partnered",
   "Widowed",
 ];
 const EMPLOYMENT_OPTIONS = [
-  "Employed",
-  "Self-employed",
-  "Unemployed",
-  "Retired",
+  "Employee",
+  "Homemaker",
+  "Not Working",
+  "Self-funded Retiree",
   "Centrelink Retiree",
+  "Centrelink Recipient",
+  "Self Employed",
   "Student",
-  "Other",
+  "Unemployed",
 ];
 const YES_NO = ["Yes", "No"];
-const HEALTH_OPTIONS = ["good", "average", "poor"];
+const HEALTH_OPTIONS = ["Excellent", "Good", "Average", "Poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
 const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step-child", "Other"];
 const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);

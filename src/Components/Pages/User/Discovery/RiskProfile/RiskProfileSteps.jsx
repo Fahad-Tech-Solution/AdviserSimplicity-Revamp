@@ -1,3 +1,4 @@
+import { message } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,7 +8,7 @@ const LINE = "#e5e7eb";
 const WARNING = "rgb(245, 158, 11)";
 const WARNING_BG = "rgb(245, 158, 11)";
 
-const RiskProfileSteps = ({ currentStep, steps, lockedStepKeys = [] }) => {
+const RiskProfileSteps = ({ currentStep, steps, lockedStepKeys = [], conflicts = [] }) => {
   const activeIndex = steps.findIndex((step) => step.key === currentStep.key);
   const navigate = useNavigate();
   return (
@@ -49,6 +50,11 @@ const RiskProfileSteps = ({ currentStep, steps, lockedStepKeys = [] }) => {
               key={step.key}
               role="button"
               onClick={() => {
+                console.log(step.route, conflicts.length);
+                if (step.route ==="cards" && conflicts.length > 0) {
+                  message.warning("Please review the inconsistencies before proceeding to the results step.");
+                  return;
+                }
                 navigate(`/user/discovery/risk-profile/${step.route}`);
               }}
               style={{
@@ -112,21 +118,6 @@ const RiskProfileSteps = ({ currentStep, steps, lockedStepKeys = [] }) => {
                       justifyContent: "center",
                       boxShadow: "0 0 0 2px #fff",
                       fontFamily: "Georgia, serif",
-
-                      //   position: absolute;
-                      //   top: -4px;
-                      //   right: -4px;
-                      //   width: 14px;
-                      //   height: 14px;
-                      //   border-radius: 50%;
-                      //   background: rgb(239, 68, 68);
-                      //   border: 2px solid rgb(255, 255, 255);
-                      //   display: flex;
-                      //   align-items: center;
-                      //   justify-content: center;
-                      //   font-size: 8px;
-                      //   color: rgb(255, 255, 255);
-                      //   font-weight: 900;
                     }}
                   >
                     !

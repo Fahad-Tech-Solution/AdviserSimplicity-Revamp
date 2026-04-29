@@ -1,12 +1,20 @@
-import { Col, Form, Row, Select } from "antd";
-import React from "react";
+import { Button, Col, Form, Row, Select, message } from "antd";
+import React, { useState } from "react";
 import AdviceGoalCard from "../../../../Common/AdviceGoalCard";
-import { goalsSectionQuestionsAtom } from "../../../../../store/authState";
-import { useAtomValue } from "jotai";
+import {
+  goalsSectionQuestionsAtom,
+  SelectedClient,
+} from "../../../../../store/authState";
+import { useAtomValue, useSetAtom } from "jotai";
+import useApi from "../../../../../hooks/useApi";
 
 const GoalsObjectivesQuestionsModal = ({ modalData }) => {
   const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
+  const selectedClient = useAtomValue(SelectedClient);
   const goalsQuestions = useAtomValue(goalsSectionQuestionsAtom);
+  const setGoalsQuestions = useSetAtom(goalsSectionQuestionsAtom);
+  const { post, patch } = useApi();
   const cards = modalData?.cards || [];
   const initialValues = {
     ...goalsQuestions,
@@ -34,8 +42,34 @@ const GoalsObjectivesQuestionsModal = ({ modalData }) => {
     form.setFieldValue("scope", selectedValues);
   };
 
-  const onFinish = (values) => {
-    console.log(values);
+  const onFinish = async (values) => {
+    const formValues = form.getFieldsValue(true);
+    setSubmitting(true);
+
+    const payload = {
+      ...goalsQuestions,
+      ...values,
+      ...formValues,
+      clientFK: goalsQuestions?.clientFK || selectedClient?._id,
+    };
+
+    try {
+      const saved = goalsQuestions?.clientFK
+        ? await patch("/api/goalsQuestions/Update", payload)
+        : await post("/api/goalsQuestions/Add", payload);
+
+      setGoalsQuestions(saved && typeof saved === "object" ? saved : payload);
+      message.success("Goals questions updated successfully");
+      modalData?.closeModal?.();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update goals questions",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <div>
@@ -108,6 +142,16 @@ const GoalsObjectivesQuestionsModal = ({ modalData }) => {
                 );
               }}
             </Form.Item>
+          </Col>
+          <Col xs={24} md={24} className="mt-4 d-flex justify-content-end">
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              disabled={submitting}
+            >
+              Submit
+            </Button>
           </Col>
         </Row>
       </Form>

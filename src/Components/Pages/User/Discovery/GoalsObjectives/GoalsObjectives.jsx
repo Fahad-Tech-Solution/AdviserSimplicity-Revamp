@@ -118,6 +118,7 @@ const GoalsObjectives = () => {
               width: "800px",
               component: <GoalsObjectivesQuestionsModal />,
               cards: CurrentRoute?.Cards || [],
+              closeModal: () => setModalOpen(false),
             });
           }}
           style={DISCOVERY_ADD_BUTTON_STYLE}
