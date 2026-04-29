@@ -52,6 +52,9 @@ export function PersonalDetails() {
   const session = useAtomValue(loggedInUser);
   const [step, setStep] = useState(1);
 
+
+  console.log("discoveryData: ", discoveryData);
+
   const pd = getPersonalDetailsFromDiscovery(discoveryData);
 
   const client = pd?.client ?? selected?.client ?? {};
