@@ -166,63 +166,62 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
   );
 
   const recalculate = (currentForm, columnField, changedValue) => {
-    if (columnField === "accountBalance") {
-      const digits = parseDigitsValue(getChangedValue(changedValue));
+    try {
+      const rawChangedValue = getChangedValue(changedValue);
+
+      if (
+        [
+          "accountBalance",
+          "taxFreeComponent",
+          "restrictedNonPreserved",
+          "unrestrictedNonPreserved",
+        ].includes(columnField)
+      ) {
+        currentForm.setFieldValue(
+          columnField,
+          formatCurrencyValue(rawChangedValue),
+        );
+      }
+
+      const nextAccountBalance =
+        columnField === "accountBalance"
+          ? parseCurrencyValue(rawChangedValue)
+          : parseCurrencyValue(currentForm.getFieldValue("accountBalance"));
+      const nextTaxFreeComponent =
+        columnField === "taxFreeComponent"
+          ? parseCurrencyValue(rawChangedValue)
+          : parseCurrencyValue(currentForm.getFieldValue("taxFreeComponent"));
+      const nextRestricted =
+        columnField === "restrictedNonPreserved"
+          ? parseCurrencyValue(rawChangedValue)
+          : parseCurrencyValue(currentForm.getFieldValue("restrictedNonPreserved"));
+      const nextUnrestricted =
+        columnField === "unrestrictedNonPreserved"
+          ? parseCurrencyValue(rawChangedValue)
+          : parseCurrencyValue(currentForm.getFieldValue("unrestrictedNonPreserved"));
+
+      const nextTaxableComponent = nextAccountBalance - nextTaxFreeComponent;
+      const nextPreservedAmount =
+        nextAccountBalance - nextRestricted - nextUnrestricted;
+      const nextTaxFreePercent = nextAccountBalance
+        ? `${Math.min(
+            100,
+            ((nextTaxFreeComponent / nextAccountBalance) * 100).toFixed(2),
+          )}%`
+        : "";
+
       currentForm.setFieldValue(
-        "accountBalance",
-        digits ? toCommaAndDollar(digits) : "",
+        "taxableComponent",
+        nextAccountBalance ? toCommaAndDollar(nextTaxableComponent) : "",
       );
-    }
-
-    if (columnField === "taxFree") {
-      currentForm.setFieldValue("taxFree", formatPercentValue(changedValue));
-    }
-
-    if (columnField === "restrictedNonPreserved") {
-      currentForm.setFieldValue(
-        "restrictedNonPreserved",
-        formatCurrencyValue(getChangedValue(changedValue)),
-      );
-    }
-
-    if (columnField === "preservedAmount") {
       currentForm.setFieldValue(
         "preservedAmount",
-        formatCurrencyValue(getChangedValue(changedValue)),
+        nextAccountBalance ? toCommaAndDollar(nextPreservedAmount) : "",
       );
+      currentForm.setFieldValue("taxFree", nextTaxFreePercent);
+    } catch (error) {
+      console.error("Failed to recalculate accumulation benefits:", error);
     }
-
-    const nextAccountBalance = parseCurrencyValue(
-      currentForm.getFieldValue("accountBalance"),
-    );
-    const nextTaxFreePercent = parsePercentValue(
-      currentForm.getFieldValue("taxFree"),
-    );
-    const nextRestricted = parseCurrencyValue(
-      currentForm.getFieldValue("restrictedNonPreserved"),
-    );
-    const nextPreserved = parseCurrencyValue(
-      currentForm.getFieldValue("preservedAmount"),
-    );
-
-    const nextTaxFreeComponent =
-      nextAccountBalance * (nextTaxFreePercent / 100);
-    const nextTaxableComponent = nextAccountBalance - nextTaxFreeComponent;
-    const nextUnrestricted =
-      nextAccountBalance - (nextRestricted + nextPreserved);
-
-    currentForm.setFieldValue(
-      "taxFreeComponent",
-      nextAccountBalance ? toCommaAndDollar(nextTaxFreeComponent) : "",
-    );
-    currentForm.setFieldValue(
-      "taxableComponent",
-      nextAccountBalance ? toCommaAndDollar(nextTaxableComponent) : "",
-    );
-    currentForm.setFieldValue(
-      "unrestrictedNonPreserved",
-      nextAccountBalance ? toCommaAndDollar(nextUnrestricted) : "",
-    );
   };
 
   const columns = [
@@ -244,16 +243,6 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       onChange: (value, record, column, currentForm) =>
         recalculate(currentForm, column.field, value?.target?.value),
     },
-    // {
-    //   title: "Tax Free %",
-    //   dataIndex: "taxFree",
-    //   key: "taxFree",
-    //   field: "taxFree",
-    //   type: "text",
-    //   placeholder: "Tax Free %",
-    //   onChange: (value, record, column, currentForm) =>
-    //     recalculate(currentForm, column.field, value?.target?.value),
-    // },
     {
       title: "Commencement Date",
       dataIndex: "commencementDate",
@@ -274,8 +263,9 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       key: "taxFreeComponent",
       field: "taxFreeComponent",
       type: "text",
-      disabled: true,
       placeholder: "Tax Free Component",
+      onChange: (value, record, column, currentForm) =>
+        recalculate(currentForm, column.field, value?.target?.value),
     },
     {
       title: "Taxable Component",
@@ -286,7 +276,7 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       disabled: true,
       placeholder: "Taxable Component",
     },
-  
+
     {
       title: "Restricted Non Preserved",
       dataIndex: "restrictedNonPreserved",
@@ -303,8 +293,9 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       key: "unrestrictedNonPreserved",
       field: "unrestrictedNonPreserved",
       type: "text",
-      disabled: true,
       placeholder: "Unrestricted Non Preserved",
+      onChange: (value, record, column, currentForm) =>
+        recalculate(currentForm, column.field, value?.target?.value),
     },
     {
       title: "Preserved Amount",
@@ -312,9 +303,8 @@ export default function SMSFAccumulationBenefitsModal({ modalData }) {
       key: "preservedAmount",
       field: "preservedAmount",
       type: "text",
+      disabled: true,
       placeholder: "Preserved Amount",
-      onChange: (value, record, column, currentForm) =>
-        recalculate(currentForm, column.field, value?.target?.value),
     },
   ];
 

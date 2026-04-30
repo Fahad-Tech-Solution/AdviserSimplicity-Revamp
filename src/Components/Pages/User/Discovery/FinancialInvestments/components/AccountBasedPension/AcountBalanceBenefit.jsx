@@ -279,11 +279,6 @@ export default function AcountBalanceBenefit({ modalData }) {
         name: "Open Portfolio Value",
         onClick: openPortfolioModal,
       },
-      sorter: (a, b) =>
-        parseCurrencyValue(a?.portfolioValue) -
-        parseCurrencyValue(b?.portfolioValue),
-      sortOrder:
-        sortState.columnKey === "portfolioValue" ? sortState.order : undefined,
     },
     {
       title: "Commencement Date",

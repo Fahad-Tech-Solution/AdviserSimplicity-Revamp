@@ -1,4 +1,4 @@
-import { Button, Col, Form, message, Row, Select, Space } from "antd";
+import { Button, Col, Form, message, Row, Select, Space, Tooltip } from "antd";
 import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
@@ -9,6 +9,7 @@ import { discoveryDataAtom } from "../../../../../../../store/authState";
 import useApi from "../../../../../../../hooks/useApi.js";
 import EstatePlanningDescriptionModal from "./EstatePlanningDescriptionModal.jsx";
 import ExecutorDetailsModal from "./ExecutorDetailsModal.jsx";
+import { IoInformationCircleOutline } from "react-icons/io5";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -41,13 +42,13 @@ function buildOwnerOptions(discoveryData, allowPartner) {
 
   return allowPartner
     ? [
-      { value: "client", label: clientName },
-      { value: "partner", label: partnerName },
-      {
-        value: "together",
-        label: `Together (${clientName} & ${partnerName})`,
-      },
-    ]
+        { value: "client", label: clientName },
+        { value: "partner", label: partnerName },
+        {
+          value: "together",
+          label: `Together (${clientName} & ${partnerName})`,
+        },
+      ]
     : [{ value: "client", label: clientName }];
 }
 
@@ -166,7 +167,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedClient?.willsCurrent || "No",
         executorDisplay:
           Array.isArray(watchedClient?.executor) &&
-            watchedClient.executor.length
+          watchedClient.executor.length
             ? String(watchedClient.executor.length)
             : "",
         enduringGuardianship: watchedClient?.enduringGuardianship || "No",
@@ -184,7 +185,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedPartner?.willsCurrent || "No",
         executorDisplay:
           Array.isArray(watchedPartner?.executor) &&
-            watchedPartner.executor.length
+          watchedPartner.executor.length
             ? String(watchedPartner.executor.length)
             : "",
         enduringGuardianship: watchedPartner?.enduringGuardianship || "No",
@@ -202,7 +203,7 @@ export default function EstatePlanningWill({ modalData }) {
         willsCurrent: watchedClient?.willsCurrent || "",
         executorDisplay:
           Array.isArray(watchedClient?.executor) &&
-            watchedClient.executor.length
+          watchedClient.executor.length
             ? String(watchedClient.executor.length)
             : "",
         enduringGuardianship: watchedClient?.enduringGuardianship || "",
@@ -219,7 +220,7 @@ export default function EstatePlanningWill({ modalData }) {
 
     const detailMap = {
       executor: {
-        title: `${record?.ownerLabel || "Owner"} Executor`,
+        title: `Executor`,
         width: 900,
         question: "Number of Executors",
         closeModal: () => setDetailModalOpen(false),
@@ -228,7 +229,7 @@ export default function EstatePlanningWill({ modalData }) {
         component: <ExecutorDetailsModal />,
       },
       estatePlanning: {
-        title: `${record?.ownerLabel || "Owner"} Estate Planning`,
+        title: `Estate Planning`,
         width: 760,
         closeModal: () => setDetailModalOpen(false),
         switchToEditMode: () => setEditing(true),
@@ -399,8 +400,8 @@ export default function EstatePlanningWill({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-        error?.message ||
-        `Failed to update ${modalData?.title || "Wills"}`,
+          error?.message ||
+          `Failed to update ${modalData?.title || "Wills"}`,
       );
     } finally {
       setSaving(false);
@@ -446,6 +447,33 @@ export default function EstatePlanningWill({ modalData }) {
               />
             </Form.Item>
           </Col>
+
+          <Form.Item shouldUpdate noStyle>
+            {({ getFieldValue }) => {
+              const owners = getFieldValue("owner") || [];
+              if (owners.includes("together")) {
+                return (
+                  <Col
+                    xs={24}
+                    md={1}
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Tooltip title="When yes is selected for Partner for Wills and POA have an option to copy details from Client Answers for Will and POA this will apply for when client and partner have a Will together.">
+                      <IoInformationCircleOutline
+                        style={{ fontSize: 16, color: "#6b7280" }}
+                      />
+                    </Tooltip>
+                  </Col>
+                );
+              }
+              return null;
+            }}
+          </Form.Item>
+
           {rows.length > 0 ? (
             <Col xs={24}>
               <EditableDynamicTable

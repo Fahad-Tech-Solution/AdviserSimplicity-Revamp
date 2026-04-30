@@ -136,7 +136,6 @@ export function PersonalDetails() {
               View
             </Button>
             <Button
-              icon={<DownloadOutlined />}
               onClick={() => {
                 if (!pd) {
                   message.error("Personal details not available to export yet.");
@@ -165,7 +164,7 @@ export function PersonalDetails() {
               }}
               style={{ borderRadius: 8, minWidth: 140 }}
             >
-              Download Doc
+              Download Doc <DownloadOutlined />
             </Button>
           </div>
           <Button

@@ -50,10 +50,7 @@ function buildOwnerOptions(discoveryData, allowPartner) {
     ? [
         { value: "client", label: clientName },
         { value: "partner", label: partnerName },
-        {
-          value: "together",
-          label: `Together (${clientName} & ${partnerName})`,
-        },
+        
       ]
     : [{ value: "client", label: clientName }];
 }

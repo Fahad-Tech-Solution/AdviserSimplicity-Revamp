@@ -73,6 +73,7 @@ function hasMeaningfulValues(values) {
 const LEAVE_ENTITLEMENTS_COLUMNS = [
   {
     title: "Leave Type",
+    placeholder: "Leave Type",
     key: "leaveType",
     dataIndex: "leaveType",
     field: "leaveType",
@@ -82,6 +83,7 @@ const LEAVE_ENTITLEMENTS_COLUMNS = [
   },
   {
     title: "Amount",
+    placeholder: "Amount",
     key: "amount",
     dataIndex: "amount",
     field: "amount",
@@ -92,6 +94,7 @@ const LEAVE_ENTITLEMENTS_COLUMNS = [
   },
   {
     title: "Time",
+    placeholder: "Time",
     key: "time",
     dataIndex: "time",
     field: "time",

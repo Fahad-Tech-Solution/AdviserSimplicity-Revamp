@@ -134,13 +134,13 @@ export default function GoalsFromModal({ modalData }) {
 
   const columns = useMemo(
     () => [
-      {
-        title: "No#",
-        dataIndex: "rowNumber",
-        key: "rowNumber",
-        width: 50,
-        editable: false,
-      },
+      // {
+      //   title: "No#",
+      //   dataIndex: "rowNumber",
+      //   key: "rowNumber",
+      //   width: 50,
+      //   editable: false,
+      // },
       {
         title: "Scope of Advice",
         dataIndex: "scopeOfAdvice",

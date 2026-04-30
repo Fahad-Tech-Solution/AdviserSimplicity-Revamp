@@ -113,10 +113,36 @@ function SwitchPopupDisplay({ value, onClick }) {
   );
 }
 
+function hasMeaningfulValues(values) {
+  return [
+    values?.occupation,
+    values?.employmentStatus,
+    values?.nameOfCompany,
+    values?.startDate,
+    values?.hoursWorked,
+    values?.grossSalary,
+    values?.salaryPackagingRadio,
+    values?.leaveEntitlementsRadio,
+    values?.choiceOfFund,
+    values?.SalaryPackageModal,
+    values?.SalaryPackagingModal,
+    values?.LeaveEntitlementsModal,
+    values?.salaryPackagingRadio,
+    values?.leaveEntitlementsRadio,
+    values?.choiceOfFund,
+    values?.clientFK,
+    values?._id,
+  ].some((value) => String(value ?? "").trim() !== "");
+}
+
 export default function EmploymentModal({ modalData }) {
   const [form] = Form.useForm();
   const ownerOptions = useOwnerOptions();
-  const [editing, setEditing] = useState(false);
+
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(form.getFieldsValue(true)),
+  );
+
   const [saving, setSaving] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [openModalData, setOpenModalData] = useState(null);
@@ -132,11 +158,13 @@ export default function EmploymentModal({ modalData }) {
       key: "occupation",
       dataIndex: "occupation",
       field: "occupation",
+      placeholder: "Occupation",
       type: "text",
       width: 140,
     },
     {
       title: "Employment Status",
+      placeholder: "Employment Status",
       key: "employmentStatus",
       dataIndex: "employmentStatus",
       field: "employmentStatus",
@@ -146,6 +174,7 @@ export default function EmploymentModal({ modalData }) {
     },
     {
       title: "Name of Company",
+      placeholder: "Name of Company",
       key: "nameOfCompany",
       dataIndex: "nameOfCompany",
       field: "nameOfCompany",
@@ -154,6 +183,7 @@ export default function EmploymentModal({ modalData }) {
     },
     {
       title: "Start Date",
+      placeholder: "Start Date",
       key: "startDate",
       dataIndex: "startDate",
       field: "startDate",
@@ -162,6 +192,7 @@ export default function EmploymentModal({ modalData }) {
     },
     {
       title: "Hours Worked",
+      placeholder: "Hours Worked",
       key: "hoursWorked",
       dataIndex: "hoursWorked",
       field: "hoursWorked",
@@ -172,6 +203,7 @@ export default function EmploymentModal({ modalData }) {
     },
     {
       title: "Salary Detail",
+      placeholder: "Salary Detail",
       key: "grossSalary",
       dataIndex: "grossSalary",
       field: "grossSalary",
@@ -186,7 +218,7 @@ export default function EmploymentModal({ modalData }) {
 
           setOpenModal(true);
           setOpenModalData({
-            title: `${ownerLabel} Salary Detail`,
+            title: `Salary Detail`,
             component: <SalaryDetail />,
             icon: null,
             key: "salaryDetail",
@@ -218,7 +250,7 @@ export default function EmploymentModal({ modalData }) {
 
           setOpenModal(true);
           setOpenModalData({
-            title: `${ownerLabel} Salary Packaging`,
+            title: `Salary Packaging`,
             component: <SalaryPackageModal />,
             icon: null,
             key: "salaryPackaging",
@@ -242,7 +274,7 @@ export default function EmploymentModal({ modalData }) {
 
             setOpenModal(true);
             setOpenModalData({
-              title: `${ownerLabel} Salary Packaging`,
+              title: `Salary Packaging`,
               component: <SalaryPackageModal />,
               icon: null,
               key: "salaryPackaging",
@@ -273,11 +305,11 @@ export default function EmploymentModal({ modalData }) {
 
           setOpenModal(true);
           setOpenModalData({
-            title: `${ownerLabel} Leave Entitlements`,
+            title: `Leave Entitlements`,
             component: <LeaveEntitlements />,
             icon: null,
             key: "leaveEntitlements",
-            width: 900,
+            width: 600,
             closeModal: () => setOpenModal(false),
             switchToEditMode: () => setEditing(true),
             parentForm: form,
@@ -297,7 +329,7 @@ export default function EmploymentModal({ modalData }) {
 
             setOpenModal(true);
             setOpenModalData({
-              title: `${ownerLabel} Leave Entitlements`,
+              title: `Leave Entitlements`,
               component: <LeaveEntitlements />,
               icon: null,
               key: "leaveEntitlements",

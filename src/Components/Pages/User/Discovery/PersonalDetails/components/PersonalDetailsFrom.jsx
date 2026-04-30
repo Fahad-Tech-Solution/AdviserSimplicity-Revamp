@@ -57,7 +57,7 @@ const NEXT_BUTTON_STYLE = {
 };
 
 const TITLE_OPTIONS = ["Mr.", "Mrs.", "Ms.", "Miss", "Dr.", "Prof."];
-const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
+const GENDER_OPTIONS = ["Male", "Female", "Other",];
 const MARITAL_OPTIONS = [
   "Single",
   "Married",
@@ -79,7 +79,7 @@ const EMPLOYMENT_OPTIONS = [
 const YES_NO = ["Yes", "No"];
 const HEALTH_OPTIONS = ["Excellent", "Good", "Average", "Poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
-const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step-child", "Other"];
+const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step Daughter", "Step Son",];
 const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);
 const AUS_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
 

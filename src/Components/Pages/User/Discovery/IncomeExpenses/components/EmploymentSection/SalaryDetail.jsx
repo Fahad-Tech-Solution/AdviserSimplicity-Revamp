@@ -124,12 +124,12 @@ function applySalaryFormula(form, nextPartialValues = {}) {
 const SALARY_DETAIL_COLUMNS = [
   {
     title: "Remuneration Type",
+    placeholder: "Remuneration Type",
     key: "remunerationType",
     dataIndex: "remunerationType",
     field: "remunerationType",
     type: "select",
     options: REMUNERATION_OPTIONS,
-    width: 140,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], value);
       applySalaryFormula(form, { remunerationType: value });
@@ -137,11 +137,11 @@ const SALARY_DETAIL_COLUMNS = [
   },
   {
     title: "Amount",
+    placeholder: "Amount",
     key: "amount",
     dataIndex: "amount",
     field: "amount",
     type: "text",
-    width: 120,
     onChange: (value, record, column, form) => {
       const formatted = formatCurrencyValue(value);
       form.setFieldValue([column.field], formatted);
@@ -150,11 +150,11 @@ const SALARY_DETAIL_COLUMNS = [
   },
   {
     title: "SG",
+    placeholder: "SG",
     key: "SG",
     dataIndex: "SG",
     field: "SG",
     type: "text",
-    width: 80,
     onChange: (value, record, column, form) => {
       const formatted = formatPercentValue(value);
       form.setFieldValue([column.field], formatted);
@@ -163,12 +163,12 @@ const SALARY_DETAIL_COLUMNS = [
   },
   {
     title: "Gross Salary",
+    placeholder: "Gross Salary",
     key: "grossSalary",
     dataIndex: "grossSalary",
     field: "grossSalary",
     type: "text",
     disabled: true,
-    width: 120,
   },
   {
     title: "SGC",
@@ -177,26 +177,25 @@ const SALARY_DETAIL_COLUMNS = [
     field: "SGC",
     type: "text",
     disabled: true,
-    width: 120,
   },
   {
     title: "Salary Sacrifice Contributions",
+    placeholder: "Salary Sacrifice Contributions",
     key: "salarySacrificeContributions",
     dataIndex: "salarySacrificeContributions",
     field: "salarySacrificeContributions",
     type: "text",
-    width: 170,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], formatCurrencyValue(value));
     },
   },
   {
     title: "After Tax Contributions",
+    placeholder: "After Tax Contributions",
     key: "afterTaxContributions",
     dataIndex: "afterTaxContributions",
     field: "afterTaxContributions",
     type: "text",
-    width: 160,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], formatCurrencyValue(value));
     },

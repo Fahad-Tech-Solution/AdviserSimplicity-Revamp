@@ -71,51 +71,51 @@ function hasMeaningfulValues(values) {
 const SALARY_PACKAGING_COLUMNS = [
   {
     title: "Employer FBT Status",
+    placeholder: "Employer FBT Status",
     key: "employerFBTStatus",
     dataIndex: "employerFBTStatus",
     field: "employerFBTStatus",
     type: "select",
     options: EMPLOYER_FBT_STATUS_OPTIONS,
     rules: [{ required: true, message: "Employer FBT Status is required" }],
-    width: 190,
   },
   {
     title: "Credit Card/Mortgage Repayments",
+    placeholder: "Credit Card/Mortgage Repayments",
     key: "creditCardMortgageRepayments",
     dataIndex: "creditCardMortgageRepayments",
     field: "creditCardMortgageRepayments",
     type: "text",
-    width: 190,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], formatCurrencyValue(value));
     },
   },
   {
     title: "Cost Base of Car",
+    placeholder: "Cost Base of Car",
     key: "costBaseOfCar",
     dataIndex: "costBaseOfCar",
     field: "costBaseOfCar",
     type: "text",
-    width: 140,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], formatCurrencyValue(value));
     },
   },
   {
     title: "FBT Paid By Employer",
+    placeholder: "FBT Paid By Employer",
     key: "FBTPaidByEmployer",
     dataIndex: "FBTPaidByEmployer",
     field: "FBTPaidByEmployer",
     type: "yesNoSwitch",
-    width: 140,
   },
   {
     title: "Running Costs of Car",
+    placeholder: "Running Costs of Car",
     key: "runningCostsOfCar",
     dataIndex: "runningCostsOfCar",
     field: "runningCostsOfCar",
     type: "text",
-    width: 150,
     onChange: (value, record, column, form) => {
       form.setFieldValue([column.field], formatCurrencyValue(value));
     },

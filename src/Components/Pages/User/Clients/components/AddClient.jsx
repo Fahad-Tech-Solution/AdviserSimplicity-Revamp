@@ -97,7 +97,15 @@ export default function AddClient({ open, onClose, onSuccess }) {
       width={500}
       destroyOnClose
       footer={
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            borderTop: "1px solid rgb(243, 244, 246)",
+            paddingTop: 8,
+          }}
+        >
           <Button onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
@@ -204,7 +212,8 @@ export default function AddClient({ open, onClose, onSuccess }) {
             options={[
               { value: "Single", label: "Single" },
               { value: "Married", label: "Married" },
-              { value: "Divorced", label: "Divorced" },
+              { value: "De Facto", label: "De Facto" },
+              { value: "Partnered", label: "Partnered" },
               { value: "Widowed", label: "Widowed" },
             ]}
             allowClear
@@ -215,16 +224,19 @@ export default function AddClient({ open, onClose, onSuccess }) {
         <div
           style={{
             marginTop: 20,
+            paddingTop: 8,
             marginBottom: 10,
-            borderTop: "1px solid #e5e7eb",
+            borderTop: "1px solid rgb(243, 244, 246)",
           }}
         >
           <Text
             style={{
-              fontSize: 11,
-              letterSpacing: 2,
+              fontSize: 12,
+              letterSpacing: "0.8px",
               color: "#6b7280",
-              fontWeight: 600,
+              fontWeight: 700,
+              fontFamily: "Arial",
+
             }}
           >
             PEOPLE
