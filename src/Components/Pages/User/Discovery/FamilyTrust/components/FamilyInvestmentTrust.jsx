@@ -24,6 +24,7 @@ const TRUST_TYPE_OPTIONS = [
 ];
 
 const TRUSTEE_TYPE_OPTIONS = [
+  { value: "Select", label: "Select" },
   { value: "Corporate", label: "Corporate" },
   { value: "Individual", label: "Individual" },
 ];
@@ -75,7 +76,7 @@ function normalizeTrustDetails(entry = {}) {
     registeredOffice: entry?.registeredOffice || "",
     placeOfBusiness: entry?.placeOfBusiness || "",
     establishmentDate: normalizeDateValue(entry?.establishmentDate),
-    trusteeType: entry?.trusteeType || undefined,
+    trusteeType: entry?.trusteeType || "Select",
     trusteeName: entry?.trusteeName || "",
     ACN: parseDigitsValue(entry?.ACN),
     nameOfAccountant: entry?.nameOfAccountant || "",
@@ -341,7 +342,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
         placeholder: "Name of Accountant",
       },
     ];
-      if (trusteeType === "Individual") {
+      if (trusteeType === "Individual" || trusteeType === "Select") {
         return baseColumns.filter(
           (col) => col.key !== "trusteeName" && col.key !== "ACN",
         );

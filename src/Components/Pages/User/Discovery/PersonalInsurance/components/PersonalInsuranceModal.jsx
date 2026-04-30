@@ -192,7 +192,7 @@ function OwnerTabContent({
       initialValues:
         (fieldPath ? form.getFieldValue(fieldPath) : null) || record || {},
       rowDescriptionKey: "loadingExclusiondescription",
-      descriptionLabel: "Loading / Exclusion Description",
+      descriptionLabel: "Description",
       descriptionPlaceholder: "Enter loading or exclusion details",
       closeModal: () => {
         setOpenModal(false);
@@ -512,7 +512,7 @@ function OwnerTabContent({
       </AppModal>
 
       <Col xs={24} md={6}>
-        <Form.Item name={[ownerKey, "NumberOfMaps"]} label="Number of Maps">
+        <Form.Item name={[ownerKey, "NumberOfMaps"]} label="Number of Policies">
           <Select
             options={Array.from({ length: 10 }, (_, index) => ({
               value: index + 1,
