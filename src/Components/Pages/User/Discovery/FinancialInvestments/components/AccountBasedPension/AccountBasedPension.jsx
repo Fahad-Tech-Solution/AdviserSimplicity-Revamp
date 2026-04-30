@@ -296,12 +296,13 @@ export default function AccountBasedPension({ modalData }) {
 
       const detailMap = {
         balanceBenefit: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Balance and Details`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Balance & Benefit Details`,
+          ownerLabel: modalData?.ownerLabel,
           width: 1500,
           component: <AcountBalanceBenefit />,
         },
         pensionPayment: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Annual Pension Payment`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Annual Pension Payment`,
           width: 760,
           component: <AnnualAdviceModal />,
           valueKey: "pensionPayment",
@@ -310,12 +311,12 @@ export default function AccountBasedPension({ modalData }) {
           totalLabel: "Annual Pension Payment",
         },
         nominatedBeneficiaries: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Beneficiaries`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Beneficiaries`,
           width: 1180,
           component: <BeneficiariesModal />,
         },
         annualAdvice: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Ongoing Annual Fee`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Ongoing Annual Fee`,
           width: 760,
           component: <AnnualAdviceModal />,
           valueKey: "annualAdvice",

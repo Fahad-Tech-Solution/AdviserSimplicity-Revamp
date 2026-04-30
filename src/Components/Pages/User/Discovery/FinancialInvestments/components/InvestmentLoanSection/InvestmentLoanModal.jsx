@@ -728,7 +728,7 @@ export default function InvestmentLoanModal({ modalData }) {
           <Col xs={24} md={6}>
             <Form.Item
               label={
-                modalData?.title !== "Investment Loan" ? "Members" : "Owner"
+                "Owner"
               }
               name="owner"
               style={{ marginBottom: 0 }}

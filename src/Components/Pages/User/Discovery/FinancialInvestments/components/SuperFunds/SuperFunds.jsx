@@ -296,27 +296,28 @@ export default function SuperFunds({ modalData }) {
 
       const detailMap = {
         balanceBenefit: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Balance and Details`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Balance and Benefits`,
           width: 1280,
+          ownerLabel: modalData?.ownerLabel,
           component: <SuperFundsBalanceBenefitModal />,
         },
         groupInsurance: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Group Insurance`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Group Insurance`,
           width: 1280,
           component: <SuperFundsGroupInsuranceModal />,
         },
         contributions: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Contributions`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Contributions`,
           width: 1000,
           component: <ContributionsModal />,
         },
         nominatedBeneficiaries: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Beneficiaries`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Beneficiaries`,
           width: 1180,
           component: <BeneficiariesModal />,
         },
         annualAdvice: {
-          title: `${modalData?.ownerLabel || "Owner"} ${fundLabel} Ongoing Annual Fee`,
+          title: `${modalData?.ownerLabel || "Owner"}_${fundLabel}_Ongoing Annual Fee`,
           width: 760,
           component: <AnnualAdviceModal />,
         },

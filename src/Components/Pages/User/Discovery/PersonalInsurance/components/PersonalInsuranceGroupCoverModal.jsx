@@ -1,8 +1,9 @@
-import { Col, Form, Row } from "antd";
+import { Col, Divider, Form, Row } from "antd";
 import { useMemo } from "react";
 import DynamicDataTable from "../../../../../Common/DynamicDataTable.jsx";
 import { InvestmentOffersData } from "../../../../../../store/authState";
 import { useAtomValue } from "jotai";
+import useTitleBlock from "../../../../../../hooks/useTitleBlock.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -15,6 +16,7 @@ const TABLE_PROPS = {
 
 export default function PersonalInsuranceGroupCoverModal({ modalData }) {
   const { parentForm } = modalData || {};
+  const renderTitleBlock = useTitleBlock();
   const groupCoverValue =
     Form.useWatch("groupCover", parentForm) ||
     parentForm?.getFieldValue?.("groupCover") ||
@@ -51,12 +53,12 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
 
     let IP =
       groupCoverValue?.groupInsuranceDetails?.monthlyIncome &&
-      groupCoverValue?.groupInsuranceDetails?.monthlyIncome !== "$0"
+        groupCoverValue?.groupInsuranceDetails?.monthlyIncome !== "$0"
         ? (groupCoverValue?.groupInsuranceDetails?.monthlyIncome || "$0") +
-          "/" +
-          (groupCoverValue?.groupInsuranceDetails?.waitingPeriod || "30") +
-          " Days/" +
-          (groupCoverValue?.groupInsuranceDetails?.BenefitPeriod || "2 Years")
+        "/" +
+        (groupCoverValue?.groupInsuranceDetails?.waitingPeriod || "30") +
+        " Days/" +
+        (groupCoverValue?.groupInsuranceDetails?.BenefitPeriod || "2 Years")
         : "$0";
 
     return [
@@ -143,7 +145,15 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
   }, []);
 
   return (
-    <Row gutter={16} style={{ padding: "16px 4px 0px 4px" }}>
+    <Row gutter={16} style={{ padding: "0px 4px 0px 4px" }}>
+      <Col xs={24} md={24}>
+        {renderTitleBlock({
+          title: modalData?.title,
+          icon:  null,
+
+        })}
+        <Divider style={{ margin: "12px 0px 0px 0px" }} />
+      </Col>
       <Col xs={24} md={24}>
         <DynamicDataTable columns={columns} data={rows} {...TABLE_PROPS} />
       </Col>

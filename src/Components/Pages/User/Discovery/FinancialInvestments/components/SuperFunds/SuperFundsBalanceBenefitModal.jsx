@@ -202,8 +202,9 @@ export default function SuperFundsBalanceBenefitModal({ modalData }) {
 
   const openPortfolioModal = ({ form: currentForm }) => {
     setDetailModalOpen(true);
+    // console.log(modalData);
     setDetailModalData({
-      title: `${modalData?.fundLabel || "Fund"} Portfolio Value`,
+      title: `${modalData?.ownerLabel || "Owner"}_${modalData?.fundLabel || "Fund"}_Portfolio Value`,
       width: 750,
       component: <PortfolioValueModal />,
       parentForm: currentForm,

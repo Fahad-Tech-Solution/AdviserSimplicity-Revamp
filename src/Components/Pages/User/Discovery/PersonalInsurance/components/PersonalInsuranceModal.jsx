@@ -210,7 +210,7 @@ function OwnerTabContent({
 
     setOpenModal(true);
     setModalData({
-      title: `${ownerLabel}_${providerLabel}_Beneficiary`,
+      title: `${ownerLabel}_${providerLabel}_Beneficiaries`,
       component: BeneficiariesModal,
       key: "beneficiary",
       width: 1000,
@@ -383,7 +383,7 @@ function OwnerTabContent({
             providerOptions.find((option) => option.value === record.provider)
               ?.label || "";
           setModalData({
-            title: `${ownerLabel}_${providerLabel}_Premiums`,
+            title: `${ownerLabel}_${providerLabel}_Premiums p.a`,
             component: PersonalInsurancePremiumsModal,
             key: "premiums",
             width: 1200,

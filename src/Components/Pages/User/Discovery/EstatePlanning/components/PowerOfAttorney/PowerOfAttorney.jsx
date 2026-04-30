@@ -186,7 +186,7 @@ export default function PowerOfAttorney({ modalData }) {
 
     setDetailModalOpen(true);
     setDetailModalData({
-      title: `${record?.ownerLabel || "Owner"} Name of POA`,
+      title: `Name of POA for ${record?.ownerLabel || "Owner"}`,
       width: 900,
       question: "Number of Power of Attorney's",
       component: <ExecutorDetailsModal />,

@@ -315,7 +315,7 @@ export default function Annuities({ modalData }) {
 
       const detailMap = {
         annualAnnuityPayment: {
-          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Annual Annuity Payment`,
+          title: `${modalData?.ownerLabel || "Owner"}_${providerLabel}_Annual Annuity Payment`,
           width: 760,
           component: <AnnualAdviceModal />,
           valueKey: "annualAnnuityPayment",
@@ -324,12 +324,12 @@ export default function Annuities({ modalData }) {
           totalLabel: "Annual Annuity Payment",
         },
         nominatedBeneficiaries: {
-          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Beneficiaries`,
+          title: `${modalData?.ownerLabel || "Owner"}_${providerLabel}_Beneficiaries`,
           width: 1180,
           component: <BeneficiariesModal />,
         },
         annualAdvice: {
-          title: `${modalData?.ownerLabel || "Owner"} ${providerLabel} Annual Ongoing Fee`,
+          title: `${modalData?.ownerLabel || "Owner"}_${providerLabel}_Annual Ongoing Fee`,
           width: 760,
           component: <AnnualAdviceModal />,
           valueKey: "annualAdvice",
