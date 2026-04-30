@@ -215,7 +215,8 @@ export default function OverseasPensionModal({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+    setEditing(!sectionData?._id);
+  }, [form, initialValues, sectionData?._id, setEditing]);
 
   useEffect(() => {
     if (!allowPartner && selectedOwners?.includes("partner")) {

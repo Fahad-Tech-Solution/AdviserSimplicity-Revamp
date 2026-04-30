@@ -198,8 +198,9 @@ export default function SoleTraderModal({ modalData }) {
   );
 
   useEffect(() => {
+    setEditing(!sectionData?._id);
     form.setFieldsValue(initialValues);
-  }, [form, initialValues]);
+  }, [form, initialValues, sectionData?._id, setEditing]);
 
   useEffect(() => {
     if (!allowPartner && selectedOwners?.includes("partner")) {

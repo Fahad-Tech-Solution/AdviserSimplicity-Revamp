@@ -322,6 +322,7 @@ export default function AustralianShare({ modalData }) {
           currentForm.setFieldValue([...record.formPath, "companyName"], "");
           currentForm.setFieldValue([...record.formPath, "sharePrice"], "");
           currentForm.setFieldValue([...record.formPath, "currentBalance"], "");
+
           return;
         }
 
@@ -337,6 +338,7 @@ export default function AustralianShare({ modalData }) {
             [...record.formPath, "sharePrice"],
             quote.sharePrice,
           );
+        
           currentForm.setFieldValue(
             [...record.formPath, "currentBalance"],
             calculateCurrentBalance(
@@ -419,6 +421,10 @@ export default function AustralianShare({ modalData }) {
       field: "shares",
       type: "number",
       placeholder: "Number of Shares",
+      disabled: ({ form: currentForm, record }) =>
+        !isValidAsxCode(
+          currentForm?.getFieldValue?.([...record.formPath, "ASXCode"]),
+        ),
       onChange: (value, record, column, currentForm) => {
         const nextShares = value?.target?.value ?? value;
         currentForm.setFieldValue(
@@ -441,6 +447,10 @@ export default function AustralianShare({ modalData }) {
       field: "costBase",
       type: "text",
       placeholder: "Cost Base",
+      disabled: ({ form: currentForm, record }) =>
+        !isValidAsxCode(
+          currentForm?.getFieldValue?.([...record.formPath, "ASXCode"]),
+        ),
       onChange: (value, record, column, currentForm) => {
         currentForm.setFieldValue(
           [...record.formPath, column.field],
