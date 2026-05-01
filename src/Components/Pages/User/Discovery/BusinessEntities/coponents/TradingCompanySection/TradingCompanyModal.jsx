@@ -7,6 +7,7 @@ import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpe
 import { discoveryDataAtom } from "../../../../../../../store/authState.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 
 const TABLE_PROPS = {
     showCount: false,
@@ -318,7 +319,7 @@ export default function TradingCompanyModal({ modalData }) {
                     type="text"
                     danger
                     aria-label={`Remove row ${record?.rowNumber}`}
-                    onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
+                    onClick={() => confirmRemoveData(() => handleRemoveRow((record?.rowNumber || 1) - 1))}
                 >
                     🗑️
                 </Button>

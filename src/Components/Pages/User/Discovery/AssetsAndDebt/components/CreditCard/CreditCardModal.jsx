@@ -12,6 +12,7 @@ import {
   discoveryDataAtom,
 } from "../../../../../../../store/authState.js";
 import useApi from "../../../../../../../hooks/useApi.js";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -40,6 +41,7 @@ const LOAN_TERM_OPTIONS = Array.from({ length: 30 }, (_, index) => ({
 }));
 
 const COUNT_OPTIONS = [
+  { value: 0, label: "0" },
   { value: 1, label: "1" },
   { value: 2, label: "2" },
 ];
@@ -126,13 +128,16 @@ function buildInitialValues(sectionData) {
   const cards = Array.isArray(sectionData?.client)
     ? sectionData.client.map(normalizeCard)
     : [];
-  const count = Math.min(Math.max(cards.length || 1, 1), 2);
+  const count = Math.min(Math.max(cards.length, 0), 2);
 
   return {
     numberOfCards: count,
-    creditCards: Array.from({ length: count }, (_, idx) =>
-      cards[idx] ? cards[idx] : buildEmptyCard(),
-    ),
+    creditCards:
+      count === 0
+        ? []
+        : Array.from({ length: count }, (_, idx) =>
+            cards[idx] ? cards[idx] : buildEmptyCard(),
+          ),
   };
 }
 
@@ -177,9 +182,9 @@ export default function CreditCardModal({ modalData }) {
     [sectionData],
   );
   const numberOfCards =
-    Form.useWatch("numberOfCards", form) || initialValues.numberOfCards;
+    Form.useWatch("numberOfCards", form) ?? initialValues.numberOfCards;
   const creditCards =
-    Form.useWatch("creditCards", form) || initialValues.creditCards;
+    Form.useWatch("creditCards", form) ?? initialValues.creditCards;
 
     useEffect(() => {
       form.setFieldsValue(initialValues);
@@ -187,9 +192,14 @@ export default function CreditCardModal({ modalData }) {
     }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
-    const count = Number(numberOfCards) || 1;
+    const count = Number(numberOfCards ?? 0);
     const current = Array.isArray(creditCards) ? [...creditCards] : [];
     if (current.length === count) return;
+
+    if (count === 0) {
+      form.setFieldValue("creditCards", []);
+      return;
+    }
 
     const nextCards = Array.from({ length: count }, (_, idx) =>
       current[idx] ? current[idx] : buildEmptyCard(),
@@ -203,8 +213,8 @@ export default function CreditCardModal({ modalData }) {
       : [];
 
     if (current.length <= 1) {
-      form.setFieldValue("creditCards", [buildEmptyCard()]);
-      form.setFieldValue("numberOfCards", 1);
+      form.setFieldValue("creditCards", []);
+      form.setFieldValue("numberOfCards", 0);
       return;
     }
 
@@ -336,7 +346,7 @@ export default function CreditCardModal({ modalData }) {
           <Button
             type="text"
             danger
-            onClick={() => handleDeleteRow(record.rowIndex)}
+            onClick={() => confirmRemoveData(() => handleDeleteRow(record.rowIndex))}
             disabled={!editing}
           >
             🗑️

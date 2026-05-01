@@ -17,6 +17,7 @@ import AppModal from "../../../../../../Common/AppModal.jsx";
 import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
 import InvestmentPropertyLoanBalanceModal from "./InvestmentPropertyLoanBalanceModal.jsx";
 import InvestmentPropertyExpenseModal from "./InvestmentPropertyExpenseModal.jsx";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -518,7 +519,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
             type="text"
             danger
             aria-label={`Remove row ${record?.rowIndex + 1}`}
-            onClick={() => handleRemoveRow(record.rowIndex)}
+            onClick={() => confirmRemoveData(() => handleRemoveRow(record.rowIndex))}
           >
             🗑️
           </Button>
@@ -674,7 +675,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
               label="Number of Investment Properties"
               name="numberOfProperties"
               style={{ marginBottom: 0 }}
-              rules={[{ required: true, message: "Number is required" }]}
+              // rules={[{ required: true, message: "Number is required" }]}
             >
               <Select
                 placeholder="Select"

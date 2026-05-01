@@ -19,7 +19,7 @@ import OverseasPensionModal from "../Pages/User/Discovery/IncomeExpenses/compone
 import AssetAndDebt from "../Pages/User/Discovery/AssetsAndDebt/AssetAndDebt.jsx";
 import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyHome/FamilyHome.jsx";
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
-import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/personalLoan/personalLoanModal.jsx";
+import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/PersonalLoan/PersonalLoanModal.jsx";
 import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
 import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";

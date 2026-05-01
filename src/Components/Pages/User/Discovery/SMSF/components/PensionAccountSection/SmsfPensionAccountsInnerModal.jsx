@@ -9,6 +9,7 @@ import { toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 import PensionBenefitsDetailsModal from "./PensionBenefitsDetailsModal.jsx";
 import SmsfAnnualPensionPaymentModal from "./SmsfAnnualPensionPaymentModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -242,7 +243,7 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
           type="text"
           danger
           aria-label={`Remove pension account row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
+          onClick={() => confirmRemoveData(() => handleRemoveRow((record?.rowNumber || 1) - 1))}
         >
           🗑️
         </Button>
@@ -253,10 +254,11 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
   const handleConfirmAndExit = async () => {
     const values = form.getFieldsValue(true);
     const nextCount = Number(values?.NumberOfMap) || 0;
-    if (!nextCount) {
-      message.warning("Select how many pension accounts apply");
-      return;
-    }
+    console.log("nextCount", nextCount);
+    // if (!nextCount) {
+    //   message.warning("Select how many pension accounts apply");
+    //   return;
+    // }
 
     const accounts = buildPensionAccountEntries(
       nextCount,

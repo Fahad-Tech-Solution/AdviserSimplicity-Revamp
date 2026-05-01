@@ -3,6 +3,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 import {
   formatNumber,
   toCommaAndDollar,
@@ -40,6 +41,7 @@ const LOAN_TERM_OPTIONS = Array.from({ length: 30 }, (_, index) => ({
 }));
 
 const COUNT_OPTIONS = [
+  { value: 0, label: "0" },
   { value: 1, label: "1" },
   { value: 2, label: "2" },
 ];
@@ -126,13 +128,16 @@ function buildInitialValues(sectionData) {
   const loans = Array.isArray(sectionData?.client)
     ? sectionData.client.map(normalizeLoan)
     : [];
-  const count = Math.min(Math.max(loans.length || 1, 1), 2);
+  const count = Math.min(Math.max(loans.length, 0), 2);
 
   return {
     numberOfLoans: count,
-    personalLoans: Array.from({ length: count }, (_, idx) =>
-      loans[idx] ? loans[idx] : buildEmptyLoan(),
-    ),
+    personalLoans:
+      count === 0
+        ? []
+        : Array.from({ length: count }, (_, idx) =>
+            loans[idx] ? loans[idx] : buildEmptyLoan(),
+          ),
   };
 }
 
@@ -147,7 +152,7 @@ export default function PersonalLoanModal({ modalData }) {
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
-  console.log("sectionData",sectionData);
+  console.log("sectionData", sectionData);
 
   const lenderOptions = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
@@ -179,9 +184,9 @@ export default function PersonalLoanModal({ modalData }) {
     [sectionData],
   );
   const numberOfLoans =
-    Form.useWatch("numberOfLoans", form) || initialValues.numberOfLoans;
+    Form.useWatch("numberOfLoans", form) ?? initialValues.numberOfLoans;
   const personalLoans =
-    Form.useWatch("personalLoans", form) || initialValues.personalLoans;
+    Form.useWatch("personalLoans", form) ?? initialValues.personalLoans;
 
   // useEffect(() => {
   //   form.setFieldsValue(initialValues);
@@ -193,9 +198,14 @@ export default function PersonalLoanModal({ modalData }) {
   }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
-    const count = Number(numberOfLoans) || 1;
+    const count = Number(numberOfLoans ?? 0);
     const current = Array.isArray(personalLoans) ? [...personalLoans] : [];
     if (current.length === count) return;
+
+    if (count === 0) {
+      form.setFieldValue("personalLoans", []);
+      return;
+    }
 
     const nextLoans = Array.from({ length: count }, (_, idx) =>
       current[idx] ? current[idx] : buildEmptyLoan(),
@@ -209,8 +219,8 @@ export default function PersonalLoanModal({ modalData }) {
       : [];
 
     if (current.length <= 1) {
-      form.setFieldValue("personalLoans", [buildEmptyLoan()]);
-      form.setFieldValue("numberOfLoans", 1);
+      form.setFieldValue("personalLoans", []);
+      form.setFieldValue("numberOfLoans", 0);
       return;
     }
 
@@ -218,6 +228,8 @@ export default function PersonalLoanModal({ modalData }) {
     form.setFieldValue("personalLoans", filtered);
     form.setFieldValue("numberOfLoans", filtered.length);
   };
+
+
   function requiredRule(message) {
     return { required: true, message };
   }
@@ -332,7 +344,7 @@ export default function PersonalLoanModal({ modalData }) {
         options: LOAN_TERM_OPTIONS,
       },
       {
-        title: "Action",
+        title: "Action 3211",
         dataIndex: "action",
         key: "action",
         editable: false,
@@ -340,7 +352,9 @@ export default function PersonalLoanModal({ modalData }) {
           <Button
             type="text"
             danger
-            onClick={() => handleDeleteRow(record.rowIndex)}
+            onClick={() =>
+              confirmRemoveData(() => handleDeleteRow(record.rowIndex))
+            }
             disabled={!editing}
           >
             🗑️
@@ -391,9 +405,9 @@ export default function PersonalLoanModal({ modalData }) {
           0,
         ),
       ),
-     
+
     };
-console.log("payload",payload);
+    console.log("payload", payload);
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
@@ -412,8 +426,8 @@ console.log("payload",payload);
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Personal Loan"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Personal Loan"}`,
       );
     } finally {
       setSaving(false);

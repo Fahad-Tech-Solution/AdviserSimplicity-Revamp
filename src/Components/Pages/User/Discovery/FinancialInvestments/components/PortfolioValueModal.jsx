@@ -4,6 +4,7 @@ import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../Common/EditableDynamicTable";
 import { toCommaAndDollar } from "../../../../../../hooks/helpers";
 import useTitleBlock from "../../../../../../hooks/useTitleBlock";
+import { confirmRemoveData } from "../../../../../Common/confirmationModal";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -278,7 +279,7 @@ export default function PortfolioValueModal({ modalData }) {
           type="text"
           danger
           aria-label={`Remove portfolio row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
+          onClick={() => confirmRemoveData(() => handleRemoveRow((record?.rowNumber || 1) - 1))}
         >
           🗑️
         </Button>

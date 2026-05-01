@@ -19,6 +19,7 @@ import PersonalInsuranceIncomeProtectionModal from "./PersonalInsuranceIncomePro
 import PersonalInsurancePremiumsModal from "./PersonalInsurancePremiumsModal.jsx";
 import EstatePlanningDescriptionModal from "../../EstatePlanning/components/wills/EstatePlanningDescriptionModal.jsx";
 import BeneficiariesModal from "../../FinancialInvestments/components/SuperFunds/BeneficiariesModal.jsx";
+import { confirmRemoveData } from "../../../../../Common/confirmationModal.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -453,7 +454,7 @@ function OwnerTabContent({
         <Button
           type="text"
           danger
-          onClick={() => handleRemoveRow(record.rowIndex)}
+          onClick={() => confirmRemoveData(() => handleRemoveRow(record.rowIndex))}
         >
           🗑️
         </Button>

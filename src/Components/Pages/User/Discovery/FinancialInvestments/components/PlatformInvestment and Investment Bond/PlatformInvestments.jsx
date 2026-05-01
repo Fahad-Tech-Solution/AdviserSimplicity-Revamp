@@ -10,6 +10,7 @@ import PortfolioValueModal from ".././PortfolioValueModal";
 import ServiceFeeModal from ".././ServiceFeeModal";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
+import { confirmRemoveData } from "../../../../../../Common/confirmationModal";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -476,7 +477,7 @@ export default function PlatformInvestments({ modalData }) {
           type="text"
           danger
           aria-label={`Remove row ${record?.rowNumber}`}
-          onClick={() => handleRemoveRow((record?.rowNumber || 1) - 1)}
+          onClick={() => confirmRemoveData(() => handleRemoveRow((record?.rowNumber || 1) - 1))}
         >
           🗑️
         </Button>
