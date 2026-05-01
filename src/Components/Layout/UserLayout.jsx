@@ -7,6 +7,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import {
+  message,
   Drawer,
   Layout,
   Menu,
@@ -37,6 +38,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import {
   addDiscoverySectionsModalOpen,
   loggedInUser,
+  SelectedClient,
 } from "../../store/authState.js";
 import useUserDashboardData from "../../hooks/useUserDashboardData";
 
@@ -50,6 +52,7 @@ export default function UserLayout() {
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
   const session = useAtomValue(loggedInUser);
+  const selectedClient = useAtomValue(SelectedClient);
   const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
@@ -98,6 +101,16 @@ export default function UserLayout() {
       return;
     }
     if (info.key.startsWith("/")) {
+      const requiresSelectedClient =
+        info.key.startsWith("/user/discovery") ||
+        info.key.startsWith("/strategy");
+      const selectedClientId = selectedClient?._id ?? selectedClient?.id;
+
+      if (requiresSelectedClient && !selectedClientId) {
+        message.warning("Please select a client from My Clients before proceeding.");
+        return;
+      }
+
       navigate(info.key);
     }
   };

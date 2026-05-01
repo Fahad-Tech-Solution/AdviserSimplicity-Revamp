@@ -476,7 +476,7 @@ const MiddleWare = ({ modalData }) => {
         title: ["SMSFManagedFunds", "familyMangedFunds"].includes(
           modalData?.key,
         )
-          ? "Platform Investments"
+          ? "Portfolio value"
           : "Current Balance",
         dataIndex: "currentBalance",
         key: "currentBalance",
@@ -486,7 +486,7 @@ const MiddleWare = ({ modalData }) => {
         placeholder: ["SMSFManagedFunds", "familyMangedFunds"].includes(
           modalData?.key,
         )
-          ? "Platform Investments"
+          ? "Portfolio value"
           : "Current Balance",
         action: {
           name: "Open Current Balance",

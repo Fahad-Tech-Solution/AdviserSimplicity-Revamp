@@ -417,21 +417,24 @@ const BUSINESS_ENTITIES_CARDS = [
 
 const ESTATE_PLANNING_CARDS = [
   {
-    title: "Wills",
+    title: "Do you have a Will?",
+    cardTitle: "Will",
     key: "will",
     icon: "📄",
     component: <EstatePlanningWill />,
     modalWidth: "1000px",
   },
   {
-    title: "Power of Attorneys",
+    title: "Do you have a Power of Attorney in place?",
+    cardTitle: "Power of Attorneys",
     key: "POA",
     icon: "🤝",
     component: <PowerOfAttorney />,
     modalWidth: "700px",
   },
   {
-    title: "Professional Advisers",
+    title: "Do you have any Professional Advisers",
+    cardTitle: "Professional Advisers",
     key: "professionalAdviser",
     icon: "👔",
     component: <ProfessionalAdvisers />,

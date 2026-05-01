@@ -135,7 +135,7 @@ function ResultCard({
           boxShadow: participant?.happyWithResult
             ? "rgba(34, 197, 94, 0.1) 0px 4px 18px"
             : "rgba(0, 0, 0, 0.05) 0px 2px 8px",
-          padding: "24px 20px 24px ",
+          padding: "24px 20px 24px",
           display: "flex",
           flexDirection: "column",
           gap: 14,
@@ -414,7 +414,7 @@ const ResultsStep = ({
           it, then confirm.
         </Text>
       </Col>
-      <Col xs={24} lg={includePartner ? 12 : 24}>
+      <Col xs={24} lg={!includePartner ? 12 : 24}>
         <ResultCard
           title="Client"
           participantKey="client"
@@ -429,7 +429,7 @@ const ResultsStep = ({
           calculateScore={calculateScore}
         />
       </Col>
-      {includePartner ? (
+      {!includePartner ? (
         <Col xs={24} lg={12}>
           <ResultCard
             title="Partner"
@@ -447,7 +447,7 @@ const ResultsStep = ({
         </Col>
       ) : null}
 
-      <Col xs={24} lg={24}>
+      <Col xs={24} lg={includePartner ? 12 : 24}>
         <Card
           borderd
           style={{
@@ -499,15 +499,74 @@ const ResultsStep = ({
               background: "rgb(250, 255, 254)",
               lineHeight: 1.7,
             }}
+            readOnly={true}
             rows={4}
-            value={values.addNoteDescription}
-            onChange={(event) =>
-              onTextChange("addNoteDescription", event.target.value)
-            }
+            value={values.client.addNoteDescription}
             placeholder="Add notes about the client's risk profile, any discussion points, clarifications or observations from the questionnaire..."
           />
         </Card>
       </Col>
+      {includePartner ? (
+        <Col xs={24} lg={12}>
+          <Card
+            borderd
+            style={{
+              background: "rgb(255, 255, 255)",
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              borderRadius: 16,
+              padding: "22px 24px",
+              boxShadow: "rgba(0, 0, 0, 0.04) 0px 2px 8px",
+              marginBottom: 32,
+            }}
+            styles={{
+              body: {
+                padding: 0,
+              },
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ fontSize: 20 }}>📝</div>
+              <div
+                style={{
+                  fontFamily: "Arial",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "rgb(17, 24, 39)",
+                }}
+              >
+                Adviser Notes
+              </div>
+            </div>
+            <TextArea
+              style={{
+                width: "100%",
+                border: "1.5px solid rgba(34, 197, 94, 0.35)",
+                borderRadius: 10,
+                padding: "12px 14px",
+                fontFamily: "Arial",
+                fontSize: 13,
+                color: "rgb(55, 65, 81)",
+                outline: "none",
+                resize: "vertical",
+                boxSizing: "border-box",
+                background: "rgb(250, 255, 254)",
+                lineHeight: 1.7,
+              }}
+              readOnly={true}
+              rows={4}
+              value={values.partner.addNoteDescription}
+              placeholder="Add notes about the client's risk profile, any discussion points, clarifications or observations from the questionnaire..."
+            />
+          </Card>
+        </Col>
+      ) : null}
     </Row>
   );
 };

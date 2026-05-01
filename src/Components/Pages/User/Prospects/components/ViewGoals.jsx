@@ -19,41 +19,41 @@ import AdviceGoalCard from "../../../../Common/AdviceGoalCard";
 const { Title } = Typography;
 
 const GOAL_ITEMS = [
-  { key: "buyAProperty", title: "Buy A Property", icon: HomeOutlined },
+  { key: "buyAProperty", title: "Buy A Property", icon: "🏘️" },
   {
     key: "payOffHomeLoan",
     title: "Pay Off The Home Loan",
-    icon: CreditCardOutlined,
+    icon: "🔑",
   },
   {
     key: "incomeProtectionInsurance",
     title: "Life & Income Protection Insurance",
-    icon: SafetyOutlined,
+    icon: "🛡️",
   },
-  { key: "buildSuperannuation", title: "Build Up Super", icon: WalletOutlined },
+  { key: "buildSuperannuation", title: "Build Up Super", icon: "➕" },
   {
     key: "retirementPlanning",
     title: "Plan For Retirement",
-    icon: ClockCircleOutlined,
+    icon: "⏰",
   },
   {
     key: "centreLinkEligibility",
     title: "Eligibility To Centrelink",
-    icon: SettingOutlined,
+    icon: "💼",
   },
-  { key: "investing", title: "Investing Money", icon: LineChartOutlined },
+  { key: "investing", title: "Investing Money", icon: "📈" },
   {
     key: "moneyManagement",
     title: "Manage Our Money And Finances Better",
-    icon: FileTextOutlined,
+    icon: "📄",
   },
-  { key: "taxMinimization", title: "Pay Less Tax", icon: DollarOutlined },
-  { key: "inheritancePlanning", title: "An Inheritance", icon: GiftOutlined },
-  { key: "agedCare", title: "Aged Care", icon: MedicineBoxOutlined },
+  { key: "taxMinimization", title: "Pay Less Tax", icon: "💲" },
+  { key: "inheritancePlanning", title: "An Inheritance", icon: "🎁" },
+  { key: "agedCare", title: "Aged Care", icon: "👴" },
   {
     key: "selfManagedSuperFund",
     title: "Self Managed Super Fund",
-    icon: BankOutlined,
+    icon: "🏦",
   },
 ];
 

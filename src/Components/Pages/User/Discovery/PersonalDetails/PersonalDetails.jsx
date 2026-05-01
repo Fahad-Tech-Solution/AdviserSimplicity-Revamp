@@ -41,6 +41,7 @@ function getPersonalDetailsFromDiscovery(data) {
 
 export function PersonalDetails() {
   const { message } = AntdApp.useApp();
+  const [downloading, setdownloading] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
@@ -51,9 +52,6 @@ export function PersonalDetails() {
   const selected = useAtomValue(SelectedClient);
   const session = useAtomValue(loggedInUser);
   const [step, setStep] = useState(1);
-
-
-  console.log("discoveryData: ", discoveryData);
 
   const pd = getPersonalDetailsFromDiscovery(discoveryData);
 
@@ -94,7 +92,11 @@ export function PersonalDetails() {
 
           {step === 1 && (
             <Row gutter={[24, 24]} align={"stretch"}>
-              <Col xs={24} md={12} style={{ display: "flex", alignItems: "stretch" }}>
+              <Col
+                xs={24}
+                md={12}
+                style={{ display: "flex", alignItems: "stretch" }}
+              >
                 <ProfileCard
                   person={client}
                   role="client"
@@ -136,31 +138,24 @@ export function PersonalDetails() {
               View
             </Button>
             <Button
-              onClick={() => {
-                if (!pd) {
-                  message.error("Personal details not available to export yet.");
-                  return;
+              loading={downloading}
+              disabled={downloading}
+              onClick={async () => {
+                setdownloading(true);
+                try {
+                  await generatePersonalDetailsDocument(
+                    selected?._id || "",
+                    "template.docx",
+                    `Adviser Simplicity Fact Find of ${selected?.client?.clientPreferredName || "Client"}.docx`,
+                  );
+                  message.success("Document downloaded.");
+                } catch (error) {
+                  message.error(
+                    error?.message || "Failed to generate/download document.",
+                  );
+                } finally {
+                  setdownloading(false);
                 }
-
-                generatePersonalDetailsDocument({
-                  personalDetails: pd,
-                  discoveryData,
-                  discoveryQuestions,
-                  goalsData,
-                  goalsQuestions,
-                  riskProfileData,
-                  sessionUser: session?.user || null,
-                  templateFileName: "template.docx",
-                  downloadFileName: `Personal Details - ${
-                    pd?.client?.clientPreferredName || "Client"
-                  }.docx`,
-                })
-                  .then(() => message.success("Document downloaded."))
-                  .catch((error) => {
-                    message.error(
-                      error?.message || "Failed to generate/download document.",
-                    );
-                  });
               }}
               style={{ borderRadius: 8, minWidth: 140 }}
             >

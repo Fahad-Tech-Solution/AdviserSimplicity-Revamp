@@ -3,23 +3,23 @@ import { AiFillQuestionCircle } from "react-icons/ai";
 
 const { Text } = Typography;
 
-function renderCardIcon(Icon, isYes) {
-  const iconStyle = {
-    fontSize: 26,
-    color: isYes ? "#22c55e" : "#6b7280",
-    lineHeight: 1,
-  };
+// function renderCardIcon(Icon, isYes) {
+//   const iconStyle = {
+//     fontSize: 26,
+//     color: isYes ? "#22c55e" : "#6b7280",
+//     lineHeight: 1,
+//   };
 
-  if (typeof Icon === "string") {
-    return <span style={iconStyle}>{Icon}</span>;
-  }
+//   if (typeof Icon === "string") {
+//     return <span style={iconStyle}>{Icon}</span>;
+//   }
 
-  if (typeof Icon === "function") {
-    return <Icon style={iconStyle} />;
-  }
+//   if (typeof Icon === "function") {
+//     return <Icon style={iconStyle} />;
+//   }
 
-  return null;
-}
+//   return null;
+// }
 
 /**
  * Shared “Area of Advice Needed” card UI.
@@ -68,7 +68,8 @@ export default function AdviceGoalCard({
           marginBottom: 12,
         }}
       >
-        {renderCardIcon(Icon, isYes)}
+        {/* {renderCardIcon(Icon, isYes)} */}
+        {Icon}
       </div>
 
       <Text

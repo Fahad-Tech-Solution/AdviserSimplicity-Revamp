@@ -18,7 +18,7 @@ import {
   Typography,
 } from "antd";
 import { useAtomValue } from "jotai";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   discoveryDataAtom,
@@ -30,6 +30,7 @@ import {
 } from "../../../../../store/authState.js";
 import { capitalizeFirst } from "../../../../../hooks/helpers.js";
 import { CgArrowTopRight } from "react-icons/cg";
+import { generatePersonalDetailsDocument } from "../../../../Common/docx/generatePersonalDetailsDocument.js";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -614,7 +615,7 @@ export default function ClientSummary() {
   const goalsData = useAtomValue(goalsDataAtom);
   const goalsQuestions = useAtomValue(goalsSectionQuestionsAtom);
   const riskProfileData = useAtomValue(riskProfileDataAtom);
-
+  const [downloading, setdownloading] = useState(false);
   const personalDetails = getPersonalDetailsFromDiscovery(discoveryData);
   const client = personalDetails?.client ?? selected?.client ?? {};
   const partner = personalDetails?.partner ?? selected?.partner ?? {};
@@ -1034,6 +1035,25 @@ export default function ClientSummary() {
                 borderColor: PRIMARY_GREEN,
                 boxShadow: "0 6px 18px rgba(34, 197, 94, 0.25)",
                 fontWeight: 700,
+              }}
+              loading={downloading}
+              disabled={downloading}
+              onClick={async () => {
+                setdownloading(true);
+                try {
+                  await generatePersonalDetailsDocument(
+                    selected?._id || "",
+                    "template.docx",
+                    `Adviser Simplicity Fact Find of ${selected?.client?.clientPreferredName || "Client"}.docx`,
+                  );
+                  message.success("Document downloaded.");
+                } catch (error) {
+                  message.error(
+                    error?.message || "Failed to generate/download document.",
+                  );
+                } finally {
+                  setdownloading(false);
+                }
               }}
             >
               DownLoad PDF

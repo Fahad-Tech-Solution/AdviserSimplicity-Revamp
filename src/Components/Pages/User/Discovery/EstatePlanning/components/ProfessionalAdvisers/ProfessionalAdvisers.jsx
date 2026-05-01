@@ -258,6 +258,8 @@ export default function ProfessionalAdvisers({ modalData }) {
   });
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const [activeTab, setActiveTab] = useState("client");
+
   const { post, patch } = useApi();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -381,7 +383,7 @@ export default function ProfessionalAdvisers({ modalData }) {
         <Row gutter={[16, 16]}>
           <Col xs={24} className={"px-2"}>
             {renderTitleBlock({
-              title: "Professional Advisers",
+              title: "Professional Advisers for " + (activeTab === "client" ? clientName : partnerName),
               icon: "👔",
             })}
             <Divider style={{ margin: "8px 0px 0px 0px" }} />
@@ -389,7 +391,8 @@ export default function ProfessionalAdvisers({ modalData }) {
 
           <Col xs={24}>
             <Tabs
-              defaultActiveKey="client"
+              activeKey={activeTab}
+              onChange={setActiveTab}
               items={[
                 {
                   key: "client",

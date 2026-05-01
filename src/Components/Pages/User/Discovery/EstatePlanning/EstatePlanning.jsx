@@ -115,7 +115,7 @@ const EstatePlanning = () => {
               return (
                 <Col key={card.key} xs={24} sm={12} md={8} lg={6}>
                   <DiscoveryTotalsCard
-                    title={card.title}
+                    title={card.cardTitle}
                     icon={card.icon}
                     firstName={
                       card?.firstNameKey ||

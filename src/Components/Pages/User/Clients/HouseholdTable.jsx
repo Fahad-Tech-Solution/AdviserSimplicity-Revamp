@@ -13,6 +13,7 @@ import {
   goalsDataAtom,
   goalsSectionQuestionsAtom,
   riskProfileDataAtom,
+  InvestmentOffersData,
 } from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@ant-design/icons";
 import useApi from "../../../../hooks/useApi";
 import { useNavigate } from "react-router-dom";
+import { generatePersonalDetailsDocument } from "../../../Common/docx/generatePersonalDetailsDocument";
 
 const PRIMARY_GREEN = "#22c55e";
 
@@ -183,8 +185,11 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
+  const setInvestmentsData = useSetAtom(InvestmentOffersData);
+
   const [openDropdownRowId, setOpenDropdownRowId] = useState(null);
   const [selectLoadingRowId, setSelectLoadingRowId] = useState(null);
+  const [Loading, setLoading] = useState(false);
   /** Sync guard so onOpenChange cannot close the menu before Select loading state is applied. */
   const selectLoadingRowIdRef = useRef(null);
 
@@ -197,14 +202,32 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     setOpenDropdownRowId(null);
   };
 
+  const DownloadReport = async (row) => {
+    setLoading(true);
+    try {
+    await generatePersonalDetailsDocument(
+      row?._id || "",
+        "template.docx",
+        `Adviser Simplicity Fact Find of ${row?.client?.clientPreferredName || "Client"}.docx`,
+      );
+      message.success("Report downloaded.");
+    } catch (error) {
+      message.error(error?.message || "Failed to download report.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
-    console.log("row", row);
+    // console.log("row", row);
     let yesNoQuestionsRes = [];
     let fullDetailsRes = {};
     let goalsYesNoQuestionsRes = [];
     let goalsFullDetailsRes = {};
     let riskProfileRes = {};
+    let investmentsRes = {};
+    setLoading(true);
     try {
       const [
         yesNoQuestionsResult,
@@ -212,12 +235,14 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         goalsYesNoQuestionsResult,
         goalsFullDetailsResult,
         riskProfileResult,
+        investments,
       ] = await Promise.allSettled([
         get(`/api/questions/${row?._id}`),
         get(`/api/dataOfAllSection/${row?._id}`),
         get(`/api/goalsQuestions/getByClient/${row?._id}`),
         get(`/api/CombinedGoalsAndObjectives/${row?._id}`),
         get(`/api/riskProfile/${row?._id}`),
+        get(`/api/investmentoffer`),
       ]);
 
       if (goalsYesNoQuestionsResult.status === "fulfilled") {
@@ -254,6 +279,12 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         riskProfileRes = {};
       }
 
+      if (investments.status === "fulfilled") {
+        investmentsRes = investments.value;
+      } else {
+        investmentsRes = {};
+      }
+
       setDiscoverySectionQuestions(yesNoQuestionsRes);
       setDiscoveryData(fullDetailsRes);
       // Goals and Objectives Questions and Details
@@ -264,11 +295,17 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
       setRiskProfileData(riskProfileRes);
 
+      setInvestmentsData(investmentsRes);
+
       const displayName = getClientLastName(row?.client || {}) || "Client";
       message.success(`"${displayName.toUpperCase()}" is active now`);
       if (action === "View") {
         navigate(`/user/discovery/personal-details`);
       }
+
+        if (action === "Download-Report") {
+            DownloadReport(row);
+        }
     } catch (error) {
       // If an unexpected error occurs, assign default values
       setDiscoverySectionQuestions([]);
@@ -278,6 +315,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       console.error("Error getting client details", error);
     } finally {
       finishSelectClientFlow(rowId);
+      setLoading(false);
     }
   };
 
@@ -412,7 +450,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       items,
       onClick: ({ key }) => {
         const action = keyToAction[key] || key;
-        if (action === "Select" || action === "View") {
+        if (action === "Select" || action === "View" || action === "Download-Report") {
           // flushSync(() => {
           //   selectLoadingRowIdRef.current = rowId;
           //   setSelectLoadingRowId(rowId);
@@ -431,7 +469,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
   const columns = [
     {
-      title: <div style={{ textAlign: "center", width: "100%" }}>#</div>,
+      title: <div style={{ textAlign: "center", width: "100%" }}>No#</div>,
       dataIndex: "number",
       key: "number",
       width: 50,
@@ -690,7 +728,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       tableProps={{
         childrenColumnName: "__antdNestedRows__",
         loading: {
-          spinning: isDashboardLoading,
+          spinning: isDashboardLoading || Loading,
           tip: "Loading households...",
         },
       }}

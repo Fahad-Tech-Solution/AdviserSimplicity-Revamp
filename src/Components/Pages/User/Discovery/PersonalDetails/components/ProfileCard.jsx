@@ -284,13 +284,13 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
           <span>{phoneLine(person, role)}</span>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <span>📧</span>
+          <span>✉️</span>
           <span style={{ wordBreak: "break-word" }}>
             {emailLine(person, role)}
           </span>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <span>🏠</span>
+          <span>📍</span>
           <span style={{ wordBreak: "break-word" }}>
             {addressLine(person, role)}
           </span>

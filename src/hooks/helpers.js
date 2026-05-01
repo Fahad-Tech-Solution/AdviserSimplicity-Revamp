@@ -1,3 +1,7 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
+
 /* ================================
    STRING HELPERS
 ================================ */
@@ -9,6 +13,10 @@ export const capitalizeWords = (text = "") =>
 // Capitalize only first letter
 export const capitalizeFirst = (text = "") =>
   text.charAt(0).toUpperCase() + text.slice(1);
+
+// Convert to sentence case
+export const toSentenceCase = (text = "") =>
+  text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 
 // Convert to kebab-case
 export const toKebabCase = (text = "") =>
@@ -198,7 +206,8 @@ export function buildClientRowFromAddForm(values, apiRes = {}) {
   const ms = String(values.clientMaritalStatus || "")
     .trim()
     .toLowerCase();
-  const hidePartner = ["single", "widowed", "", null, undefined].includes(ms) || !ms;
+  const hidePartner =
+    ["single", "widowed", "", null, undefined].includes(ms) || !ms;
 
   const partner =
     hidePartner || !(values.partnerPreferredName || values.partnerAge)
@@ -233,4 +242,17 @@ export function mergeNewClientRowForTable(apiRes, formValues) {
     return buildClientRowFromAddForm(formValues, apiRes);
   }
   return unwrapped;
+}
+
+export function RemoveSpan(text = "") {
+  return text
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function convertDateAUWithDayJS(date = "") {
+  if (!date) return "";
+  return dayjs.utc(date).format("DD/MM/YYYY");
 }

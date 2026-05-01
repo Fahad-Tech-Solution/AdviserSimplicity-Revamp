@@ -28,7 +28,8 @@ const RiskGoals = ({ modalData }) => {
   const Profiles = {
     "Cash Management": {
       title: "Cash Management",
-      description: "Cash Management",
+      description:
+        "Your responses indicate an extremely low tolerance to investment risk or, alternatively, you have a short investment time frame. The only appropriate investment for this risk profile or time frame is a cash-based investment such as bank accounts, cash management trusts and term deposits.",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -112,7 +113,8 @@ const RiskGoals = ({ modalData }) => {
     },
     Conservative: {
       title: "Conservative",
-      description: "Conservative",
+      description:
+        "As a Conservative investor, you really don't like risk. Your risk profile suggests you are most concerned with keeping what you have. As a result, you are prepared to accept lower returns to reduce the risk of losing capital. Based on your risk profile you would generally prefer an investment mix that is positioned defensively to produce a stable return with a higher proportion invested in bonds and cash and a smaller proportion of money in shares and property investments. Minimum Investment Term: 2 years",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -196,7 +198,8 @@ const RiskGoals = ({ modalData }) => {
     },
     "Moderately Conservative": {
       title: "Moderately Conservative",
-      description: "Moderately Conservative",
+      description:
+        "As a Moderately Conservative investor, you seek consistent returns using a steady growth strategy. Your risk profile suggests you want some potential for capital growth, but prefer not to have large fluctuations in short term performance. Based on your risk profile, you would generally prefer a diversified portfolio with a balance of defensive assets, such as bonds and cash and growth assets such as shares and property. Minimum Investment Term: 3 years",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -280,7 +283,8 @@ const RiskGoals = ({ modalData }) => {
     },
     Balanced: {
       title: "Balanced",
-      description: "Balanced",
+      description:
+        "As a Balanced investor, you seek a portfolio that will give you the best opportunity to achieve your medium to long term financial goals. Your risk profile suggests you are prepared to experience short term fluctuations in performance for potentially higher returns over the long term. Based on your risk profile, you would generally prefer a diversified portfolio with a bias towards growth assets such as shares and property. Minimum Investment Term: 5 years",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -364,7 +368,8 @@ const RiskGoals = ({ modalData }) => {
     },
     Growth: {
       title: "Growth",
-      description: "Growth",
+      description:
+        "As a Growth investor, you focus on assets with greater growth potential. Your risk profile suggests you are prepared to accept short term fluctuations in performance for potentially greater returns over the longer term. Based on your risk profile, you would generally prefer a diversified portfolio with a strong bias towards growth investments such as shares and property. Minimum Investment Term: 5 years",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -448,7 +453,8 @@ const RiskGoals = ({ modalData }) => {
     },
     "High Growth": {
       title: "High Growth",
-      description: "High Growth",
+      description:
+        "As a High Growth investor, you are prepared to compromise portfolio balance to pursue potential long-term gains. Your risk profile suggests you acknowledge there will be short term fluctuations in performance and are comfortable to invest in high risk investments. Based on your risk profile you would generally prefer a portfolio comprising solely growth assets such as shares and property. Minimum Investment Term: 7 years.",
       color: "rgb(34, 197, 94)",
       svg: (
         <svg
@@ -831,6 +837,7 @@ const RiskGoals = ({ modalData }) => {
           <div
             key={profile.title}
             onClick={() => {
+              setRiskDescription(profile.description);
               setSelectedGoal(profile.title);
             }}
             style={{
