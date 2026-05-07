@@ -445,7 +445,7 @@ const ESTATE_PLANNING_CARDS = [
 const PERSONAL_INSURANCE_CARDS = [
   {
     title: "Life",
-    key: "lifeInsurance",
+    key: "life",
     icon: "📋",
     component: <PersonalInsuranceModal />,
     modalWidth: "1800px",
@@ -454,7 +454,7 @@ const PERSONAL_INSURANCE_CARDS = [
   },
   {
     title: "TPD",
-    key: "TPDInsurance",
+    key: "TPD",
     icon: "♿",
     modalWidth: "1800px",
     component: <PersonalInsuranceModal />,
@@ -463,7 +463,7 @@ const PERSONAL_INSURANCE_CARDS = [
   },
   {
     title: "Trauma",
-    key: "TraumaInsurance",
+    key: "trauma",
     modalWidth: "1800px",
     icon: "⬜",
     component: <PersonalInsuranceModal />,
@@ -472,7 +472,7 @@ const PERSONAL_INSURANCE_CARDS = [
   },
   {
     title: "Income Protection",
-    key: "IncomeProtection",
+    key: "incomeProtection",
     modalWidth: "1800px",
     icon: "☂️",
     component: <PersonalInsuranceModal />,

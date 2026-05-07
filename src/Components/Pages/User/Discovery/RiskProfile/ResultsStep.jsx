@@ -139,7 +139,7 @@ function ResultCard({
           display: "flex",
           flexDirection: "column",
           gap: 14,
-          height: screens.xxl ? "48vh" : "80vh",
+          height: screens.xxl ? "48vh" : "90vh",
         }}
         styles={{
           body: {
@@ -414,7 +414,7 @@ const ResultsStep = ({
           it, then confirm.
         </Text>
       </Col>
-      <Col xs={24} lg={!includePartner ? 12 : 24}>
+      <Col xs={24} lg={includePartner ? 12 : 24}>
         <ResultCard
           title="Client"
           participantKey="client"
@@ -429,7 +429,7 @@ const ResultsStep = ({
           calculateScore={calculateScore}
         />
       </Col>
-      {!includePartner ? (
+      {includePartner ? (
         <Col xs={24} lg={12}>
           <ResultCard
             title="Partner"

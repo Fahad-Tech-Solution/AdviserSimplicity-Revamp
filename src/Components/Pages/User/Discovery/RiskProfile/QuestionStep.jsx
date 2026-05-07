@@ -11,7 +11,7 @@ const QuestionStep = ({
 }) => {
   const participantCards = [
     { key: "client", name: clientName || "Client" },
-    ...(!includePartner
+    ...(includePartner
       ? [{ key: "partner", name: partnerName || "Partner" }]
       : []),
   ];
