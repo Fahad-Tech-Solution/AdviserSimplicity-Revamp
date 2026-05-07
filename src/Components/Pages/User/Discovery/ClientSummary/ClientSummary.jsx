@@ -622,6 +622,7 @@ export default function ClientSummary() {
   const showPartner = hasPartnerDetails(partner);
 
   const incomeSummary = useMemo(() => {
+
     const rows = [
       {
         label: `Employment — ${client?.clientPreferredName || "Client"}`,
@@ -668,6 +669,7 @@ export default function ClientSummary() {
     const positiveIncome = rows
       .slice(0, 4)
       .reduce((sum, item) => sum + item.amount, 0);
+
     const expenses = rows.slice(4).reduce((sum, item) => sum + item.amount, 0);
 
     return {
@@ -746,6 +748,7 @@ export default function ClientSummary() {
         ),
       )
       .reduce((sum, item) => sum + item.amount, 0);
+      
     const debt = rows
       .filter((item) =>
         ["Home Loan", "Credit Card", "Personal Loan"].includes(item.label),
