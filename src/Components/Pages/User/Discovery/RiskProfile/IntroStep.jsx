@@ -7,12 +7,14 @@ const IntroStep = ({
   onJoinedProfileChange,
   showPartner,
   onClick,
+  values,
 }) => {
   const navigate = useNavigate();
   return (
     <div style={{ paddingTop: 56 }}>
       <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
         <h2
+        onClick={() => console.log("values", values, "showPartner", showPartner, "joinedProfile", joinedProfile)}
           style={{
             marginBottom: 28,
             fontFamily: "Arial, sans-serif",
@@ -221,10 +223,11 @@ const IntroStep = ({
           }}
         >
           <Radio.Button
-            value="Yes"
+            value="No"
+            disabled={!showPartner}
             style={{
               border: "1px solid #22C55E",
-              color: joinedProfile === "No" ? "rgb(23 163 74)" : "#ffffff",
+              color: joinedProfile === "No" ? "#ffffff" : "rgb(23 163 74)",
               width: "180px",
               height: "40px",
               display: "flex",
@@ -238,11 +241,10 @@ const IntroStep = ({
             No
           </Radio.Button>
           <Radio.Button
-            value="No"
-            disabled={!showPartner}
+            value="Yes"
             style={{
               border: "1px solid #22C55E",
-              color: joinedProfile === "Yes" ? "rgb(23 163 74)" : "#ffffff",
+              color: joinedProfile === "Yes" ? "#ffffff" : "rgb(23 163 74)",
               width: "180px",
               height: "40px",
               display: "flex",

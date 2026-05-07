@@ -445,7 +445,7 @@ function getInitialFormValues(showPartner) {
   return {
     client: buildParticipantDefaults(),
     partner: buildParticipantDefaults(),
-    joinedProfile: showPartner ? "No" : "Yes",
+    joinedProfile: showPartner ? "Yes" : "No",
     currentQuestion: "question1",
   };
 }
@@ -554,7 +554,7 @@ function buildConflictRows(values, includePartner) {
       relationship: "Q1 Timeframe ↔ Q8 Asset Allocation",
       check: (profile) =>
         getQuestionChoice("question1", profile.question1) ===
-          "Less than one year" &&
+        "Less than one year" &&
         ["medium risk", "60%", "80%"].some((text) =>
           getQuestionChoice("question8", profile.question8)
             .toLowerCase()
@@ -631,11 +631,16 @@ export default function RiskProfile() {
   const riskProfileData = useAtomValue(riskProfileDataAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
 
+
+  console.log("discoveryData", discoveryData);
+  console.log("riskProfileData", riskProfileData);
+
   const { get, post, patch } = useApi();
 
   const showPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
   );
+
   const clientName =
     discoveryData?.personalDetails?.client?.clientPreferredName || "Client";
   const partnerName =
@@ -650,6 +655,9 @@ export default function RiskProfile() {
   const [loading, setLoading] = useState(() => !hasPreloadedRiskProfile);
   const [submitting, setSubmitting] = useState(false);
   const [recordId, setRecordId] = useState(() => riskProfileData?._id || "");
+
+
+  console.log("showPartner", showPartner);
 
   useEffect(() => {
     if (!hasRiskProfileData(riskProfileData)) {
@@ -703,9 +711,12 @@ export default function RiskProfile() {
     if (!showPartner && values.joinedProfile !== "Yes") {
       setValues((prev) => ({ ...prev, joinedProfile: "Yes" }));
     }
+    console.log("showPartner", showPartner);
+    console.log("values.joinedProfile", values.joinedProfile);
   }, [showPartner, values.joinedProfile]);
 
   const includePartner = showPartner && values.joinedProfile === "No";
+
   const currentSubPath = location.pathname
     .replace("/user/discovery/risk-profile", "")
     .replace(/^\/+/, "");
@@ -823,6 +834,8 @@ export default function RiskProfile() {
   };
 
   const handleNext = () => {
+    console.log("joinedProfile", values.joinedProfile);
+
     if (!validateQuestionStep()) {
       return;
     }
@@ -906,8 +919,8 @@ export default function RiskProfile() {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to save Risk Profile.",
+        error?.message ||
+        "Failed to save Risk Profile.",
       );
     } finally {
       setSubmitting(false);
@@ -926,9 +939,8 @@ export default function RiskProfile() {
       sessionUser: session?.user || null,
       calculateScore,
       templateFileName: "riskprofiletemplate.docx",
-      downloadFileName: `Risk Profile - ${
-        personalDetails?.client?.clientPreferredName || "Client"
-      }.docx`,
+      downloadFileName: `Risk Profile - ${personalDetails?.client?.clientPreferredName || "Client"
+        }.docx`,
     })
       .then(() => {
         message.success("Risk profile document downloaded.");
@@ -936,7 +948,7 @@ export default function RiskProfile() {
       .catch((error) => {
         message.error(
           error?.message ||
-            "Failed to generate/download risk profile document.",
+          "Failed to generate/download risk profile document.",
         );
       });
   };
@@ -967,6 +979,7 @@ export default function RiskProfile() {
         onJoinedProfileChange={handleJoinedProfileChange}
         showPartner={showPartner}
         onClick={handleNext}
+        values={values}
       />
     );
   }
@@ -1000,6 +1013,7 @@ export default function RiskProfile() {
               Discovery
             </Text>
             <Title
+            onClick={() => console.log("includePartner", includePartner)}
               level={2}
               style={{
                 marginTop: 18,
