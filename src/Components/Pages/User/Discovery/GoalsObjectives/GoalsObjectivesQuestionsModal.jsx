@@ -7,6 +7,38 @@ import {
 } from "../../../../../store/authState";
 import { useAtomValue, useSetAtom } from "jotai";
 import useApi from "../../../../../hooks/useApi";
+import { GOALS_OBJECTIVES_CARDS } from "./goalsCatalog.js";
+
+function applyScopeToGoalSectionValues(mergedValues, scope, catalog) {
+  const out = { ...(mergedValues && typeof mergedValues === "object" ? mergedValues : {}) };
+  const scopeArr = Array.isArray(scope) ? scope : [];
+  const allInScope = scopeArr.includes("All Areas");
+
+  (catalog || []).forEach((card) => {
+    const cardInScope = allInScope || scopeArr.includes(card.key);
+    (card.sections || []).forEach((section) => {
+      if (!section?.key) return;
+      out[section.key] =
+        cardInScope && out[section.key] === "Yes" ? "Yes" : "No";
+    });
+  });
+
+  return out;
+}
+
+function syncFormSectionFieldsToScope(formInstance, scope, catalog) {
+  const scopeArr = Array.isArray(scope) ? scope : [];
+  const allInScope = scopeArr.includes("All Areas");
+  (catalog || []).forEach((card) => {
+    const cardInScope = allInScope || scopeArr.includes(card.key);
+    (card.sections || []).forEach((section) => {
+      if (!section?.key) return;
+      if (!cardInScope) {
+        formInstance.setFieldValue(section.key, "No");
+      }
+    });
+  });
+}
 
 const GoalsObjectivesQuestionsModal = ({ modalData }) => {
   const [form] = Form.useForm();
@@ -16,40 +48,52 @@ const GoalsObjectivesQuestionsModal = ({ modalData }) => {
   const setGoalsQuestions = useSetAtom(goalsSectionQuestionsAtom);
   const { post, patch } = useApi();
   const cards = modalData?.cards || [];
+
+  // console.log("cards", cards);
+  // console.log("goalsQuestions", goalsQuestions);
+
   const initialValues = {
     ...goalsQuestions,
   };
 
   const handleScopeChange = (nextValues = []) => {
     const selectedValues = Array.isArray(nextValues) ? nextValues : [];
+
     if (selectedValues.includes("All Areas")) {
       const isOnlyAllAreas = selectedValues.length === 1;
       const indexOfAllAreas = selectedValues.indexOf("All Areas");
       if (indexOfAllAreas == 0) {
-        form.setFieldValue(
-          "scope",
-          isOnlyAllAreas
-            ? ["All Areas"]
-            : selectedValues.filter((value) => value !== "All Areas"),
-        );
+        const nextScope = isOnlyAllAreas
+          ? ["All Areas"]
+          : selectedValues.filter((value) => value !== "All Areas");
+        form.setFieldValue("scope", nextScope);
+        syncFormSectionFieldsToScope(form, nextScope, GOALS_OBJECTIVES_CARDS);
         return;
       } else {
         form.setFieldValue("scope", ["All Areas"]);
+        syncFormSectionFieldsToScope(form, ["All Areas"], GOALS_OBJECTIVES_CARDS);
         return;
       }
     }
 
     form.setFieldValue("scope", selectedValues);
+    syncFormSectionFieldsToScope(form, selectedValues, GOALS_OBJECTIVES_CARDS);
   };
 
   const onFinish = async (values) => {
     const formValues = form.getFieldsValue(true);
     setSubmitting(true);
 
+    const scope = formValues?.scope ?? values?.scope ?? [];
+    const merged = { ...goalsQuestions, ...values, ...formValues };
+    const synced = applyScopeToGoalSectionValues(
+      merged,
+      scope,
+      GOALS_OBJECTIVES_CARDS,
+    );
+
     const payload = {
-      ...goalsQuestions,
-      ...values,
-      ...formValues,
+      ...synced,
       clientFK: goalsQuestions?.clientFK || selectedClient?._id,
     };
 
