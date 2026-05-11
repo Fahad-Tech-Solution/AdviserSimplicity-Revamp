@@ -98,19 +98,19 @@ export async function generateRiskProfileDocument({
     ["Single", "Widowed", ""].includes(maritalStatus) ||
     values?.joinedProfile === "Yes";
 
-    console.log("isSingle", isSingle);
-    console.log("values?.joinedProfile", values?.joinedProfile);
-    console.log("maritalStatus", maritalStatus);
+    // console.log("isSingle", isSingle);
+    // console.log("values?.joinedProfile", values?.joinedProfile);
+    // console.log("maritalStatus", maritalStatus);
 
   const payload = {
     adviserName,
     downloadDate: formatAuDate(),
     clientPreferred,
-    partnerPreferred,
+    partnerPreferred : isSingle ? "" : partnerPreferred,
     isSingle,
     PageBreak: `<w:br w:type="page"/>`,
     clientSection: buildSection(values?.client || {}, calculateScore),
-    partnerSection: buildSection(values?.partner || {}, calculateScore),
+    partnerSection: isSingle ? [] : buildSection(values?.partner || {}, calculateScore),
   };
 
   const resolvedDownloadName =
