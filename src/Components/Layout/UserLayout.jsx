@@ -3,6 +3,7 @@ import {
   AppstoreOutlined,
   DollarOutlined,
   HomeOutlined,
+  LogoutOutlined,
   MenuOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -15,6 +16,8 @@ import {
   Grid,
   Avatar,
   ConfigProvider,
+  Button,
+  Dropdown,
 } from "antd";
 import {
   Navigate,
@@ -46,6 +49,8 @@ const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 import { discoverySectionQuestionsAtom } from "../../store/authState.js";
+import { HiDotsVertical } from "react-icons/hi";
+import { capitalizeWords } from "../../hooks/helpers.js";
 
 export default function UserLayout() {
   const location = useLocation();
@@ -56,6 +61,7 @@ export default function UserLayout() {
   const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
+  const setLoggedInUser = useSetAtom(loggedInUser);
 
   const navItems = useMemo(() => {
     const passes = (route) => route.condition?.(discoveryQuestions) !== false;
@@ -107,12 +113,20 @@ export default function UserLayout() {
       const selectedClientId = selectedClient?._id ?? selectedClient?.id;
 
       if (requiresSelectedClient && !selectedClientId) {
-        message.warning("Please select a client from My Clients before proceeding.");
+        message.warning(
+          "Please select a client from My Clients before proceeding.",
+        );
         return;
       }
 
       navigate(info.key);
     }
+  };
+
+  const logout = () => {
+    setLoggedInUser({});
+    navigate("/auth/login", { replace: true });
+    message.success("Logged out successfully");
   };
 
   return (
@@ -182,7 +196,7 @@ export default function UserLayout() {
             <div
               style={{
                 marginTop: "auto",
-                padding: "15px",
+                padding: "10px",
                 borderTop: "1px solid #f0f0f0",
                 display: "flex",
                 alignItems: "center",
@@ -201,18 +215,58 @@ export default function UserLayout() {
                 }}
               >
                 {!session?.user?.profileImage &&
-                  session?.user?.firstName?.charAt(0) +
-                    session?.user?.lastName?.charAt(0)}
+                  (capitalizeWords(
+                    session?.user?.firstName?.charAt(0) +
+                      session?.user?.lastName?.charAt(0),
+                  ) ||
+                    "JD")}
               </Avatar>
 
               <div style={{ lineHeight: 1.2 }}>
-                <div style={{ fontWeight: 500 }}>
-                  {session?.user?.firstName + " " + session?.user?.lastName ||
-                    "John Doe"}
+                <div style={{ fontWeight: 500, fontSize: "12px" }}>
+                  {capitalizeWords(
+                    session?.user?.firstName + " " + session?.user?.lastName ||
+                      "John Doe",
+                  )}
                 </div>
-                <div style={{ fontSize: "12px", color: "#888" }}>
+                <div style={{ fontSize: "10px", color: "#888" }}>
                   {session?.user?.email || "john.doe@example.com"}
                 </div>
+              </div>
+              <div>
+                <Dropdown
+                  trigger={["click"]}
+                  menu={{
+                    items: [
+                      {
+                        key: "profile",
+                        label: "Profile",
+                        icon: <UserOutlined />,
+                        onClick: () => {
+                          navigate("/user/profile");
+                        },
+                      },
+                      {
+                        key: "logout",
+                        label: "Logout",
+                        icon: <LogoutOutlined />,
+                        danger: true,
+                        onClick: () => {
+                          logout();
+                        },
+                      },
+                    ],
+                  }}
+                  styles={{
+                    root: {
+                      width: 200,
+                      left: "10px",
+                      bottom: "65px",
+                    },
+                  }}
+                >
+                  <HiDotsVertical />
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -300,12 +354,11 @@ export default function UserLayout() {
                     <Route
                       key={r.key}
                       path={r.routePath || r.relativePath}
-                      element={
-                        r.component ?? <Navigate to="/user" replace />
-                      }
+                      element={r.component ?? <Navigate to="/user" replace />}
                     />
                   ))}
               </Route>
+              
             </Routes>
           </div>
         </Content>

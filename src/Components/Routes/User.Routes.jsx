@@ -53,6 +53,7 @@ import SMSFDetails from "../Pages/User/Discovery/SMSF/components/SMSFDetails/SMS
 import SMSFAccumulationAccount from "../Pages/User/Discovery/SMSF/components/SMSFAccumulationAccount/SMSFAccumulationAccount.jsx";
 import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObjectives.jsx";
 import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
+import ProfilePage from "../Pages/User/Clients/ProfilePage.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -690,7 +691,6 @@ const FAMILY_TRUST_CARDS = [
   },
 ];
 
-
 export const withSpacing = ({
   icon,
   label,
@@ -741,6 +741,13 @@ export const userRoutes = [
     ...withSpacing({ icon: "👤", label: "My Team", fontSize: "13px" }),
     component: <MyTeam />,
     condition: () => true,
+  },
+  {
+    key: "/user/profile",
+    path: "/profile",
+    ...withSpacing({ icon: "👤", label: "Profile", fontSize: "13px" }),
+    component: <ProfilePage />,
+    condition: () => false,
   },
 ];
 
