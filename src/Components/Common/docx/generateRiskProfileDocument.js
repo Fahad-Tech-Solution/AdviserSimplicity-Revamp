@@ -98,9 +98,9 @@ export async function generateRiskProfileDocument({
     ["Single", "Widowed", ""].includes(maritalStatus) ||
     values?.joinedProfile === "Yes";
 
-    console.log("isSingle", isSingle);
-    console.log("values?.joinedProfile", values?.joinedProfile);
-    console.log("maritalStatus", maritalStatus);
+    // console.log("isSingle", isSingle);
+    // console.log("values?.joinedProfile", values?.joinedProfile);
+    // console.log("maritalStatus", maritalStatus);
 
   const payload = {
     adviserName,
