@@ -106,11 +106,11 @@ export async function generateRiskProfileDocument({
     adviserName,
     downloadDate: formatAuDate(),
     clientPreferred,
-    partnerPreferred,
+    partnerPreferred : isSingle ? "" : partnerPreferred,
     isSingle,
     PageBreak: `<w:br w:type="page"/>`,
     clientSection: buildSection(values?.client || {}, calculateScore),
-    partnerSection: buildSection(values?.partner || {}, calculateScore),
+    partnerSection: isSingle ? [] : buildSection(values?.partner || {}, calculateScore),
   };
 
   const resolvedDownloadName =
