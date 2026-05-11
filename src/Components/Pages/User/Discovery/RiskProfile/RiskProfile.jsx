@@ -632,8 +632,8 @@ export default function RiskProfile() {
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
 
 
-  console.log("discoveryData", discoveryData);
-  console.log("riskProfileData", riskProfileData);
+  // console.log("discoveryData", discoveryData);
+  // console.log("riskProfileData", riskProfileData);
 
   const { get, post, patch } = useApi();
 
@@ -657,7 +657,7 @@ export default function RiskProfile() {
   const [recordId, setRecordId] = useState(() => riskProfileData?._id || "");
 
 
-  console.log("showPartner", showPartner);
+  // console.log("showPartner", showPartner);
 
   useEffect(() => {
     if (!hasRiskProfileData(riskProfileData)) {
@@ -711,7 +711,7 @@ export default function RiskProfile() {
     if (!showPartner && values.joinedProfile !== "Yes") {
       setValues((prev) => ({ ...prev, joinedProfile: "Yes" }));
     }
-    console.log("showPartner", showPartner);
+    // console.log("showPartner", showPartner);
     console.log("values.joinedProfile", values.joinedProfile);
   }, [showPartner, values.joinedProfile]);
 
@@ -834,7 +834,7 @@ export default function RiskProfile() {
   };
 
   const handleNext = () => {
-    console.log("joinedProfile", values.joinedProfile);
+    // console.log("joinedProfile", values.joinedProfile);
 
     if (!validateQuestionStep()) {
       return;
@@ -1013,7 +1013,6 @@ export default function RiskProfile() {
               Discovery
             </Text>
             <Title
-            onClick={() => console.log("includePartner", includePartner)}
               level={2}
               style={{
                 marginTop: 18,

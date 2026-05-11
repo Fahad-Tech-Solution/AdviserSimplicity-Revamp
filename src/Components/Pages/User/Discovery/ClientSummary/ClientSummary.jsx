@@ -31,6 +31,7 @@ import {
 import { capitalizeFirst } from "../../../../../hooks/helpers.js";
 import { CgArrowTopRight } from "react-icons/cg";
 import { generatePersonalDetailsDocument } from "../../../../Common/docx/generatePersonalDetailsDocument.js";
+import { GOALS_OBJECTIVES_CARDS } from "../GoalsObjectives/goalsCatalog.js";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -60,6 +61,16 @@ const GOAL_SCOPE_ICONS = {
   "Retirement Planning": "🏖️",
   Superannuation: "🐷",
 };
+
+const GOAL_KEY_ICONS = (GOALS_OBJECTIVES_CARDS || []).reduce((acc, card) => {
+  const sections = Array.isArray(card?.sections) ? card.sections : [];
+  sections.forEach((section) => {
+    if (section?.key && section?.icon) {
+      acc[String(section.key)] = section.icon;
+    }
+  });
+  return acc;
+}, {});
 
 const RISK_BREAKDOWNS = {
   "Cash Management": { growth: 0, defensive: 100, color: "#84cc16" },
@@ -906,7 +917,10 @@ export default function ClientSummary() {
         title: humanizeGoalKey(key),
         scope: value?.scopeOfAdvice || "",
         when: value?.when || "Planned",
-        icon: GOAL_SCOPE_ICONS[value?.scopeOfAdvice] || "🎯",
+        icon:
+          GOAL_KEY_ICONS[key] ||
+          GOAL_SCOPE_ICONS[value?.scopeOfAdvice] ||
+          "🎯",
       }));
   }, [goalsData, goalsQuestions]);
 
@@ -917,7 +931,7 @@ export default function ClientSummary() {
         name: client?.clientPreferredName || "Client",
         data: riskProfileData?.client,
       },
-      ...(showPartner
+      ...(showPartner && riskProfileData.joinedProfile === "No"
         ? [
             {
               key: "partner",
