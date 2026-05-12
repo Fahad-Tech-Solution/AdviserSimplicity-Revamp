@@ -1,7 +1,7 @@
 import { Button, Input, Space } from "antd";
 import Text from "antd/es/typography/Text";
 import Title from "antd/es/typography/Title";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSetAtom } from "jotai";
 import { MyClientsData } from "../../../../store/authState";
 import {
@@ -11,11 +11,22 @@ import {
 } from "../../../../hooks/helpers";
 import AddClient from "./components/AddClient";
 import HouseholdTable from "./HouseholdTable";
+import useApi from "../../../../hooks/useApi";
 
 const MyClients = () => {
   const [searchText, setSearchText] = useState("");
   const [openAddClient, setOpenAddClient] = useState(false);
   const setMyClientsData = useSetAtom(MyClientsData);
+  const api = useApi();
+
+  useEffect(() => {
+    // just get the data from the api
+    const fetchData = async () => {
+      const response = await api.get("/api/user/Clients");
+      setMyClientsData(response);
+    };
+    fetchData();
+  });
 
   return (
     <div>

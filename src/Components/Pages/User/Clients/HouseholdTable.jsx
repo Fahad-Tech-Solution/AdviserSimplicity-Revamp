@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Avatar, Button, Dropdown, message, Spin, Tooltip } from "antd";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
@@ -32,8 +32,6 @@ import {
 import useApi from "../../../../hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { generatePersonalDetailsDocument } from "../../../Common/docx/generatePersonalDetailsDocument";
-
-const PRIMARY_GREEN = "#22c55e";
 
 const getInitials = (name = "") => {
   const parts = name.trim().split(/\s+/);
@@ -171,6 +169,7 @@ function rowMatchesSearch(row, queryRaw) {
 }
 
 const HouseholdTable = ({ onAction, searchText = "" }) => {
+
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
 

@@ -31,6 +31,7 @@ export default function AddEmployee({
   onSuccess,
   editingEmployee = null,
 }) {
+
   const api = useApi();
   const { message } = AntdApp.useApp();
   const session = useAtomValue(loggedInUser);
@@ -88,7 +89,7 @@ export default function AddEmployee({
     return () => {
       cancelled = true;
     };
-  }, [open, editingKey, isEdit, api, form, companyName, message]);
+  }, [open, editingKey, isEdit, companyName, message]);
 
   const handleFinish = async (values) => {
     const base = {
