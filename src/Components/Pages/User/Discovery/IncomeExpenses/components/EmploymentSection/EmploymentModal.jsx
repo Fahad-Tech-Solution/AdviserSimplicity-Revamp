@@ -114,34 +114,14 @@ function SwitchPopupDisplay({ value, onClick }) {
 }
 
 function hasMeaningfulValues(values) {
-  return [
-    values?.occupation,
-    values?.employmentStatus,
-    values?.nameOfCompany,
-    values?.startDate,
-    values?.hoursWorked,
-    values?.grossSalary,
-    values?.salaryPackagingRadio,
-    values?.leaveEntitlementsRadio,
-    values?.choiceOfFund,
-    values?.SalaryPackageModal,
-    values?.SalaryPackagingModal,
-    values?.LeaveEntitlementsModal,
-    values?.salaryPackagingRadio,
-    values?.leaveEntitlementsRadio,
-    values?.choiceOfFund,
-    values?.clientFK,
-    values?._id,
-  ].some((value) => String(value ?? "").trim() !== "");
+  return [values?.clientFK, values?._id].some(
+    (value) => String(value ?? "").trim() !== "",
+  );
 }
 
 export default function EmploymentModal({ modalData }) {
   const [form] = Form.useForm();
   const ownerOptions = useOwnerOptions();
-
-  const [editing, setEditing] = useState(
-    () => !hasMeaningfulValues(form.getFieldsValue(true)),
-  );
 
   const [saving, setSaving] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -357,6 +337,10 @@ export default function EmploymentModal({ modalData }) {
   const sectionData = discoveryData?.[modalData?.key] || {};
   const allowPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
+  );
+
+  const [editing, setEditing] = useState(
+    () => !hasMeaningfulValues(sectionData),
   );
 
   const availableOwnerOptions = useMemo(

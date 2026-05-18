@@ -4,6 +4,7 @@ import DynamicDataTable from "../../../../../Common/DynamicDataTable.jsx";
 import { InvestmentOffersData } from "../../../../../../store/authState";
 import { useAtomValue } from "jotai";
 import useTitleBlock from "../../../../../../hooks/useTitleBlock.jsx";
+import { toCommaAndDollar } from "../../../../../../hooks/helpers.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -13,6 +14,9 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
+function currencyToNumber(val) {
+  return Number(String(val ?? "$0").replace(/[^0-9.-]+/g, "")) || 0;
+}
 
 export default function PersonalInsuranceGroupCoverModal({ modalData }) {
   const { parentForm } = modalData || {};
@@ -53,12 +57,12 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
 
     let IP =
       groupCoverValue?.groupInsuranceDetails?.monthlyIncome &&
-        groupCoverValue?.groupInsuranceDetails?.monthlyIncome !== "$0"
+      groupCoverValue?.groupInsuranceDetails?.monthlyIncome !== "$0"
         ? (groupCoverValue?.groupInsuranceDetails?.monthlyIncome || "$0") +
-        "/" +
-        (groupCoverValue?.groupInsuranceDetails?.waitingPeriod || "30") +
-        " Days/" +
-        (groupCoverValue?.groupInsuranceDetails?.BenefitPeriod || "2 Years")
+          "/" +
+          (groupCoverValue?.groupInsuranceDetails?.waitingPeriod || "30") +
+          " Days/" +
+          (groupCoverValue?.groupInsuranceDetails?.BenefitPeriod || "2 Years")
         : "$0";
 
     return [
@@ -83,7 +87,10 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
         IP: IP || "$0",
         premiumPA:
           groupCoverValue?.premiumPA ||
-          groupCoverValue?.groupInsuranceDetails?.cost ||
+          toCommaAndDollar(
+            currencyToNumber(groupCoverValue?.groupInsuranceDetails?.cost) +
+              currencyToNumber(groupCoverValue?.groupInsuranceDetails?.cost2),
+          ) ||
           "$0",
         loadingExclusion: groupCoverValue?.loadingExclusion || "No",
       },
@@ -149,8 +156,7 @@ export default function PersonalInsuranceGroupCoverModal({ modalData }) {
       <Col xs={24} md={24}>
         {renderTitleBlock({
           title: modalData?.title,
-          icon:  null,
-
+          icon: null,
         })}
         <Divider style={{ margin: "12px 0px 0px 0px" }} />
       </Col>

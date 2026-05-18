@@ -8,5 +8,6 @@ export default defineConfig({
     host: true, // ← allows access via IP address
     port: 5173, // optional: choose your port
   },
-  base: '/AdviserSimplicity-Revamp/',
+  // base: '/AdviserSimplicity-Revamp/',
+  base: '/',
 });
