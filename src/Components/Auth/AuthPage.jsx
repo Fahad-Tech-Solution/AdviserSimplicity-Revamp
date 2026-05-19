@@ -4,6 +4,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import ForgetPasswordForm from "./ForgetPasswordForm";
+import VerifyOtpForm from "./VerifyOtpForm";
 
 export default function AuthPage() {
   const location = useLocation();
@@ -39,7 +40,7 @@ export default function AuthPage() {
     >
       <div style={{ width: "100%", maxWidth: 980, perspective: 1400 }}>
         <motion.div
-          initial={false}
+          // initial={false}
           animate={flipControls}
           style={{
             width: "100%",
@@ -48,14 +49,19 @@ export default function AuthPage() {
             overflow: "hidden",
             boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
             transformStyle: "preserve-3d",
-            minHeight:
-              location.pathname === "/auth/forget-password" ? 350 : 440,
+            minHeight: [
+              "/auth/forget-password",
+              "/auth/otp-validation",
+            ].includes(location.pathname)
+              ? 350
+              : 430,
             willChange: "transform",
           }}
         >
           <div className="h-100">
             <Routes>
               <Route path="login" element={<LoginForm />} />
+              <Route path="otp-validation" element={<VerifyOtpForm />} />
               <Route path="admin-login" element={<LoginForm />} />
               <Route path="register" element={<RegisterForm />} />
               <Route path="forget-password" element={<ForgetPasswordForm />} />

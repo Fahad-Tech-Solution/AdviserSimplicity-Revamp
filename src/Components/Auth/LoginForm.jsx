@@ -35,36 +35,26 @@ export default function LoginForm() {
         passwordHash: values.passwordHash.trim(),
       };
       const res = await api.post("/api/auth/login", payload);
-      const user = res?.user ?? null;
-      const token = res?.token ?? "";
 
-      if (!user || !token) {
-        throw new Error("Invalid login response.");
+      console.log(res);
+
+      if(res?.requiresOtp) {
+        message.success(res?.message);
+        navigate("/auth/otp-validation", { replace: true, state: { email: values.email.toLowerCase().trim() } });
+      }
+      else{
+        setLoggedInUser(
+          {
+            token: res?.token,
+            email: values.email.toLowerCase().trim(),
+            user : res?.user,
+            permissions : res?.user?.roleID?.permissions,
+          }
+        );
+        navigate("/user", { replace: true });
+        message.success(res?.message);
       }
 
-      const permissions = user?.roleID?.permissions ?? [];
-
-      setLoggedInUser({
-        token,
-        email: payload.email,
-        user,
-        permissions,
-      });
-
-      if (isAdminLogin) {
-        if (!permissions.includes("superAdmin")) {
-          throw new Error("Access denied. Admin role required.");
-        }
-        navigate("/super/admin", { replace: true });
-        return;
-      }
-
-      if (permissions.includes("superAdmin")) {
-        throw new Error("Use admin login for this account.");
-      }
-
-      navigate("/user", { replace: true });
-      message.success("Login successful.");
     } catch (err) {
       let msg = err?.response?.data?.message || err?.message || "Login failed.";
       //if error is 401, show "Invalid email or password"

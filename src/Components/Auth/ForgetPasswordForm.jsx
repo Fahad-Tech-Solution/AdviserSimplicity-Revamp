@@ -1,10 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
 import useApi from "../../hooks/useApi";
 
 const { Title, Text } = Typography;
+const OTP_EXPIRY_SECONDS = 10 * 60;
+
+function formatRemainingTime(totalSeconds) {
+  const safeSeconds = Math.max(totalSeconds, 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 export default function ForgetPasswordForm() {
   const { message } = AntdApp.useApp();
@@ -14,6 +23,7 @@ export default function ForgetPasswordForm() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
 
   const heading = useMemo(() => {
     if (step === 2) return "Verify OTP";
@@ -27,12 +37,31 @@ export default function ForgetPasswordForm() {
     return "Enter your email for reset instructions.";
   }, [step]);
 
+  const isOtpExpired = step === 2 && timeLeft === 0;
+
+  useEffect(() => {
+    if (step !== 2 || timeLeft <= 0) return undefined;
+
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [step, timeLeft]);
+
   const handleSendOtp = async (values) => {
     try {
       setSubmitting(true);
       const cleanedEmail = values.email?.toLowerCase().trim();
       await api.patch("/api/auth/forgot-password", { email: cleanedEmail });
       setEmail(cleanedEmail);
+      setTimeLeft(OTP_EXPIRY_SECONDS);
       setStep(2);
       message.success("OTP sent to your email.");
     } catch (err) {
@@ -43,6 +72,11 @@ export default function ForgetPasswordForm() {
   };
 
   const handleVerifyOtp = async (values) => {
+    if (isOtpExpired) {
+      message.error("OTP has expired. Please resend OTP and try again.");
+      return;
+    }
+
     try {
       setSubmitting(true);
       const cleanedOtp = values.otp?.trim();
@@ -68,7 +102,9 @@ export default function ForgetPasswordForm() {
       message.success("Password updated successfully.");
       navigate("/auth/login", { replace: true });
     } catch (err) {
-      message.error(err?.response?.data?.message || "Failed to reset password.");
+      message.error(
+        err?.response?.data?.message || "Failed to reset password.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -105,7 +141,13 @@ export default function ForgetPasswordForm() {
             >
               <Input size="large" placeholder="someone@example.com" />
             </Form.Item>
-            <Button type="primary" size="large" block htmlType="submit" loading={submitting}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              htmlType="submit"
+              loading={submitting}
+            >
               Send OTP
             </Button>
           </Form>
@@ -118,14 +160,46 @@ export default function ForgetPasswordForm() {
             style={{ marginTop: 18 }}
             onFinish={handleVerifyOtp}
           >
+            {isOtpExpired ? (
+              <div
+                style={{
+                  marginBottom: 12,
+                  color: "#dc2626",
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              >
+                OTP expired. Please resend OTP to continue.
+              </div>
+            ) : null}
             <Form.Item
               label="OTP"
               name="otp"
               rules={[{ required: true, message: "OTP is required" }]}
+              extra={
+                <span
+                  style={{
+                    float: "right",
+                    fontWeight: 400,
+                    color: "rgba(12, 177, 48, 0.66)",
+                    fontSize: 14,
+                    fontFamily: "Arial,serif",
+                  }}
+                >
+                  {formatRemainingTime(timeLeft)}
+                </span>
+              }
             >
               <Input.OTP length={6} size="large" />
             </Form.Item>
-            <Button type="primary" size="large" block htmlType="submit" loading={submitting}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              htmlType="submit"
+              loading={submitting}
+              disabled={isOtpExpired}
+            >
               Verify OTP
             </Button>
           </Form>
@@ -166,7 +240,13 @@ export default function ForgetPasswordForm() {
             >
               <Input.Password size="large" placeholder="Confirm password" />
             </Form.Item>
-            <Button type="primary" size="large" block htmlType="submit" loading={submitting}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              htmlType="submit"
+              loading={submitting}
+            >
               Reset Password
             </Button>
           </Form>
@@ -178,7 +258,13 @@ export default function ForgetPasswordForm() {
               Back to login
             </Link>
           ) : (
-            <Button type="link" onClick={() => setStep(1)}>
+            <Button
+              type="link"
+              onClick={() => {
+                setTimeLeft(OTP_EXPIRY_SECONDS);
+                setStep(1);
+              }}
+            >
               Resend OTP
             </Button>
           )}
@@ -188,7 +274,12 @@ export default function ForgetPasswordForm() {
         <img
           src={logo}
           alt="Forgot password illustration"
-          style={{ width: "100%", maxHeight: 420, objectFit: "contain", padding: 18 }}
+          style={{
+            width: "100%",
+            maxHeight: 420,
+            objectFit: "contain",
+            padding: 18,
+          }}
         />
       </div>
     </div>

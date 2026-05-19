@@ -2,6 +2,7 @@ import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { loggedInUser } from "../../store/authState";
 import { Spin } from "antd";
+import { Navigate } from "react-router-dom";
 
 export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   const session = useAtomValue(loggedInUser);
@@ -32,7 +33,6 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
       </div>
     ); // or your spinner component
   }
-
   // If session is still null after hydration, consider it as not authenticated
   if (!session) {
     return <Navigate to="/auth/login" replace />;
