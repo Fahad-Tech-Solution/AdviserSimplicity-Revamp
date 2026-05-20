@@ -34,27 +34,32 @@ export default function LoginForm() {
         email: values.email.toLowerCase().trim(),
         passwordHash: values.passwordHash.trim(),
       };
-      const res = await api.post("/api/auth/login", payload);
+      const res = await api.post("/api/auth/login-v2", payload);
 
       console.log(res);
 
-      if(res?.requiresOtp) {
+      if (res?.requiresOtp) {
         message.success(res?.message);
-        navigate("/auth/otp-validation", { replace: true, state: { email: values.email.toLowerCase().trim() } });
-      }
-      else{
-        setLoggedInUser(
-          {
-            token: res?.token,
-            email: values.email.toLowerCase().trim(),
-            user : res?.user,
-            permissions : res?.user?.roleID?.permissions,
-          }
-        );
-        navigate("/user", { replace: true });
-        message.success(res?.message);
-      }
+        navigate("/auth/otp-validation", {
+          replace: true,
+          state: { email: values.email.toLowerCase().trim() },
+        });
+      } else {
+        setLoggedInUser({
+          token: res?.token,
+          email: values.email.toLowerCase().trim(),
+          user: res?.user,
+          permissions: res?.user?.roleID?.permissions,
+        });
 
+        if (res?.action === "pricing table") {
+          navigate("/auth/pricing-table", { replace: true });
+          message.success(res?.subscription?.message);
+        } else {
+          navigate("/user", { replace: true });
+          message.success(res?.message);
+        }
+      }
     } catch (err) {
       let msg = err?.response?.data?.message || err?.message || "Login failed.";
       //if error is 401, show "Invalid email or password"

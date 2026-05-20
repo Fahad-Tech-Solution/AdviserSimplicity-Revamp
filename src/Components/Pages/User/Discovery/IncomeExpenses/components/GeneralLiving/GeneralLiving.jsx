@@ -154,7 +154,8 @@ function buildPayload(values, existing, clientFK) {
       payload[definition.id] = amount;
       payload[`${definition.id}Type`] = frequency;
       grandTotal +=
-        parseCurrencyNumber(formatCurrencyValue(amount)) * Number(frequency || 0);
+        parseCurrencyNumber(formatCurrencyValue(amount)) *
+        Number(frequency || 0);
     });
   });
 
@@ -317,25 +318,28 @@ export default function GeneralLiving({ modalData }) {
   const handleFinish = async (values) => {
     const formValues = form.getFieldsValue(true);
     const sourceValues = { ...formValues, ...values };
+
     const payload = buildPayload(
       sourceValues,
       sectionData,
       discoveryData?.personalDetails?._id,
     );
 
-    // console.log("payload", payload);
-    // return false;
+    // remove empty values from payload
+    const filteredPayload = Object.fromEntries(
+      Object.entries(payload).filter(([_, value]) => value !== ""),
+    );
 
     try {
       setSaving(true);
 
       const saved = sectionData?._id
-        ? await patch("/api/generalLivingExpenses/Update", payload)
-        : await post("/api/generalLivingExpenses/Add", payload);
+        ? await patch("/api/generalLivingExpenses/Update", filteredPayload)
+        : await post("/api/generalLivingExpenses/Add", filteredPayload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
-        [SECTION_KEY]: saved || payload,
+        [SECTION_KEY]: saved || filteredPayload,
       }));
 
       message.success(

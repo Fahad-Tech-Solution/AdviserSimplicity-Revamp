@@ -5,6 +5,9 @@ import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import ForgetPasswordForm from "./ForgetPasswordForm";
 import VerifyOtpForm from "./VerifyOtpForm";
+import ChangePasswordForm from "./ChangePasswordForm";
+import PricingTable from "./PricingTable";
+import StripeRedirect from "./StripeRedirect";
 
 export default function AuthPage() {
   const location = useLocation();
@@ -27,6 +30,12 @@ export default function AuthPage() {
       mounted = false;
     };
   }, [location.pathname, flipControls]);
+
+  if (location.pathname === "/auth/pricing-table") {
+    return <PricingTable />;
+  } else if (location.pathname === "/auth/stripe-redirect") {
+    return <StripeRedirect />;
+  }
 
   return (
     <div
@@ -65,6 +74,7 @@ export default function AuthPage() {
               <Route path="admin-login" element={<LoginForm />} />
               <Route path="register" element={<RegisterForm />} />
               <Route path="forget-password" element={<ForgetPasswordForm />} />
+              <Route path="change-password" element={<ChangePasswordForm />} />
             </Routes>
           </div>
         </motion.div>
