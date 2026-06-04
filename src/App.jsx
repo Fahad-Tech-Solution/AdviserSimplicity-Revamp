@@ -7,6 +7,7 @@ import StripeRedirect from "./Components/Auth/StripeRedirect";
 import Warning from "./Components/SuperAdminComponent/Warning";
 import Unauthorized from "./Components/Auth/Unauthorized";
 import UserLayout from "./Components/Layout/UserLayout";
+import SuperAdminLayout from "./Components/Layout/SuperAdminLayout";
 import ProtectedRoute from "./Components/Routes/ProtectedRoute";
 
 const publicRoutes = [
@@ -37,6 +38,7 @@ export default function App() {
     >
       <Routes>
         {/* Auth */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/auth/*" element={<AuthPage />} />
 
         {/* Public */}
@@ -46,10 +48,10 @@ export default function App() {
 
         {/* Protected: Super Admin */}
         <Route
-          path="/super/admin"
+          path="/super-admin/*"
           element={
             <ProtectedRoute
-              element={<></>} // your super admin page
+              element={<SuperAdminLayout />}
               requiredPermissions={["superAdmin"]}
             />
           }

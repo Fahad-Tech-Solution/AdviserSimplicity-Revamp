@@ -244,20 +244,22 @@ export default function ProfilePage() {
                   {email}
                 </Text>
 
-                <Link
-                  to={profileLink}
-                  target="_blank"
-                  style={{
-                    display: "block",
-                    fontSize: 11,
-                    wordBreak: "break-all",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    color: "#22c55e",
-                  }}
-                >
-                  {profileLink}
-                </Link>
+                {roleLabel !== "superAdmin" && (
+                  <Link
+                    to={profileLink}
+                    target="_blank"
+                    style={{
+                      display: "block",
+                      fontSize: 11,
+                      wordBreak: "break-all",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      color: "#22c55e",
+                    }}
+                  >
+                    {profileLink}
+                  </Link>
+                )}
               </div>
             </Space>
 
@@ -342,42 +344,45 @@ export default function ProfilePage() {
         </Col>
 
         <Col xs={24} lg={10}>
-          <Card
-            style={{
-              borderRadius: 18,
-              border: "1px solid rgba(0, 0, 0, 0.08)",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
-              marginBottom: "10px",
-            }}
-          >
-            <div>
-              <Text
-                type="secondary"
-                style={{
-                  display: "block",
-                  fontSize: 11,
-                  letterSpacing: 2.5,
-                  color: "#22c55e",
-                  fontWeight: 700,
-                  marginBottom: 8,
-                }}
-              >
-                INTEGRATION
-              </Text>
-              <Title level={5} style={{ ...pageHeadingStyle, margin: 0 }}>
-                Connect your Asana.{" "}
-                <Tooltip title="Your Asana token is securely encrypted. If you wish to update it, click the magnifying glass icon.">
-                  <MdOutlineInfo />
-                </Tooltip>
-              </Title>
-            </div>
-            <div style={{ marginTop: 10 }}>
-              <Input.Group compact className="d-flex flex-row ">
-                <Input placeholder="Asana increpted PAT..." disabled />
-                <Button icon={<IoSearchOutline />} onClick={OpenModal}></Button>
-              </Input.Group>
-            </div>
-          </Card>
+          {roleLabel !== "superAdmin" && (
+
+            <Card
+              style={{
+                borderRadius: 18,
+                border: "1px solid rgba(0, 0, 0, 0.08)",
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+                marginBottom: "10px",
+              }}
+            >
+              <div>
+                <Text
+                  type="secondary"
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    letterSpacing: 2.5,
+                    color: "#22c55e",
+                    fontWeight: 700,
+                    marginBottom: 8,
+                  }}
+                >
+                  INTEGRATION
+                </Text>
+                <Title level={5} style={{ ...pageHeadingStyle, margin: 0 }}>
+                  Connect your Asana.{" "}
+                  <Tooltip title="Your Asana token is securely encrypted. If you wish to update it, click the magnifying glass icon.">
+                    <MdOutlineInfo />
+                  </Tooltip>
+                </Title>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <Input.Group compact className="d-flex flex-row ">
+                  <Input placeholder="Asana increpted PAT..." disabled />
+                  <Button icon={<IoSearchOutline />} onClick={OpenModal}></Button>
+                </Input.Group>
+              </div>
+            </Card>
+          )}
 
           <Card
             style={{
@@ -430,59 +435,63 @@ export default function ProfilePage() {
               </Col>
             </Row>
 
-            <Divider style={{ marginBlock: 20 }} />
+            {roleLabel !== "superAdmin" && (
+              <>
+                <Divider style={{ marginBlock: 20 }} />
 
-            <div
-              style={{
-                borderRadius: 18,
-                background: "rgba(34, 197, 94, 0.05)",
-                border: "1px solid rgba(34, 197, 94, 0.14)",
-                padding: 18,
-              }}
-            >
-              <Text
-                style={{
-                  display: "block",
-                  marginBottom: 6,
-                  fontWeight: 600,
-                  color: "#111827",
-                }}
-              >
-                Permissions
-              </Text>
-              <Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 14 }}
-              >
-                These permissions are coming from the role stored in the active
-                login session.
-              </Text>
+                <div
+                  style={{
+                    borderRadius: 18,
+                    background: "rgba(34, 197, 94, 0.05)",
+                    border: "1px solid rgba(34, 197, 94, 0.14)",
+                    padding: 18,
+                  }}
+                >
+                  <Text
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                      color: "#111827",
+                    }}
+                  >
+                    Permissions
+                  </Text>
+                  <Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 14 }}
+                  >
+                    These permissions are coming from the role stored in the active
+                    login session.
+                  </Text>
 
-              {permissions.length > 0 ? (
-                <Space size={[8, 8]} wrap>
-                  {permissions.map((permission) => (
-                    <Tag
-                      key={permission}
-                      color="processing"
-                      style={{
-                        borderRadius: 999,
-                        paddingInline: 12,
-                        paddingBlock: 4,
-                        textTransform: "capitalize",
-                        background: "#22c55e",
-                        color: "#fff",
-                      }}
-                    >
-                      {permission}
-                    </Tag>
-                  ))}
-                </Space>
-              ) : (
-                <Text type="secondary">
-                  No permissions available in session.
-                </Text>
-              )}
-            </div>
+                  {permissions.length > 0 ? (
+                    <Space size={[8, 8]} wrap>
+                      {permissions.map((permission) => (
+                        <Tag
+                          key={permission}
+                          color="processing"
+                          style={{
+                            borderRadius: 999,
+                            paddingInline: 12,
+                            paddingBlock: 4,
+                            textTransform: "capitalize",
+                            background: "#22c55e",
+                            color: "#fff",
+                          }}
+                        >
+                          {permission}
+                        </Tag>
+                      ))}
+                    </Space>
+                  ) : (
+                    <Text type="secondary">
+                      No permissions available in session.
+                    </Text>
+                  )}
+                </div>
+              </>
+            )}
           </Card>
         </Col>
       </Row>

@@ -37,6 +37,7 @@ export default function VerifyOtpForm() {
 
   const email = location.state?.email ?? "";
   const redirectTo = location.state?.redirectTo ?? "/user";
+  const isAdminLogin = location.state?.isAdminLogin ?? false;
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -81,7 +82,13 @@ export default function VerifyOtpForm() {
           user: res?.user,
           permissions: res?.user?.roleID?.permissions,
         });
-        navigate("/user", { replace: true });
+        if (isAdminLogin) {
+          navigate("/super-admin", { replace: true });
+        } else {
+          navigate("/user", { replace: true });
+        }
+        message.success("OTP verified. Login successful.");
+        return;
       }
 
       message.success("OTP verified. Login successful.");
@@ -89,8 +96,8 @@ export default function VerifyOtpForm() {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          err?.message ||
-          "OTP verification failed.",
+        err?.message ||
+        "OTP verification failed.",
       );
     } finally {
       setSubmitting(false);

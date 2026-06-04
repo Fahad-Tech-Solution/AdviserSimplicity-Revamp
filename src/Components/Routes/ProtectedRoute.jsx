@@ -33,6 +33,7 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
       </div>
     ); // or your spinner component
   }
+
   // If session is still null after hydration, consider it as not authenticated
   if (!session) {
     return <Navigate to="/auth/login" replace />;
@@ -46,9 +47,33 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
     return <Navigate to="/auth/login" replace />;
   }
 
+  // Primary role permissions (unchanged for normal users)
+  const primaryPermissions = permissions;
+
+  // Extra permissions from secondary roles (empty [] for most users).
+  // API may send a flat list and/or populated role objects on additionalRoleIDs.
+  const additionalRolePermissions = Array.isArray(user?.additionalRoleIDs)
+    ? user.additionalRoleIDs
+    : [];
+
+  const permissionsFromAdditionalRoles = (
+    Array.isArray(user?.additionalRoleIDs) ? user.additionalRoleIDs : []
+  ).flatMap((role) => {
+    if (typeof role === "string") return [];
+    return role?.permissions ?? role?.roleID?.permissions ?? [];
+  });
+
+  const allPermissions = [
+    ...primaryPermissions,
+    ...additionalRolePermissions,
+    ...permissionsFromAdditionalRoles,
+  ];
+
+  console.log(allPermissions, "allPermissions");
+
   const hasPermission =
     requiredPermissions.length === 0 ||
-    requiredPermissions.some((p) => permissions.includes(p));
+    requiredPermissions.some((p) => allPermissions.includes(p));
 
   if (!hasPermission) {
     return <Navigate to="/unauthorized" replace />;

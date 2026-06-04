@@ -1,8 +1,18 @@
-import { Button, Col, Divider, Form, Row, Select, Space, message } from "antd";
+import {
+  Button,
+  Col,
+  Divider,
+  Form,
+  Row,
+  Select,
+  Space,
+  message,
+} from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
@@ -11,7 +21,6 @@ import ServiceFeeModal from ".././ServiceFeeModal";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal";
-
 const TABLE_PROPS = {
   showCount: false,
   noPagination: true,
@@ -21,6 +30,34 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
+
+const PLATFORM_PDF_SCAN_KEYS = [
+  {
+    key: "platformName",
+    labels: ["Platform Name", "Platform", "Provider", "Investment Platform"],
+  },
+  {
+    key: "accountNumber",
+    labels: ["Account Number", "Account No", "A/C Number", "Acct No"],
+  },
+  {
+    key: "portfolioValue",
+    labels: ["Portfolio Value", "Total Portfolio Value", "Market Value"],
+  },
+  {
+    key: "totalPortfolioCost",
+    labels: ["Total Portfolio Cost", "Cost Base", "Total Cost"],
+  },
+  {
+    key: "serviceFee",
+    labels: [
+      "Service Fee",
+      "Annual Service Fee",
+      "Adviser Service Fee",
+      "Ongoing Fee",
+    ],
+  },
+];
 
 function parseCurrencyValue(value) {
   if (value === null || value === undefined || value === "") return 0;
@@ -95,13 +132,22 @@ function hasMeaningfulValues(initialValues = {}) {
 }
 
 function buildPlatformOptions(investmentOffers, entries = [], key) {
-  const platforms = [
-    "managedFund",
-    "familyMangedFunds",
-    "SMSFManagedFunds",
-  ].includes(key)
-    ? investmentOffers?.InvestmentPlatforms
-    : investmentOffers?.InvestmentBonds || [];
+  const offers =
+    investmentOffers &&
+    typeof investmentOffers === "object" &&
+    !Array.isArray(investmentOffers)
+      ? investmentOffers
+      : {};
+
+  const platforms = (
+    [
+      "managedFund",
+      "familyMangedFunds",
+      "SMSFManagedFunds",
+    ].includes(key)
+      ? offers.InvestmentPlatforms
+      : offers.InvestmentBonds
+  ) || [];
 
   const options = platforms.map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
@@ -149,6 +195,7 @@ export default function PlatformInvestments({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const [scanTargetRow, setScanTargetRow] = useState(1);
   const renderTitleBlock = useTitleBlock();
 
   // console.log(modalData?.sectionKey, "modalData?.sectionKey");
@@ -477,7 +524,11 @@ export default function PlatformInvestments({ modalData }) {
           type="text"
           danger
           aria-label={`Remove row ${record?.rowNumber}`}
-          onClick={() => confirmRemoveData(() => handleRemoveRow((record?.rowNumber || 1) - 1))}
+          onClick={() =>
+            confirmRemoveData(() =>
+              handleRemoveRow((record?.rowNumber || 1) - 1),
+            )
+          }
         >
           🗑️
         </Button>
@@ -508,6 +559,27 @@ export default function PlatformInvestments({ modalData }) {
     });
   };
 
+  const resolvePlatformScanValue = useCallback(
+    (key, rawValue) => {
+      if (key !== "platformName") return rawValue;
+
+      const normalized = String(rawValue || "").trim().toLowerCase();
+      if (!normalized) return rawValue;
+
+      const exactMatch = platformOptions.find(
+        (option) => String(option.label).trim().toLowerCase() === normalized,
+      );
+      if (exactMatch) return exactMatch.value;
+
+      const partialMatch = platformOptions.find((option) => {
+        const label = String(option.label).trim().toLowerCase();
+        return label.includes(normalized) || normalized.includes(label);
+      });
+      return partialMatch?.value || rawValue;
+    },
+    [platformOptions],
+  );
+
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
@@ -532,7 +604,28 @@ export default function PlatformInvestments({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={7}>
+          {editing && (
+              <NattyAiScanCard
+                rowCount={sortedDetailRows.length}
+                targetRow={scanTargetRow}
+                onTargetRowChange={setScanTargetRow}
+                scanKeys={PLATFORM_PDF_SCAN_KEYS}
+                form={form}
+                rowFieldName="managedFunds"
+                fieldFormatters={{
+                  portfolioValue: formatCurrencyValue,
+                  totalPortfolioCost: formatCurrencyValue,
+                  serviceFee: formatCurrencyValue,
+                }}
+                resolveFieldValue={resolvePlatformScanValue}
+                onAfterFormUpdate={(entries) => syncParentValues(entries)}
+              />
+          )}
+          <Col
+            xs={24}
+            md={7}
+            // className={editing ? "" : "d-none"}
+          >
             <Form.Item
               label="Number of Platforms"
               name="NumberOfMap"

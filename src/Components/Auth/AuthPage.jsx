@@ -61,9 +61,10 @@ export default function AuthPage() {
             minHeight: [
               "/auth/forget-password",
               "/auth/otp-validation",
+              "/auth/admin-login",
             ].includes(location.pathname)
-              ? 350
-              : 430,
+              ? 350 :
+              430,
             willChange: "transform",
           }}
         >

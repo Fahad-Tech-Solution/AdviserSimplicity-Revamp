@@ -66,7 +66,7 @@ const MIDDLEWARE_CONFIG = {
     addEndpoint: "/api/managedFund/Add",
     updateEndpoint: "/api/managedFund/Update",
     countLabel: "Number of Platform",
-    width: 800,
+    width: 900,
   },
   investmentBondFinance: {
     addEndpoint: "/api/investmentBondFinance/Add",

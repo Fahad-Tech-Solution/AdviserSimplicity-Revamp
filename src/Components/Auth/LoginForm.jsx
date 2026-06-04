@@ -33,16 +33,19 @@ export default function LoginForm() {
       const payload = {
         email: values.email.toLowerCase().trim(),
         passwordHash: values.passwordHash.trim(),
+        roleName: isAdminLogin ? "superAdmin" : "Adviser",
       };
-      const res = await api.post("/api/auth/login-v2", payload);
+
+      let res = await api.post("/api/auth/login-v2", payload);
 
       console.log(res);
 
       if (res?.requiresOtp) {
         message.success(res?.message);
+        console.log(isAdminLogin, "inside login form");
         navigate("/auth/otp-validation", {
           replace: true,
-          state: { email: values.email.toLowerCase().trim() },
+          state: { email: values.email.toLowerCase().trim(), isAdminLogin: isAdminLogin },
         });
       } else {
         setLoggedInUser({
@@ -56,7 +59,12 @@ export default function LoginForm() {
           navigate("/auth/pricing-table", { replace: true });
           message.success(res?.subscription?.message);
         } else {
-          navigate("/user", { replace: true });
+          console.log(isAdminLogin, "inside login form");
+          if (isAdminLogin) {
+            navigate("/super-admin", { replace: true });
+          } else {
+            navigate("/user", { replace: true });
+          }
           message.success(res?.message);
         }
       }

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
@@ -25,10 +26,77 @@ const TABLE_PROPS = {
   bodyFontSize: 12,
 };
 
+const SUPER_PDF_SCAN_KEYS = [
+  {
+    key: "platformName",
+    labels: [
+      "Fund Name",
+      "Super Fund",
+      "Superannuation Fund",
+      "Fund",
+      "Provider",
+      "Your fund",
+      "Fund provider",
+      "AustralianSuper",
+      "Australian Super",
+      "Aus Super",
+      "REST Super",
+      "Hostplus",
+      "HESTA",
+      "UniSuper",
+      "CBUS",
+      "Aware Super",
+      "Colonial First State",
+      "MLC",
+      "AMP",
+    ],
+  },
+  {
+    key: "memberNumber",
+    labels: [
+      "Member number",
+      "Member Number",
+      "Member No",
+      "Member no",
+      "Membership Number",
+      "Membership No",
+      "Member #",
+      "Member ID",
+      "Member account number",
+      "Account number",
+      "Membership no",
+    ],
+  },
+  {
+    key: "balanceBenefit",
+    labels: [
+      "Balance",
+      "Your balance",
+      "Total Benefit Amount",
+      "Account Balance",
+      "Total Balance",
+      "Super Balance",
+      "Closing Balance",
+      "Total Account Balance",
+      "Current Balance",
+      "Balance and Benefits",
+      "Accumulation balance",
+      "Total value",
+      "Benefit balance",
+      "Member balance",
+    ],
+  },
+];
+
 function parseCurrencyValue(value) {
   if (value === null || value === undefined || value === "") return 0;
   const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function formatCurrencyValue(value) {
+  const numeric = parseCurrencyValue(value);
+  return numeric ? toCommaAndDollar(numeric) : "";
 }
 
 function normalizeSelectValue(value) {
@@ -100,7 +168,14 @@ function hasMeaningfulValues(initialValues = {}) {
 }
 
 function buildFundOptions(investmentOffers, entries = []) {
-  const funds = investmentOffers?.SuperannuationFunds || [];
+  const offers =
+    investmentOffers &&
+    typeof investmentOffers === "object" &&
+    !Array.isArray(investmentOffers)
+      ? investmentOffers
+      : {};
+
+  const funds = offers.SuperannuationFunds || [];
   const options = funds.map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
@@ -165,6 +240,7 @@ export default function SuperFunds({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const [scanTargetRow, setScanTargetRow] = useState(1);
   const renderTitleBlock = useTitleBlock();
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -513,6 +589,27 @@ export default function SuperFunds({ modalData }) {
     });
   };
 
+  const resolveSuperFundScanValue = useCallback(
+    (key, rawValue) => {
+      if (key !== "platformName") return rawValue;
+
+      const normalized = String(rawValue || "").trim().toLowerCase();
+      if (!normalized) return rawValue;
+
+      const exactMatch = fundOptions.find(
+        (option) => String(option.label).trim().toLowerCase() === normalized,
+      );
+      if (exactMatch) return exactMatch.value;
+
+      const partialMatch = fundOptions.find((option) => {
+        const label = String(option.label).trim().toLowerCase();
+        return label.includes(normalized) || normalized.includes(label);
+      });
+      return partialMatch?.value || rawValue;
+    },
+    [fundOptions],
+  );
+
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
@@ -537,6 +634,23 @@ export default function SuperFunds({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
+          {editing ? (
+            <NattyAiScanCard
+              title="Natty AI - Scan Super Fund Statement(s)"
+              subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
+              rowCount={sortedRows.length}
+              targetRow={scanTargetRow}
+              onTargetRowChange={setScanTargetRow}
+              scanKeys={SUPER_PDF_SCAN_KEYS}
+              form={form}
+              rowFieldName="superFunds"
+              fieldFormatters={{
+                balanceBenefit: formatCurrencyValue,
+              }}
+              resolveFieldValue={resolveSuperFundScanValue}
+              onAfterFormUpdate={(entries) => syncParentValues(entries)}
+            />
+          ) : null}
           <Col xs={24} md={6}>
             <Form.Item
               label="Number of Super Funds"
