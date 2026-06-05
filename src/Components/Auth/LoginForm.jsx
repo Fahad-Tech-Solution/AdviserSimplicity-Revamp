@@ -38,11 +38,8 @@ export default function LoginForm() {
 
       let res = await api.post("/api/auth/login-v2", payload);
 
-      console.log(res);
-
       if (res?.requiresOtp) {
         message.success(res?.message);
-        console.log(isAdminLogin, "inside login form");
         navigate("/auth/otp-validation", {
           replace: true,
           state: { email: values.email.toLowerCase().trim(), isAdminLogin: isAdminLogin },
@@ -59,7 +56,6 @@ export default function LoginForm() {
           navigate("/auth/pricing-table", { replace: true });
           message.success(res?.subscription?.message);
         } else {
-          console.log(isAdminLogin, "inside login form");
           if (isAdminLogin) {
             navigate("/super-admin", { replace: true });
           } else {
@@ -87,9 +83,7 @@ export default function LoginForm() {
           level={3}
           style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}
           className="text-center"
-          onClick={() => {
-            console.log(loggedInUserValue);
-          }}
+         
         >
           {isAdminLogin ? "Admin Login" : "Login"}
         </Title>

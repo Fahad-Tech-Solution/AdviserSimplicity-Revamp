@@ -40,3 +40,7 @@ export const riskProfileDataAtom = atomWithStorage("riskProfileDataAtom", {});
 export const addDiscoverySectionsModalOpen = atom(false);
 
 /** Goals and Objectives Questions and Details */
+export const advisersDataAtom = atomWithStorage("advisersDataAtom", []);
+
+/** Catalogs Data — object keyed by section e.g. FinancialInstitutions. */
+export const catalogsDataAtom = atomWithStorage("catalogsDataAtom", {});

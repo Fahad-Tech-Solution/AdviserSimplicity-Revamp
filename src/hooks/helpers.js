@@ -256,3 +256,14 @@ export function convertDateAUWithDayJS(date = "") {
   if (!date) return "";
   return dayjs.utc(date).format("DD/MM/YYYY");
 }
+
+
+export function getInitials(name = "") {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}

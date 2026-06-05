@@ -69,8 +69,6 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
     ...permissionsFromAdditionalRoles,
   ];
 
-  console.log(allPermissions, "allPermissions");
-
   const hasPermission =
     requiredPermissions.length === 0 ||
     requiredPermissions.some((p) => allPermissions.includes(p));

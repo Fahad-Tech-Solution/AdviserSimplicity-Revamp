@@ -422,7 +422,7 @@ export default function SuperAdminPricingTablePage() {
         }
     };
 
-    return (
+  return (
         <div
             style={{
                 display: "flex",

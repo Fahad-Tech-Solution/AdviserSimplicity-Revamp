@@ -20,6 +20,8 @@ import {
 import logo from "../../assets/image/Adviser-Simpilicity1.png";
 import {
   allSuperAdminRoutes,
+  catalogChildRoutes,
+  catalogParentRoute,
   superAdminNavRoutes,
   superAdminSubMenuRoutes,
 } from "../Routes/SuperAdmin.Routes.jsx";
@@ -60,11 +62,24 @@ export default function SuperAdminLayout() {
     ];
     const found =
       all.find((item) => location.pathname === item.key) ||
-      all.find((item) => location.pathname.startsWith(item.key));
+      [...all]
+        .sort((a, b) => b.key.length - a.key.length)
+        .find((item) => location.pathname.startsWith(item.key));
     return found?.key || "/super-admin";
   }, [location.pathname, navItems]);
 
-  const visibleRoutes = useMemo(() => allSuperAdminRoutes, []);
+  const visibleRoutes = useMemo(
+    () =>
+      allSuperAdminRoutes.filter(
+        (route) => route.path !== catalogParentRoute.path,
+      ),
+    [],
+  );
+
+  const visibleCatalogRoutes = useMemo(
+    () => catalogChildRoutes.filter((route) => route.condition?.() !== false),
+    [],
+  );
 
   const handleMenuClick = (info) => {
     if (info.key.startsWith("/")) {
@@ -283,6 +298,32 @@ export default function SuperAdminLayout() {
                   }
                 />
               ))}
+              <Route
+                path={catalogParentRoute.path.replace(/^\//, "")}
+                element={catalogParentRoute.component}
+              >
+                <Route
+                  index
+                  element={
+                    <Navigate
+                      to={
+                        visibleCatalogRoutes[0]?.relativePath ||
+                        "financial-institutions"
+                      }
+                      replace
+                    />
+                  }
+                />
+                {visibleCatalogRoutes.map((r) => (
+                  <Route
+                    key={r.key}
+                    path={r.relativePath}
+                    element={
+                      r.component ?? <Navigate to="/super-admin/catalog" replace />
+                    }
+                  />
+                ))}
+              </Route>
             </Routes>
           </div>
         </Content>

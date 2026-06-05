@@ -75,13 +75,14 @@ export default function VerifyOtpForm() {
 
       console.log(res);
 
-      if (res?.action === "dashboard") {
+      if (res?.action === "dashboard" || res?.action === "superAdmin") {
         setLoggedInUser({
           token: res?.token,
           email: email,
           user: res?.user,
           permissions: res?.user?.roleID?.permissions,
         });
+        console.log(isAdminLogin, "inside verify otp form");
         if (isAdminLogin) {
           navigate("/super-admin", { replace: true });
         } else {
