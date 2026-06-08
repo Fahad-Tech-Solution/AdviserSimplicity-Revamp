@@ -201,12 +201,7 @@ export default function AdviserForm({
         message.success("Adviser added.");
       }
 
-      const saved = normalizeSavedAdviser(
-        res,
-        payload,
-        editingAdviser,
-        isEdit,
-      );
+      const saved = normalizeSavedAdviser(res, payload, editingAdviser, isEdit);
       upsertAdviserInAtom(setAdvisers, saved, { isEdit, editingAdviser });
       onSuccess?.(saved, { isEdit });
       form.resetFields();
@@ -466,6 +461,7 @@ export default function AdviserForm({
                 <Form.Item
                   name="AFSNumber"
                   label={<FieldLabel>AFS Number</FieldLabel>}
+                  rules={[{ required: true, message: "Enter AFS Number" }]}
                 >
                   <Input
                     placeholder="AFSL 234567"
@@ -477,6 +473,7 @@ export default function AdviserForm({
                 <Form.Item
                   name="AFSName"
                   label={<FieldLabel>AFS Name</FieldLabel>}
+                  rules={[{ required: true, message: "Enter AFS Name" }]}
                 >
                   <Input
                     placeholder="Financial Services Ltd"
@@ -485,7 +482,11 @@ export default function AdviserForm({
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item name="ASIC" label={<FieldLabel>ASIC</FieldLabel>}>
+                <Form.Item
+                  name="ASIC"
+                  label={<FieldLabel>ASIC</FieldLabel>}
+                  rules={[{ required: true, message: "Enter ASIC" }]}
+                >
                   <Input
                     placeholder="ASIC number"
                     type="number"

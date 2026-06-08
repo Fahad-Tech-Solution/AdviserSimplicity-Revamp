@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   App as AntdApp,
   Button,
@@ -8,17 +8,21 @@ import {
   Typography,
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import DynamicDataTable from "../../../Common/DynamicDataTable";
+import { useAtom } from "jotai";
+import { useLocation } from "react-router-dom";
+import { catalogChildRouteConfigs } from "../../../Routes/catalogRouteConfig";
 import { BiSearch } from "react-icons/bi";
 import { MdAdd } from "react-icons/md";
+import DynamicDataTable from "../../../Common/DynamicDataTable";
 import { getInitials } from "../../../../hooks/helpers";
 import { catalogsDataAtom } from "../../../../store/authState";
-import { useAtom } from "jotai";
 import {
+  getCatalogItemName,
   getCatalogSectionList,
-  getInstitutionName,
+  matchCatalogChildRoute,
   normalizeCatalogsData,
 } from "./catalogHelpers";
+import AddSectionModal from "./AddSectionModal";
 
 const { Text } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -33,6 +37,16 @@ const TYPE_STYLES = {
     background: "#f3e8ff",
     color: "#7c3aed",
     border: "1px solid #e9d5ff",
+  },
+  Platform: {
+    background: "#f0fdf4",
+    color: "#16a34a",
+    border: "1px solid #bbf7d0",
+  },
+  Bond: {
+    background: "#fff7ed",
+    color: "#ea580c",
+    border: "1px solid #fed7aa",
   },
 };
 
@@ -49,8 +63,6 @@ const AVATAR_COLORS = [
   "#ec4899",
 ];
 
-const CATALOG_SECTION_KEY = "FinancialInstitutions";
-
 function formatAddedDate(value) {
   if (!value) return "—";
   const date = new Date(value);
@@ -62,8 +74,8 @@ function formatAddedDate(value) {
   });
 }
 
-function TypeBadge({ type }) {
-  const style = TYPE_STYLES[type] || TYPE_STYLES.Bank;
+function TypeBadge({ type, fallback = "Bank" }) {
+  const style = TYPE_STYLES[type] || TYPE_STYLES[fallback] || TYPE_STYLES.Bank;
   return (
     <span
       style={{
@@ -76,61 +88,97 @@ function TypeBadge({ type }) {
         lineHeight: "20px",
       }}
     >
-      {type}
+      {type || fallback}
     </span>
   );
 }
 
-export default function FinancialInstitutionsPage() {
+const DEFAULT_CONFIG = {
+  catalogDataKey: "",
+  catalogTitle: "Catalog",
+  addButtonLabel: "Add Item",
+  paginationItemLabel: "items",
+  deleteSuccessLabel: "Item",
+  defaultType: "Bank",
+  showTypeColumn: true,
+};
+
+export default function CatalogSectionPage() {
   const { message } = AntdApp.useApp();
+  const location = useLocation();
   const [catalogsData, setCatalogsData] = useAtom(catalogsDataAtom);
   const [searchText, setSearchText] = useState("");
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const institutions = useMemo(
-    () => getCatalogSectionList(catalogsData, CATALOG_SECTION_KEY),
-    [catalogsData],
+  const activeCatalogRoute = useMemo(
+    () => matchCatalogChildRoute(location.pathname, catalogChildRouteConfigs),
+    [location.pathname],
   );
 
-  const removeInstitution = useCallback(
+  const config = useMemo(
+    () => ({
+      ...DEFAULT_CONFIG,
+      ...activeCatalogRoute,
+    }),
+    [activeCatalogRoute],
+  );
+
+  const {
+    catalogDataKey,
+    catalogTitle,
+    addButtonLabel,
+    paginationItemLabel,
+    deleteSuccessLabel,
+    defaultType,
+    showTypeColumn,
+  } = config;
+
+  const items = useMemo(
+    () => getCatalogSectionList(catalogsData, catalogDataKey),
+    [catalogsData, catalogDataKey],
+  );
+
+  const removeItem = useCallback(
     (rowId) => {
+      if (!catalogDataKey) return;
       setCatalogsData((prev) => {
         const normalized = normalizeCatalogsData(prev);
-        const currentList = getCatalogSectionList(prev, CATALOG_SECTION_KEY);
+        const currentList = getCatalogSectionList(prev, catalogDataKey);
         return {
           ...normalized,
-          [CATALOG_SECTION_KEY]: currentList.filter(
+          [catalogDataKey]: currentList.filter(
             (item) => (item.id ?? item._id) !== rowId,
           ),
         };
       });
     },
-    [setCatalogsData],
+    [catalogDataKey, setCatalogsData],
   );
 
-  const filteredInstitutions = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    if (!query) return institutions;
+    if (!query) return items;
 
-    return institutions.filter((item) => {
-      const name = getInstitutionName(item).toLowerCase();
-      const type = String(item.type ?? "Bank").toLowerCase();
+    return items.filter((item) => {
+      const name = getCatalogItemName(item).toLowerCase();
+      const type = String(item.type ?? defaultType).toLowerCase();
       return name.includes(query) || type.includes(query);
     });
-  }, [institutions, searchText]);
+  }, [items, searchText, defaultType]);
 
   const tableData = useMemo(
     () =>
-      filteredInstitutions.map((row, index) => ({
+      filteredItems.map((row, index) => ({
         ...row,
         key: row.id ?? row._id ?? String(index),
         index: index + 1,
-        displayName: getInstitutionName(row),
+        displayName: getCatalogItemName(row),
       })),
-    [filteredInstitutions],
+    [filteredItems],
   );
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const baseColumns = [
       {
         title: "#",
         dataIndex: "index",
@@ -143,7 +191,7 @@ export default function FinancialInstitutionsPage() {
       },
       {
         title: "NAME",
-        key: "platformName",
+        key: "name",
         render: (_, row, index) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
@@ -169,13 +217,21 @@ export default function FinancialInstitutionsPage() {
           </div>
         ),
       },
-      {
+    ];
+
+    if (showTypeColumn) {
+      baseColumns.push({
         title: "TYPE",
         dataIndex: "type",
         key: "type",
         width: 140,
-        render: (_, row) => <TypeBadge type={row.type ?? "Bank"} />,
-      },
+        render: (_, row) => (
+          <TypeBadge type={row.type} fallback={defaultType} />
+        ),
+      });
+    }
+
+    baseColumns.push(
       {
         title: "ADDED",
         dataIndex: "createdAt",
@@ -183,8 +239,7 @@ export default function FinancialInstitutionsPage() {
         width: 110,
         render: (createdAt) => (
           <span style={{ color: "#374151", fontSize: 13 }}>
-            {/* {formatAddedDate(createdAt)} */}
-            {formatAddedDate(new Date())}
+            {formatAddedDate(createdAt)}
           </span>
         ),
       },
@@ -215,17 +270,18 @@ export default function FinancialInstitutionsPage() {
                   <DeleteOutlined style={{ color: "#d1d5db", fontSize: 14 }} />
                 }
                 onClick={() => {
-                  removeInstitution(row.id ?? row._id);
-                  message.success("Institution removed.");
+                  removeItem(row.id ?? row._id);
+                  message.success(`${deleteSuccessLabel} removed.`);
                 }}
               />
             </Tooltip>
           </Space>
         ),
       },
-    ],
-    [message, removeInstitution],
-  );
+    );
+
+    return baseColumns;
+  }, [defaultType, deleteSuccessLabel, message, removeItem, showTypeColumn]);
 
   return (
     <div
@@ -237,6 +293,12 @@ export default function FinancialInstitutionsPage() {
         overflow: "hidden",
       }}
     >
+      <AddSectionModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        sectionConfig={config}
+      />
+
       <div
         style={{
           display: "flex",
@@ -257,12 +319,12 @@ export default function FinancialInstitutionsPage() {
               textTransform: "uppercase",
             }}
           >
-            Financial Institutions
+            {catalogTitle}
           </Text>
           <span style={{ color: "#d1d5db" }}>|</span>
           <Text style={{ fontSize: 13, color: "#9ca3af" }}>
-            {filteredInstitutions.length} item
-            {filteredInstitutions.length === 1 ? "" : "s"}
+            {filteredItems.length} item
+            {filteredItems.length === 1 ? "" : "s"}
           </Text>
         </div>
 
@@ -283,7 +345,7 @@ export default function FinancialInstitutionsPage() {
           <Button
             type="primary"
             icon={<MdAdd size={15} />}
-            onClick={() => message.info("Add institution — coming soon")}
+            onClick={() => setAddModalOpen(true)}
             style={{
               borderRadius: 8,
               fontWeight: 700,
@@ -293,7 +355,7 @@ export default function FinancialInstitutionsPage() {
               borderColor: PRIMARY_GREEN,
             }}
           >
-            Add Institution
+            {addButtonLabel}
           </Button>
         </Space>
       </div>
@@ -310,7 +372,7 @@ export default function FinancialInstitutionsPage() {
           tableStyle={{ borderRadius: 8, overflow: "hidden" }}
           pagination={{
             showTotal: (total, range) =>
-              `Showing ${range[0]}–${range[1]} of ${total} institutions`,
+              `Showing ${range[0]}–${range[1]} of ${total} ${paginationItemLabel}`,
           }}
         />
       </div>

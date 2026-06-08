@@ -1,10 +1,11 @@
 import CatalogsLayoutPage from "../Layout/CatalogsLayoutPage";
 import AdvisersPage from "../Pages/SuperAdmin/AdvisersPage/AdvisersPage";
-import FinancialInstitutionsPage from "../Pages/SuperAdmin/Catalogs/FinancialInstitutionsPage";
+import CatalogSectionPage from "../Pages/SuperAdmin/Catalogs/CatalogSectionPage";
 import SupderAdminDashboardPage from "../Pages/SuperAdmin/Dashboard/SupderAdminDashboardPage";
 import SuperAdminPricingTablePage from "../Pages/SuperAdmin/PricingTable/SuperAdminPricingTablePage";
 import SettingsPage from "../Pages/SuperAdmin/SettingsPage";
 import ProfilePage from "../Pages/User/Clients/ProfilePage";
+import { catalogChildRouteConfigs } from "./catalogRouteConfig";
 
 export const withSpacing = ({
   icon,
@@ -28,24 +29,17 @@ export const withSpacing = ({
   ),
 });
 
-/** Nested catalog sections — each child is a route + page under `/super-admin/catalog/*`. */
-
-export const catalogChildRoutes = [
-  {
-    key: "/super-admin/catalog/financial-institutions",
-    relativePath: "financial-institutions",
-    catalogDataKey: "FinancialInstitutions",
-    catalogTitle: "Financial Institutions",
-    catalogIcon: "🏦",
-    ...withSpacing({
-      icon: "🏦",
-      label: "Financial Institutions",
-      fontSize: "13px",
-    }),
-    component: <FinancialInstitutionsPage />,
-    condition: () => true,
-  },
-];
+/** Nested catalog sections — each child is a route under `/super-admin/catalog/*`. */
+export const catalogChildRoutes = catalogChildRouteConfigs.map((config) => ({
+  ...config,
+  ...withSpacing({
+    icon: config.menuIcon,
+    label: config.menuLabel,
+    fontSize: "13px",
+  }),
+  component: <CatalogSectionPage />,
+  condition: () => true,
+}));
 
 export const catalogParentRoute = {
   key: "/super-admin/catalog",
@@ -63,7 +57,6 @@ export const superAdminNavRoutes = [
     component: <SupderAdminDashboardPage />,
     condition: () => true,
   },
-
   {
     key: "/super-admin/advisers",
     path: "/advisers",

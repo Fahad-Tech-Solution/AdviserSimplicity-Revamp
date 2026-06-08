@@ -1,9 +1,11 @@
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import {
+  App as AntdApp,
   Button,
   Card,
   Col,
   Input,
+  Modal,
   Row,
   Space,
   Tooltip,
@@ -30,17 +32,31 @@ const headingStyle = { fontFamily: "Georgia, serif" };
 const PRIMARY_GREEN = "#22c55e";
 
 const PLAN_STYLES = {
-  Practice: {
+  "Gold Plan": {
     background: "#f3e8ff",
     color: "#7c3aed",
     border: "1px solid #e9d5ff",
   },
-  Pro: { background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" },
-  Starter: {
+  "Platinum Plan": {
+    background: "#eff6ff",
+    color: "#2563eb",
+    border: "1px solid #bfdbfe",
+  },
+  "Platinum": {
+    background: "#eff6ff",
+    color: "#2563eb",
+    border: "1px solid #bfdbfe",
+  }, 
+  "Silver Plan": {
     background: "#fff7ed",
     color: "#ea580c",
     border: "1px solid #fed7aa",
   },
+  "None":{
+    background: "#fff",
+    color: "#6b7280",
+    border: "1px solid #e5e7eb",
+  }
 };
 
 const AvatarColors = [
@@ -183,8 +199,8 @@ function isWithinLast30Days(value) {
   return date >= thirtyDaysAgo;
 }
 
-function PlanBadge({ plan }) {
-  const style = PLAN_STYLES[plan] || PLAN_STYLES.Starter;
+function PlanBadge({ plan, index }) {
+  const style = PLAN_STYLES[plan] || PLAN_STYLES["None"];
   return (
     <span
       style={{
@@ -197,7 +213,7 @@ function PlanBadge({ plan }) {
         lineHeight: "20px",
       }}
     >
-      {plan}
+      {plan || "None"}
     </span>
   );
 }
@@ -337,7 +353,10 @@ const AdvisersPage = () => {
   const [editingAdviser, setEditingAdviser] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingAdviser, setViewingAdviser] = useState(null);
+  const [statusBusy, setStatusBusy] = useState(false);
 
+  const { message } = AntdApp.useApp();
+  const { confirm } = Modal;
   const [advisers, setAdvisers] = useAtom(advisersDataAtom);
 
   const counts = useMemo(() => {
@@ -384,7 +403,7 @@ const AdvisersPage = () => {
     [filteredAdvisers, advisers],
   );
 
-  const { get } = useApi();
+  const { get, patch } = useApi();
 
   useEffect(() => {
     fetchAdvisers();
@@ -394,6 +413,7 @@ const AdvisersPage = () => {
     try {
       setAdvisersLoading(true);
       const response = await get("/api/user/Advisers");
+      console.log(response, "response, advisers");
       setAdvisers(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error(error);
@@ -440,6 +460,55 @@ const AdvisersPage = () => {
         : activeTab === "disabled"
           ? "DISABLED ADVISERS"
           : "NEW ADVISERS";
+
+  const enableDisableAdviser = useCallback(
+    (id, action) => {
+      const adviserId = id?._id ?? id;
+      if (!adviserId) return;
+
+      const isEnabling = action === "enable";
+
+      confirm({
+        title: `Are you sure you want to ${
+          isEnabling ? "enable" : "disable"
+        } this Adviser?`,
+        content: `This action will ${
+          isEnabling ? "enable" : "disable"
+        } the adviser.`,
+        okText: `Yes, ${isEnabling ? "Enable" : "Disable"}`,
+        okType: isEnabling ? "primary" : "danger",
+        cancelText: "Cancel",
+        centered: true,
+        onOk: async () => {
+          setStatusBusy(true);
+          try {
+            await patch("/api/user/UpdateStatus", { _id: adviserId });
+            setAdvisers((prev) =>
+              (prev || []).map((item) =>
+                (item._id ?? item.id) === adviserId
+                  ? { ...item, isActive: !item.isActive }
+                  : item,
+              ),
+            );
+            message.success(
+              `Adviser ${isEnabling ? "enabled" : "disabled"} successfully.`,
+            );
+          } catch (error) {
+            message.error(
+              error?.response?.data?.message ||
+                error?.message ||
+                `An error occurred while ${
+                  isEnabling ? "enabling" : "disabling"
+                } the adviser.`,
+            );
+          } finally {
+            setStatusBusy(false);
+          }
+        },
+      });
+    },
+    [confirm, message, patch, setAdvisers],
+  );
 
   const columns = useMemo(
     () => [
@@ -498,7 +567,9 @@ const AdvisersPage = () => {
         dataIndex: "plan",
         key: "plan",
         width: 110,
-        render: (plan) => <PlanBadge plan={plan} />,
+        render: (plan, row, index) => (
+          <PlanBadge plan={row.productName} index={index} />
+        ),
       },
       {
         title: "STATUS",
@@ -547,23 +618,34 @@ const AdvisersPage = () => {
                 onClick={() => openEditAdviserModal(row)}
               />
             </Tooltip>
-            <Tooltip title={row.status === "active" ? "Disable" : "Enable"}>
+            <Tooltip title={row.isActive ? "Disable" : "Enable"}>
               <Button
                 type="text"
                 size="small"
+                disabled={statusBusy}
                 icon={
                   <PoweroffOutlined
                     style={{ color: "#9ca3af", fontSize: 10 }}
                   />
                 }
-                onClick={() => console.log("toggle", row.id)}
+                onClick={() =>
+                  enableDisableAdviser(
+                    row._id ?? row.id,
+                    row.isActive ? "disable" : "enable",
+                  )
+                }
               />
             </Tooltip>
           </Space>
         ),
       },
     ],
-    [],
+    [
+      enableDisableAdviser,
+      openEditAdviserModal,
+      openViewAdviserModal,
+      statusBusy,
+    ],
   );
 
   return (

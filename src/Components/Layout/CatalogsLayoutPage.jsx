@@ -1,28 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, Spin, Typography } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { catalogChildRoutes } from "../Routes/SuperAdmin.Routes.jsx";
+import { catalogChildRouteConfigs } from "../Routes/catalogRouteConfig";
 import useApi from "../../hooks/useApi.js";
 import { useAtom } from "jotai";
 import { catalogsDataAtom } from "../../store/authState.js";
 import {
   getCatalogSectionCount,
+  isCatalogChildActive,
+  matchCatalogChildRoute,
   normalizeCatalogsData,
 } from "../Pages/SuperAdmin/Catalogs/catalogHelpers.js";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
 const headingStyle = { fontFamily: "Georgia, serif" };
-
-function isCatalogChildActive(pathname, route) {
-  const segment = route.relativePath || route.path?.replace(/^\//, "");
-  if (!segment) return false;
-  return (
-    pathname === route.key ||
-    pathname.endsWith(`/catalog/${segment}`) ||
-    pathname.endsWith(`/Catalog/${segment}`)
-  );
-}
 
 function CatalogCategoryCard({ route, active, onClick, count }) {
   const icon = route.catalogIcon ?? "📁";
@@ -32,35 +24,50 @@ function CatalogCategoryCard({ route, active, onClick, count }) {
       type="button"
       onClick={onClick}
       style={{
-        flex: "1 1 120px",
-        minWidth: 118,
-        maxWidth: 150,
-        border: active ? `2px solid ${PRIMARY_GREEN}` : "1px solid #e5e7eb",
-        background: active ? "#f0fdf4" : "#fff",
-        borderRadius: 12,
-        padding: "14px 10px 12px",
-        cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: 8,
+        padding: "14px 6px 12px",
+        borderRadius: 11,
+        cursor: "pointer",
         transition: "all 0.15s ease",
-        boxShadow: active
-          ? "0 8px 20px rgba(34, 197, 94, 0.12)"
-          : "0 2px 8px rgba(15, 23, 42, 0.04)",
+        border: "none",
+        flex: "1 1 120px",
+        minWidth: 118,
+        maxWidth: 150,
+        background: active ? "#f0fdf4" : "#fff",
       }}
     >
-      <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden>
+      <span
+        style={{
+          fontSize: 16,
+          lineHeight: 1,
+          background: active ? "#22c55e" : "#f3f4f6",
+          color: active ? "#6b7280" : "#fff",
+          boxShadow: active ? "0 3px 10px rgba(34, 197, 94, .35)" : "none",
+          borderRadius: 50,
+          padding: "4px 8px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 36,
+          height: 36,
+        }}
+        aria-hidden
+      >
         {icon}
       </span>
       <Text
         style={{
           fontSize: 11,
-          fontWeight: 600,
-          color: "#374151",
+          fontWeight: 700,
+          color: active ? "#16a34a" : "#6b7280",
           textAlign: "center",
           lineHeight: 1.35,
           minHeight: 30,
+          maxWidth: 100,
+          fontFamily: "Arial, sans-serif",
         }}
       >
         {title}
@@ -94,16 +101,14 @@ export default function CatalogsLayoutPage() {
   const [loading, setLoading] = useState(false);
 
   const visibleCatalogRoutes = useMemo(
-    () => catalogChildRoutes.filter((route) => route.condition?.() !== false),
+    () =>
+      catalogChildRouteConfigs.filter((route) => route.condition?.() !== false),
     [],
   );
 
   const activeRoute = useMemo(
-    () =>
-      visibleCatalogRoutes.find((route) =>
-        isCatalogChildActive(location.pathname, route),
-      ),
-    [location.pathname, visibleCatalogRoutes],
+    () => matchCatalogChildRoute(location.pathname, catalogChildRouteConfigs),
+    [location.pathname],
   );
 
   useEffect(() => {
@@ -123,10 +128,21 @@ export default function CatalogsLayoutPage() {
     }
   };
 
-  if(loading){
-    return <Spin size="large" />;
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          minHeight: "100vh",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
   }
-
 
   return (
     <div
@@ -144,6 +160,7 @@ export default function CatalogsLayoutPage() {
           letterSpacing: "3px",
           fontSize: "11px",
           color: PRIMARY_GREEN,
+          marginBottom: 6,
         }}
       >
         ADMIN
@@ -151,19 +168,24 @@ export default function CatalogsLayoutPage() {
 
       <Title
         level={3}
-        style={{ ...headingStyle, margin: "8px 0 0", fontWeight: 500 }}
+        style={{
+          ...headingStyle,
+          margin: "0 0",
+          fontWeight: 500,
+          fontSize: 28,
+        }}
       >
         Product Catalog
       </Title>
       <Text
         style={{
           display: "block",
-          marginTop: 6,
+          marginTop: 0,
           marginBottom: 20,
           fontSize: 12,
           color: "#6b7280",
           fontFamily: "Arial, sans-serif",
-          maxWidth: 720,
+          maxWidth: 580,
           lineHeight: 1.6,
         }}
       >
@@ -172,20 +194,20 @@ export default function CatalogsLayoutPage() {
       </Text>
 
       <Card
-        styles={{ body: { padding: "16px 14px" } }}
+        styles={{ body: { padding: "12px 12px", background: "none" } }}
         style={{
-          borderRadius: 14,
-          border: "1px solid #ebedf0",
+          borderRadius: 16,
+          border: "1px solid rgba(0, 0, 0, .08)",
           boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
           marginBottom: 20,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
             display: "flex",
             gap: 12,
-            overflowX: "auto",
-            paddingBottom: 4,
+            padding: 0,
           }}
         >
           {visibleCatalogRoutes.map((route) => {
@@ -206,7 +228,7 @@ export default function CatalogsLayoutPage() {
         </div>
       </Card>
 
-      <Outlet context={{ activeCatalogRoute: activeRoute }} />
+      <Outlet key={activeRoute?.key ?? location.pathname} />
     </div>
   );
 }
