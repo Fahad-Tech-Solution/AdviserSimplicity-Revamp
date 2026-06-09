@@ -96,10 +96,16 @@ function FormSection({ title, children }) {
 }
 
 function pickAdviserValues(record = {}) {
-  return ADVISER_FIELDS.reduce((acc, key) => {
+  const values = ADVISER_FIELDS.reduce((acc, key) => {
     acc[key] = record[key] ?? "";
     return acc;
   }, {});
+
+  if (!values.referralID && record.referralId) {
+    values.referralID = record.referralId;
+  }
+
+  return values;
 }
 
 function normalizeSavedAdviser(res, payload, editingAdviser, isEdit) {
@@ -330,7 +336,17 @@ export default function AdviserForm({
                 <Form.Item
                   name="firstName"
                   label={<FieldLabel required>First Name</FieldLabel>}
-                  rules={[{ required: true, message: "Enter first name" }]}
+                  rules={[
+                    { required: true, message: "Enter first name" },
+                    {
+                      min: 2,
+                      message: "First name must be at least 2 characters",
+                    },
+                    {
+                      pattern: /^[A-Za-z]+$/,
+                      message: "First name can only contain letters",
+                    },
+                  ]}
                 >
                   <Input placeholder="Natalie" style={{ borderRadius: 8 }} />
                 </Form.Item>
@@ -339,7 +355,17 @@ export default function AdviserForm({
                 <Form.Item
                   name="lastName"
                   label={<FieldLabel required>Last Name</FieldLabel>}
-                  rules={[{ required: true, message: "Enter last name" }]}
+                  rules={[
+                    { required: true, message: "Enter last name" },
+                    {
+                      min: 2,
+                      message: "Last name must be at least 2 characters",
+                    },
+                    {
+                      pattern: /^[A-Za-z]+$/,
+                      message: "Last name can only contain letters",
+                    },
+                  ]}
                 >
                   <Input placeholder="Wong" style={{ borderRadius: 8 }} />
                 </Form.Item>
@@ -387,7 +413,6 @@ export default function AdviserForm({
                         placeholder="ADV-NW-7842"
                         style={{ borderRadius: 8, flex: 1 }}
                         readOnly
-                        disabled
                       />
                     </Form.Item>
                     <Button
