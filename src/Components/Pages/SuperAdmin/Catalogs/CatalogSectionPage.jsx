@@ -9,11 +9,13 @@ import {
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { useAtom } from "jotai";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { catalogChildRouteConfigs } from "../../../Routes/catalogRouteConfig";
 import { BiSearch } from "react-icons/bi";
 import { MdAdd } from "react-icons/md";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
+import { confirmRemoveData } from "../../../Common/confirmationModal";
+import useApi from "../../../../hooks/useApi";
 import { getInitials } from "../../../../hooks/helpers";
 import { catalogsDataAtom } from "../../../../store/authState";
 import {
@@ -36,7 +38,17 @@ const TYPE_STYLES = {
   "Credit Union": {
     background: "#f3e8ff",
     color: "#7c3aed",
-    border: "1px solid #e9d5ff",
+    border: "1px solid var(--primary-green)",
+  },
+  "Building Society": {
+    background: "#f0fdf4",
+    color: "#16a34a",
+    border: "1px solid #bbf7d0",
+  },
+  "Mutual Bank": {
+    background: "#f0fdf4",
+    color: "#16a34a",
+    border: "1px solid rgba(255, 229, 204, 0.97)",
   },
   Platform: {
     background: "#f0fdf4",
@@ -104,11 +116,20 @@ const DEFAULT_CONFIG = {
 };
 
 export default function CatalogSectionPage() {
+  const api = useApi();
   const { message } = AntdApp.useApp();
   const location = useLocation();
   const [catalogsData, setCatalogsData] = useAtom(catalogsDataAtom);
   const [searchText, setSearchText] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+
+  const closeAddModal = useCallback(() => {
+    setAddModalOpen(false);
+    setEditingRecord(null);
+  }, []);
+
+  const navigate = useNavigate();
 
   const activeCatalogRoute = useMemo(
     () => matchCatalogChildRoute(location.pathname, catalogChildRouteConfigs),
@@ -131,6 +152,7 @@ export default function CatalogSectionPage() {
     deleteSuccessLabel,
     defaultType,
     showTypeColumn,
+    showTypeInvestmentSection,
   } = config;
 
   const items = useMemo(
@@ -153,6 +175,36 @@ export default function CatalogSectionPage() {
       });
     },
     [catalogDataKey, setCatalogsData],
+  );
+
+  const deleteItem = useCallback(
+    (row) => {
+      const rowId = row?._id ?? row?.id;
+      if (!rowId) return;
+
+      confirmRemoveData(
+        async () => {
+          try {
+            await api.patch("/api/platform/Delete", { _id: rowId });
+            removeItem(rowId);
+            message.success(`${deleteSuccessLabel} removed.`);
+          } catch (error) {
+            message.error(
+              error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to delete item.",
+            );
+            throw error;
+          }
+        },
+        {
+          title: `Remove ${deleteSuccessLabel}?`,
+          content: `This will permanently remove "${getCatalogItemName(row)}" from the catalog.`,
+        },
+      );
+    },
+    [api, deleteSuccessLabel, message, removeItem],
   );
 
   const filteredItems = useMemo(() => {
@@ -222,11 +274,11 @@ export default function CatalogSectionPage() {
     if (showTypeColumn) {
       baseColumns.push({
         title: "TYPE",
-        dataIndex: "type",
-        key: "type",
+        dataIndex: "platformType",
+        key: "platformType",
         width: 140,
         render: (_, row) => (
-          <TypeBadge type={row.type} fallback={defaultType} />
+          <TypeBadge type={row.platformType} fallback={defaultType} />
         ),
       });
     }
@@ -250,6 +302,25 @@ export default function CatalogSectionPage() {
         align: "center",
         render: (_, row) => (
           <Space size={4}>
+            {showTypeInvestmentSection && (
+              <Tooltip title="Edit">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<span style={{ fontSize: 14 }}>📂</span>}
+                  onClick={() => {
+                    navigate(`/super-admin/catalog/investment-sections`, {
+                      state: {
+                        row: row,
+                        config: config,
+                        numberOfItems: tableData.length,
+                      },
+                    });
+                  }}
+                />
+              </Tooltip>
+            )}
+
             <Tooltip title="Edit">
               <Button
                 type="text"
@@ -257,9 +328,10 @@ export default function CatalogSectionPage() {
                 icon={
                   <EditOutlined style={{ color: "#6b7280", fontSize: 14 }} />
                 }
-                onClick={() =>
-                  message.info(`Edit ${row.displayName} — coming soon`)
-                }
+                onClick={() => {
+                  setEditingRecord(row);
+                  setAddModalOpen(true);
+                }}
               />
             </Tooltip>
             <Tooltip title="Delete">
@@ -269,10 +341,7 @@ export default function CatalogSectionPage() {
                 icon={
                   <DeleteOutlined style={{ color: "#d1d5db", fontSize: 14 }} />
                 }
-                onClick={() => {
-                  removeItem(row.id ?? row._id);
-                  message.success(`${deleteSuccessLabel} removed.`);
-                }}
+                onClick={() => deleteItem(row)}
               />
             </Tooltip>
           </Space>
@@ -281,7 +350,16 @@ export default function CatalogSectionPage() {
     );
 
     return baseColumns;
-  }, [defaultType, deleteSuccessLabel, message, removeItem, showTypeColumn]);
+  }, [
+    config,
+    defaultType,
+    deleteItem,
+    deleteSuccessLabel,
+    navigate,
+    showTypeColumn,
+    showTypeInvestmentSection,
+    tableData.length,
+  ]);
 
   return (
     <div
@@ -295,8 +373,9 @@ export default function CatalogSectionPage() {
     >
       <AddSectionModal
         open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={closeAddModal}
         sectionConfig={config}
+        editingRecord={editingRecord}
       />
 
       <div
@@ -345,7 +424,10 @@ export default function CatalogSectionPage() {
           <Button
             type="primary"
             icon={<MdAdd size={15} />}
-            onClick={() => setAddModalOpen(true)}
+            onClick={() => {
+              setEditingRecord(null);
+              setAddModalOpen(true);
+            }}
             style={{
               borderRadius: 8,
               fontWeight: 700,

@@ -1,7 +1,8 @@
 import CatalogsLayoutPage from "../Layout/CatalogsLayoutPage";
 import AdvisersPage from "../Pages/SuperAdmin/AdvisersPage/AdvisersPage";
 import CatalogSectionPage from "../Pages/SuperAdmin/Catalogs/CatalogSectionPage";
-import SupderAdminDashboardPage from "../Pages/SuperAdmin/Dashboard/SupderAdminDashboardPage";
+import InvestmentSectionsPage from "../Pages/SuperAdmin/Catalogs/InvestmentSectionsPage";
+import SuperAdminDashboardPage from "../Pages/SuperAdmin/Dashboard/SuperAdminDashboardPage";
 import SuperAdminPricingTablePage from "../Pages/SuperAdmin/PricingTable/SuperAdminPricingTablePage";
 import SettingsPage from "../Pages/SuperAdmin/SettingsPage";
 import ProfilePage from "../Pages/User/Clients/ProfilePage";
@@ -37,7 +38,11 @@ export const catalogChildRoutes = catalogChildRouteConfigs.map((config) => ({
     label: config.menuLabel,
     fontSize: "13px",
   }),
-  component: <CatalogSectionPage />,
+  component: config?.switchToInvestmentSectionsPage ? (
+    <InvestmentSectionsPage />
+  ) : (
+    <CatalogSectionPage />
+  ),
   condition: () => true,
 }));
 
@@ -54,7 +59,7 @@ export const superAdminNavRoutes = [
     key: "/super-admin",
     path: "/",
     ...withSpacing({ icon: "📊", label: "Dashboard", fontSize: "13px" }),
-    component: <SupderAdminDashboardPage />,
+    component: <SuperAdminDashboardPage />,
     condition: () => true,
   },
   {

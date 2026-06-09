@@ -102,12 +102,20 @@ export default function CatalogsLayoutPage() {
 
   const visibleCatalogRoutes = useMemo(
     () =>
-      catalogChildRouteConfigs.filter((route) => route.condition?.() !== false),
+      catalogChildRouteConfigs.filter(
+        (route) =>
+          route.condition?.() !== false && !route.switchToInvestmentSectionsPage,
+      ),
     [],
   );
 
   const activeRoute = useMemo(
     () => matchCatalogChildRoute(location.pathname, catalogChildRouteConfigs),
+    [location.pathname],
+  );
+
+  const isInvestmentSectionsRoute = useMemo(
+    () => location.pathname === "/super-admin/catalog/investment-sections",
     [location.pathname],
   );
 
@@ -142,6 +150,10 @@ export default function CatalogsLayoutPage() {
         <Spin size="large" />
       </div>
     );
+  }
+
+  if (isInvestmentSectionsRoute) {
+    return <Outlet key={activeRoute?.key ?? location.pathname} />;
   }
 
   return (

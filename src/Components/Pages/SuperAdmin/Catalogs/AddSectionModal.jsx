@@ -3,8 +3,13 @@ import { App as AntdApp, Button, Form, Input, Select, Typography } from "antd";
 import { MdAdd } from "react-icons/md";
 import { useSetAtom } from "jotai";
 import AppModal from "../../../Common/AppModal";
+import useApi from "../../../../hooks/useApi";
 import { catalogsDataAtom } from "../../../../store/authState";
-import { getCatalogSectionList, normalizeCatalogsData } from "./catalogHelpers";
+import {
+  getCatalogItemName,
+  getCatalogSectionList,
+  normalizeCatalogsData,
+} from "./catalogHelpers";
 
 const { Text, Title } = Typography;
 const FORM_ID = "catalog-add-section-form";
@@ -131,7 +136,80 @@ function FieldLabel({ children, required = false }) {
   );
 }
 
-function buildFormConfig(sectionConfig = {}) {
+function normalizeSavedPlatform(res, payload, editingRecord, isEdit) {
+  const record = res?.platform ?? res?.data ?? res;
+
+  if (
+    record &&
+    typeof record === "object" &&
+    (record._id || record.id || record.platformName)
+  ) {
+    const platformName =
+      record.platformName ?? payload.platformName ?? getCatalogItemName(record);
+    return {
+      ...record,
+      _id: record._id ?? record.id,
+      platformName,
+      name: platformName,
+      institutionName: platformName,
+      productName: platformName,
+      type: record.platformType ?? record.type ?? payload.platformType,
+    };
+  }
+
+  if (isEdit) {
+    const platformName =
+      payload.platformName ?? getCatalogItemName(editingRecord);
+    return {
+      ...editingRecord,
+      _id: editingRecord._id ?? editingRecord.id,
+      platformName,
+      name: platformName,
+      type: editingRecord.type ?? payload.platformType,
+    };
+  }
+
+  const platformName = payload.platformName;
+  return {
+    _id: `cat-${Date.now()}`,
+    platformName,
+    name: platformName,
+    institutionName: platformName,
+    productName: platformName,
+    type: payload.platformType,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function upsertCatalogItem(
+  setCatalogsData,
+  catalogDataKey,
+  saved,
+  { isEdit, editingRecord },
+) {
+  setCatalogsData((prev) => {
+    const normalized = normalizeCatalogsData(prev);
+    const list = getCatalogSectionList(prev, catalogDataKey);
+    const savedId = saved._id ?? saved.id;
+
+    if (isEdit) {
+      const editId = editingRecord?._id ?? editingRecord?.id;
+      return {
+        ...normalized,
+        [catalogDataKey]: list.map((item) =>
+          (item._id ?? item.id) === editId ? { ...item, ...saved } : item,
+        ),
+      };
+    }
+
+    return {
+      ...normalized,
+      [catalogDataKey]: [saved, ...list],
+    };
+  });
+}
+
+function buildFormConfig(sectionConfig = {}, isEdit = false) {
   const {
     catalogDataKey = "",
     catalogTitle = "Catalog",
@@ -143,11 +221,14 @@ function buildFormConfig(sectionConfig = {}) {
 
   const preset = SECTION_ADD_FORM_CONFIG[catalogDataKey] ?? {};
 
+  const addTitle = preset.modalTitle ?? `Add ${deleteSuccessLabel}`;
+
   return {
-    modalTitle: preset.modalTitle ?? `Add ${deleteSuccessLabel}`,
-    modalSubtitle:
-      preset.modalSubtitle ??
-      `Add a new entry to the ${catalogTitle.toLowerCase()} catalog.`,
+    modalTitle: isEdit ? addTitle.replace(/^Add /, "Edit ") : addTitle,
+    modalSubtitle: isEdit
+      ? `Update this ${deleteSuccessLabel.toLowerCase()} in the catalog.`
+      : (preset.modalSubtitle ??
+        `Add a new entry to the ${catalogTitle.toLowerCase()} catalog.`),
     nameLabel: preset.nameLabel ?? "Name",
     namePlaceholder: preset.namePlaceholder ?? "Enter name",
     nameHelper:
@@ -159,7 +240,7 @@ function buildFormConfig(sectionConfig = {}) {
     typeOptions:
       preset.typeOptions ??
       (defaultType ? [{ value: defaultType, label: defaultType }] : []),
-    submitLabel: addButtonLabel,
+    submitLabel: isEdit ? "Save changes" : addButtonLabel,
     catalogDataKey,
     showTypeColumn,
     defaultType,
@@ -171,15 +252,20 @@ export default function AddSectionModal({
   onClose,
   onSuccess,
   sectionConfig = {},
+  editingRecord = null,
 }) {
+  const api = useApi();
   const { message } = AntdApp.useApp();
   const setCatalogsData = useSetAtom(catalogsDataAtom);
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
+  const isEdit = Boolean(editingRecord?._id ?? editingRecord?.id);
+  const editingKey = editingRecord?._id ?? editingRecord?.id ?? null;
+
   const formConfig = useMemo(
-    () => buildFormConfig(sectionConfig),
-    [sectionConfig],
+    () => buildFormConfig(sectionConfig, isEdit),
+    [sectionConfig, isEdit],
   );
 
   const {
@@ -198,45 +284,85 @@ export default function AddSectionModal({
 
   useEffect(() => {
     if (!open) return;
+
+    if (isEdit) {
+      form.setFieldsValue({
+        name: getCatalogItemName(editingRecord),
+        platformType:
+          editingRecord?.platformType ??
+          editingRecord?.type ??
+          typeOptions[0]?.value ??
+          defaultType,
+      });
+      return;
+    }
+
     form.resetFields();
     form.setFieldsValue({
-      type: typeOptions[0]?.value ?? defaultType ?? undefined,
+      platformType: typeOptions[0]?.value ?? defaultType ?? undefined,
     });
-  }, [open, catalogDataKey, form, typeOptions, defaultType]);
+  }, [
+    open,
+    catalogDataKey,
+    defaultType,
+    editingKey,
+    editingRecord,
+    form,
+    isEdit,
+    typeOptions,
+  ]);
 
   const handleFinish = async (values) => {
     if (!catalogDataKey) return;
 
-    const name = String(values.name ?? "").trim();
-    if (!name) return;
+    const platformName = String(values.name ?? "").trim();
+    if (!platformName) return;
+
+    const section = sectionConfig.apiSection ?? catalogDataKey;
+    const platformType = values.platformType ?? defaultType;
 
     setSubmitting(true);
     try {
-      const newItem = {
-        _id: `cat-${Date.now()}`,
-        name,
-        platformName: name,
-        institutionName: name,
-        productName: name,
-        type: values.type ?? defaultType,
-        createdAt: new Date().toISOString(),
-      };
+      let res;
 
-      setCatalogsData((prev) => {
-        const normalized = normalizeCatalogsData(prev);
-        const list = getCatalogSectionList(prev, catalogDataKey);
-        return {
-          ...normalized,
-          [catalogDataKey]: [newItem, ...list],
-        };
+      if (isEdit) {
+        res = await api.patch("/api/platform/Update", {
+          platformName,
+          platformType,
+          section,
+          softDelete: false,
+          _id: editingRecord._id ?? editingRecord.id,
+        });
+        message.success(
+          `${sectionConfig.deleteSuccessLabel ?? "Item"} updated.`,
+        );
+      } else {
+        res = await api.post("/api/platform/Add", {
+          platformName,
+          platformType,
+          section,
+        });
+        message.success(`${sectionConfig.deleteSuccessLabel ?? "Item"} added.`);
+      }
+
+      const payload = { platformName, platformType, section };
+      const saved = normalizeSavedPlatform(res, payload, editingRecord, isEdit);
+
+      upsertCatalogItem(setCatalogsData, catalogDataKey, saved, {
+        isEdit,
+        editingRecord,
       });
 
-      message.success(`${sectionConfig.deleteSuccessLabel ?? "Item"} added.`);
       form.resetFields();
-      onSuccess?.(newItem);
+      onSuccess?.(saved, { isEdit });
       onClose?.();
     } catch (err) {
-      message.error(err?.message || "Something went wrong.");
+      message.error(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Something went wrong.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -328,18 +454,20 @@ export default function AddSectionModal({
           `}
         </style>
 
-        <Text
-          style={{
-            display: "block",
-            color: PRIMARY_GREEN,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "2.5px",
-            marginBottom: 6,
-          }}
-        >
-          NEW
-        </Text>
+        {!isEdit ? (
+          <Text
+            style={{
+              display: "block",
+              color: PRIMARY_GREEN,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "2.5px",
+              marginBottom: 6,
+            }}
+          >
+            NEW
+          </Text>
+        ) : null}
 
         <Title
           level={3}
@@ -400,7 +528,7 @@ export default function AddSectionModal({
 
           {showTypeColumn ? (
             <Form.Item
-              name="type"
+              name="platformType"
               label={<FieldLabel required>Type</FieldLabel>}
               rules={[{ required: true, message: "Select a type" }]}
               extra={

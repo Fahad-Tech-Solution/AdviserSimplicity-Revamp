@@ -11,6 +11,11 @@ const useApi = () => {
     return res.data;
   };
 
+  const deleteApi = async (url, data = {}, config = {}) => {
+    const res = await http.delete(url, { ...config, data });
+    return res.data;
+  };
+
   const put = async (url, data, config = {}) => {
     const res = await http.put(url, data, config);
     return res.data;
@@ -30,7 +35,7 @@ const useApi = () => {
     return http.post(url, data, { responseType: "blob", ...config });
   };
 
-  return { get, post, put, patch, remove, postBlob };
+  return { get, post, put, patch, remove, postBlob, deleteApi };
 };
 
 export default useApi;

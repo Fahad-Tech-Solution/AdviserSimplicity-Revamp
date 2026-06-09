@@ -49,7 +49,7 @@ function DashboardChartIcon() {
     );
 }
 
-export default function SupderAdminDashboardPage() {
+export default function SuperAdminDashboardPage() {
     return (
         <div
             style={{
