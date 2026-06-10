@@ -42,6 +42,11 @@ export function getCatalogSectionCount(data, sectionKey) {
   return getCatalogSectionList(data, sectionKey).length;
 }
 
+export function getUnderlyingInvestments(row = {}) {
+  const investments = row?.arrayOfOffers;
+  return Array.isArray(investments) ? investments : [];
+}
+
 export function getCatalogItemName(item = {}) {
   return (
     item.platformName ??

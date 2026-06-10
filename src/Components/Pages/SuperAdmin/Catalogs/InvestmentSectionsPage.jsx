@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   App as AntdApp,
   Button,
@@ -8,14 +8,22 @@ import {
   Space,
   Tooltip,
   Typography,
-  Upload,
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSetAtom } from "jotai";
 import { BiSearch } from "react-icons/bi";
+import AppModal from "../../../Common/AppModal";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
+import useApi from "../../../../hooks/useApi";
+import { catalogsDataAtom } from "../../../../store/authState";
+import CSVFileUpload from "./components/CSVFileUpload";
+import AddIndividualInvestment from "./components/AddIndividualInvestment";
+import {
+  getUnderlyingInvestments,
+  normalizeCatalogsData,
+} from "./catalogHelpers";
 
-const { Dragger } = Upload;
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
 const headingStyle = { fontFamily: "Georgia, serif" };
@@ -61,12 +69,6 @@ function TypeBadge({ type, fallback = "Bank" }) {
   );
 }
 
-function getUnderlyingInvestments(row = {}) {
-  let investments = row.arrayOfOffers;
-
-  return Array.isArray(investments) ? investments : [];
-}
-
 function getInvestmentName(item = {}) {
   return (
     item.investmentName ?? item.name ?? item.platformName ?? item.fundName ?? ""
@@ -77,87 +79,111 @@ function getInvestmentCode(item = {}) {
   return item.code ?? item.investmentCode ?? item.fundCode ?? item.apir ?? "";
 }
 
-function CsvUploadZone({ onFileSelect }) {
-  const handleBeforeUpload = (file) => {
-    onFileSelect?.(file);
-    return Upload.LIST_IGNORE;
-  };
+function CsvImportButton({ onClick }) {
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <Dragger
-      accept=".csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-      multiple={false}
-      showUploadList={false}
-      beforeUpload={handleBeforeUpload}
-      className="investment-sections-upload"
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
-        flex: 1,
+        width: "100%",
         minHeight: 88,
-        borderRadius: 10,
-        background: "#f9fafb",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
         padding: "20px 24px",
+        borderRadius: 10,
+        border: `1.5px dashed ${isHovered ? PRIMARY_GREEN : "#d1d5db"}`,
+        background: isHovered ? "#f0fdf4" : "#f9fafb",
+        cursor: "pointer",
+        transition: "all 0.15s ease",
       }}
     >
-      <div
+      <span
         style={{
-          display: "flex",
+          width: 40,
+          height: 40,
+          borderRadius: 10,
+          color: "#7c3aed",
+          display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 14,
+          fontSize: 20,
+          flexShrink: 0,
         }}
       >
-        <span
+        📄
+      </span>
+      <div style={{ textAlign: "left" }}>
+        <Text
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            color: "#7c3aed",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 20,
-            flexShrink: 0,
+            display: "block",
+            fontSize: 14,
+            fontWeight: 700,
+            color: "#1e3a5f",
+            lineHeight: 1.35,
           }}
         >
-          📄
-        </span>
-        <div style={{ textAlign: "left" }}>
-          <Text
-            style={{
-              display: "block",
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#1e3a5f",
-              lineHeight: 1.35,
-            }}
-          >
-            + Add From CSV / Excel File
-          </Text>
-          <Text
-            style={{
-              display: "block",
-              marginTop: 2,
-              fontSize: 12,
-              color: "#9ca3af",
-              lineHeight: 1.4,
-            }}
-          >
-            Drag and drop or click to browse
-          </Text>
-        </div>
+          + Add From CSV / Excel File
+        </Text>
+        <Text
+          style={{
+            display: "block",
+            marginTop: 2,
+            fontSize: 12,
+            color: "#9ca3af",
+            lineHeight: 1.4,
+          }}
+        >
+          Drag and drop or click to browse
+        </Text>
       </div>
-    </Dragger>
+    </button>
   );
 }
 
 export default function InvestmentSectionsPage() {
+  const api = useApi();
   const { message } = AntdApp.useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const { row, config } = location.state ?? {};
   const [searchText, setSearchText] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+  const [investments, setInvestments] = useState(() =>
+    getUnderlyingInvestments(row),
+  );
+  const setCatalogsData = useSetAtom(catalogsDataAtom);
 
-  const investments = useMemo(() => getUnderlyingInvestments(row), [row]);
+  const platformId = row?._id ?? row?.id;
+
+  useEffect(() => {
+    setInvestments(getUnderlyingInvestments(row));
+  }, [row]);
+
+  const refreshInvestments = useCallback(async () => {
+    if (!config?.catalogDataKey || !platformId) return;
+
+    try {
+      const res = await api.get("/api/investmentoffer");
+      const normalized = normalizeCatalogsData(res);
+      setCatalogsData(normalized);
+
+      const sectionList = normalized[config.catalogDataKey];
+      const platforms = Array.isArray(sectionList) ? sectionList : [];
+      const updatedPlatform = platforms.find(
+        (item) => (item._id ?? item.id) === platformId,
+      );
+      setInvestments(getUnderlyingInvestments(updatedPlatform ?? row));
+    } catch {
+      // Keep current list if refresh fails.
+    }
+  }, [api, config?.catalogDataKey, platformId, row, setCatalogsData]);
 
   const filteredInvestments = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -169,6 +195,21 @@ export default function InvestmentSectionsPage() {
       return name.includes(query) || code.includes(query);
     });
   }, [investments, searchText]);
+
+  const deleteInvestment = useCallback(
+    async (id) => {
+      try {
+        await api.patch("/api/investmentoffer/Delete", { _id: id });
+        message.success("Investment deleted successfully.");
+        setInvestments(investments.filter((item) => item._id !== id));
+      } catch (error) {
+        message.error("Failed to delete investment.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, message, investments],
+  );
 
   const tableData = useMemo(
     () =>
@@ -235,21 +276,25 @@ export default function InvestmentSectionsPage() {
                 icon={
                   <EditOutlined style={{ color: "#6b7280", fontSize: 14 }} />
                 }
-                onClick={() =>
-                  message.info(`Edit ${record.displayName} — coming soon`)
-                }
+                onClick={() => {
+                  setOpenModal(true);
+                  setModalData({
+                    type: "manual",
+                    record: record,
+                    editing: true,
+                  });
+                }}
               />
             </Tooltip>
             <Tooltip title="Delete">
               <Button
                 type="text"
                 size="small"
+                danger={true}
                 icon={
-                  <DeleteOutlined style={{ color: "#d1d5db", fontSize: 14 }} />
+                  <DeleteOutlined style={{  fontSize: 14 }} />
                 }
-                onClick={() =>
-                  message.info(`Delete ${record.displayName} — coming soon`)
-                }
+                onClick={() => deleteInvestment(record._id)}
               />
             </Tooltip>
           </Space>
@@ -305,7 +350,7 @@ export default function InvestmentSectionsPage() {
           lineHeight: "1.2",
         }}
       >
-        {config?.InvestmentSectionHeading ?? row?.displayName ?? "Investment"}
+        {row?.displayName ?? "Investment"}
       </Title>
       <Text
         style={{
@@ -322,38 +367,53 @@ export default function InvestmentSectionsPage() {
         {investments.length === 1 ? "" : "s"}
       </Text>
 
-      <style>
-        {`
-          .investment-sections-upload.ant-upload-wrapper .ant-upload-drag {
-            border: 1.5px dashed #d1d5db;
-            background: #f9fafb;
-            transition: all 0.15s ease;
-          }
-          .investment-sections-upload.ant-upload-wrapper .ant-upload-drag:hover,
-          .investment-sections-upload.ant-upload-wrapper .ant-upload-drag.ant-upload-drag-hover {
-            border-color: ${PRIMARY_GREEN};
-            background: #f0fdf4;
-          }
-          .investment-sections-upload.ant-upload-wrapper .ant-upload-drag .ant-upload-btn {
-            padding: 0;
-          }
-        `}
-      </style>
+      <AppModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setModalData(null);
+        }}
+        title=""
+        width={modalData?.type === "csv" ? 560 : 520}
+        footer={null}
+      >
+        {modalData?.type === "csv" ? (
+          <CSVFileUpload
+            data={{ ...modalData, row, config }}
+            onClose={() => {
+              setOpenModal(false);
+              setModalData(null);
+            }}
+            onSuccess={refreshInvestments}
+          />
+        ) : (
+          <AddIndividualInvestment
+            data={{ ...modalData, row, config }}
+            onClose={() => {
+              setOpenModal(false);
+              setModalData(null);
+            }}
+            onSuccess={refreshInvestments}
+          />
+        )}
+      </AppModal>
 
       <Row gutter={16}>
         <Col md={12} xs={24} style={{ marginTop: 28 }}>
-          <CsvUploadZone
-            onFileSelect={(file) => {
-              message.info(`Import from "${file.name}" — coming soon`);
+          <CsvImportButton
+            onClick={() => {
+              setOpenModal(true);
+              setModalData({ type: "csv" });
             }}
           />
         </Col>
         <Col md={12} xs={24} style={{ marginTop: 28 }}>
           <button
             type="button"
-            onClick={() =>
-              message.info("Add investment manually — coming soon")
-            }
+            onClick={() => {
+              setOpenModal(true);
+              setModalData({ type: "manual" });
+            }}
             style={{
               flex: 1,
               minHeight: 88,

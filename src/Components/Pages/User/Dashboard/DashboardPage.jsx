@@ -137,7 +137,7 @@ export default function DashboardPage() {
   });
 
   const stats = [
-    { title: "Total FUM", value: "$106M", accent: "#22c55e" },
+    { title: "Total SUM", value: "$106M", accent: "#22c55e" },
     { title: "Annual Premiums", value: "$854K", accent: "#111827" },
     { title: "Ongoing Income", value: "$644K", accent: "#111827" },
     { title: "Ongoing Commission", value: "$118K", accent: "#111827" },

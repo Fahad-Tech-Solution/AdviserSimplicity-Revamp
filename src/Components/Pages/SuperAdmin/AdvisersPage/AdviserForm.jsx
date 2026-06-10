@@ -485,7 +485,7 @@ export default function AdviserForm({
               <Col xs={24} md={12}>
                 <Form.Item
                   name="AFSNumber"
-                  label={<FieldLabel>AFS Number</FieldLabel>}
+                  label={<FieldLabel required>AFS Number</FieldLabel>}
                   rules={[{ required: true, message: "Enter AFS Number" }]}
                 >
                   <Input
@@ -497,7 +497,7 @@ export default function AdviserForm({
               <Col xs={24} md={12}>
                 <Form.Item
                   name="AFSName"
-                  label={<FieldLabel>AFS Name</FieldLabel>}
+                  label={<FieldLabel required>AFS Name</FieldLabel>}
                   rules={[{ required: true, message: "Enter AFS Name" }]}
                 >
                   <Input
@@ -509,7 +509,7 @@ export default function AdviserForm({
               <Col xs={24} md={12}>
                 <Form.Item
                   name="ASIC"
-                  label={<FieldLabel>ASIC</FieldLabel>}
+                  label={<FieldLabel required>ASIC</FieldLabel>}
                   rules={[{ required: true, message: "Enter ASIC" }]}
                 >
                   <Input

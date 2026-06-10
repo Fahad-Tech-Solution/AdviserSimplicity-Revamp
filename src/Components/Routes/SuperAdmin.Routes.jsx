@@ -3,6 +3,7 @@ import AdvisersPage from "../Pages/SuperAdmin/AdvisersPage/AdvisersPage";
 import CatalogSectionPage from "../Pages/SuperAdmin/Catalogs/CatalogSectionPage";
 import InvestmentSectionsPage from "../Pages/SuperAdmin/Catalogs/InvestmentSectionsPage";
 import SuperAdminDashboardPage from "../Pages/SuperAdmin/Dashboard/SuperAdminDashboardPage";
+import KnowledgeBasePage from "../Pages/SuperAdmin/KnowledgeBasePage/KnowledgeBasePage";
 import SuperAdminPricingTablePage from "../Pages/SuperAdmin/PricingTable/SuperAdminPricingTablePage";
 import SettingsPage from "../Pages/SuperAdmin/SettingsPage";
 import ProfilePage from "../Pages/User/Clients/ProfilePage";
@@ -75,6 +76,13 @@ export const superAdminNavRoutes = [
     path: "/subscriptions",
     ...withSpacing({ icon: "💳", label: "Subscriptions", fontSize: "13px" }),
     component: <SuperAdminPricingTablePage />,
+    condition: () => true,
+  },
+  {
+    key: "/super-admin/knowledge",
+    path: "/knowledge",
+    ...withSpacing({ icon: "📖", label: "Knowledge", fontSize: "13px" }),
+    component: <KnowledgeBasePage />,
     condition: () => true,
   },
   {

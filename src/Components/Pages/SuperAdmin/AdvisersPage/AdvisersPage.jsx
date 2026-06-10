@@ -42,21 +42,21 @@ const PLAN_STYLES = {
     color: "#2563eb",
     border: "1px solid #bfdbfe",
   },
-  "Platinum": {
+  Platinum: {
     background: "#eff6ff",
     color: "#2563eb",
     border: "1px solid #bfdbfe",
-  }, 
+  },
   "Silver Plan": {
     background: "#fff7ed",
     color: "#ea580c",
     border: "1px solid #fed7aa",
   },
-  "None":{
+  None: {
     background: "#fff",
     color: "#6b7280",
     border: "1px solid #e5e7eb",
-  }
+  },
 };
 
 const AvatarColors = [
@@ -413,7 +413,7 @@ const AdvisersPage = () => {
     try {
       setAdvisersLoading(true);
       const response = await get("/api/user/Advisers");
-      console.log(response, "response, advisers");
+      // console.log(response, "response, advisers");
       setAdvisers(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error(error);
