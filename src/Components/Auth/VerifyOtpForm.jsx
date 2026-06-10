@@ -92,6 +92,14 @@ export default function VerifyOtpForm() {
         return;
       }
       else if (res?.action === "pricing table") {
+        setLoggedInUser({
+          token: res?.token,
+          email: email,
+          user: res?.user,
+          permissions: res?.user?.roleID?.permissions,
+        });
+        console.log(isAdminLogin, "inside verify otp form");
+        
         navigate("/auth/pricing-table", { replace: true });
         message.success("OTP verified. Please select a plan to continue.");
         return;

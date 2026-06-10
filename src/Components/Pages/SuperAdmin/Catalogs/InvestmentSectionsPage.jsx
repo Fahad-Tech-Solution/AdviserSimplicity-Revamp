@@ -340,7 +340,7 @@ export default function InvestmentSectionsPage() {
         `}
       </style>
 
-      <Row gutter={16} >
+      <Row gutter={16}>
         <Col md={12} xs={24} style={{ marginTop: 28 }}>
           <CsvUploadZone
             onFileSelect={(file) => {
