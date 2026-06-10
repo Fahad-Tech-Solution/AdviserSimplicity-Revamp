@@ -91,6 +91,11 @@ export default function VerifyOtpForm() {
         message.success("OTP verified. Login successful.");
         return;
       }
+      else if (res?.action === "pricing table") {
+        navigate("/auth/pricing-table", { replace: true });
+        message.success("OTP verified. Please select a plan to continue.");
+        return;
+      }
 
       message.success("OTP verified. Login successful.");
       navigate(redirectTo, { replace: true });
