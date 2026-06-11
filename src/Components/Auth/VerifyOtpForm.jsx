@@ -67,7 +67,7 @@ export default function VerifyOtpForm() {
       setSubmitting(true);
       setError("");
 
-      const cleanedOtp = values.otp?.trim();
+      const cleanedOtp = String(values.otp ?? "").replace(/\D/g, "");
       const res = await api.post("/api/auth/login-verify-otp", {
         email,
         otp: cleanedOtp,
@@ -172,6 +172,7 @@ export default function VerifyOtpForm() {
             rules={[
               { required: true, message: "OTP is required" },
               { len: 6, message: "OTP must be 6 digits" },
+              { pattern: /^\d{6}$/, message: "OTP must contain numbers only" },
             ]}
             className="mb-0"
             extra={
@@ -188,7 +189,12 @@ export default function VerifyOtpForm() {
               </span>
             }
           >
-            <Input.OTP length={6} size="large" />
+            <Input.OTP
+              length={6}
+              size="large"
+              inputMode="numeric"
+              formatter={(value) => value.replace(/\D/g, "")}
+            />
           </Form.Item>
 
           <Button

@@ -464,7 +464,14 @@ export default function AdviserForm({
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item name="ABN" label={<FieldLabel>ABN</FieldLabel>}>
+                <Form.Item
+                  name="ABN"
+                  label={<FieldLabel required>ABN</FieldLabel>}
+                  rules={[
+                    { required: true, message: "Enter ABN" },
+                    { pattern: /^\d+$/, message: "Numbers only" },
+                  ]}
+                >
                   <Input
                     placeholder="12 345 678 901"
                     style={{ borderRadius: 8 }}

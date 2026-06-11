@@ -227,7 +227,7 @@ function AdviserStatusTag({ status }) {
         alignItems: "center",
         gap: 6,
         padding: "2px 10px",
-        borderRadius: 6,
+        borderRadius: 15,
         fontSize: 11,
         fontWeight: 600,
         background: isActive ? "#f0fdf4" : "#fef2f2",
@@ -313,7 +313,7 @@ function StatCard({ title, value, subtext, subtextColor, showActiveDot }) {
             fontSize: 11,
             fontFamily: "Arial",
             color: subtextColor || "#6b7280",
-            fontWeight: 700,
+            fontWeight: 600,
           }}
         >
           {subtext}
@@ -568,7 +568,10 @@ const AdvisersPage = () => {
         key: "plan",
         width: 110,
         render: (plan, row, index) => (
-          <PlanBadge plan={row.productName} index={index} />
+          <PlanBadge
+            plan={row?.subscription?.productName || ""}
+            index={index}
+          />
         ),
       },
       {

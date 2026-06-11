@@ -41,11 +41,10 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
-      { value: "Building Society", label: "Building Society" },
-      { value: "Mutual Bank", label: "Mutual Bank" },
-      { value: "Other", label: "Other" },
+      { value: "Wrap", label: "Wrap" },
+      { value: "Master Trust", label: "Master Trust" },
+      { value: "IDPS", label: "IDPS" },
+      { value: "Investor Directed", label: "Investor Directed" },
     ],
   },
   InvestmentBonds: {
@@ -71,17 +70,16 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
-      { value: "Building Society", label: "Building Society" },
-      { value: "Mutual Bank", label: "Mutual Bank" },
-      { value: "Other", label: "Other" },
+      { value: "Industry", label: "Industry" },
+      { value: "Retail", label: "Retail" },
+      { value: "Public Sector", label: "Public Sector" },
+      { value: "Corporate", label: "Corporate" },
     ],
   },
   AccountBasedPensions: {
     modalTitle: "Add Account Based Pension",
     modalSubtitle: "Add a new account based pension provider to the catalog.",
-    nameLabel: "Provider Name",
+    nameLabel: "Pension Name",
     namePlaceholder: "e.g. AMP",
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
@@ -96,22 +94,21 @@ const SECTION_ADD_FORM_CONFIG = {
   Annuities: {
     modalTitle: "Add Annuity",
     modalSubtitle: "Add a new annuity provider to the catalog.",
-    nameLabel: "Provider Name",
+    nameLabel: "Annuity Name",
     namePlaceholder: "e.g. Challenger",
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
-      { value: "Building Society", label: "Building Society" },
-      { value: "Mutual Bank", label: "Mutual Bank" },
-      { value: "Other", label: "Other" },
+      { value: "Lifetime", label: "Lifetime" },
+      { value: "Term", label: "Term" },
+      { value: "Fixed-Term", label: "Fixed-Term" },
+      { value: "Deferred Lifetime", label: "Deferred Lifetime" },
     ],
   },
   PersonalInsurances: {
     modalTitle: "Add Personal Insurance",
     modalSubtitle: "Add a new personal insurance provider to the catalog.",
-    nameLabel: "Provider Name",
+    nameLabel: "Insurer Name",
     namePlaceholder: "e.g. TAL",
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
@@ -215,7 +212,7 @@ function buildFormConfig(sectionConfig = {}, isEdit = false) {
     catalogTitle = "Catalog",
     addButtonLabel = "Add Item",
     deleteSuccessLabel = "Item",
-    defaultType = "Bank",
+    defaultType = "",
     showTypeColumn = true,
   } = sectionConfig;
 
@@ -529,7 +526,14 @@ export default function AddSectionModal({
           {showTypeColumn ? (
             <Form.Item
               name="platformType"
-              label={<FieldLabel required>Type</FieldLabel>}
+              label={
+                <FieldLabel required>
+                  {" "}
+                  {catalogDataKey === "PersonalInsurances"
+                    ? "Product Name"
+                    : "Type"}
+                </FieldLabel>
+              }
               rules={[{ required: true, message: "Select a type" }]}
               extra={
                 <Text
@@ -539,11 +543,15 @@ export default function AddSectionModal({
                 </Text>
               }
             >
-              <Select
-                placeholder="Select type..."
-                options={typeOptions}
-                popupMatchSelectWidth
-              />
+              {catalogDataKey === "PersonalInsurances" ? (
+                <Input placeholder="Enter product name" />
+              ) : (
+                <Select
+                  placeholder="Select type..."
+                  options={typeOptions}
+                  popupMatchSelectWidth
+                />
+              )}
             </Form.Item>
           ) : null}
         </Form>

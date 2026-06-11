@@ -244,6 +244,7 @@ export default function CatalogSectionPage() {
       {
         title: "NAME",
         key: "name",
+        width: 200,
         render: (_, row, index) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
@@ -273,7 +274,8 @@ export default function CatalogSectionPage() {
 
     if (showTypeColumn) {
       baseColumns.push({
-        title: "TYPE",
+        title:
+          catalogDataKey === "PersonalInsurances" ? "Product Name" : "TYPE",
         dataIndex: "platformType",
         key: "platformType",
         width: 140,
@@ -303,7 +305,7 @@ export default function CatalogSectionPage() {
         render: (_, row) => (
           <Space size={4}>
             {showTypeInvestmentSection && (
-              <Tooltip title="Edit">
+              <Tooltip title="Upload CSV">
                 <Button
                   type="text"
                   size="small"
@@ -423,7 +425,6 @@ export default function CatalogSectionPage() {
           />
           <Button
             type="primary"
-            icon={<MdAdd size={15} />}
             onClick={() => {
               setEditingRecord(null);
               setAddModalOpen(true);
@@ -437,7 +438,7 @@ export default function CatalogSectionPage() {
               borderColor: PRIMARY_GREEN,
             }}
           >
-            {addButtonLabel}
+            <MdAdd size={15} /> {addButtonLabel}
           </Button>
         </Space>
       </div>

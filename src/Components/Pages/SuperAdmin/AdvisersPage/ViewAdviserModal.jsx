@@ -53,25 +53,26 @@ function getRoleLabel(adviser = {}) {
 function getSubscriptionDetails(adviser = {}) {
   const sub = adviser.subscription ?? adviser.subscriptionDetails ?? {};
 
-  const paymentMethod =
-    sub.paymentMethod ??
-    (sub.cardBrand && sub.cardLast4
-      ? `${sub.cardBrand} ending in ${sub.cardLast4}`
-      : sub.cardLast4
-        ? `VISA ending in ${sub.cardLast4}`
-        : null);
+  const paymentMethod = "Credit Card/Debit Card";
 
-  const daysLeft =
-    sub.daysLeft ??
-    sub.daysRemaining ??
-    (sub.isUnlimited || sub.unlimited ? "Unlimited" : null);
+  const daysLeft = (() => {
+    const start = sub.createdAt ? new Date(sub.createdAt) : null;
+    const end = sub.subscriptionPeriodEnd ? new Date(sub.subscriptionPeriodEnd) : null;
+    if (!start || !end || isNaN(start) || isNaN(end)) return "—";
+    const diff = Math.max(0, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    return diff;
+  })();
+    
 
   return {
-    plan: sub.planName ?? adviser.plan ?? adviser.planName ?? "—",
+    plan: sub.productName ?? adviser.plan ?? adviser.planName ?? "—",
     status: adviser.isActive === false ? "Disabled" : "Active",
     daysLeft,
-    billingCycle: sub.billingCycle ?? sub.interval ?? sub.billingInterval ?? "—",
-    nextRenewal: sub.nextRenewal ?? sub.renewalDate ?? "—",
+    nextRenewal: sub.subscriptionPeriodEnd ? new Date(sub.subscriptionPeriodEnd).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }) : "—",
     paymentMethod,
   };
 }
@@ -137,12 +138,7 @@ function PlanAccessBadge({ label }) {
   );
 }
 
-export default function ViewAdviserModal({
-  open,
-  onClose,
-  adviser,
-  onEdit,
-}) {
+export default function ViewAdviserModal({ open, onClose, adviser, onEdit }) {
   if (!adviser) return null;
 
   const subscription = getSubscriptionDetails(adviser);
@@ -274,7 +270,7 @@ export default function ViewAdviserModal({
         <ViewSection title="Subscription">
           <Row gutter={[24, 20]}>
             <DetailField label="Plan">
-              <PlanAccessBadge label={subscription.plan} />
+              <PlanAccessBadge label={subscription?.plan || ""} />
             </DetailField>
             <DetailField label="Status" value={subscription.status} />
             <DetailField label="Days Left">
@@ -292,10 +288,6 @@ export default function ViewAdviserModal({
                 {formatDisplayValue(subscription.daysLeft)}
               </Text>
             </DetailField>
-            <DetailField
-              label="Billing Cycle"
-              value={subscription.billingCycle}
-            />
             <DetailField
               label="Next Renewal"
               value={subscription.nextRenewal}

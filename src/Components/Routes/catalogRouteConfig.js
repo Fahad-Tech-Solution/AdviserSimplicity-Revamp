@@ -31,7 +31,7 @@ export const catalogChildRouteConfigs = [
     paginationItemLabel: "platforms",
     deleteSuccessLabel: "Platform",
     defaultType: "Bank",
-    showTypeColumn: false,
+    showTypeColumn: true,
     showTypeInvestmentSection: true,
   },
   {
@@ -46,7 +46,7 @@ export const catalogChildRouteConfigs = [
     paginationItemLabel: "bonds",
     deleteSuccessLabel: "Bond",
     defaultType: "Bank",
-    showTypeColumn: false,
+    showTypeColumn: true,
     showTypeInvestmentSection: true,
   },
   {
@@ -61,7 +61,7 @@ export const catalogChildRouteConfigs = [
     paginationItemLabel: "funds",
     deleteSuccessLabel: "Fund",
     defaultType: "Bank",
-    showTypeColumn: false,
+    showTypeColumn: true,
     showTypeInvestmentSection: true,
   },
   {
@@ -76,7 +76,7 @@ export const catalogChildRouteConfigs = [
     paginationItemLabel: "pensions",
     deleteSuccessLabel: "Pension",
     defaultType: "Bank",
-    showTypeColumn: false,
+    showTypeColumn: true,
     showTypeInvestmentSection: true,
   },
   {
@@ -101,7 +101,7 @@ export const catalogChildRouteConfigs = [
     catalogIcon: "🛡️",
     menuIcon: "🛡️",
     menuLabel: "Personal Insurances",
-    addButtonLabel: "Add Insurance",
+    addButtonLabel: "Add Personal Insurance",
     paginationItemLabel: "insurances",
     deleteSuccessLabel: "Insurance",
     defaultType: "Bank",
