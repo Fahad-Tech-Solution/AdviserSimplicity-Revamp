@@ -1,25 +1,52 @@
 import { useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
-import { loggedInUser } from "../../store/authState";
-import { Spin } from "antd";
 import { Navigate } from "react-router-dom";
+import { Spin } from "antd";
+import useAuthSession from "../../hooks/useAuthSession";
+import { loggedInUser } from "../../store/authState";
+import {
+  getUserPermissions,
+  hasRequiredPermission,
+  isAuthenticatedSession,
+} from "../../utils/authSession";
 
 export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   const session = useAtomValue(loggedInUser);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { fetchSession, clearSession } = useAuthSession();
+  const [authStatus, setAuthStatus] = useState("loading");
 
-  // Check if the atom has been hydrated from storage
   useEffect(() => {
-    // Small delay to ensure atom storage is loaded
-    const timer = setTimeout(() => {
-      setIsHydrated(true);
-    }, 100);
+    let cancelled = false;
 
-    return () => clearTimeout(timer);
-  }, []);
+    const verifySession = async () => {
+      setAuthStatus("loading");
+      const result = await fetchSession();
 
-  // Show loading while waiting for hydration
-  if (!isHydrated) {
+      if (!cancelled) {
+        setAuthStatus(result.ok ? "authenticated" : "unauthenticated");
+      }
+    };
+
+    verifySession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSession]);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearSession();
+      setAuthStatus("unauthenticated");
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
+  }, [clearSession]);
+
+  if (authStatus === "loading") {
     return (
       <div
         style={{
@@ -31,49 +58,16 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
       >
         <Spin size="large" />
       </div>
-    ); // or your spinner component
+    );
   }
 
-  // If session is still null after hydration, consider it as not authenticated
-  if (!session) {
+  if (authStatus === "unauthenticated" || !isAuthenticatedSession(session)) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  const { token, user, permissions = [] } = session;
+  const allPermissions = getUserPermissions(session);
 
-  const isAuthenticated = Boolean(token && user);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
-  }
-
-  // Primary role permissions (unchanged for normal users)
-  const primaryPermissions = permissions;
-
-  // Extra permissions from secondary roles (empty [] for most users).
-  // API may send a flat list and/or populated role objects on additionalRoleIDs.
-  const additionalRolePermissions = Array.isArray(user?.additionalRoleIDs)
-    ? user.additionalRoleIDs
-    : [];
-
-  const permissionsFromAdditionalRoles = (
-    Array.isArray(user?.additionalRoleIDs) ? user.additionalRoleIDs : []
-  ).flatMap((role) => {
-    if (typeof role === "string") return [];
-    return role?.permissions ?? role?.roleID?.permissions ?? [];
-  });
-
-  const allPermissions = [
-    ...primaryPermissions,
-    ...additionalRolePermissions,
-    ...permissionsFromAdditionalRoles,
-  ];
-
-  const hasPermission =
-    requiredPermissions.length === 0 ||
-    requiredPermissions.some((p) => allPermissions.includes(p));
-
-  if (!hasPermission) {
+  if (!hasRequiredPermission(allPermissions, requiredPermissions)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

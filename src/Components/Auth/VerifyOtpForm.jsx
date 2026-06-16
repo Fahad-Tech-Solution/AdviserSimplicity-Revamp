@@ -9,10 +9,9 @@ import {
   Space,
   Typography,
 } from "antd";
-import { useSetAtom } from "jotai";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
 import useApi from "../../hooks/useApi";
-import { loggedInUser } from "../../store/authState";
+import useAuthSession from "../../hooks/useAuthSession";
 
 const { Title, Text } = Typography;
 const OTP_EXPIRY_SECONDS = 10 * 60;
@@ -30,7 +29,7 @@ export default function VerifyOtpForm() {
   const location = useLocation();
   const api = useApi();
   const { message } = AntdApp.useApp();
-  const setLoggedInUser = useSetAtom(loggedInUser);
+  const { saveSessionFromAuthResponse } = useAuthSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
@@ -73,16 +72,8 @@ export default function VerifyOtpForm() {
         otp: cleanedOtp,
       });
 
-      console.log(res);
-
       if (res?.action === "dashboard" || res?.action === "superAdmin") {
-        setLoggedInUser({
-          token: res?.token,
-          email: email,
-          user: res?.user,
-          permissions: res?.user?.roleID?.permissions,
-        });
-        console.log(isAdminLogin, "inside verify otp form");
+        saveSessionFromAuthResponse(res, email);
         if (isAdminLogin) {
           navigate("/super-admin", { replace: true });
         } else {
@@ -90,16 +81,9 @@ export default function VerifyOtpForm() {
         }
         message.success("OTP verified. Login successful.");
         return;
-      }
-      else if (res?.action === "pricing table") {
-        setLoggedInUser({
-          token: res?.token,
-          email: email,
-          user: res?.user,
-          permissions: res?.user?.roleID?.permissions,
-        });
-        console.log(isAdminLogin, "inside verify otp form");
-        
+      } else if (res?.action === "pricing table") {
+        saveSessionFromAuthResponse(res, email);
+
         navigate("/auth/pricing-table", { replace: true });
         message.success("OTP verified. Please select a plan to continue.");
         return;
@@ -110,8 +94,8 @@ export default function VerifyOtpForm() {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-        err?.message ||
-        "OTP verification failed.",
+          err?.message ||
+          "OTP verification failed.",
       );
     } finally {
       setSubmitting(false);

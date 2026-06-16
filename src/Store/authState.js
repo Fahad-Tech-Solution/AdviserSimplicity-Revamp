@@ -1,8 +1,8 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-export const loggedInUser = atomWithStorage("loggedInUser", {
-  token: "",
+/** In-memory session only — auth cookie is HttpOnly and not stored in JS. */
+export const loggedInUser = atom({
   email: "",
   user: null,
   permissions: [],

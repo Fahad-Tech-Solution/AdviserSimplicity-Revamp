@@ -101,7 +101,7 @@ export const catalogChildRouteConfigs = [
     catalogIcon: "🛡️",
     menuIcon: "🛡️",
     menuLabel: "Personal Insurances",
-    addButtonLabel: "Add Personal Insurance",
+    addButtonLabel: "Add Insurance product",
     paginationItemLabel: "insurances",
     deleteSuccessLabel: "Insurance",
     defaultType: "Bank",

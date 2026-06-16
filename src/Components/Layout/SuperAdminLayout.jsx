@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { LogoutOutlined, MenuOutlined, UserOutlined } from "@ant-design/icons";
 import {
-  message,
   Drawer,
   Layout,
   Menu,
@@ -25,8 +24,9 @@ import {
   superAdminNavRoutes,
   superAdminSubMenuRoutes,
 } from "../Routes/SuperAdmin.Routes.jsx";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { loggedInUser } from "../../store/authState.js";
+import useAuthSession from "../../hooks/useAuthSession";
 import { HiDotsVertical } from "react-icons/hi";
 import { capitalizeWords } from "../../hooks/helpers.js";
 
@@ -39,7 +39,7 @@ export default function SuperAdminLayout() {
   const isMobile = !screens.lg;
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
-  const setLoggedInUser = useSetAtom(loggedInUser);
+  const { logout } = useAuthSession();
 
   const navItems = useMemo(() => {
     const passes = (route) => route.condition?.() !== false;
@@ -85,12 +85,6 @@ export default function SuperAdminLayout() {
     if (info.key.startsWith("/")) {
       navigate(info.key);
     }
-  };
-
-  const logout = () => {
-    setLoggedInUser({});
-    navigate("/auth/login", { replace: true });
-    message.success("Logged out successfully");
   };
 
   return (

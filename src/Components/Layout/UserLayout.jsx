@@ -44,6 +44,8 @@ import {
   SelectedClient,
 } from "../../store/authState.js";
 import useUserDashboardData from "../../hooks/useUserDashboardData";
+import useAuthSession from "../../hooks/useAuthSession";
+import { isAuthenticatedSession } from "../../utils/authSession";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -61,7 +63,7 @@ export default function UserLayout() {
   const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
-  const setLoggedInUser = useSetAtom(loggedInUser);
+  const { logout } = useAuthSession();
 
   const navItems = useMemo(() => {
     const passes = (route) => route.condition?.(discoveryQuestions) !== false;
@@ -82,7 +84,7 @@ export default function UserLayout() {
   }, [discoveryQuestions]);
 
   useUserDashboardData({
-    enabled: Boolean(session?.token),
+    enabled: isAuthenticatedSession(session),
   });
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -121,12 +123,6 @@ export default function UserLayout() {
 
       navigate(info.key);
     }
-  };
-
-  const logout = () => {
-    setLoggedInUser({});
-    navigate("/auth/login", { replace: true });
-    message.success("Logged out successfully");
   };
 
   return (

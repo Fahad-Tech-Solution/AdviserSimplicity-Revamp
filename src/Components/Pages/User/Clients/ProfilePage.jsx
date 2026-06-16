@@ -17,6 +17,7 @@ import { loggedInUser } from "../../../../store/authState";
 import profileBanner from "../../../../assets/image/Adviser-Simplicity-Profile-Green-Banner.png";
 import { Link } from "react-router-dom";
 import { capitalizeFirst } from "../../../../hooks/helpers";
+import useAuthSession from "../../../../hooks/useAuthSession";
 import { MdOutlineInfo } from "react-icons/md";
 import { IoSearchOutline } from "react-icons/io5";
 import AppModal from "../../../Common/AppModal";
@@ -141,6 +142,7 @@ function SummaryMetric({ label, value }) {
 
 export default function ProfilePage() {
   const session = useAtomValue(loggedInUser);
+  const { logout } = useAuthSession();
   const user = session?.user || {};
   const permissions = user?.roleID?.permissions ?? session?.permissions ?? [];
   const fullName = getFullName(user);
@@ -265,7 +267,7 @@ export default function ProfilePage() {
 
             <Space wrap>
               <Button icon={<EditOutlined />}>Edit</Button>
-              <Button danger icon={<LogoutOutlined />}>
+              <Button danger icon={<LogoutOutlined />} onClick={logout}>
                 Logout
               </Button>
             </Space>

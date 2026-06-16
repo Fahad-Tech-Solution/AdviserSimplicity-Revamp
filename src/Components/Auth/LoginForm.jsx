@@ -2,11 +2,10 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Alert, App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { useAtomValue, useSetAtom } from "jotai";
 import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
 import useApi from "../../hooks/useApi";
-import { loggedInUser } from "../../store/authState";
+import useAuthSession from "../../hooks/useAuthSession";
 
 const { Title, Text } = Typography;
 
@@ -15,8 +14,7 @@ export default function LoginForm() {
   const location = useLocation();
   const api = useApi();
   const { message } = AntdApp.useApp();
-  const setLoggedInUser = useSetAtom(loggedInUser);
-  const loggedInUserValue = useAtomValue(loggedInUser);
+  const { saveSessionFromAuthResponse } = useAuthSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,12 +43,7 @@ export default function LoginForm() {
           state: { email: values.email.toLowerCase().trim(), isAdminLogin: isAdminLogin },
         });
       } else {
-        setLoggedInUser({
-          token: res?.token,
-          email: values.email.toLowerCase().trim(),
-          user: res?.user,
-          permissions: res?.user?.roleID?.permissions,
-        });
+        saveSessionFromAuthResponse(res, values.email);
 
         if (res?.action === "pricing table") {
           navigate("/auth/pricing-table", { replace: true });
