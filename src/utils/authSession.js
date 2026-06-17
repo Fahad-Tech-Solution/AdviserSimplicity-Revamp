@@ -37,12 +37,14 @@ export function getUserPermissions(session = {}) {
     ? permissions
     : user?.roleID?.permissions ?? user?.permissions ?? [];
 
-  const fromAdditionalRoles = (
+  // console.log("User", user);
+
+  const fromAdditionalRoles = 
     Array.isArray(user?.additionalRoleIDs) ? user.additionalRoleIDs : []
-  ).flatMap((role) => {
-    if (!role || typeof role === "string") return [];
-    return role?.permissions ?? role?.roleID?.permissions ?? [];
-  });
+  
+
+  // console.log("primary", primary);
+  // console.log("fromAdditionalRoles", fromAdditionalRoles);
 
   return [...new Set([...primary, ...fromAdditionalRoles].filter(Boolean))];
 }
