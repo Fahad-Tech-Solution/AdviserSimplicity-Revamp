@@ -37,14 +37,9 @@ export function getUserPermissions(session = {}) {
     ? permissions
     : user?.roleID?.permissions ?? user?.permissions ?? [];
 
-  // console.log("User", user);
-
   const fromAdditionalRoles = 
     Array.isArray(user?.additionalRoleIDs) ? user.additionalRoleIDs : []
   
-
-  // console.log("primary", primary);
-  // console.log("fromAdditionalRoles", fromAdditionalRoles);
 
   return [...new Set([...primary, ...fromAdditionalRoles].filter(Boolean))];
 }

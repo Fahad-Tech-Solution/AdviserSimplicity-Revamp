@@ -178,6 +178,7 @@ function PlanCard({
   isPopular,
   onSubscribe,
   subscribingPriceId,
+  activeUsers,
 }) {
   const prices = Array.isArray(plan?.prices) ? plan.prices : [];
   const monthlyPrice = prices.find((p) => p.interval === "month");
@@ -333,10 +334,15 @@ function PlanCard({
         }}
       >
         <ActiveDot size={7} marginRight={0} />
-        <span>
-          {subscriberCount !== null
+        <span
+          onClick={() => {
+            console.log(activeUsers, plan);
+          }}
+        >
+          {/* {subscriberCount !== null
             ? `${subscriberCount} active subscriber${subscriberCount === 1 ? "" : "s"}`
-            : "— active subscribers"}
+            : "— active subscribers"} */}
+          {activeUsers?.[plan.name] || "NaN"} active subscribers
         </span>
       </div>
 
@@ -370,6 +376,7 @@ export default function SuperAdminPricingTablePage() {
   const navigate = useNavigate();
 
   const [plans, setPlans] = useState([]);
+  const [activeUsers, setActiveUsers] = useState({});
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [subscribingPriceId, setSubscribingPriceId] = useState("");
@@ -379,6 +386,11 @@ export default function SuperAdminPricingTablePage() {
       setIsLoading(true);
       const res = await api.get("/api/products-with-prices");
       setPlans(Array.isArray(res?.products) ? res.products : []);
+      setActiveUsers(
+        res?.activeUsersByPlan && typeof res.activeUsersByPlan === "object"
+          ? res.activeUsersByPlan
+          : {},
+      );
     } catch (err) {
       setPlans([]);
       message.error(
@@ -550,6 +562,7 @@ export default function SuperAdminPricingTablePage() {
             >
               <PlanCard
                 plan={plan}
+                activeUsers={activeUsers}
                 planIndex={index}
                 isYearly={isYearly}
                 isPopular={index === popularPlanIndex}

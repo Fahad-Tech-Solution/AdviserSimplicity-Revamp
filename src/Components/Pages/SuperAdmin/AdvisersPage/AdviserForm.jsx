@@ -343,8 +343,8 @@ export default function AdviserForm({
                       message: "First name must be at least 2 characters",
                     },
                     {
-                      pattern: /^[A-Za-z]+$/,
-                      message: "First name can only contain letters",
+                      pattern: /^[A-Za-z ]+$/,
+                      message: "First name can only contain letters and spaces",
                     },
                   ]}
                 >
@@ -362,8 +362,8 @@ export default function AdviserForm({
                       message: "Last name must be at least 2 characters",
                     },
                     {
-                      pattern: /^[A-Za-z]+$/,
-                      message: "Last name can only contain letters",
+                      pattern: /^[A-Za-z ]+$/,
+                      message: "Last name can only contain letters and spaces",
                     },
                   ]}
                 >
@@ -373,7 +373,25 @@ export default function AdviserForm({
               <Col xs={24} md={12}>
                 <Form.Item
                   name="phoneNumber"
-                  label={<FieldLabel>Phone</FieldLabel>}
+                  label={<FieldLabel required>Phone</FieldLabel>}
+                  rules={[
+                    {
+                      validator: (_, value) => {
+                        if (!value) {
+                          return Promise.resolve();
+                        }
+                        const normalized = value.replace(/\s+/g, "");
+                        const auPhoneRegex = /^(\+61|0)[2-478]\d{8}$/;
+                        return auPhoneRegex.test(normalized)
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error(
+                                "Enter a valid Australian phone number",
+                              ),
+                            );
+                      },
+                    },
+                  ]}
                 >
                   <Input
                     placeholder="+61 412 345 678"
@@ -493,7 +511,10 @@ export default function AdviserForm({
                 <Form.Item
                   name="AFSNumber"
                   label={<FieldLabel required>AFS Number</FieldLabel>}
-                  rules={[{ required: true, message: "Enter AFS Number" }]}
+                  rules={[
+                    { required: true, message: "Enter AFS Number" },
+                    { pattern: /^\d+$/, message: "Numbers only" },
+                  ]}
                 >
                   <Input
                     placeholder="AFSL 234567"
