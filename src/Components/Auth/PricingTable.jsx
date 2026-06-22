@@ -16,6 +16,7 @@ import { ArrowRightOutlined, CheckOutlined } from "@ant-design/icons";
 import { useAtomValue } from "jotai";
 import { useLocation, useNavigate } from "react-router-dom";
 import useApi from "../../hooks/useApi";
+import useAuthSession from "../../hooks/useAuthSession";
 import { loggedInUser } from "../../store/authState";
 
 const { Title, Text } = Typography;
@@ -40,10 +41,12 @@ export default function PricingTable() {
   const location = useLocation();
   const navigate = useNavigate();
   const session = useAtomValue(loggedInUser);
+  const { fetchSession, clearSession } = useAuthSession();
 
   const [plans, setPlans] = useState([]);
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authStatus, setAuthStatus] = useState("loading");
   const [subscribingPriceId, setSubscribingPriceId] = useState("");
   const [hasPurchasedSubscription, setHasPurchasedSubscription] =
     useState(false);
@@ -69,6 +72,37 @@ export default function PricingTable() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verifySession = async () => {
+      setAuthStatus("loading");
+      const result = await fetchSession();
+
+      if (!cancelled) {
+        setAuthStatus(result.ok ? "authenticated" : "unauthenticated");
+      }
+    };
+
+    verifySession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSession]);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearSession();
+      setAuthStatus("unauthenticated");
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired);
+    };
+  }, [clearSession]);
 
   useEffect(() => {
     fetchPricingPlans();
@@ -115,7 +149,7 @@ export default function PricingTable() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || authStatus === "loading") {
     return (
       <div
         style={{

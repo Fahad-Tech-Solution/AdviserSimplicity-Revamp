@@ -260,7 +260,7 @@ export default function ReferenceMaterialModal({
             borderRadius: 8,
           }}
         >
-          Upload &amp; Parse
+          Upload &amp; Paste
         </Button>
       ) : null}
       {activeTab === TAB_KEYS.ADD ? (

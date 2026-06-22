@@ -40,7 +40,10 @@ export default function LoginForm() {
         message.success(res?.message);
         navigate("/auth/otp-validation", {
           replace: true,
-          state: { email: values.email.toLowerCase().trim(), isAdminLogin: isAdminLogin },
+          state: {
+            email: values.email.toLowerCase().trim(),
+            isAdminLogin: isAdminLogin,
+          },
         });
       } else {
         saveSessionFromAuthResponse(res, values.email);
@@ -60,9 +63,10 @@ export default function LoginForm() {
     } catch (err) {
       let msg = err?.response?.data?.message || err?.message || "Login failed.";
       //if error is 401, show "Invalid email or password"
-      if (err?.response?.status === 401) {
-        msg = "Invalid email or password";
-      }
+      // if (err?.response?.status === 401) {
+      //   msg = "Invalid email or password";
+      // }
+      message.error(msg);
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -76,7 +80,6 @@ export default function LoginForm() {
           level={3}
           style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}
           className="text-center"
-         
         >
           {isAdminLogin ? "Admin Login" : "Login"}
         </Title>

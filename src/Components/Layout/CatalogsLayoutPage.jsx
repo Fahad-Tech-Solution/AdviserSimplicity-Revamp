@@ -104,7 +104,8 @@ export default function CatalogsLayoutPage() {
     () =>
       catalogChildRouteConfigs.filter(
         (route) =>
-          route.condition?.() !== false && !route.switchToInvestmentSectionsPage,
+          route.condition?.() !== false &&
+          !route.switchToInvestmentSectionsPage,
       ),
     [],
   );
@@ -197,7 +198,7 @@ export default function CatalogsLayoutPage() {
           fontSize: 12,
           color: "#6b7280",
           fontFamily: "Arial, sans-serif",
-          maxWidth: 580,
+          // maxWidth: 580,
           lineHeight: 1.6,
         }}
       >

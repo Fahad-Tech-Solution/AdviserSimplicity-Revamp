@@ -96,8 +96,8 @@ function CsvImportButton({ onClick }) {
         justifyContent: "center",
         gap: 14,
         padding: "20px 24px",
-        borderRadius: 10,
-        border: `1.5px dashed ${isHovered ? PRIMARY_GREEN : "#d1d5db"}`,
+        borderRadius: 15,
+        border: `2px dashed ${isHovered ? PRIMARY_GREEN : "#d1d5db"}`,
         background: isHovered ? "#f0fdf4" : "#f9fafb",
         cursor: "pointer",
         transition: "all 0.15s ease",
@@ -249,7 +249,7 @@ export default function InvestmentSectionsPage() {
         title: "CODE",
         dataIndex: "displayCode",
         key: "displayCode",
-        width: 160,
+        // width: 160,
         render: (code) => (
           <span
             style={{
@@ -362,8 +362,8 @@ export default function InvestmentSectionsPage() {
           lineHeight: "20px",
         }}
       >
-        <TypeBadge type={row?.type} fallback={config?.defaultType} />{" "}
-        {investments.length} underlying investment
+        <TypeBadge type={row?.type} fallback={config?.defaultType} />{" "} &nbsp;&nbsp;
+        {investments.length} underlying investment 
         {investments.length === 1 ? "" : "s"}
       </Text>
 
@@ -423,7 +423,7 @@ export default function InvestmentSectionsPage() {
               alignItems: "center",
               justifyContent: "center",
               padding: "20px 24px",
-              borderRadius: 10,
+              borderRadius: 15,
               border: "none",
               background: PRIMARY_GREEN,
               color: "#fff",

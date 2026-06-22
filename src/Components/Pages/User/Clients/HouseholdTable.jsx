@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Avatar, Button, Dropdown, message, Spin, Tooltip } from "antd";
+import {
+  Avatar,
+  Button,
+  ConfigProvider,
+  Dropdown,
+  message,
+  notification,
+  Spin,
+  Tooltip,
+} from "antd";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
 import { normalizeMyClientsList } from "../../../../hooks/helpers";
 import {
@@ -169,7 +178,6 @@ function rowMatchesSearch(row, queryRaw) {
 }
 
 const HouseholdTable = ({ onAction, searchText = "" }) => {
-
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
 
@@ -180,7 +188,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const setGoalsData = useSetAtom(goalsDataAtom);
   const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
 
-  const { get } = useApi();
+  const { get, post } = useApi();
 
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -204,8 +212,8 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const DownloadReport = async (row) => {
     setLoading(true);
     try {
-    await generatePersonalDetailsDocument(
-      row?._id || "",
+      await generatePersonalDetailsDocument(
+        row?._id || "",
         "template.docx",
         `Adviser Simplicity Fact Find of ${row?.client?.clientPreferredName || "Client"}.docx`,
       );
@@ -215,7 +223,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
@@ -302,9 +310,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         navigate(`/user/discovery/personal-details`);
       }
 
-        if (action === "Download-Report") {
-            DownloadReport(row);
-        }
+      if (action === "Download-Report") {
+        DownloadReport(row);
+      }
+
+      if (action === "View Risk Profile" || action === "viewRiskProfile") {
+        navigate(`/user/discovery/risk-profile`);
+      }
     } catch (error) {
       // If an unexpected error occurs, assign default values
       setDiscoverySectionQuestions([]);
@@ -314,6 +326,62 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       console.error("Error getting client details", error);
     } finally {
       finishSelectClientFlow(rowId);
+      setLoading(false);
+    }
+  };
+
+  const sendRiskProfileEmail = async (row) => {
+    const client = row?.client || {};
+    const payload = {
+      name: client.clientGivenName || client.clientPreferredName || "Client",
+      email: client.Email || client.email || "",
+      clientFK: row?._id,
+    };
+
+    const key = "sendingEmail";
+
+    notification.open({
+      key,
+      message: "Sending Email",
+      description: "Please wait while we send the Risk Profile...",
+      duration: 0,
+      icon: (
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#36b446",
+            },
+          }}
+        >
+          <Spin size="small" />
+        </ConfigProvider>
+      ),
+    });
+
+    setLoading(true);
+
+    try {
+      const res = await post("/api/riskprofile/email", payload);
+
+      if (res) {
+        notification.success({
+          key,
+          message: "Risk Profile Sent",
+          description: "Risk Profile has been sent successfully.",
+          duration: 3,
+        });
+      }
+    } catch (error) {
+      notification.error({
+        key,
+        message: "Failed to Send",
+        description:
+          error?.response?.data?.message ||
+          "An error occurred while sending the Risk Profile.",
+        duration: 3,
+      });
+      console.error("Error in sendRiskProfileEmail:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -449,7 +517,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       items,
       onClick: ({ key }) => {
         const action = keyToAction[key] || key;
-        if (action === "Select" || action === "View" || action === "Download-Report") {
+        if (
+          action === "Select" ||
+          action === "View" ||
+          action === "Download-Report" ||
+          action == "View Risk Profile" ||
+          action == "viewRiskProfile"
+        ) {
           // flushSync(() => {
           //   selectLoadingRowIdRef.current = rowId;
           //   setSelectLoadingRowId(rowId);
@@ -460,6 +534,11 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
           setDiscoverySectionQuestions({});
           setDiscoveryData({});
           setSelectedClient(null);
+        } else if (
+          action == "Send Risk Profile" ||
+          action == "sendRiskProfile"
+        ) {
+          sendRiskProfileEmail(row);
         }
         onAction?.(action, row);
       },
