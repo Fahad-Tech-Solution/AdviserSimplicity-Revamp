@@ -317,7 +317,7 @@ const QUESTION_STEPS = [
     key: "question4",
     title: "Inflation",
     question:
-      "Question 4: Your concerns about inflation. How concerned are you with your savings being eroded due to inflation and the rising costs of necessities such as groceries, utilities, and healthcare.",
+      "Question 4: Your concerns about inflation. How concerned are you with your savings being eroded due to inflation and the rising costs of necessities such as groceries, utilities, and healthcare?",
     choices: [
       "Not concerned",
       "Slightly concerned",

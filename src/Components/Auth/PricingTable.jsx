@@ -129,8 +129,8 @@ export default function PricingTable() {
       const res = await api.post("/api/create-checkout-session", {
         priceId,
         email,
-        successUrl: `${window.location.origin}/auth/stripe-redirect?status=${successStatus}`,
-        cancelUrl: `${window.location.origin}/auth/stripe-redirect?status=cancel`,
+        successUrl: `${window.location.origin}/#/auth/stripe-redirect?status=${successStatus}`,
+        cancelUrl: `${window.location.origin}/#/auth/stripe-redirect?status=cancel`,
       });
 
       if (!res?.checkoutUrl) {

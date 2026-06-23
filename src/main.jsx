@@ -21,7 +21,9 @@ createRoot(document.getElementById("root")).render(
       <JotaiProvider store={appStore}>
         <AntdApp>
           <HashRouter>
+          {/* <BrowserRouter> */}
             <App />
+          {/* </BrowserRouter> */}
           </HashRouter>
         </AntdApp>
       </JotaiProvider>
