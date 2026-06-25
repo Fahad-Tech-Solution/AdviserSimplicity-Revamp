@@ -9,7 +9,17 @@ import { useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DynamicFormField from "../../../../../Common/DynamicFormField.jsx";
 import useApi from "../../../../../../hooks/useApi";
-import { discoveryDataAtom } from "../../../../../../store/authState";
+import {
+  creatingNewClientAtom,
+  discoveryDataAtom,
+  MyClientsData,
+  SelectedClient,
+} from "../../../../../../store/authState";
+import {
+  mergeNewClientRowForTable,
+  normalizeMyClientsList,
+  wrapMyClientsState,
+} from "../../../../../../hooks/helpers";
 import ChildrenSection from "./ChildrenSection.jsx";
 import SectionTable from "./SectionTable.jsx";
 import {
@@ -792,6 +802,7 @@ function buildEditColumns(config, form, options = {}) {
  */
 export default function PersonalDetailsFrom({
   discoveryData,
+  createMode = false,
   onBack,
   onNext,
   onSave,
@@ -799,8 +810,11 @@ export default function PersonalDetailsFrom({
   const api = useApi();
   const { message } = AntdApp.useApp();
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const setSelectedClient = useSetAtom(SelectedClient);
+  const setMyClientsData = useSetAtom(MyClientsData);
+  const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
   const [form] = Form.useForm();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(createMode);
   const [submitting, setSubmitting] = useState(false);
 
   /** @type {PersonalDetailsData | null} */
@@ -907,6 +921,12 @@ export default function PersonalDetailsFrom({
   );
 
   useEffect(() => {
+    if (createMode) {
+      setEditing(true);
+    }
+  }, [createMode]);
+
+  useEffect(() => {
     form.setFieldsValue(initialValues);
   }, [form, initialValues]);
 
@@ -934,13 +954,11 @@ export default function PersonalDetailsFrom({
 
   const finish = useCallback(
     async (values) => {
-      const payload = {
-        ...mapSubmitValues(values),
+      const mapped = mapSubmitValues(values);
+      const isCreate = createMode || !pd?._id;
+      const payload = isCreate ? mapped : { ...mapped, _id: pd?._id };
 
-        _id: pd?._id,
-      };
-
-      if (!payload._id) {
+      if (!isCreate && !payload._id) {
         message.error("Personal details ID is missing.");
         return;
       }
@@ -948,12 +966,14 @@ export default function PersonalDetailsFrom({
       setSubmitting(true);
 
       try {
-        const saved = await api.patch("/api/personalDetails/Update", payload);
+        const saved = isCreate
+          ? await api.post("/api/personalDetails/Add", payload)
+          : await api.patch("/api/personalDetails/Update", payload);
 
         const nextPd =
           saved && typeof saved === "object"
             ? {
-                ...pd,
+                ...(pd ?? {}),
                 ...saved,
                 _id: saved._id ?? payload._id,
                 client: saved.client ?? payload.client,
@@ -963,7 +983,7 @@ export default function PersonalDetailsFrom({
                   saved.haveAnyChildren ?? payload.haveAnyChildren,
               }
             : {
-                ...pd,
+                ...(pd ?? {}),
                 ...payload,
               };
 
@@ -984,11 +1004,25 @@ export default function PersonalDetailsFrom({
           if (prev && typeof prev === "object") {
             return { ...prev, ...nextPd };
           }
-          return nextPd;
+          return { personaldetails: nextPd, personalDetails: nextPd };
         });
 
+        if (isCreate) {
+          const row = mergeNewClientRowForTable(saved);
+          if (row) {
+            setSelectedClient(row);
+            setMyClientsData((prev) => {
+              const list = normalizeMyClientsList(prev);
+              return wrapMyClientsState([row, ...list]);
+            });
+          }
+          setCreatingNewClient(false);
+        }
+
         await onSave?.(saved ?? payload);
-        message.success("Personal details updated.");
+        message.success(
+          isCreate ? "Client created successfully." : "Personal details updated.",
+        );
         setEditing(false);
       } catch (error) {
         message.error(
@@ -1001,13 +1035,27 @@ export default function PersonalDetailsFrom({
         setSubmitting(false);
       }
     },
-    [api, message, onSave, pd, setDiscoveryData],
+    [
+      api,
+      createMode,
+      message,
+      onSave,
+      pd,
+      setCreatingNewClient,
+      setDiscoveryData,
+      setMyClientsData,
+      setSelectedClient,
+    ],
   );
 
   const handleEditBack = useCallback(() => {
+    if (createMode) {
+      onBack?.();
+      return;
+    }
     form.setFieldsValue(initialValues);
     setEditing(false);
-  }, [form, initialValues]);
+  }, [createMode, form, initialValues, onBack]);
   const handleStartEditing = useCallback(() => setEditing(true), []);
 
   return (
@@ -1017,7 +1065,7 @@ export default function PersonalDetailsFrom({
         layout="vertical"
         initialValues={initialValues}
         onFinish={finish}
-        key={pd?._id || "pd"}
+        key={pd?._id || (createMode ? "create" : "pd")}
       >
         <SectionTable
           title="PERSONAL DETAILS"
@@ -1068,7 +1116,7 @@ export default function PersonalDetailsFrom({
             >
               Back
             </Button>
-            {!editing && (
+            {!editing && !createMode && (
               <Button
                 key="edit"
                 icon={<EditOutlined />}
@@ -1078,7 +1126,7 @@ export default function PersonalDetailsFrom({
               </Button>
             )}
           </Space>
-          {!editing ? (
+          {!editing && !createMode ? (
             <Button
               type="primary"
               icon={<ArrowRightOutlined />}

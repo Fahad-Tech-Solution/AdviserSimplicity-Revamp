@@ -1,9 +1,10 @@
 import { DownloadOutlined, RightOutlined } from "@ant-design/icons";
 import { App as AntdApp, Button, Card, Col, Row, Typography } from "antd";
-import { useAtomValue } from "jotai";
-import React, { useState } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  creatingNewClientAtom,
   discoveryDataAtom,
   discoverySectionQuestionsAtom,
   goalsDataAtom,
@@ -44,6 +45,8 @@ export function PersonalDetails() {
   const [downloading, setdownloading] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
+  const isCreatingClient = useAtomValue(creatingNewClientAtom);
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
   const goalsQuestions = useAtomValue(goalsSectionQuestionsAtom);
@@ -62,11 +65,29 @@ export function PersonalDetails() {
   const partnerImageUrl = partner?.image?.url;
 
   const hasSelection = Boolean(selected?._id);
+  const showCreateForm = isCreatingClient && !hasSelection;
+  const canShowContent = hasSelection || isCreatingClient;
   const nextPath = getNextDiscoveryNavKey(pathname, discoveryQuestions);
+
+  useEffect(() => {
+    if (showCreateForm) {
+      setStep(2);
+    }
+  }, [showCreateForm]);
+
+  const handleCancelCreate = () => {
+    setCreatingNewClient(false);
+    navigate("/user/clients");
+  };
+
+  const handleCreateSave = () => {
+    setCreatingNewClient(false);
+    setStep(1);
+  };
 
   return (
     <>
-      {!hasSelection ? (
+      {!canShowContent ? (
         <Card style={{ borderRadius: 12, marginBottom: 24 }}>
           <Text type="secondary">
             Select a client from <strong>My Clients</strong> (gear menu →
@@ -80,17 +101,24 @@ export function PersonalDetails() {
               <Col xs={24}>
                 <PersonalDetailsFrom
                   discoveryData={discoveryData}
-                  onBack={() => setStep(1)}
+                  createMode={showCreateForm}
+                  onBack={
+                    showCreateForm ? handleCancelCreate : () => setStep(1)
+                  }
                   onNext={() => nextPath && navigate(nextPath)}
                   onSave={(saved) => {
-                    setStep(1);
+                    if (showCreateForm) {
+                      handleCreateSave();
+                    } else {
+                      setStep(1);
+                    }
                   }}
                 />
               </Col>
             </Row>
           )}
 
-          {step === 1 && (
+          {step === 1 && hasSelection && (
             <Row gutter={[24, 24]} align={"stretch"}>
               <Col
                 xs={24}
@@ -117,7 +145,7 @@ export function PersonalDetails() {
         </>
       )}
 
-      {step === 1 && (
+      {step === 1 && hasSelection && (
         <div
           style={{
             display: "flex",

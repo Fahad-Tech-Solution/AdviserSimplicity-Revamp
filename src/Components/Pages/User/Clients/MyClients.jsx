@@ -3,30 +3,55 @@ import Text from "antd/es/typography/Text";
 import Title from "antd/es/typography/Title";
 import React, { useEffect, useState } from "react";
 import { useSetAtom } from "jotai";
-import { MyClientsData } from "../../../../store/authState";
+import { useNavigate } from "react-router-dom";
 import {
-  mergeNewClientRowForTable,
-  normalizeMyClientsList,
-  wrapMyClientsState,
-} from "../../../../hooks/helpers";
-import AddClient from "./components/AddClient";
+  creatingNewClientAtom,
+  discoveryDataAtom,
+  discoverySectionQuestionsAtom,
+  goalsDataAtom,
+  goalsSectionQuestionsAtom,
+  MyClientsData,
+  riskProfileDataAtom,
+  SelectedClient,
+} from "../../../../store/authState";
 import HouseholdTable from "./HouseholdTable";
 import useApi from "../../../../hooks/useApi";
 
 const MyClients = () => {
   const [searchText, setSearchText] = useState("");
-  const [openAddClient, setOpenAddClient] = useState(false);
+  const navigate = useNavigate();
   const setMyClientsData = useSetAtom(MyClientsData);
+  const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
+  const setSelectedClient = useSetAtom(SelectedClient);
+  const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const setDiscoverySectionQuestions = useSetAtom(discoverySectionQuestionsAtom);
+  const setGoalsData = useSetAtom(goalsDataAtom);
+  const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
+  const setRiskProfileData = useSetAtom(riskProfileDataAtom);
   const api = useApi();
 
   useEffect(() => {
-    // just get the data from the api
+    setCreatingNewClient(false);
+  }, [setCreatingNewClient]);
+
+  useEffect(() => {
     const fetchData = async () => {
       const response = await api.get("/api/user/Clients");
       setMyClientsData(response);
     };
     fetchData();
   });
+
+  const handleAddNewClient = () => {
+    setSelectedClient(null);
+    setDiscoveryData({});
+    setDiscoverySectionQuestions({});
+    setGoalsData({});
+    setGoalsSectionQuestions({});
+    setRiskProfileData({});
+    setCreatingNewClient(true);
+    navigate("/user/discovery/personal-details");
+  };
 
   return (
     <div>
@@ -85,28 +110,13 @@ const MyClients = () => {
                 padding: "17px 20px",
                 fontSize: 13,
               }}
-              onClick={() => {
-                setOpenAddClient(true);
-              }}
+              onClick={handleAddNewClient}
             >
               Add New +
             </Button>
           </Space>
         </div>
       </div>
-
-      <AddClient
-        open={openAddClient}
-        onClose={() => setOpenAddClient(false)}
-        onSuccess={(res, formValues) => {
-          const row = mergeNewClientRowForTable(res, formValues);
-          if (!row) return;
-          setMyClientsData((prev) => {
-            const list = normalizeMyClientsList(prev);
-            return wrapMyClientsState([row, ...list]);
-          });
-        }}
-      />
 
       <HouseholdTable searchText={searchText} />
     </div>

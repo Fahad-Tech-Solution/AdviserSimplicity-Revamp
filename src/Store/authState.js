@@ -36,6 +36,9 @@ export const goalsSectionQuestionsAtom = atomWithStorage(
 
 export const riskProfileDataAtom = atomWithStorage("riskProfileDataAtom", {});
 
+/** True while adviser is adding a household via Personal Details (not persisted). */
+export const creatingNewClientAtom = atom(false);
+
 /** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
 export const addDiscoverySectionsModalOpen = atom(false);
 
