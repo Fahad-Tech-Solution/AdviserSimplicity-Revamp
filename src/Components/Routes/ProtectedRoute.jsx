@@ -5,6 +5,7 @@ import { Spin } from "antd";
 import useAuthSession from "../../hooks/useAuthSession";
 import { loggedInUser } from "../../store/authState";
 import {
+  getLoginPathForRequiredPermissions,
   getUserPermissions,
   hasRequiredPermission,
   isAuthenticatedSession,
@@ -14,6 +15,7 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   const session = useAtomValue(loggedInUser);
   const { fetchSession, clearSession } = useAuthSession();
   const [authStatus, setAuthStatus] = useState("loading");
+  const loginPath = getLoginPathForRequiredPermissions(requiredPermissions);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,7 +64,7 @@ export default function ProtectedRoute({ element, requiredPermissions = [] }) {
   }
 
   if (authStatus === "unauthenticated" || !isAuthenticatedSession(session)) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to={loginPath} replace />;
   }
 
   const allPermissions = getUserPermissions(session);

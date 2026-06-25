@@ -267,7 +267,15 @@ export default function ProfilePage() {
 
             <Space wrap>
               <Button icon={<EditOutlined />}>Edit</Button>
-              <Button danger icon={<LogoutOutlined />} onClick={logout}>
+              <Button
+                danger
+                icon={<LogoutOutlined />}
+                onClick={() =>
+                  roleLabel === "superAdmin"
+                    ? logout("/auth/admin-login")
+                    : logout("/auth/login")
+                }
+              >
                 Logout
               </Button>
             </Space>
@@ -347,7 +355,6 @@ export default function ProfilePage() {
 
         <Col xs={24} lg={10}>
           {roleLabel !== "superAdmin" && (
-
             <Card
               style={{
                 borderRadius: 18,
@@ -380,7 +387,10 @@ export default function ProfilePage() {
               <div style={{ marginTop: 10 }}>
                 <Input.Group compact className="d-flex flex-row ">
                   <Input placeholder="Asana increpted PAT..." disabled />
-                  <Button icon={<IoSearchOutline />} onClick={OpenModal}></Button>
+                  <Button
+                    icon={<IoSearchOutline />}
+                    onClick={OpenModal}
+                  ></Button>
                 </Input.Group>
               </div>
             </Card>
@@ -463,8 +473,8 @@ export default function ProfilePage() {
                     type="secondary"
                     style={{ display: "block", marginBottom: 14 }}
                   >
-                    These permissions are coming from the role stored in the active
-                    login session.
+                    These permissions are coming from the role stored in the
+                    active login session.
                   </Text>
 
                   {permissions.length > 0 ? (

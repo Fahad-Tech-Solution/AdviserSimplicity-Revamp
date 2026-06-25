@@ -2,6 +2,7 @@ import { Avatar, Card, Typography } from "antd";
 import AppModal from "../../../../../Common/AppModal";
 import UploadImage from "./UploadImage";
 import { useEffect, useState } from "react";
+import { capitalizeFirst } from "../../../../../../hooks/helpers";
 
 const { Text } = Typography;
 
@@ -27,9 +28,10 @@ function calcAge(dob) {
 
 function buildFormalName(person = {}, role = "client") {
   const isClient = role === "client";
-  const title = isClient
-    ? person.clientTitle || person.title || ""
-    : person.partnerTitle || person.title || "";
+  // const title = isClient
+  //   ? person.clientTitle || person.title || ""
+  //   : person.partnerTitle || person.title || "";
+
   const given = isClient
     ? person.clientGivenName || person.firstName || ""
     : person.partnerGivenName || person.firstName || "";
@@ -41,10 +43,10 @@ function buildFormalName(person = {}, role = "client") {
     : person.partnerLastName || person.lastName || "";
 
   const parts = [
-    title,
-    given && String(given).toUpperCase(),
-    middle && String(middle).toLowerCase(),
-    last && String(last).toUpperCase(),
+    // title,
+    given && capitalizeFirst(String(given)),
+    middle && capitalizeFirst(String(middle)),
+    last && capitalizeFirst(String(last)),
   ].filter(Boolean);
   return parts.join(" ").trim() || "—";
 }
@@ -55,7 +57,7 @@ function nicknameLine(person = {}, role = "client") {
       ? person.clientPreferredName || person.preferredName
       : person.partnerPreferredName || person.preferredName;
   if (!pref) return null;
-  return `(${String(pref).toLowerCase()})`;
+  return `(${capitalizeFirst(String(pref))})`;
 }
 
 function phoneLine(person = {}, role = "client") {

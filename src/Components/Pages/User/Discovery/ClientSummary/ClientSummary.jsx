@@ -167,18 +167,24 @@ function pickFirstValue(source, keys = []) {
 }
 
 function getPersonName(person = {}, role = "client") {
+
+    const given = role === "client"
+    ? person.clientGivenName || person.firstName || ""
+    : person.partnerGivenName || person.firstName || "";
+
   const preferred =
     role === "client"
       ? person?.clientPreferredName
       : person?.partnerPreferredName;
 
-  const first =
-    role === "client" ? person?.clientGivenName : person?.partnerGivenName;
+  const middle =   role === "client"
+    ? person.clientMiddleName || person.middleName || ""
+    : person.partnerMiddleName || person.middleName || "";
 
   const last =
     role === "client" ? person?.clientLastName : person?.partnerLastName;
 
-  return [preferred, first, last].filter(Boolean).join(" ").trim() || "—";
+  return [capitalizeFirst(given), capitalizeFirst(middle), capitalizeFirst(last)].filter(Boolean).join(" ").trim() || "—";
 }
 
 function getRoleLabel(role) {

@@ -14,7 +14,16 @@ const IntroStep = ({
     <div style={{ paddingTop: 56 }}>
       <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
         <h2
-        onClick={() => console.log("values", values, "showPartner", showPartner, "joinedProfile", joinedProfile)}
+          onClick={() =>
+            console.log(
+              "values",
+              values,
+              "showPartner",
+              showPartner,
+              "joinedProfile",
+              joinedProfile,
+            )
+          }
           style={{
             marginBottom: 28,
             fontFamily: "Arial, sans-serif",
@@ -209,8 +218,7 @@ const IntroStep = ({
             maxWidth: "700px",
           }}
         >
-          Would you like to answer this questionnaire individually or as a
-          couple?
+          Would you like to answer this questionnaire individually?
         </div>
         <Radio.Group
           value={joinedProfile}

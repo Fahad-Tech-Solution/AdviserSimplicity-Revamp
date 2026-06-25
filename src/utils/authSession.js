@@ -1,8 +1,32 @@
+export const ADVISER_LOGIN_PATH = "/auth/login";
+export const ADMIN_LOGIN_PATH = "/auth/admin-login";
+
 export const EMPTY_SESSION = {
   email: "",
   user: null,
   permissions: [],
 };
+
+/** Login route for a protected area (e.g. super-admin shell → admin login). */
+export function getLoginPathForRequiredPermissions(requiredPermissions = []) {
+  if (requiredPermissions.includes("superAdmin")) {
+    return ADMIN_LOGIN_PATH;
+  }
+  return ADVISER_LOGIN_PATH;
+}
+
+/** Login route for the current session (logout redirect). */
+export function getLoginPathForSession(session = {}) {
+  const roleName = session?.user?.roleID?.roleName?.trim() || "";
+  if (roleName === "superAdmin") {
+    return ADMIN_LOGIN_PATH;
+  }
+  const permissions = getUserPermissions(session);
+  if (permissions.includes("superAdmin")) {
+    return ADMIN_LOGIN_PATH;
+  }
+  return ADVISER_LOGIN_PATH;
+}
 
 /** Build client session state from login / me API responses (no token stored). */
 export function normalizeSessionFromApi(res = {}, fallbackEmail = "") {

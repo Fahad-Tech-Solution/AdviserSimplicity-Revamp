@@ -1,11 +1,12 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { App as AntdApp } from "antd";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import useApi from "./useApi";
 import { loggedInUser } from "../store/authState";
 import {
   EMPTY_SESSION,
+  getLoginPathForSession,
   normalizeSessionFromApi,
 } from "../utils/authSession";
 
@@ -18,6 +19,7 @@ export default function useAuthSession() {
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
   const setLoggedInUser = useSetAtom(loggedInUser);
+  const LoggedInUser = useAtomValue(loggedInUser);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -35,17 +37,24 @@ export default function useAuthSession() {
     setLoggedInUser(EMPTY_SESSION);
   }, [setLoggedInUser]);
 
-  const logout = useCallback(async () => {
-    try {
-      await api.post("/api/auth/logout");
-    } catch {
-      // Still clear local state if logout API fails.
-    } finally {
-      clearSession();
-      navigate("/auth/login", { replace: true });
-      message.success("Logged out successfully");
-    }
-  }, [api, clearSession, navigate, message]);
+  const logout = useCallback(
+    async (redirectPathOverride = null) => {
+      const resolvedRedirectPath = redirectPathOverride
+        ? redirectPathOverride
+        : getLoginPathForSession(LoggedInUser);
+
+      try {
+        await api.post("/api/auth/logout");
+      } catch {
+        // Still clear local state if logout API fails.
+      } finally {
+        clearSession();
+        navigate(resolvedRedirectPath, { replace: true });
+        message.success("Logged out successfully");
+      }
+    },
+    [api, clearSession, navigate, message, LoggedInUser],
+  );
 
   const saveSessionFromAuthResponse = useCallback(
     (res, fallbackEmail = "") => {
