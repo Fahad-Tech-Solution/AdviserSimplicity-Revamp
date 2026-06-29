@@ -151,7 +151,7 @@ function upsertAdviserInAtom(setAdvisers, saved, { isEdit, editingAdviser }) {
 
 /**
  * Add / edit adviser modal.
- * POST /api/user/Add/Adviser | PATCH /api/user/Update/Adviser
+ * POST /user/Add/Adviser | PATCH /user/Update/Adviser
  */
 export default function AdviserForm({
   open,
@@ -197,13 +197,13 @@ export default function AdviserForm({
     try {
       let res;
       if (isEdit) {
-        res = await api.patch("/api/user/Update/Adviser", {
+        res = await api.patch("/user/Update/Adviser", {
           ...payload,
           _id: editingAdviser._id,
         });
         message.success("Adviser updated.");
       } else {
-        res = await api.post("/api/user/Add/Adviser", payload);
+        res = await api.post("/user/Add/Adviser", payload);
         message.success("Adviser added.");
       }
 

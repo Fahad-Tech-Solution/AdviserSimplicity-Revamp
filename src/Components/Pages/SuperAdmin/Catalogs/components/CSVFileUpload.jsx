@@ -84,7 +84,7 @@ export default function CSVFileUpload({ data = {}, onClose, onSuccess }) {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/api/investmentCSV/upload", formData);
+      const res = await api.post("/investmentCSV/upload", formData);
       message.success("Investments imported successfully.");
       setFileList([]);
       onSuccess?.(res);

@@ -283,8 +283,8 @@ export default function OverseasPensionModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromOverseasPension/Update", payload)
-        : await post("/api/incomeFromOverseasPension/Add", payload);
+        ? await patch("/incomeFromOverseasPension/Update", payload)
+        : await post("/incomeFromOverseasPension/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

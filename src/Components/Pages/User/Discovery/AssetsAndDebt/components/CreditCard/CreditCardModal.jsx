@@ -401,8 +401,8 @@ export default function CreditCardModal({ modalData }) {
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch("/api/creditCards/Update", payload)
-        : await post("/api/creditCards/Add", payload);
+        ? await patch("/creditCards/Update", payload)
+        : await post("/creditCards/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

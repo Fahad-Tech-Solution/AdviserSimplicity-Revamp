@@ -387,8 +387,8 @@ export default function EstatePlanningWill({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/will/Update", payload)
-        : await post("/api/will/Add", payload);
+        ? await patch("/will/Update", payload)
+        : await post("/will/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

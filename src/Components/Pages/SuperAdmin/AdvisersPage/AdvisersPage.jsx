@@ -412,7 +412,7 @@ const AdvisersPage = () => {
   const fetchAdvisers = async () => {
     try {
       setAdvisersLoading(true);
-      const response = await get("/api/user/Advisers");
+      const response = await get("/user/Advisers");
       // console.log(response, "response, advisers");
       setAdvisers(Array.isArray(response) ? response : []);
     } catch (error) {
@@ -482,7 +482,7 @@ const AdvisersPage = () => {
         onOk: async () => {
           setStatusBusy(true);
           try {
-            await patch("/api/user/UpdateStatus", { _id: adviserId });
+            await patch("/user/UpdateStatus", { _id: adviserId });
             setAdvisers((prev) =>
               (prev || []).map((item) =>
                 (item._id ?? item.id) === adviserId

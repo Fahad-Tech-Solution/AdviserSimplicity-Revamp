@@ -204,8 +204,8 @@ export default function GoalsFromModal({ modalData }) {
 
       const saved =
         currentGoalData?.clientFK || currentGoalData?._id
-          ? await patch(`/api/${goalKey}/Update`, payload)
-          : await post(`/api/${goalKey}/Add`, payload);
+          ? await patch(`/${goalKey}/Update`, payload)
+          : await post(`/${goalKey}/Add`, payload);
 
       setGoalsData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

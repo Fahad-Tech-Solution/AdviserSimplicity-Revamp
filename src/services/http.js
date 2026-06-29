@@ -7,11 +7,12 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "";
  * The browser sends it automatically on every request when withCredentials is true.
  * Do NOT read or store the token in JS, localStorage, or jotai.
  *
- * Dev: leave VITE_API_BASE_URL empty so `/api/*` is proxied by vite.config.js.
+ * Dev: leave VITE_API_BASE_URL empty so `/*` is proxied by vite.config.js.
  * Production (GitHub Pages): set VITE_API_BASE_URL to the real API host.
  */
 const http = axios.create({
-  baseURL: apiBaseURL,
+  // baseURL: apiBaseURL+"/api",
+  baseURL: apiBaseURL + "/dev_api",
   timeout: 20000,
   withCredentials: true,
 });

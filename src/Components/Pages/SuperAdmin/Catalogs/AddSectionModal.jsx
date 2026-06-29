@@ -323,7 +323,7 @@ export default function AddSectionModal({
       let res;
 
       if (isEdit) {
-        res = await api.patch("/api/platform/Update", {
+        res = await api.patch("/platform/Update", {
           platformName,
           platformType,
           section,
@@ -334,7 +334,7 @@ export default function AddSectionModal({
           `${sectionConfig.deleteSuccessLabel ?? "Item"} updated.`,
         );
       } else {
-        res = await api.post("/api/platform/Add", {
+        res = await api.post("/platform/Add", {
           platformName,
           platformType,
           section,

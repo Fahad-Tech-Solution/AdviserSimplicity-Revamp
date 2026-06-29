@@ -67,7 +67,7 @@ export default function VerifyOtpForm() {
       setError("");
 
       const cleanedOtp = String(values.otp ?? "").replace(/\D/g, "");
-      const res = await api.post("/api/auth/login-verify-otp", {
+      const res = await api.post("/auth/login-verify-otp", {
         email,
         otp: cleanedOtp,
       });

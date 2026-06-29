@@ -967,8 +967,8 @@ export default function PersonalDetailsFrom({
 
       try {
         const saved = isCreate
-          ? await api.post("/api/personalDetails/Add", payload)
-          : await api.patch("/api/personalDetails/Update", payload);
+          ? await api.post("/personalDetails/Add", payload)
+          : await api.patch("/personalDetails/Update", payload);
 
         const nextPd =
           saved && typeof saved === "object"

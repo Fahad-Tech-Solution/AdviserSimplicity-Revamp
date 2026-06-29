@@ -185,7 +185,7 @@ export default function CatalogSectionPage() {
       confirmRemoveData(
         async () => {
           try {
-            await api.patch("/api/platform/Delete", { _id: rowId });
+            await api.patch("/platform/Delete", { _id: rowId });
             removeItem(rowId);
             message.success(`${deleteSuccessLabel} removed.`);
           } catch (error) {

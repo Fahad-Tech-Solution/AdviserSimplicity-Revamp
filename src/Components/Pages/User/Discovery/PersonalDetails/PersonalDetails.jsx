@@ -21,7 +21,7 @@ import { generatePersonalDetailsDocument } from "../../../../Common/docx/generat
 const { Text } = Typography;
 
 /**
- * `GET /api/dataOfAllSection/:id` may nest personal details or return them at the root.
+ * `GET /dataOfAllSection/:id` may nest personal details or return them at the root.
  */
 function getPersonalDetailsFromDiscovery(data) {
   if (!data || typeof data !== "object") return null;

@@ -170,7 +170,7 @@ export default function InvestmentSectionsPage() {
     if (!config?.catalogDataKey || !platformId) return;
 
     try {
-      const res = await api.get("/api/investmentoffer");
+      const res = await api.get("/investmentoffer");
       const normalized = normalizeCatalogsData(res);
       setCatalogsData(normalized);
 
@@ -199,7 +199,7 @@ export default function InvestmentSectionsPage() {
   const deleteInvestment = useCallback(
     async (id) => {
       try {
-        await api.patch("/api/investmentoffer/Delete", { _id: id });
+        await api.patch("/investmentoffer/Delete", { _id: id });
         message.success("Investment deleted successfully.");
         setInvestments(investments.filter((item) => item._id !== id));
       } catch (error) {

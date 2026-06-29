@@ -199,7 +199,7 @@ export default function UploadImage({
 
       if (selectedPreset) {
         result = await api.patch(
-          `/api/personalDetails/updateAvatar/${personalDetailsId}`,
+          `/personalDetails/updateAvatar/${personalDetailsId}`,
           {
             image: selectedPreset,
             type: owner,
@@ -221,7 +221,7 @@ export default function UploadImage({
         formData.append("type", owner);
 
         result = await api.patch(
-          `/api/personalDetails/updateImage/${personalDetailsId}`,
+          `/personalDetails/updateImage/${personalDetailsId}`,
           formData,
           {
             headers: {

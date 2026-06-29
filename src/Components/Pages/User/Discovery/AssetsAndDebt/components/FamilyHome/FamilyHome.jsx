@@ -279,8 +279,8 @@ export default function FamilyHome({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?._id
-        ? await patch("/api/familyHome/Update", payload)
-        : await post("/api/familyHome/Add", payload);
+        ? await patch("/familyHome/Update", payload)
+        : await post("/familyHome/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

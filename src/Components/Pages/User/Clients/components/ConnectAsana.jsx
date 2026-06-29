@@ -117,7 +117,7 @@ export default function ConnectAsana({ onSuccess }) {
     setWorkspaces([]);
 
     try {
-      const res = await axios.get("https://app.asana.com/api/1.0/workspaces", {
+      const res = await axios.get("https://app.asana.com/1.0/workspaces", {
         headers: { Authorization: `Bearer ${patID}` },
       });
       setWorkspaces(res?.data?.data || []);
@@ -141,7 +141,7 @@ export default function ConnectAsana({ onSuccess }) {
 
     try {
       const res = await axios.get(
-        `https://app.asana.com/api/1.0/projects?workspace=${workspaceId}`,
+        `https://app.asana.com/1.0/projects?workspace=${workspaceId}`,
         {
           headers: { Authorization: `Bearer ${patID}` },
         },
@@ -167,7 +167,7 @@ export default function ConnectAsana({ onSuccess }) {
 
     try {
       const res = await axios.get(
-        `https://app.asana.com/api/1.0/users?workspace=${workspaceId}`,
+        `https://app.asana.com/1.0/users?workspace=${workspaceId}`,
         {
           headers: { Authorization: `Bearer ${patID}` },
         },
@@ -193,7 +193,7 @@ export default function ConnectAsana({ onSuccess }) {
 
     try {
       const res = await axios.get(
-        `https://app.asana.com/api/1.0/projects/${projectId}`,
+        `https://app.asana.com/1.0/projects/${projectId}`,
         {
           headers: { Authorization: `Bearer ${patID}` },
         },
@@ -242,7 +242,7 @@ export default function ConnectAsana({ onSuccess }) {
     setSaved(false);
 
     try {
-      await api.post("/api/CDFAsana/Add", payload);
+      await api.post("/CDFAsana/Add", payload);
       setSaved(true);
       setStep(5);
       message.success("Asana details stored successfully.");

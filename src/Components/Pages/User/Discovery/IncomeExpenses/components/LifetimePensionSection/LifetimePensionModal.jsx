@@ -324,8 +324,8 @@ export default function LifetimePensionModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromSuperPayment/Update", payload)
-        : await post("/api/incomeFromSuperPayment/Add", payload);
+        ? await patch("/incomeFromSuperPayment/Update", payload)
+        : await post("/incomeFromSuperPayment/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

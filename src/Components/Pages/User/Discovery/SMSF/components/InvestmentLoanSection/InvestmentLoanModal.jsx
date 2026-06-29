@@ -757,8 +757,8 @@ export default function InvestmentLoanModal({ modalData }) {
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch(`/api/${modalData?.key}/Update`, payload)
-        : await post(`/api/${modalData?.key}/Add`, payload);
+        ? await patch(`/${modalData?.key}/Update`, payload)
+        : await post(`/${modalData?.key}/Add`, payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

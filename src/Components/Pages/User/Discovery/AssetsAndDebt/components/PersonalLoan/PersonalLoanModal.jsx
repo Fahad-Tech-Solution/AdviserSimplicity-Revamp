@@ -411,8 +411,8 @@ export default function PersonalLoanModal({ modalData }) {
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch("/api/personalLoans/Update", payload)
-        : await post("/api/personalLoans/Add", payload);
+        ? await patch("/personalLoans/Update", payload)
+        : await post("/personalLoans/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

@@ -49,9 +49,9 @@ export default function AddIndividualInvestment({
       let res;
       if (data?.editing) {
         payload._id = data?.record?._id;
-        res = await api.patch("/api/investmentoffer/Update", payload);
+        res = await api.patch("/investmentoffer/Update", payload);
       } else {
-        res = await api.post("/api/investmentoffer/Add", payload);
+        res = await api.post("/investmentoffer/Add", payload);
       }
       message.success("Investment added successfully.");
       form.resetFields();

@@ -716,8 +716,8 @@ export default function PersonalInsuranceModal({ modalData }) {
     try {
       setSaving(true);
       const saved = pi.clientFK
-        ? await patch("/api/personalInsurance/Update", payload)
-        : await post("/api/personalInsurance/Add", payload);
+        ? await patch("/personalInsurance/Update", payload)
+        : await post("/personalInsurance/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

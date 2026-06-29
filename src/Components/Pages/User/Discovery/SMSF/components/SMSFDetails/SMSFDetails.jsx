@@ -446,8 +446,8 @@ export default function SMSFDetails({ modalData }) {
     try {
       setSaving(true);
       const saved = sectionData?.clientFK
-        ? await patch("/api/SMSFDetails/Update", payload)
-        : await post("/api/SMSFDetails/Add", payload);
+        ? await patch("/SMSFDetails/Update", payload)
+        : await post("/SMSFDetails/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

@@ -60,7 +60,7 @@ export default function PricingTable() {
   const fetchPricingPlans = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get("/api/products-with-prices");
+      const res = await api.get("/products-with-prices");
       setPlans(Array.isArray(res?.products) ? res.products : []);
       setHasPurchasedSubscription(Boolean(res?.hasPurchasedSubscription));
     } catch (err) {
@@ -126,7 +126,7 @@ export default function PricingTable() {
       setSubscribingPriceId(priceId);
       const successStatus = hasPurchasedSubscription ? "renew" : "success";
 
-      const res = await api.post("/api/create-checkout-session", {
+      const res = await api.post("/create-checkout-session", {
         priceId,
         email,
         successUrl: `${window.location.origin}/#/auth/stripe-redirect?status=${successStatus}`,

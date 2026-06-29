@@ -38,7 +38,7 @@ export default function PricingTable() {
   const fetchPricingPlans = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get("/api/products-with-prices");
+      const res = await api.get("/products-with-prices");
       const products = Array.isArray(res?.products) ? res.products : [];
       setPlans(products);
       setHasPurchasedSubscription(Boolean(res?.hasPurchasedSubscription));
@@ -74,7 +74,7 @@ export default function PricingTable() {
         cancelUrl: `${window.location.origin}/stripe-redirect?status=cancel`,
       };
 
-      const res = await api.post("/api/create-checkout-session", payload);
+      const res = await api.post("/create-checkout-session", payload);
       const checkoutUrl = res?.checkoutUrl;
 
       if (!checkoutUrl) {

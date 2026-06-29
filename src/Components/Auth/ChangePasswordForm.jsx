@@ -19,7 +19,7 @@ export default function ChangePasswordForm() {
       setSubmitting(true);
       setError("");
 
-      await api.patch("/api/auth/change-password", {
+      await api.patch("/auth/change-password", {
         oldPassword: values.oldPassword?.trim(),
         newPassword: values.newPassword?.trim(),
       });

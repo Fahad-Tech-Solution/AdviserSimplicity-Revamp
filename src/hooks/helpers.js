@@ -179,7 +179,7 @@ export function unwrapCreatedClientResponse(res) {
 }
 
 /**
- * Build a household row in the same shape as GET /api/user/Clients (for optimistic UI after Add).
+ * Build a household row in the same shape as GET /user/Clients (for optimistic UI after Add).
  */
 export function buildClientRowFromAddForm(values, apiRes = {}) {
   const id =

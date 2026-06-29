@@ -384,7 +384,7 @@ export default function SuperAdminPricingTablePage() {
   const fetchPricingPlans = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get("/api/products-with-prices");
+      const res = await api.get("/products-with-prices");
       setPlans(Array.isArray(res?.products) ? res.products : []);
       setActiveUsers(
         res?.activeUsersByPlan && typeof res.activeUsersByPlan === "object"

@@ -329,8 +329,8 @@ export default function CentrelinkModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromCentrelink/Update", payload)
-        : await post("/api/incomeFromCentrelink/Add", payload);
+        ? await patch("/incomeFromCentrelink/Update", payload)
+        : await post("/incomeFromCentrelink/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

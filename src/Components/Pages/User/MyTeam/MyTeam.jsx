@@ -54,7 +54,7 @@ export default function MyTeam() {
   const runUpdateStatus = async (id) => {
     setBusy(true);
     try {
-      await api.patch("/api/user/UpdateStatus", { _id: id });
+      await api.patch("/user/UpdateStatus", { _id: id });
       setTeam((prev) =>
         (prev || []).map((item) =>
           item._id === id ? { ...item, isActive: !item.isActive } : item,
@@ -73,7 +73,7 @@ export default function MyTeam() {
   const runSoftDelete = async (id, email) => {
     setBusy(true);
     try {
-      await api.patch("/api/user/softDelete", { _id: id });
+      await api.patch("/user/softDelete", { _id: id });
       setTeam((prev) => (prev || []).filter((item) => item._id !== id));
       message.success("Team member removed.");
       setFilterEmail((current) =>

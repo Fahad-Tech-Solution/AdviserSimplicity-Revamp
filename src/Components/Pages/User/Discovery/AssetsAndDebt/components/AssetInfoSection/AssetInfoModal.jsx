@@ -21,8 +21,8 @@ const JOINT_OPTION = { label: "Joint", value: "joint" };
 
 const ASSET_CONFIG = {
   car: {
-    addEndpoint: "/api/car/Add",
-    updateEndpoint: "/api/car/Update",
+    addEndpoint: "/car/Add",
+    updateEndpoint: "/car/Update",
     type: "split",
     extraField: {
       key: "modelOfCar",
@@ -31,23 +31,23 @@ const ASSET_CONFIG = {
     },
   },
   houseHold: {
-    addEndpoint: "/api/houseHold/Add",
-    updateEndpoint: "/api/houseHold/Update",
+    addEndpoint: "/houseHold/Add",
+    updateEndpoint: "/houseHold/Update",
     type: "joint",
   },
   boat: {
-    addEndpoint: "/api/boat/Add",
-    updateEndpoint: "/api/boat/Update",
+    addEndpoint: "/boat/Add",
+    updateEndpoint: "/boat/Update",
     type: "joint",
   },
   caravan: {
-    addEndpoint: "/api/caravan/Add",
-    updateEndpoint: "/api/caravan/Update",
+    addEndpoint: "/caravan/Add",
+    updateEndpoint: "/caravan/Update",
     type: "joint",
   },
   otherAssets: {
-    addEndpoint: "/api/otherAssets/Add",
-    updateEndpoint: "/api/otherAssets/Update",
+    addEndpoint: "/otherAssets/Add",
+    updateEndpoint: "/otherAssets/Update",
     type: "joint",
     extraField: {
       key: "description",

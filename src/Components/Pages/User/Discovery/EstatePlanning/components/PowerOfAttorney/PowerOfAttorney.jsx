@@ -308,8 +308,8 @@ export default function PowerOfAttorney({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/POA/Update", payload)
-        : await post("/api/POA/Add", payload);
+        ? await patch("/POA/Update", payload)
+        : await post("/POA/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

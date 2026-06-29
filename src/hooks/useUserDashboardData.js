@@ -127,7 +127,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
       try {
         const userApis = [
           {
-            call: () => get("/api/CDF/", { signal: abortController.signal }),
+            call: () => get("/CDF/", { signal: abortController.signal }),
             setter: setCDFProspectsData,
             normalize: (cdfResponse) =>
               Array.isArray(cdfResponse)
@@ -136,18 +136,18 @@ export default function useUserDashboardData({ enabled = true } = {}) {
           },
           {
             call: () =>
-              get("/api/user/Clients", { signal: abortController.signal }),
+              get("/user/Clients", { signal: abortController.signal }),
             setter: setMyClientsData,
             normalize: (res) => wrapMyClientsState(normalizeMyClientsList(res)),
           },
           {
             call: () =>
-              get("/api/user/Employees", { signal: abortController.signal }),
+              get("/user/Employees", { signal: abortController.signal }),
             setter: setMyTeamData,
           },
           {
             call: () =>
-              get("/api/investmentoffer", { signal: abortController.signal }),
+              get("/investmentoffer", { signal: abortController.signal }),
             setter: setInvestmentOffersData,
           },
         ];

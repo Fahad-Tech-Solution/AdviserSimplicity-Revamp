@@ -3,7 +3,25 @@ import { useNavigate } from "react-router-dom";
 import { App as AntdApp } from "antd";
 import { useAtomValue, useSetAtom } from "jotai";
 import useApi from "./useApi";
-import { loggedInUser } from "../store/authState";
+import {
+  addDiscoverySectionsModalOpen,
+  advisersDataAtom,
+  catalogsDataAtom,
+  CDFProspectsData,
+  creatingNewClientAtom,
+  discoveryDataAtom,
+  discoverySectionQuestionsAtom,
+  goalsDataAtom,
+  goalsSectionQuestionsAtom,
+  InvestmentOffersData,
+  loggedInUser,
+  MyClientsData,
+  MyTeamData,
+  riskProfileDataAtom,
+  SelectedClient,
+  userDashboardError,
+  userDashboardLoading,
+} from "../store/authState";
 import {
   EMPTY_SESSION,
   getLoginPathForSession,
@@ -19,11 +37,30 @@ export default function useAuthSession() {
   const navigate = useNavigate();
   const { message } = AntdApp.useApp();
   const setLoggedInUser = useSetAtom(loggedInUser);
+  const resetLoggedInUser = useSetAtom(loggedInUser);
+  const resetCDFProspectsData = useSetAtom(CDFProspectsData);
+  const resetMyClientsData = useSetAtom(MyClientsData);
+  const resetMyTeamData = useSetAtom(MyTeamData);
+  const resetInvestmentOffersData = useSetAtom(InvestmentOffersData);
+  const resetSelectedClient = useSetAtom(SelectedClient);
+  const resetDiscoveryData = useSetAtom(discoveryDataAtom);
+  const resetDiscoverySectionQuestions = useSetAtom(
+    discoverySectionQuestionsAtom,
+  );
+  const resetGoalsData = useSetAtom(goalsDataAtom);
+  const resetGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
+  const resetRiskProfileData = useSetAtom(riskProfileDataAtom);
+  const resetCreatingNewClient = useSetAtom(creatingNewClientAtom);
+  const resetDiscoverySectionsModal = useSetAtom(addDiscoverySectionsModalOpen);
+  const resetAdvisersData = useSetAtom(advisersDataAtom);
+  const resetCatalogsData = useSetAtom(catalogsDataAtom);
+  const resetDashboardLoading = useSetAtom(userDashboardLoading);
+  const resetDashboardError = useSetAtom(userDashboardError);
   const LoggedInUser = useAtomValue(loggedInUser);
 
   const fetchSession = useCallback(async () => {
     try {
-      const res = await api.get("/api/auth/me");
+      const res = await api.get("/auth/me");
       const session = normalizeSessionFromApi(res);
       setLoggedInUser(session);
       return { ok: true, session };
@@ -35,7 +72,43 @@ export default function useAuthSession() {
 
   const clearSession = useCallback(() => {
     setLoggedInUser(EMPTY_SESSION);
-  }, [setLoggedInUser]);
+    resetLoggedInUser();
+    resetCDFProspectsData();
+    resetMyClientsData();
+    resetMyTeamData();
+    resetInvestmentOffersData();
+    resetSelectedClient();
+    resetDiscoveryData();
+    resetDiscoverySectionQuestions();
+    resetGoalsData();
+    resetGoalsSectionQuestions();
+    resetRiskProfileData();
+    resetCreatingNewClient();
+    resetDiscoverySectionsModal();
+    resetAdvisersData();
+    resetCatalogsData();
+    resetDashboardLoading();
+    resetDashboardError();
+  }, [
+    resetAdvisersData,
+    resetCatalogsData,
+    resetCDFProspectsData,
+    resetCreatingNewClient,
+    resetDashboardError,
+    resetDashboardLoading,
+    resetDiscoveryData,
+    resetDiscoverySectionQuestions,
+    resetDiscoverySectionsModal,
+    resetGoalsData,
+    resetGoalsSectionQuestions,
+    resetInvestmentOffersData,
+    resetLoggedInUser,
+    resetMyClientsData,
+    resetMyTeamData,
+    resetRiskProfileData,
+    resetSelectedClient,
+    setLoggedInUser,
+  ]);
 
   const logout = useCallback(
     async (redirectPathOverride = null) => {
@@ -44,7 +117,7 @@ export default function useAuthSession() {
         : getLoginPathForSession(LoggedInUser);
 
       try {
-        await api.post("/api/auth/logout");
+        await api.post("/auth/logout");
       } catch {
         // Still clear local state if logout API fails.
       } finally {

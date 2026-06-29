@@ -35,12 +35,12 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
 
       if (discoveryQuestions?.clientFK) {
         const response = await patch(
-          `/api/questions/Update/${discoveryQuestions.clientFK}`,
+          `/questions/Update/${discoveryQuestions.clientFK}`,
           payload,
         );
         console.log(response);
       } else {
-        const response = await post("/api/questions/Add", payload);
+        const response = await post("/questions/Add", payload);
         console.log(response);
       }
 

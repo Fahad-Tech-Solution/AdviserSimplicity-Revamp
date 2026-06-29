@@ -358,8 +358,8 @@ export default function PartnershipModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromPartnership/Update", payload)
-        : await post("/api/incomeFromPartnership/Add", payload);
+        ? await patch("/incomeFromPartnership/Update", payload)
+        : await post("/incomeFromPartnership/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

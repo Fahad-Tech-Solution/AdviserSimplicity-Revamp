@@ -21,7 +21,7 @@ function roleIdFromRow(row) {
 
 /**
  * Add / edit employee modal — same fields / endpoints as legacy EmployeeForm.
- * POST /api/user/Add/Employee | PATCH /api/user/Update/Employee
+ * POST /user/Add/Employee | PATCH /user/Update/Employee
  *
  * @param {object|null} editingEmployee — when set, form opens in edit mode for that row.
  */
@@ -74,7 +74,7 @@ export default function AddEmployee({
     (async () => {
       setLoadingRoles(true);
       try {
-        const data = await api.get("/api/role");
+        const data = await api.get("/role");
         if (!cancelled) setRoles(normalizeRolesResponse(data));
       } catch {
         if (!cancelled) {
@@ -107,7 +107,7 @@ export default function AddEmployee({
             parentUserID: editingEmployee.parentUserID,
           }),
         };
-        const res = await api.patch("/api/user/Update/Employee", payload);
+        const res = await api.patch("/user/Update/Employee", payload);
         message.success("Employee updated.");
         const merged =
           res && typeof res === "object"
@@ -115,7 +115,7 @@ export default function AddEmployee({
             : { ...editingEmployee, ...base, _id: editingEmployee._id };
         onSuccess?.(merged, { isEdit: true });
       } else {
-        const res = await api.post("/api/user/Add/Employee", base);
+        const res = await api.post("/user/Add/Employee", base);
         message.success("Employee added.");
         onSuccess?.(res, { isEdit: false });
       }

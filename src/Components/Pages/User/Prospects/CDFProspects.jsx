@@ -101,7 +101,7 @@ export default function CDFProspects() {
         status,
       };
 
-      const response = await api.patch("/api/CDF/Update", payload);
+      const response = await api.patch("/CDF/Update", payload);
 
       setProspects((prev) =>
         prev.map((item) =>
@@ -149,7 +149,7 @@ export default function CDFProspects() {
       setSearchText("");
       setActiveTab("new");
 
-      const response = await api.get("/api/CDF/");
+      const response = await api.get("/CDF/");
       const normalizedCDFData = Array.isArray(response)
         ? response.map(normalizeCDFProspect)
         : [];

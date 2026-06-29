@@ -36,7 +36,7 @@ const MyClients = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/api/user/Clients");
+      const response = await api.get("/user/Clients");
       setMyClientsData(response);
     };
     fetchData();

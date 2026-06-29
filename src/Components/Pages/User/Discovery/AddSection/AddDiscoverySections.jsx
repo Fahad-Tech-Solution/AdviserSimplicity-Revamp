@@ -198,7 +198,7 @@ export default function AddDiscoverySectionsModal() {
 
     (async () => {
       try {
-        const res = await getRef.current(`/api/questions/${clientId}`);
+        const res = await getRef.current(`/questions/${clientId}`);
         if (cancelled) return;
         const data = unwrapQuestionsResponse(res) ?? res;
         formRef.current.setFieldsValue(mergeLoadedPayload(clientId, data));
@@ -241,9 +241,9 @@ export default function AddDiscoverySectionsModal() {
 
       let saved;
       if (!payload._id) {
-        saved = await post("/api/questions/Add", payload);
+        saved = await post("/questions/Add", payload);
       } else {
-        saved = await patch(`/api/questions/Update/${clientId}`, payload);
+        saved = await patch(`/questions/Update/${clientId}`, payload);
       }
       const normalized = unwrapQuestionsResponse(saved) ?? saved;
       if (normalized && typeof normalized === "object") {

@@ -19,7 +19,7 @@ export default function RegisterForm() {
         email: values.email?.toLowerCase().trim(),
         password: values.password,
       };
-      await api.post("/api/auth/register", payload);
+      await api.post("/auth/register", payload);
       message.success("Account created successfully. Please login.");
     } catch (err) {
       const msg = err?.response?.data?.message || "Registration failed.";

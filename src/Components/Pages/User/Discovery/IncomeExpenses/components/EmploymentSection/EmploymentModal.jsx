@@ -532,8 +532,8 @@ export default function EmploymentModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromOwnBusiness/Update", payload)
-        : await post("/api/incomeFromOwnBusiness/Add", payload);
+        ? await patch("/incomeFromOwnBusiness/Update", payload)
+        : await post("/incomeFromOwnBusiness/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

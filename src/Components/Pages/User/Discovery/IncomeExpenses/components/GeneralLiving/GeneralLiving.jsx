@@ -334,8 +334,8 @@ export default function GeneralLiving({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?._id
-        ? await patch("/api/generalLivingExpenses/Update", filteredPayload)
-        : await post("/api/generalLivingExpenses/Add", filteredPayload);
+        ? await patch("/generalLivingExpenses/Update", filteredPayload)
+        : await post("/generalLivingExpenses/Add", filteredPayload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

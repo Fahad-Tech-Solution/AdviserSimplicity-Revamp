@@ -43,7 +43,7 @@ function buildPayload(values) {
 
 /**
  * Add household / client — household fields + PEOPLE (Primary / Partner).
- * POST /api/personalDetails/Add
+ * POST /personalDetails/Add
  */
 export default function AddClient({ open, onClose, onSuccess }) {
   const api = useApi();
@@ -66,7 +66,7 @@ export default function AddClient({ open, onClose, onSuccess }) {
     const payload = buildPayload(values);
     setSubmitting(true);
     try {
-      const res = await api.post("/api/personalDetails/Add", payload);
+      const res = await api.post("/personalDetails/Add", payload);
       message.success("Client saved.");
       onSuccess?.(res, values);
       form.resetFields();

@@ -274,8 +274,8 @@ export default function SoleTraderModal({ modalData }) {
       setSaving(true);
 
       const saved = sectionData?.clientFK
-        ? await patch("/api/incomeFromSoleTrader/Update", payload)
-        : await post("/api/incomeFromSoleTrader/Add", payload);
+        ? await patch("/incomeFromSoleTrader/Update", payload)
+        : await post("/incomeFromSoleTrader/Add", payload);
 
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),

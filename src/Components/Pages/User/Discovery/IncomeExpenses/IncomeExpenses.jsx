@@ -67,9 +67,9 @@ const IncomeExpenses = () => {
       let response;
 
       if (isUpdate) {
-        response = await patch(`/api/retirementLivingExpenses/Update`, payload);
+        response = await patch(`/retirementLivingExpenses/Update`, payload);
       } else {
-        response = await post(`/api/retirementLivingExpenses/Add`, payload);
+        response = await post(`/retirementLivingExpenses/Add`, payload);
       }
 
       // console.log(response);

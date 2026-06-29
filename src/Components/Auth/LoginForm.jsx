@@ -34,7 +34,7 @@ export default function LoginForm() {
         roleName: isAdminLogin ? "superAdmin" : "Adviser",
       };
 
-      let res = await api.post("/api/auth/login-v2", payload);
+      let res = await api.post("/auth/login-v2", payload);
 
       if (res?.requiresOtp) {
         message.success(res?.message);

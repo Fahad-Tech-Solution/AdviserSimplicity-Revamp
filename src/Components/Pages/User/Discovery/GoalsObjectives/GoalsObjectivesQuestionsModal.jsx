@@ -99,8 +99,8 @@ const GoalsObjectivesQuestionsModal = ({ modalData }) => {
 
     try {
       const saved = goalsQuestions?.clientFK
-        ? await patch("/api/goalsQuestions/Update", payload)
-        : await post("/api/goalsQuestions/Add", payload);
+        ? await patch("/goalsQuestions/Update", payload)
+        : await post("/goalsQuestions/Add", payload);
 
       setGoalsQuestions(saved && typeof saved === "object" ? saved : payload);
       message.success("Goals questions updated successfully");

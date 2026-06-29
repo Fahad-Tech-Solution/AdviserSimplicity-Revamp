@@ -11,7 +11,7 @@ export const loggedInUser = atom({
 export const CDFProspectsData = atomWithStorage("CDFProspectsData", []);
 export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
 
-/** Team / employees list from GET /api/user/Employees (bootstrap). */
+/** Team / employees list from GET /user/Employees (bootstrap). */
 export const MyTeamData = atomWithStorage("MyTeamData", []);
 
 export const InvestmentOffersData = atomWithStorage("InvestmentOffersData", []);

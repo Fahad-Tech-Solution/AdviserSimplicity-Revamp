@@ -244,12 +244,12 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         riskProfileResult,
         investments,
       ] = await Promise.allSettled([
-        get(`/api/questions/${row?._id}`),
-        get(`/api/dataOfAllSection/${row?._id}`),
-        get(`/api/goalsQuestions/getByClient/${row?._id}`),
-        get(`/api/CombinedGoalsAndObjectives/${row?._id}`),
-        get(`/api/riskProfile/${row?._id}`),
-        get(`/api/investmentoffer`),
+        get(`/questions/${row?._id}`),
+        get(`/dataOfAllSection/${row?._id}`),
+        get(`/goalsQuestions/getByClient/${row?._id}`),
+        get(`/CombinedGoalsAndObjectives/${row?._id}`),
+        get(`/riskProfile/${row?._id}`),
+        get(`/investmentoffer`),
       ]);
 
       if (goalsYesNoQuestionsResult.status === "fulfilled") {
@@ -361,7 +361,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     setLoading(true);
 
     try {
-      const res = await post("/api/riskprofile/email", payload);
+      const res = await post("/riskprofile/email", payload);
 
       if (res) {
         notification.success({

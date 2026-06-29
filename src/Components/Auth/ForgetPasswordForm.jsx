@@ -59,7 +59,7 @@ export default function ForgetPasswordForm() {
     try {
       setSubmitting(true);
       const cleanedEmail = values.email?.toLowerCase().trim();
-      await api.patch("/api/auth/forgot-password", { email: cleanedEmail });
+      await api.patch("/auth/forgot-password", { email: cleanedEmail });
       setEmail(cleanedEmail);
       setTimeLeft(OTP_EXPIRY_SECONDS);
       setStep(2);
@@ -80,7 +80,7 @@ export default function ForgetPasswordForm() {
     try {
       setSubmitting(true);
       const cleanedOtp = values.otp?.trim();
-      await api.post("/api/auth/verify-otp", { email, otp: cleanedOtp });
+      await api.post("/auth/verify-otp", { email, otp: cleanedOtp });
       setOtp(cleanedOtp);
       setStep(3);
       message.success("OTP verified.");
@@ -94,7 +94,7 @@ export default function ForgetPasswordForm() {
   const handleReset = async (values) => {
     try {
       setSubmitting(true);
-      await api.patch("/api/auth/reset-password", {
+      await api.patch("/auth/reset-password", {
         email,
         otp,
         newPassword: values.newPassword,

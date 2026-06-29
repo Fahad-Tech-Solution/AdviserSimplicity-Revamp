@@ -127,7 +127,7 @@ export default function CatalogsLayoutPage() {
   const fetchCatalogs = async () => {
     try {
       setLoading(true);
-      const res = await get("/api/investmentoffer");
+      const res = await get("/investmentoffer");
       console.log(res, "res");
       setCatalogsData(normalizeCatalogsData(res));
     } catch (error) {

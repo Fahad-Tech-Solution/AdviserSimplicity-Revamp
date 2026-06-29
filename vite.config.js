@@ -17,13 +17,22 @@ export default defineConfig({
     proxy: {
       "/api": {
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
-        target: process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
+        target:
+          process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
+        // target: "http://192.168.18.128:7000/api",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/dev_api": {
+        // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
+        target:
+          process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
         // target: "http://192.168.18.128:7000/api",
         changeOrigin: true,
         secure: false,
       },
     },
   },
-  base: "/AdviserSimplicity-Revamp/",
-  // base: '/',
+  // base: "/AdviserSimplicity-Revamp/",
+  base: "/",
 });

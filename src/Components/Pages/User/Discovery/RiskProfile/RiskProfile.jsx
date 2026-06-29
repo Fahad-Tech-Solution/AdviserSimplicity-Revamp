@@ -678,7 +678,7 @@ export default function RiskProfile() {
       }
 
       try {
-        const result = await get(`/api/riskProfile/${selected?._id}`);
+        const result = await get(`/riskProfile/${selected?._id}`);
         if (result && result._id) {
           setRecordId(result._id);
           setValues(buildValuesFromApi(result, showPartner));
@@ -902,8 +902,8 @@ export default function RiskProfile() {
     try {
       setSubmitting(true);
       const response = recordId
-        ? await patch("/api/riskProfile/Update", payload)
-        : await post("/api/riskProfile/Add", payload);
+        ? await patch("/riskProfile/Update", payload)
+        : await post("/riskProfile/Add", payload);
 
       const saved =
         response && typeof response === "object" ? response : payload;
