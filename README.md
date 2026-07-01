@@ -21,6 +21,12 @@ If you are developing a production application, we recommend using TypeScript wi
 
 - Automated Subdirectory Support: Setting base: `/AdviserSimplicity-Revamp/` for GitHub Pages is crucial because GitHub serves your built files out of that project directory instead of the domain root.
 
+![Config file](./supportingImage/img%20(2).png)
+
 - Nginx Routing: By hitting `/dev_api`, your frontend automatically forces Nginx on your server to transparently strip that prefix and send clean `/api` calls down into your development database runner.
 
+![Config file](./supportingImage/img%20(3).png)
+
 - Router Adjustments: Moving between `HashRouter` and `BrowserRouter` prevents the dreaded 404 page-refresh issues inherent to standard client-side routing on shared static hosting providers like GitHub Pages.
+
+![Config file](./supportingImage/img%20(1).png)
