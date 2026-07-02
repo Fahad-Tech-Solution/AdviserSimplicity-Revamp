@@ -5,7 +5,7 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import { App as AntdApp, Button, Checkbox, Form, Space } from "antd";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DynamicFormField from "../../../../../Common/DynamicFormField.jsx";
 import useApi from "../../../../../../hooks/useApi";
@@ -67,7 +67,7 @@ const NEXT_BUTTON_STYLE = {
 };
 
 const TITLE_OPTIONS = ["Mr.", "Mrs.", "Ms.", "Miss", "Dr.", "Prof."];
-const GENDER_OPTIONS = ["Male", "Female", "Other",];
+const GENDER_OPTIONS = ["Male", "Female", "Other"];
 const MARITAL_OPTIONS = [
   "Single",
   "Married",
@@ -89,7 +89,7 @@ const EMPLOYMENT_OPTIONS = [
 const YES_NO = ["Yes", "No"];
 const HEALTH_OPTIONS = ["Excellent", "Good", "Average", "Poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
-const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step Daughter", "Step Son",];
+const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step Daughter", "Step Son"];
 const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);
 const AUS_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
 
@@ -810,6 +810,7 @@ export default function PersonalDetailsFrom({
   const api = useApi();
   const { message } = AntdApp.useApp();
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
+  const DiscoveryData = useAtomValue(discoveryDataAtom);
   const setSelectedClient = useSetAtom(SelectedClient);
   const setMyClientsData = useSetAtom(MyClientsData);
   const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
@@ -987,24 +988,34 @@ export default function PersonalDetailsFrom({
                 ...payload,
               };
 
+        console.log("nextPd", nextPd);
+        console.log("createMode", createMode);
+
         setPd(nextPd);
+
+        console.log(DiscoveryData, "DiscoveryData");
+
         setDiscoveryData((prev) => {
           if (
-            prev?.personaldetails &&
-            typeof prev.personaldetails === "object"
+            prev?.personalDetails &&
+            typeof prev.personalDetails === "object"
           ) {
-            return { ...prev, personaldetails: nextPd };
+            console.log("condition 1");
+            return { ...prev, personalDetails: nextPd };
           }
           if (
             prev?.personalDetails &&
             typeof prev.personalDetails === "object"
           ) {
+            console.log("condition 2");
             return { ...prev, personalDetails: nextPd };
           }
           if (prev && typeof prev === "object") {
-            return { ...prev, ...nextPd };
+            console.log("condition 3");
+            return { ...prev, personalDetails: nextPd };
           }
-          return { personaldetails: nextPd, personalDetails: nextPd };
+          console.log("condition 4");
+          return { personalDetails: nextPd };
         });
 
         if (isCreate) {
@@ -1021,7 +1032,9 @@ export default function PersonalDetailsFrom({
 
         await onSave?.(saved ?? payload);
         message.success(
-          isCreate ? "Client created successfully." : "Personal details updated.",
+          isCreate
+            ? "Client created successfully."
+            : "Personal details updated.",
         );
         setEditing(false);
       } catch (error) {

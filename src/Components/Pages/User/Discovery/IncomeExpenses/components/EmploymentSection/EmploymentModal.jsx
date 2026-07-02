@@ -85,6 +85,8 @@ function buildInitialValues(sectionData, allowPartner) {
     ? rawOwner
     : rawOwner.filter((value) => value === "client");
 
+
+
   return {
     owner,
     client: buildInitialPerson(sectionData?.client, sectionData?.clientTotal),
@@ -335,6 +337,7 @@ export default function EmploymentModal({ modalData }) {
   ];
 
   const sectionData = discoveryData?.[modalData?.key] || {};
+
   const allowPartner = !["Single", "Widowed"].includes(
     discoveryData?.personalDetails?.client?.clientMaritalStatus,
   );
@@ -350,6 +353,7 @@ export default function EmploymentModal({ modalData }) {
         : ownerOptions.filter((option) => option.value === "client"),
     [allowPartner, ownerOptions],
   );
+
   const initialValues = useMemo(
     () => buildInitialValues(sectionData, allowPartner),
     [allowPartner, sectionData],

@@ -47,7 +47,9 @@ function slicePoliciesForOwner(branch) {
   const policies = Array.isArray(branch.policies) ? branch.policies : [];
   const n = Number(branch.NumberOfMaps);
   const count =
-    Number.isFinite(n) && n > 0 ? Math.min(n, policies.length) : policies.length;
+    Number.isFinite(n) && n > 0
+      ? Math.min(n, policies.length)
+      : policies.length;
   return policies.slice(0, count);
 }
 
@@ -75,9 +77,7 @@ function computeOwnerTotals(policies, groupCoverDetails = {}) {
     policies.reduce(
       (sum, item) =>
         sum +
-        currencyToNumber(
-          item?.IPDetails?.superlinked === "No" ? item?.IP : 0,
-        ),
+        currencyToNumber(item?.IPDetails?.superlinked === "No" ? item?.IP : 0),
       0,
     ) + currencyToNumber(gd?.monthlyIncome);
   return {
@@ -112,9 +112,7 @@ function setOwnerPoliciesToMapCount(form, ownerKey, mapCount) {
   const n = Number(mapCount);
   if (!Number.isFinite(n) || n < 1 || n > 10) return;
   const ownerBlock = form.getFieldValue(ownerKey) || {};
-  const prev = Array.isArray(ownerBlock.policies)
-    ? ownerBlock.policies
-    : [];
+  const prev = Array.isArray(ownerBlock.policies) ? ownerBlock.policies : [];
   const newPolicies = alignPoliciesToMapCount(prev, n);
   if (
     prev.length === newPolicies.length &&
@@ -397,7 +395,6 @@ function OwnerTabContent({
             },
             switchToEditMode: () => setEditing(true),
             noCancelButton: true,
-            
           });
         },
       },
@@ -454,7 +451,9 @@ function OwnerTabContent({
         <Button
           type="text"
           danger
-          onClick={() => confirmRemoveData(() => handleRemoveRow(record.rowIndex))}
+          onClick={() =>
+            confirmRemoveData(() => handleRemoveRow(record.rowIndex))
+          }
         >
           🗑️
         </Button>
@@ -478,14 +477,7 @@ function OwnerTabContent({
       index: index + 1,
       formPath: [ownerKey, "policies", index],
     }));
-  }, [
-    activeTabKey,
-    editing,
-    form,
-    ownerKey,
-    watchedMapCount,
-    watchedPolicies,
-  ]);
+  }, [activeTabKey, editing, form, ownerKey, watchedMapCount, watchedPolicies]);
 
   const onOpenGroupCover = () => {
     setOpenModal(true);
@@ -546,23 +538,24 @@ function OwnerTabContent({
           // Add a dependency so this field re-renders when NumberOfMaps changes for this owner
           shouldUpdate={(prevValues, currentValues) => {
             return (
-              prevValues?.[ownerKey]?.NumberOfMaps !== currentValues?.[ownerKey]?.NumberOfMaps
+              prevValues?.[ownerKey]?.NumberOfMaps !==
+              currentValues?.[ownerKey]?.NumberOfMaps
             );
           }}
           noStyle
         >
           {() => {
-            
-            return(
-            <EditableDynamicTable
-              key={`${ownerKey}-policies-${Array.isArray(watchedPolicies) ? watchedPolicies.length : 0}`}
-              form={form}
-              editing={editing}
-              columns={columns}
-              data={rows}
-              tableProps={TABLE_PROPS}
-            />
-          )}}
+            return (
+              <EditableDynamicTable
+                key={`${ownerKey}-policies-${Array.isArray(watchedPolicies) ? watchedPolicies.length : 0}`}
+                form={form}
+                editing={editing}
+                columns={columns}
+                data={rows}
+                tableProps={TABLE_PROPS}
+              />
+            );
+          }}
         </Form.Item>
       </Col>
     </Row>
@@ -636,14 +629,13 @@ export default function PersonalInsuranceModal({ modalData }) {
     setEditing(!discoveryData?.personalInsurance?._id);
   }, [form, initialValues, discoveryData?.personalInsurance?._id]);
 
- 
-
   const handleFinish = async (values) => {
-    const pi = personalInsurance && typeof personalInsurance === "object"
-      ? personalInsurance
-      : {};
+    const pi =
+      personalInsurance && typeof personalInsurance === "object"
+        ? personalInsurance
+        : {};
 
-      let data = form.getFieldsValue(true);
+    let data = form.getFieldsValue(true);
 
     const clientPolicies = slicePoliciesForOwner(data?.client);
     const partnerPolicies = allowPartner
@@ -664,7 +656,7 @@ export default function PersonalInsuranceModal({ modalData }) {
 
     const payload = {
       ...(pi._id ? { _id: pi._id } : {}),
-      clientFK: pi.clientFK || discoveryData?.clientFK,
+      clientFK: pi.clientFK || discoveryData?.personalDetails?._id,
       selectedStakeholders: Array.isArray(pi.selectedStakeholders)
         ? pi.selectedStakeholders
         : ["client"],
@@ -673,7 +665,9 @@ export default function PersonalInsuranceModal({ modalData }) {
         PersonalInsurance: clientPolicies,
         numberOfPolicies: clientPolicies.length,
       },
-      clientLifeInsuranceTotal: toCommaAndDollar(clientTotals.LifeInsuranceTotal),
+      clientLifeInsuranceTotal: toCommaAndDollar(
+        clientTotals.LifeInsuranceTotal,
+      ),
       clientTPDTotal: toCommaAndDollar(clientTotals.TPDTotal),
       clientTraumaTotal: toCommaAndDollar(clientTotals.TraumaTotal),
       clientIncomeProtectionTotal: toCommaAndDollar(
@@ -724,7 +718,7 @@ export default function PersonalInsuranceModal({ modalData }) {
         personalInsurance:
           saved?.personalInsurance !== undefined
             ? saved.personalInsurance
-            : saved ?? payload,
+            : (saved ?? payload),
       }));
 
       message.success("Personal insurance saved successfully");

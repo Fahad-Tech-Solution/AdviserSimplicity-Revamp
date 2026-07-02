@@ -204,7 +204,7 @@ export default function AddDiscoverySectionsModal() {
         formRef.current.setFieldsValue(mergeLoadedPayload(clientId, data));
       } catch {
         if (cancelled) return;
-        messageRef.current.error("Could not load discovery questions.");
+        // messageRef.current.error("Could not load discovery questions.");
         formRef.current.setFieldsValue(mergeLoadedPayload(clientId, null));
       } finally {
         if (!cancelled) setLoading(false);

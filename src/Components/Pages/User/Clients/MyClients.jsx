@@ -24,7 +24,9 @@ const MyClients = () => {
   const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
   const setSelectedClient = useSetAtom(SelectedClient);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
-  const setDiscoverySectionQuestions = useSetAtom(discoverySectionQuestionsAtom);
+  const setDiscoverySectionQuestions = useSetAtom(
+    discoverySectionQuestionsAtom,
+  );
   const setGoalsData = useSetAtom(goalsDataAtom);
   const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -44,7 +46,68 @@ const MyClients = () => {
 
   const handleAddNewClient = () => {
     setSelectedClient(null);
-    setDiscoveryData({});
+    setDiscoveryData({
+      personalDetails: {},
+      BusinessAsCompanyStructure: {},
+      BusinessAsTrusts: {},
+      POA: {},
+      professionalAdviser: {},
+      will: {},
+      familyAustralianShare: {},
+      familyBank: {},
+      familyDetails: {},
+      familyInvestmentHomeLoan: {},
+      familyInvestmentProperties: {},
+      familyMangedFunds: {},
+      familyTermDeposit: {},
+      familyOtherInvestment: {},
+      australianShareMarket: {},
+      bankAccountFinance: {},
+      investmentBondFinance: {},
+      managedFundsLOC: {},
+      managedFundsMarginLoan: {},
+      managedFund: {},
+      termDepositsFinance: {},
+      accountBasedPensionIssues: {},
+      annuitiesIssues: {},
+      superAnnuationIssues: {},
+      investmentPropertyDetails: {},
+      incomeExpenses: {},
+      investmentPropertyLoan: {},
+      familyHome: {},
+      boat: {},
+      car: {},
+      caravan: {},
+      houseHold: {},
+      creditCards: {},
+      otherAssets: {},
+      personalLoans: {},
+      generalLivingExpenses: {},
+      incomeFromCentrelink: {},
+      incomeFromOverseasPension: {},
+      incomeFromOwnBusiness: {},
+      incomeFromPartnership: {},
+      incomeFromSoleTrader: {},
+      incomeFromSuperPayment: {},
+      retirementLivingExpenses: {},
+      personalInsurance: {},
+      incomeProtection: {},
+      life: {},
+      TPD: {},
+      trauma: {},
+      holidayHome: [],
+      holidayHomeLoan: [],
+      SMSFAccumulationDetails: {},
+      SMSFAustralianShares: {},
+      SMSFBank: {},
+      SMSFDetails: {},
+      SMSFInvestmentLoan: {},
+      SMSFInvestmentProperties: {},
+      SMSFManagedFunds: {},
+      SMSFPensionPhase: {},
+      SMSFTermDeposits: {},
+      SMSFOtherInvestment: {},
+    });
     setDiscoverySectionQuestions({});
     setGoalsData({});
     setGoalsSectionQuestions({});

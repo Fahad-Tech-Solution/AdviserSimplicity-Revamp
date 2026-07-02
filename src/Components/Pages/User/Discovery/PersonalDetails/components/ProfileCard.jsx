@@ -3,6 +3,8 @@ import AppModal from "../../../../../Common/AppModal";
 import UploadImage from "./UploadImage";
 import { useEffect, useState } from "react";
 import { capitalizeFirst } from "../../../../../../hooks/helpers";
+import { useAtomValue } from "jotai";
+import { discoveryDataAtom, SelectedClient } from "../../../../../../store/authState";
 
 const { Text } = Typography;
 
@@ -134,6 +136,10 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
   const [open, setOpen] = useState(false);
   const [image, setImage] = useState(imageUrl);
 
+  const selectedClientData = useAtomValue(SelectedClient);
+  const DiscoveryData = useAtomValue(discoveryDataAtom);
+
+
   useEffect(() => {
     setImage(imageUrl);
   }, [imageUrl]);
@@ -250,6 +256,9 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
             color: "#111827",
             lineHeight: 1.35,
             textTransform: "none",
+          }}
+          onClick={() => {
+            console.log(DiscoveryData, "DiscoveryData");
           }}
         >
           {formal}
