@@ -344,7 +344,7 @@ export default function PersonalLoanModal({ modalData }) {
         options: LOAN_TERM_OPTIONS,
       },
       {
-        title: "Action 3211",
+        title: "Action",
         dataIndex: "action",
         key: "action",
         editable: false,

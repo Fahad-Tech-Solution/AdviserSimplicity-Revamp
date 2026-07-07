@@ -988,33 +988,25 @@ export default function PersonalDetailsFrom({
                 ...payload,
               };
 
-        console.log("nextPd", nextPd);
-        console.log("createMode", createMode);
-
         setPd(nextPd);
 
-        console.log(DiscoveryData, "DiscoveryData");
 
         setDiscoveryData((prev) => {
           if (
             prev?.personalDetails &&
             typeof prev.personalDetails === "object"
           ) {
-            console.log("condition 1");
             return { ...prev, personalDetails: nextPd };
           }
           if (
             prev?.personalDetails &&
             typeof prev.personalDetails === "object"
           ) {
-            console.log("condition 2");
             return { ...prev, personalDetails: nextPd };
           }
           if (prev && typeof prev === "object") {
-            console.log("condition 3");
             return { ...prev, personalDetails: nextPd };
           }
-          console.log("condition 4");
           return { personalDetails: nextPd };
         });
 
