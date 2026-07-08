@@ -93,3 +93,136 @@ export const INITIAL_KNOWLEDGE_ENTRIES = [
     content: "",
   },
 ];
+
+export const SelectedCategory = [
+  {
+    value: "Super",
+    label: "Super",
+    subCategories: [
+      { value: "Contributions", label: "Contributions" },
+      { value: "Strategy & planning", label: "Strategy & planning" },
+      { value: "Pension phase", label: "Pension phase" },
+      { value: "Death benefits", label: "Death benefits" },
+      { value: "Accumulation phase", label: "Accumulation phase" },
+      { value: "Access & withdrawals", label: "Access & withdrawals" },
+    ],
+  },
+  {
+    value: "Age Pension & Centrelink",
+    label: "Age Pension & Centrelink",
+    subCategories: [
+      { value: "Age Pension eligibility", label: "Age Pension eligibility" },
+      { value: "Age Pension strategy", label: "Age Pension strategy" },
+      { value: "Other payments", label: "Other payments" },
+      { value: "Health & Medicare", label: "Health & Medicare" },
+    ],
+  },
+  {
+    value: "Tax",
+    label: "Tax",
+    subCategories: [
+      { value: "Income tax", label: "Income tax" },
+      { value: "Deductions", label: "Deductions" },
+      { value: "Capital gains", label: "Capital gains" },
+      { value: "Structures", label: "Structures" },
+      { value: "EOFY & returns", label: "EOFY & returns" },
+    ],
+  },
+  {
+    value: "Investment",
+    label: "Investment",
+    subCategories: [
+      { value: "Portfolio basics", label: "Portfolio basics" },
+      { value: "Products", label: "Products" },
+      { value: "Strategy & behaviour", label: "Strategy & behaviour" },
+      { value: "Tax-efficient investing", label: "Tax-efficient investing" },
+    ],
+  },
+  {
+    value: "Budgeting & Wealth",
+    label: "Budgeting & Wealth",
+    subCategories: [
+      {
+        value: "Budgeting basics",
+        label: "Budgeting basics",
+      },
+      { value: "Goals & planning", label: "Goals & planning" },
+      { value: "Family", label: "Family" },
+      { value: "Life events", label: "Life events" },
+      { value: "Retirement lifestyle", label: "Retirement lifestyle" },
+      { value: "Wealth strategy", label: "Wealth strategy" },
+      { value: "Advice & tools", label: "Advice & tools" },
+      { value: "Strategic/meta", label: "Strategic/meta" },
+    ],
+  },
+  {
+    value: "Small Business",
+    label: "Small Business",
+    subCategories: [
+      { value: "Structures", label: "Structures" },
+      { value: "CGT & exit", label: "CGT & exit" },
+      { value: "Tax & distributions", label: "Tax & distributions" },
+      { value: "Succession & sale", label: "Succession & sale" },
+    ],
+  },
+  {
+    value: "Self-Managed Super (SMSF)",
+    label: "Self-Managed Super (SMSF)",
+    subCategories: [
+      { value: "Setup & compliance", label: "Setup & compliance" },
+      { value: "Investments", label: "Investments" },
+      { value: "Pensions", label: "Pensions" },
+      { value: "Closing & switching", label: "Closing & switching" },
+    ],
+  },
+  {
+    value: "Mortgages & Debt",
+    label: "Mortgages & Debt",
+    subCategories: [
+      { value: "Mortgages", label: "Mortgages" },
+      { value: "Credit scores", label: "Credit scores" },
+      { value: "Debt strategy", label: "Debt strategy" },
+      { value: "Other debt", label: "Other debt" },
+    ],
+  },
+  {
+    value: "Insurance",
+    label: "Insurance",
+    subCategories: [
+      { value: "Life & TPD", label: "Life & TPD" },
+      {
+        value: "Income protection & Trauma",
+        label: "Income protection & Trauma",
+      },
+      { value: "General & PHI", label: "General & PHI" },
+      { value: "Claims & review", label: "Claims & review" },
+    ],
+  },
+  {
+    value: "Aged Care",
+    label: "Aged Care",
+    subCategories: [
+      { value: "Residential care", label: "Residential care" },
+      { value: "Home care", label: "Home care" },
+      { value: "Planning & decisions", label: "Planning & decisions" },
+    ],
+  },
+  {
+    value: "Buying Your First Home",
+    label: "Buying Your First Home",
+    subCategories: [
+      { value: "Government schemes", label: "Government schemes" },
+      { value: "Deposit & borrowing", label: "Deposit & borrowing" },
+      { value: "Buy decisions", label: "Buy decisions" },
+    ],
+  },
+  {
+    value: "Redundancy & Leaving Work",
+    label: "Redundancy & Leaving Work",
+    subCategories: [
+      { value: "Redundancy", label: "Redundancy" },
+      { value: "Termination payments", label: "Termination payments" },
+      { value: "Pre-retirement payouts", label: "Pre-retirement payouts" },
+    ],
+  },
+];

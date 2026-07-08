@@ -21,6 +21,7 @@ import {
   CATEGORY_STYLES,
   KNOWLEDGE_CATEGORIES,
 } from "./knowledgeBaseData";
+import KnowledgeEntryFrom from "./KnowledgeEntryFrom";
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -346,64 +347,10 @@ export default function ReferenceMaterialModal({
       key: TAB_KEYS.ADD,
       label: "Add knowledge entry",
       children: (
-        <Form
-          id={ADD_FORM_ID}
-          form={form}
-          layout="vertical"
-          onFinish={handleAddEntry}
-          requiredMark={false}
-        >
-          <Form.Item
-            name="title"
-            label={<FieldLabel required>Title</FieldLabel>}
-            rules={[{ required: true, message: "Enter a title" }]}
-          >
-            <Input placeholder="e.g. Marginal Tax Rates 2024-25" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="category"
-                label={<FieldLabel required>Category</FieldLabel>}
-                rules={[{ required: true, message: "Select a category" }]}
-              >
-                <Select
-                  placeholder="Select category..."
-                  options={KNOWLEDGE_CATEGORIES}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="effectiveFrom"
-                label={<FieldLabel>Effective From</FieldLabel>}
-              >
-                <DatePicker
-                  format="DD/MM/YYYY"
-                  placeholder="dd/mm/yyyy"
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="content"
-            label={<FieldLabel required>Content</FieldLabel>}
-            rules={[{ required: true, message: "Enter content" }]}
-            extra={
-              <Text style={{ fontSize: 12, color: "#9ca3af" }}>
-                Markdown supported. Advisers can search this text in their tools.
-              </Text>
-            }
-          >
-            <TextArea
-              rows={6}
-              placeholder="Enter the reference material — rates, thresholds, notes, formulas, or any text advisers should see."
-            />
-          </Form.Item>
-        </Form>
+        <KnowledgeEntryFrom
+          ADD_FORM_ID={ADD_FORM_ID} form={form}
+          handleAddEntry={handleAddEntry} FieldLabel={FieldLabel}
+          KNOWLEDGE_CATEGORIES={KNOWLEDGE_CATEGORIES} />
       ),
     },
     {
@@ -455,7 +402,7 @@ export default function ReferenceMaterialModal({
       open={open}
       onClose={onClose}
       title=""
-      width={640}
+      width={800}
       footer={footer}
       destroyOnClose
     >
