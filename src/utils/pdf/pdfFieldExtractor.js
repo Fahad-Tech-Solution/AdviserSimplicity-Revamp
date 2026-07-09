@@ -1,570 +1,175 @@
-// pdf-parse is loaded on demand (browser build + worker). Do not add a top-level
-// `import pdfParse from "pdf-parse"` — that can crash the app at startup.
+import * as pdfjsLib from 'pdfjs-dist';
 
-const LINE_Y_TOLERANCE = 4;
-const PDF_TEXT_PREVIEW_LENGTH = 1500;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-let pdfParseReady;
+// --- Step 1: pull text out of the PDF, preserving line breaks ---
+export async function extractPdfText(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
 
-function isPdfScanDebugEnabled(options = {}) {
-  if (options.debug === true) return true;
-  if (options.debug === false) return false;
-  return import.meta.env.DEV;
-}
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        let lastY = null;
+        let line = '';
 
-function logPdfScan(title, data, options = {}) {
-  if (!isPdfScanDebugEnabled(options)) return;
-  console.groupCollapsed(`[Natty PDF Scan] ${title}`);
-  console.log(data);
-  console.groupEnd();
-}
-
-async function getPdfParseClass() {
-  if (!pdfParseReady) {
-    pdfParseReady = (async () => {
-      const workerUrl = (
-        await import(
-          "../../../node_modules/pdf-parse/dist/pdf-parse/web/pdf.worker.mjs?url"
-        )
-      ).default;
-      const { PDFParse } = await import("pdf-parse");
-      PDFParse.setWorker(workerUrl);
-      return PDFParse;
-    })();
-  }
-  return pdfParseReady;
-}
-
-const FIELD_PATTERN_FALLBACKS = {
-  platformName: [
-    /(?:fund\s+name|superannuation\s+fund|super\s+fund|fund\s+provider|provider)\s*[:.\-\t]?\s*([A-Za-z][A-Za-z0-9\s&.'()-]{2,80})/i,
-    /(?:your\s+)?fund\s*[:.\-\t]?\s*([A-Za-z][A-Za-z0-9\s&.'()-]{2,80})/i,
-  ],
-  memberNumber: [
-    /(?:member|membership)\s*(?:no|number|#|id)?\s*[:.\-\t]?\s*([\d][\d\s-]{5,20})/i,
-    /(?:member|membership)\s*(?:no|number|#|id)?\s*[\r\n\t]+\s*([\d][\d\s-]{5,20})/i,
-    /(?:member|membership)\s*(?:no|number|#)?\s*[:.\-]?\s*(\d{4,15})/i,
-  ],
-  accountNumber: [
-    /(?:account|acct)\s*(?:no|number|#)?\s*[:.\-\t]?\s*(\d{4,15})/i,
-    /(?:account|acct)\s*(?:no|number|#)?\s*[\r\n\t]+\s*(\d{4,15})/i,
-  ],
-  balanceBenefit: [
-    /(?:account\s+)?balance(?:\s+and\s+benefits)?(?:\s+as\s+at)?\s*[:.\-\t]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-    /(?:total\s+)?(?:account\s+)?balance\s*[\r\n\t]+\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-    /(?:total\s+)?benefit\s+amount\s*[:.\-\t]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-    /(?:super\s+)?balance\s*[:.\-\t]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-    /(?:closing|current)\s+balance\s*[:.\-\t]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-  ],
-  portfolioValue: [
-    /(?:portfolio|market)\s*value\s*[:.\-\t]?\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-    /(?:total\s+)?(?:portfolio|market)\s*value\s*[\r\n\t]+\s*\$?\s*([\d,]+(?:\.\d{2})?)/i,
-  ],
-};
-
-function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function labelToFlexiblePattern(label) {
-  const words = String(label || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length) return "";
-  return words.map(escapeRegex).join("[\\s\\n\\t]+");
-}
-
-function preparePdfTextVariants(text) {
-  const raw = String(text || "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\u00a0/g, " ");
-  const normalized = raw.replace(/[ \t]+/g, " ");
-  const flat = raw.replace(/[\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-  const lines = raw
-    .split(/\n/)
-    .map((line) => line.replace(/[ \t]+/g, " ").trim())
-    .filter(Boolean);
-  return { raw, normalized, flat, lines };
-}
-
-function valuePatternForKey(fieldKey) {
-  if (fieldKey === "memberNumber" || fieldKey === "accountNumber") {
-    return "([\\d][\\d\\s-]{4,22})";
-  }
-  if (fieldKey === "platformName") {
-    return "([A-Za-z][A-Za-z0-9\\s&.'()-]{2,80})";
-  }
-  return "([^\\n\\r\\t]{1,160})";
-}
-
-function extractValueAfterLabelFromLine(line, label, fieldKey) {
-  const lineLower = line.toLowerCase();
-  const labelLower = label.toLowerCase().trim();
-  if (!labelLower || labelLower.length < 2) return "";
-
-  const idx = lineLower.indexOf(labelLower);
-  if (idx >= 0) {
-    const after = line
-      .slice(idx + label.length)
-      .trim()
-      .replace(/^[:.\-\s\t]+/, "");
-    const refined = refineValueForKey(fieldKey, after);
-    if (refined) return refined;
-  }
-
-  const cells = line.split("\t").map((cell) => cell.trim());
-  for (let i = 0; i < cells.length; i += 1) {
-    if (!cells[i].toLowerCase().includes(labelLower)) continue;
-    const inline = cells[i]
-      .slice(cells[i].toLowerCase().indexOf(labelLower) + label.length)
-      .trim()
-      .replace(/^[:.\-\s]+/, "");
-    if (inline) {
-      const refinedInline = refineValueForKey(fieldKey, inline);
-      if (refinedInline) return refinedInline;
+        content.items.forEach((item) => {
+            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+                fullText += line.trim() + '\n';
+                line = '';
+            }
+            line += item.str + ' ';
+            lastY = item.transform[5];
+        });
+        fullText += line.trim() + '\n';
     }
-    if (cells[i + 1]) {
-      const refinedNext = refineValueForKey(fieldKey, cells[i + 1]);
-      if (refinedNext) return refinedNext;
-    }
-  }
 
-  return "";
+    return fullText;
 }
 
-function extractFromLines(lines, scanKeys = []) {
-  const extracted = {};
-  const normalizedKeys = normalizeScanKeys(scanKeys);
+// --- small string helpers ---
+const collapseSpaces = (s) => s.replace(/\s+/g, ' ').trim();
+const fixHyphenatedSlug = (s) => s.replace(/\s*-\s*/g, '-').trim();
 
-  normalizedKeys.forEach(({ key, labels }) => {
-    for (const label of labels) {
-      for (let i = 0; i < lines.length; i += 1) {
-        const line = lines[i];
-        const value = extractValueAfterLabelFromLine(line, label, key);
-        if (value) {
-          extracted[key] = value;
-          return;
+// --- fuzzy match: tolerates stray whitespace between letters (PDF kerning artifacts) ---
+function fuzzyPattern(str) {
+    return str
+        .split('')
+        .map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('\\s*');
+}
+
+const HEADING_DEFS = [
+    { key: 'title', pattern: `${fuzzyPattern('Title')}\\s*:` },
+    { key: 'topic', pattern: `${fuzzyPattern('Topic')}\\s*:` },
+    { key: 'subcategory', pattern: `${fuzzyPattern('Subcategory')}\\s*:` },
+    { key: 'slugId', pattern: `${fuzzyPattern('ID')}\\s*(?:\\([^)]*\\))?\\s*:` },
+    { key: 'tag', pattern: `${fuzzyPattern('Tag')}\\s*:` },
+    { key: 'boost', pattern: `${fuzzyPattern('Boost')}\\s*:` },
+    { key: 'keywords', pattern: `${fuzzyPattern('Keywords')}\\s*:` },
+    { key: 'snippet', pattern: `${fuzzyPattern('Snippet')}\\s*:` },
+    {
+        key: 'explanation',
+        pattern: `${fuzzyPattern('Plain')}\\s*-?\\s*${fuzzyPattern('English')}\\s*${fuzzyPattern('explanation')}\\s*:`,
+    },
+    { key: 'note', pattern: `${fuzzyPattern('Note')}\\s*:` },
+    { key: 'example', pattern: `${fuzzyPattern('Example')}\\s*:` },
+    { key: 'statBoxes', pattern: `${fuzzyPattern('stat')}\\s*${fuzzyPattern('box')}[a-zA-Z]*` },
+    { key: 'relatedEntries', pattern: `${fuzzyPattern('Related')}\\s*${fuzzyPattern('entries')}\\s*:` },
+];
+
+// --- Step 3: locate every heading in the raw text, slice content between them ---
+function splitIntoSections(text) {
+    const found = [];
+
+    HEADING_DEFS.forEach(({ key, pattern }) => {
+        const re = new RegExp(pattern, 'i');
+        const match = re.exec(text);
+        if (match) {
+            found.push({ key, start: match.index, end: match.index + match[0].length });
+        } else {
+            console.warn(`[PDF parser] heading not found for "${key}"`);
         }
+    });
 
-        const lineLower = line.toLowerCase();
-        const labelLower = label.toLowerCase().trim();
-        const isLabelOnly =
-          lineLower === labelLower ||
-          lineLower === `${labelLower}:` ||
-          lineLower.replace(/[:.\-\s]+$/, "") === labelLower;
+    found.sort((a, b) => a.start - b.start);
 
-        if (isLabelOnly && lines[i + 1]) {
-          const nextValue = refineValueForKey(key, lines[i + 1]);
-          if (nextValue) {
-            extracted[key] = nextValue;
+    const sections = {};
+    found.forEach((m, i) => {
+        const contentEnd = i + 1 < found.length ? found[i + 1].start : text.length;
+        sections[m.key] = text.slice(m.end, contentEnd).trim();
+    });
+
+    if (!sections.statBoxes) {
+        const lines = text.split('\n');
+        const valuePattern = /(\$?-?[\d,]+(?:\.\d+)?%?)\s*$/;
+        let bestRun = [];
+        let currentRun = [];
+
+        lines.forEach((line) => {
+            if (valuePattern.test(line.trim()) && line.trim().length > 0) {
+                currentRun.push(line.trim());
+            } else {
+                if (currentRun.length > bestRun.length) bestRun = currentRun;
+                currentRun = [];
+            }
+        });
+        if (currentRun.length > bestRun.length) bestRun = currentRun;
+
+        if (bestRun.length >= 2) {
+            sections.statBoxes = bestRun.join('\n');
+            console.warn('[PDF parser] statBoxes recovered via fallback shape-match');
+        }
+    }
+
+    return sections;
+}
+
+// --- Step 4: parse stat box lines into { key, value } pairs ---
+function parseStatBoxes(content) {
+    const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+    const boxes = [];
+    const valuePattern = /(\$?-?[\d,]+(?:\.\d+)?%?)\s*$/;
+
+    lines.forEach((line) => {
+        const match = line.match(valuePattern);
+
+        if (match) {
+            const value = match[1].trim();
+            const key = line.slice(0, match.index).trim();
+            if (key && value) boxes.push({ key, value });
             return;
-          }
         }
-      }
-    }
-  });
 
-  return extracted;
-}
-
-function extractBalanceNearKeywords(lines = []) {
-  const balanceLineRe =
-    /balance|benefit|total\s+value|accumulation|closing|current/i;
-
-  let largest = null;
-  let largestNum = 0;
-
-  for (let i = 0; i < lines.length; i += 1) {
-    if (!balanceLineRe.test(lines[i])) continue;
-
-    const chunk = [lines[i], lines[i + 1]].filter(Boolean).join(" ");
-    const amounts = chunk.match(/\$?\s*[\d,]+(?:\.\d{2})?/g) || [];
-
-    amounts.forEach((raw) => {
-      const numeric = Number(String(raw).replace(/[^0-9.]/g, ""));
-      if (numeric > largestNum) {
-        largestNum = numeric;
-        largest = raw.replace(/^\$/, "").trim();
-      }
+        const parts = line.split(/\s{2,}|\t|\s*:\s*/).filter(Boolean);
+        if (parts.length >= 2) {
+            boxes.push({
+                key: collapseSpaces(parts[0]),
+                value: collapseSpaces(parts.slice(1).join(' ')),
+            });
+        }
     });
-  }
 
-  return largest ? refineValueForKey("balanceBenefit", largest) : "";
+    return boxes;
 }
 
-function extractKnownPlatformNames(text, labels = []) {
-  for (const label of labels) {
-    const trimmed = String(label || "").trim();
-    if (trimmed.length < 4) continue;
-    if (!/[a-z]/i.test(trimmed)) continue;
-    const pattern = new RegExp(`\\b${labelToFlexiblePattern(trimmed)}\\b`, "i");
-    if (pattern.test(text)) {
-      return trimmed;
-    }
-  }
-  return "";
-}
+// --- Step 5: turn sections into a Form.setFieldsValue-ready object ---
+export function parsePdfIntoFormValues(text) {
+    const sections = splitIntoSections(text);
+    const values = {};
 
-function humanizeFieldKey(key) {
-  return String(key)
-    .replace(/([A-Z])/g, " $1")
-    .replace(/[_-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (char) => char.toUpperCase());
-}
-
-function cleanExtractedValue(value) {
-  return String(value || "")
-    .replace(/\s{2,}/g, " ")
-    .trim()
-    .replace(/^[$€£]\s*/i, "")
-    .trim();
-}
-
-function refineValueForKey(key, value) {
-  const cleaned = cleanExtractedValue(value);
-  if (!cleaned) return "";
-
-  if (key === "memberNumber" || key === "accountNumber") {
-    const digitsOnly = cleaned.replace(/\D/g, "");
-    if (digitsOnly.length >= 4 && digitsOnly.length <= 15) {
-      return digitsOnly;
-    }
-    const digits = cleaned.match(/\d{4,15}/);
-    return digits ? digits[0] : "";
-  }
-
-  if (
-    key === "balanceBenefit" ||
-    key === "portfolioValue" ||
-    key === "totalPortfolioCost" ||
-    key === "serviceFee"
-  ) {
-    const amount = cleaned.match(/\$?\s*[\d,]+(?:\.\d{2})?/);
-    return amount ? amount[0].replace(/^\$/, "").trim() : cleaned;
-  }
-
-  if (key === "platformName") {
-    const name = cleaned
-      .replace(/\$[\d,]+(?:\.\d{2})?.*/g, "")
-      .replace(/\d{6,}.*/g, "")
-      .trim();
-    if (name.length >= 2 && !/^[\d\s,.-]+$/.test(name)) {
-      return name;
-    }
-    return "";
-  }
-
-  return cleaned;
-}
-
-function normalizeScanKey(entry) {
-  if (typeof entry === "string") {
-    const key = entry.trim();
-    return {
-      key,
-      labels: [humanizeFieldKey(key)],
-    };
-  }
-
-  const key = String(entry?.key || "").trim();
-  const labels = Array.isArray(entry?.labels)
-    ? entry.labels.filter(Boolean).map(String)
-    : [humanizeFieldKey(key)];
-
-  return { key, labels: labels.length ? labels : [humanizeFieldKey(key)] };
-}
-
-export function normalizeScanKeys(scanKeys = []) {
-  if (!Array.isArray(scanKeys)) return [];
-  return scanKeys.map(normalizeScanKey).filter((item) => item.key);
-}
-
-export function extractValueForLabel(text, label, fieldKey = "") {
-  if (!text || !label) return "";
-
-  const flexibleLabel = labelToFlexiblePattern(label);
-  if (!flexibleLabel) return "";
-
-  const valuePattern = valuePatternForKey(fieldKey);
-
-  const sameLinePattern = new RegExp(
-    `${flexibleLabel}\\s*[:.\\-]?\\s*${valuePattern}`,
-    "i",
-  );
-  const sameLineMatch = text.match(sameLinePattern);
-  if (sameLineMatch?.[1]) {
-    return refineValueForKey(fieldKey, sameLineMatch[1]);
-  }
-
-  const nextLinePattern = new RegExp(
-    `${flexibleLabel}\\s*[:.\\-]?\\s*[\\r\\n\\t]+\\s*${valuePattern}`,
-    "i",
-  );
-  const nextLineMatch = text.match(nextLinePattern);
-  if (nextLineMatch?.[1]) {
-    return refineValueForKey(fieldKey, nextLineMatch[1]);
-  }
-
-  return "";
-}
-
-function extractWithPatternFallbacks(text, key) {
-  console.log("extractWithPatternFallbacks", text, key);
-  const patterns = FIELD_PATTERN_FALLBACKS[key] || [];
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) {
-      const refined = refineValueForKey(key, match[1]);
-      if (refined) return refined;
-    }
-  }
-  return "";
-}
-
-function inferFieldsFromFileName(fileName = "", scanKeys = []) {
-  const normalizedKeys = normalizeScanKeys(scanKeys);
-  const inferred = {};
-  const baseName = String(fileName)
-    .replace(/\.pdf$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+\d{8,}$/g, "")
-    .trim();
-
-  if (!baseName || /^\d[\d\s-]*$/.test(baseName)) return inferred;
-
-  const hasPlatformKey = normalizedKeys.some(
-    (item) => item.key === "platformName",
-  );
-  if (hasPlatformKey && baseName.length >= 3) {
-    inferred.platformName = baseName;
-  }
-
-  return inferred;
-}
-
-function mergeExtractedFields(target, source) {
-  Object.entries(source || {}).forEach(([key, value]) => {
-    if (!target[key] && String(value ?? "").trim()) {
-      target[key] = value;
-    }
-  });
-  return target;
-}
-
-export function extractFieldsFromPdfText(text, scanKeys = [], options = {}) {
-  const normalizedKeys = normalizeScanKeys(scanKeys);
-  const extracted = {};
-  const { normalized, flat, lines } = preparePdfTextVariants(text);
-  const debug = isPdfScanDebugEnabled(options);
-  const searchTexts = [normalized, flat, String(text || "")];
-
-  normalizedKeys.forEach(({ key, labels }) => {
-    for (const searchText of searchTexts) {
-      for (const label of labels) {
-        const value = extractValueForLabel(searchText, label, key);
-        if (value) {
-          extracted[key] = value;
-          break;
-        }
-      }
-      if (extracted[key]) break;
-    }
-
-    if (!extracted[key]) {
-      mergeExtractedFields(extracted, extractFromLines(lines, [{ key, labels }]));
-    }
-
-    if (!extracted[key]) {
-      for (const searchText of searchTexts) {
-        const fallbackValue = extractWithPatternFallbacks(searchText, key);
-        if (fallbackValue) {
-          extracted[key] = fallbackValue;
-          break;
-        }
-      }
-    }
-
-    if (key === "platformName" && !extracted[key]) {
-      const knownName = extractKnownPlatformNames(flat || normalized, labels);
-      if (knownName) {
-        extracted[key] = knownName;
-      }
-    }
-
-    if (key === "balanceBenefit" && !extracted[key]) {
-      const balanceGuess = extractBalanceNearKeywords(lines);
-      if (balanceGuess) {
-        extracted[key] = balanceGuess;
-      }
-    }
-  });
-
-  if (debug) {
-    const expectedKeys = normalizedKeys.map((item) => item.key);
-    const missingKeys = expectedKeys.filter(
-      (key) => !String(extracted[key] ?? "").trim(),
-    );
-    logPdfScan("Fields matched from text", {
-      extracted,
-      missingKeys,
-      lineCount: lines.length,
-      textLength: String(text || "").length,
-      textPreview: String(text || "").slice(0, PDF_TEXT_PREVIEW_LENGTH),
-    }, options);
-  }
-
-  return extracted;
-}
-
-export async function extractTextFromPdfFile(file, options = {}) {
-  if (!file) {
-    throw new Error("No PDF file provided.");
-  }
-
-  const PDFParse = await getPdfParseClass();
-  const buffer = await file.arrayBuffer();
-  const parser = new PDFParse({ data: new Uint8Array(buffer) });
-
-  try {
-    const result = await parser.getText({
-      lineEnforce: true,
-      cellSeparator: "\t",
-      pageJoiner: "\n",
+    ['title', 'topic', 'subcategory', 'tag', 'snippet', 'explanation', 'note', 'example'].forEach((key) => {
+        if (sections[key]) values[key] = collapseSpaces(sections[key]);
     });
-    const text = String(result?.text || "").trim();
 
-    if (isPdfScanDebugEnabled(options)) {
-      logPdfScan(`Text read: ${file?.name || "PDF"}`, {
-        fileName: file?.name,
-        fileSize: file?.size,
-        characterCount: text.length,
-        hasText: Boolean(text),
-        preview: text.slice(0, PDF_TEXT_PREVIEW_LENGTH),
-      }, options);
+    if (sections.slugId) {
+        values.slugId = fixHyphenatedSlug(sections.slugId);
     }
 
-    return text;
-  } finally {
-    await parser.destroy();
-  }
-}
-
-export async function extractFieldsFromPdfFiles(
-  files = [],
-  scanKeys = [],
-  { useFileNameFallback = true, debug } = {},
-) {
-  const options = { debug };
-  const merged = {};
-  let hasReadableText = false;
-  const perFileResults = [];
-
-  if (isPdfScanDebugEnabled(options)) {
-    logPdfScan("Scan started", {
-      fileCount: files.length,
-      fileNames: files.map((file) => file?.name),
-      scanKeys: normalizeScanKeys(scanKeys).map(({ key, labels }) => ({
-        key,
-        labels,
-      })),
-    }, options);
-  }
-
-  for (const file of files) {
-    const text = await extractTextFromPdfFile(file, options);
-    if (String(text || "").trim()) {
-      hasReadableText = true;
+    if (sections.boost) {
+        const num = parseFloat(sections.boost.replace(/[^\d.-]/g, ''));
+        values.boost = Number.isNaN(num) ? 0 : num;
     }
 
-    const extracted = extractFieldsFromPdfText(text, scanKeys, options);
-    Object.assign(merged, extracted);
-
-    const fileNameFields = useFileNameFallback
-      ? inferFieldsFromFileName(file?.name, scanKeys)
-      : {};
-
-    if (useFileNameFallback) {
-      Object.entries(fileNameFields).forEach(([key, value]) => {
-        if (!String(merged[key] ?? "").trim() && value) {
-          merged[key] = value;
-        }
-      });
+    if (sections.keywords) {
+        values.keywords = sections.keywords
+            .split(/[,•\n]/)
+            .map((k) => collapseSpaces(k))
+            .filter(Boolean);
     }
 
-    perFileResults.push({
-      fileName: file?.name,
-      textLength: text.length,
-      extractedFromText: extracted,
-      fromFileName: fileNameFields,
-      mergedAfterFile: { ...merged },
-    });
-  }
-
-  if (isPdfScanDebugEnabled(options)) {
-    logPdfScan("Per-file results", perFileResults, options);
-    logPdfScan("Final data applied to form", merged, options);
-  }
-
-  const filledCount = Object.values(merged).filter((value) =>
-    String(value ?? "").trim(),
-  ).length;
-
-  if (!hasReadableText && !filledCount) {
-    throw new Error(
-      "Could not read text from this PDF. It may be a scanned image statement — enter details manually or use a text-based PDF.",
-    );
-  }
-
-  if (!filledCount) {
-    throw new Error(
-      "Could not find matching fields in the PDF. Check that labels match your statement wording.",
-    );
-  }
-
-  return merged;
-}
-
-export function applyExtractedFieldsToFormRow({
-  form,
-  rowFieldName,
-  targetRow,
-  extracted = {},
-  fieldFormatters = {},
-  resolveFieldValue,
-}) {
-  if (!form || !rowFieldName) {
-    return null;
-  }
-
-  const rowIndex = Math.max(0, Number(targetRow) - 1);
-  const currentRows = form.getFieldValue(rowFieldName) || [];
-  const currentRow = { ...(currentRows[rowIndex] || {}) };
-
-  Object.entries(extracted).forEach(([key, rawValue]) => {
-    if (!rawValue) return;
-
-    let value = rawValue;
-    if (typeof resolveFieldValue === "function") {
-      value = resolveFieldValue(key, rawValue, {
-        rowIndex,
-        currentRow,
-        form,
-      });
+    if (sections.statBoxes) {
+        values.statBoxes = parseStatBoxes(sections.statBoxes);
     }
-    if (typeof fieldFormatters?.[key] === "function") {
-      value = fieldFormatters[key](value, { key, rowIndex, currentRow, form });
-    }
-    if (value !== undefined && value !== null && String(value).trim() !== "") {
-      currentRow[key] = value;
-    }
-  });
 
-  const nextRows = [...currentRows];
-  nextRows[rowIndex] = currentRow;
-  form.setFieldValue(rowFieldName, nextRows);
+    if (sections.relatedEntries) {
+        values.relatedEntries = sections.relatedEntries
+            .split(',')
+            .map((s) => fixHyphenatedSlug(s))
+            .filter(Boolean)
+            .join(', ');
+    }
 
-  return { rowIndex, row: currentRow, rows: nextRows };
+    return values;
 }

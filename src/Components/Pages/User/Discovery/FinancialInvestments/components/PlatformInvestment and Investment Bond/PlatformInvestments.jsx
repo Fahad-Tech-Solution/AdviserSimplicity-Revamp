@@ -12,7 +12,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
-import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
+// import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
@@ -604,7 +604,7 @@ export default function PlatformInvestments({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          {editing && (
+          {/* {editing && (
               <NattyAiScanCard
                 rowCount={sortedDetailRows.length}
                 targetRow={scanTargetRow}
@@ -620,7 +620,7 @@ export default function PlatformInvestments({ modalData }) {
                 resolveFieldValue={resolvePlatformScanValue}
                 onAfterFormUpdate={(entries) => syncParentValues(entries)}
               />
-          )}
+          )} */}
           <Col
             xs={24}
             md={7}

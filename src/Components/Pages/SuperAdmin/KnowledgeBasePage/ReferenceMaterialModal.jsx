@@ -22,6 +22,7 @@ import {
   KNOWLEDGE_CATEGORIES,
 } from "./knowledgeBaseData";
 import KnowledgeEntryFrom from "./KnowledgeEntryFrom";
+import useApi from "../../../../hooks/useApi";
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -74,7 +75,7 @@ function formatDisplayDate(value) {
 }
 
 function ManageEntryCard({ entry, onEdit, onDelete }) {
-  const icon = CATEGORY_ICONS[entry.category] ?? "📋";
+  const icon = CATEGORY_ICONS[entry.subcategory] ?? "📋";
 
   return (
     <div
@@ -123,9 +124,9 @@ function ManageEntryCard({ entry, onEdit, onDelete }) {
             flexWrap: "wrap",
           }}
         >
-          <CategoryBadge category={entry.category} />
+          <CategoryBadge category={entry.topic} />
           <Text style={{ fontSize: 12, color: "#9ca3af" }}>
-            {entry.source} · {formatDisplayDate(entry.lastUpdated)}
+            {entry.subcategory} · {formatDisplayDate(entry.updatedAt)}
           </Text>
         </div>
       </div>
@@ -154,6 +155,8 @@ export default function ReferenceMaterialModal({
   entries = [],
   onAddEntry,
   onDeleteEntry,
+  entry = null,
+  isEdit = false,
 }) {
   const { message } = AntdApp.useApp();
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -162,8 +165,11 @@ export default function ReferenceMaterialModal({
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
 
+  const { post, patch } = useApi()
+
   useEffect(() => {
     if (!open) return;
+    console.log("Filtered Entries:", entry, isEdit);
     setActiveTab(initialTab);
     setManageSearch("");
     setPdfFileList([]);
@@ -221,27 +227,54 @@ export default function ReferenceMaterialModal({
   };
 
   const handleAddEntry = async (values) => {
+    console.log("Submitting knowledge entry with values:", values);
+    setSubmitting(true);
+
+    // 1. Map values directly to match your required API payload structure
     const payload = {
-      title: String(values.title ?? "").trim(),
-      category: values.category,
-      content: String(values.content ?? "").trim(),
-      effectiveFrom: values.effectiveFrom
-        ? values.effectiveFrom.format("YYYY-MM-DD")
-        : null,
-      source: "Manual entry",
-      lastUpdated: new Date().toISOString().slice(0, 10),
+      title: values.title,
+      topic: values.topic,
+      subcategory: values.subcategory,
+      slugId: values.slugId,
+      tag: values.tag,
+      boost: Number(values.boost || 0),
+      keywords: values.keywords,
+      snippet: values.snippet,
+      explanation: values.explanation, // Maps to Plain-English explanation
+      note: values.note,
+      example: values.example,
+      relatedEntries: values.relatedEntries,
+      statBoxes: values.statBoxes || [], // Array of { key, value } from dynamic fields
     };
 
-    setSubmitting(true);
+    // 2. Determine action endpoint based on whether we are editing an existing record
+    // Assumes you pass down or manage an editing ID (e.g., values._id or a state variable)
+    const isUpdate = isEdit || entry._id; // Adjust this condition based on your actual edit state management
+
+    const url = isUpdate
+      ? `/knowledgeBase/update` // If your update route appends the ID param
+      : "/knowledgeBase/add";
+
     try {
-      onAddEntry?.(payload);
-      message.success("Knowledge entry added.");
+      const response = await (isUpdate ?
+        patch(url, { ...payload, _id: entry._id })
+        :
+        post(url, payload));
+
+      // 3. Trigger parent lift up if necessary to refresh the list locally
+      onAddEntry?.(response);
+
+      message.success(isUpdate ? "Knowledge entry updated." : "Knowledge entry added.");
       form.resetFields();
       setActiveTab(TAB_KEYS.MANAGE);
+    } catch (error) {
+      console.error("API Submission Error:", error);
+      message.error(error.message || "Failed to save the knowledge entry.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const footer = (
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
@@ -350,7 +383,11 @@ export default function ReferenceMaterialModal({
         <KnowledgeEntryFrom
           ADD_FORM_ID={ADD_FORM_ID} form={form}
           handleAddEntry={handleAddEntry} FieldLabel={FieldLabel}
-          KNOWLEDGE_CATEGORIES={KNOWLEDGE_CATEGORIES} />
+          KNOWLEDGE_CATEGORIES={KNOWLEDGE_CATEGORIES}
+          entry={entry}
+          isEdit={isEdit}
+
+        />
       ),
     },
     {

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
-import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
+// import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
@@ -634,23 +634,23 @@ export default function SuperFunds({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          {editing ? (
-            <NattyAiScanCard
-              title="Natty AI - Scan Super Fund Statement(s)"
-              subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
-              rowCount={sortedRows.length}
-              targetRow={scanTargetRow}
-              onTargetRowChange={setScanTargetRow}
-              scanKeys={SUPER_PDF_SCAN_KEYS}
-              form={form}
-              rowFieldName="superFunds"
-              fieldFormatters={{
-                balanceBenefit: formatCurrencyValue,
-              }}
-              resolveFieldValue={resolveSuperFundScanValue}
-              onAfterFormUpdate={(entries) => syncParentValues(entries)}
-            />
-          ) : null}
+          {/* {editing ? (
+            // <NattyAiScanCard
+            //   title="Natty AI - Scan Super Fund Statement(s)"
+            //   subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
+            //   rowCount={sortedRows.length}
+            //   targetRow={scanTargetRow}
+            //   onTargetRowChange={setScanTargetRow}
+            //   scanKeys={SUPER_PDF_SCAN_KEYS}
+            //   form={form}
+            //   rowFieldName="superFunds"
+            //   fieldFormatters={{
+            //     balanceBenefit: formatCurrencyValue,
+            //   }}
+            //   resolveFieldValue={resolveSuperFundScanValue}
+            //   onAfterFormUpdate={(entries) => syncParentValues(entries)}
+            // />
+          // ) : null} */}
           <Col xs={24} md={6}>
             <Form.Item
               label="Number of Super Funds"

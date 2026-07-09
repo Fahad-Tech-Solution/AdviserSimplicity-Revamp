@@ -11,11 +11,11 @@ import {
   Typography,
 } from "antd";
 import nattyAvatar from "../../assets/image/ProfileImages/NattyAI.png";
-import {
-  applyExtractedFieldsToFormRow,
-  extractFieldsFromPdfFiles,
-  normalizeScanKeys,
-} from "../../utils/pdf/pdfFieldExtractor";
+// import {
+//   applyExtractedFieldsToFormRow,
+//   extractFieldsFromPdfFiles,
+//   normalizeScanKeys,
+// } from "../../utils/pdf/pdfFieldExtractor";
 
 const { Title } = Typography;
 

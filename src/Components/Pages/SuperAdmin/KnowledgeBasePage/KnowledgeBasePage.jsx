@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   App as AntdApp,
   Button,
@@ -19,6 +19,9 @@ import {
   INITIAL_KNOWLEDGE_ENTRIES,
 } from "./knowledgeBaseData";
 import dayjs from "dayjs";
+import { useAtom } from "jotai";
+import { KnowledgeBaseEntriesAtom } from "../../../../store/authState";
+import useApi from "../../../../hooks/useApi";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -52,15 +55,35 @@ function formatDisplayDate(value) {
 
 export default function KnowledgeBasePage() {
   const { message } = AntdApp.useApp();
-  const [entries, setEntries] = useState(INITIAL_KNOWLEDGE_ENTRIES);
+  const [entries, setEntries] = useAtom(KnowledgeBaseEntriesAtom); // Using Jotai atom for state management
   const [searchText, setSearchText] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState(TAB_KEYS.PDF);
+  const [modalData, setModalData] = useState(null);
 
-  const openModal = useCallback((tab) => {
+  const { get, patch } = useApi()
+
+  const openModal = useCallback((tab, data = null) => {
     setModalTab(tab);
+    setModalData(data);
     setModalOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (entries.length === 0) {
+      fetchKnowledgeEntries();
+    }
+  }, [entries]);
+
+  const fetchKnowledgeEntries = async () => {
+    try {
+      const res = await get("/knowledgeBase/getAll");
+      console.log("Fetched knowledge entries:", res.data);
+      setEntries(res.data || []); // Handle your specific envelope array structure
+    } catch (err) {
+      console.error("Failed to fetch library indices", err);
+    }
+  };
 
   const filteredEntries = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -102,9 +125,22 @@ export default function KnowledgeBasePage() {
   const handleDeleteEntry = useCallback(
     (entry) => {
       confirmRemoveData(
-        () => {
-          setEntries((prev) => prev.filter((item) => item._id !== entry._id));
-          message.success("Entry removed.");
+        async () => {
+          try {
+            // 1. Call your local soft-delete API endpoint with the entry's _id
+            const response = await patch(`/knowledgeBase/softDelete/${entry._id}`);
+
+            if (!response.ok) {
+              throw new Error(`Server responded with status: ${response.status}`);
+            }
+
+            // 2. If the API succeeds, remove it from the local state and show success
+            setEntries((prev) => prev.filter((item) => item._id !== entry._id));
+            message.success("Entry removed successfully.");
+          } catch (error) {
+            console.error("API Deletion Error:", error);
+            message.error(error.message || "Failed to remove the entry from the server.");
+          }
         },
         {
           title: "Remove entry?",
@@ -112,7 +148,7 @@ export default function KnowledgeBasePage() {
         },
       );
     },
-    [message],
+    [message, confirmRemoveData], // Added confirmRemoveData to dependencies since it's used inside
   );
 
   const columns = useMemo(
@@ -145,7 +181,7 @@ export default function KnowledgeBasePage() {
                 flexShrink: 0,
               }}
             >
-              {CATEGORY_ICONS[row.category] ?? "📋"}
+              {CATEGORY_ICONS[row.subcategory] ?? "📋"}
             </span>
             <span style={{ fontWeight: 600, color: "#111827", fontSize: 13 }}>
               {row.title}
@@ -155,24 +191,24 @@ export default function KnowledgeBasePage() {
       },
       {
         title: "CATEGORY",
-        dataIndex: "category",
-        key: "category",
+        dataIndex: "topic",
+        key: "topic",
         width: 140,
-        render: (category) => <CategoryBadge category={category} />,
+        render: (topic) => <CategoryBadge category={topic} />,
       },
       {
         title: "SOURCE",
-        dataIndex: "source",
-        key: "source",
+        dataIndex: "subcategory",
+        key: "subcategory",
         width: 180,
-        render: (source) => (
-          <span style={{ color: "#6b7280", fontSize: 13 }}>{source || "—"}</span>
+        render: (subcategory) => (
+          <span style={{ color: "#6b7280", fontSize: 13 }}>{subcategory || "—"}</span>
         ),
       },
       {
         title: "LAST UPDATED",
-        dataIndex: "lastUpdated",
-        key: "lastUpdated",
+        dataIndex: "updatedAt",
+        key: "updatedAt",
         width: 120,
         render: (value) => (
           <span style={{ color: "#6b7280", fontSize: 13 }}>
@@ -195,7 +231,7 @@ export default function KnowledgeBasePage() {
                   <EditOutlined style={{ color: "#6b7280", fontSize: 14 }} />
                 }
                 onClick={() =>
-                  message.info(`Edit "${row.title}" — coming soon`)
+                  openModal(TAB_KEYS.ADD, { entry: row, isEdit: true })
                 }
               />
             </Tooltip>
@@ -310,6 +346,8 @@ export default function KnowledgeBasePage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         initialTab={modalTab}
+        entry={modalData?.entry}
+        isEdit={modalData?.isEdit}
         entries={entries}
         onAddEntry={handleAddEntry}
         onDeleteEntry={handleDeleteEntry}
