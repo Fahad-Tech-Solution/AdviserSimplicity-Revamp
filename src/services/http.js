@@ -11,8 +11,8 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "";
  * Production (GitHub Pages): set VITE_API_BASE_URL to the real API host.
  */
 const http = axios.create({
-  baseURL: apiBaseURL+"/api",
-  // baseURL: apiBaseURL + "/dev_api",
+  // baseURL: apiBaseURL+"/api",
+  baseURL: apiBaseURL + "/dev_api",
   timeout: 20000,
   withCredentials: true,
 });
