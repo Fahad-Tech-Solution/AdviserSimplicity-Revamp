@@ -6,20 +6,65 @@ export const KNOWLEDGE_CATEGORIES = [
 ];
 
 export const CATEGORY_STYLES = {
-  "Tax Rates": {
-    background: "#eff6ff",
+  Super: {
+    background: "#eff6ff", // Blue
     color: "#2563eb",
     border: "1px solid #bfdbfe",
   },
-  Superannuation: {
-    background: "#f0fdf4",
+  "Age Pension & Centrelink": {
+    background: "#f0fdf4", // Green
     color: "#16a34a",
     border: "1px solid #bbf7d0",
   },
-  Centrelink: {
-    background: "#f3e8ff",
+  "Small Business": {
+    background: "#f0fdf4", // Green
+    color: "#16a34a",
+    border: "1px solid #bbf7d0",
+  },
+  Tax: {
+    background: "#f3e8ff", // Purple
     color: "#7c3aed",
     border: "1px solid #e9d5ff",
+  },
+  Investment: {
+    background: "#f3e8ff", // Purple
+    color: "#7c3aed",
+    border: "1px solid #e9d5ff",
+  },
+  "Budgeting & Wealth": {
+    background: "#f3e8ff", // Purple
+    color: "#7c3aed",
+    border: "1px solid #e9d5ff",
+  },
+  "Self-Managed Super (SMSF)": {
+    background: "#ecfeff", // Cyan (Related to Super, but distinct)
+    color: "#0891b2",
+    border: "1px solid #c5f6fa",
+  },
+  "Mortgages & Debt": {
+    background: "#fff7ed", // Orange
+    color: "#ea580c",
+    border: "1px solid #ffedd5",
+  },
+  "Buying Your First Home": {
+    background: "#fff7ed", // Orange (Grouped with Mortgages)
+    color: "#ea580c",
+    border: "1px solid #ffedd5",
+  },
+  Insurance: {
+    background: "#fdf2f8", // Pink
+    color: "#db2777",
+    border: "1px solid #fbcfe8",
+  },
+  "Aged Care": {
+    background: "#fff1f2", // Rose (Related to Pension/Care, softer red)
+    color: "#e11d48",
+    border: "1px solid #ffe4e6",
+  },
+  "Redundancy & Leaving Work": {
+    background: "#f8fafc", // Slate/Grey
+    color: "#475569",
+    border: "1px solid #e2e8f0",
   },
   General: {
     background: "#f3f4f6",
@@ -33,6 +78,18 @@ export const CATEGORY_ICONS = {
   Superannuation: "💰",
   Centrelink: "🛡️",
   General: "📋",
+  Super: "💼",
+  "Age Pension & Centrelink": "👵",
+  Tax: "📉",
+  Investment: "📈",
+  "Budgeting & Wealth": "🐷",
+  "Small Business": "🏪",
+  "Self-Managed Super (SMSF)": "🏛️",
+  "Mortgages & Debt": "🏠",
+  Insurance: "☂️",
+  "Aged Care": "❤️",
+  "Buying Your First Home": "🔑",
+  "Redundancy & Leaving Work": "🚪",
 };
 
 export const INITIAL_KNOWLEDGE_ENTRIES = [

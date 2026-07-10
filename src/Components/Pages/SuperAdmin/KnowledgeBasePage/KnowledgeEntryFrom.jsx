@@ -19,6 +19,7 @@ import { CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import React from 'react'
 import { SelectedCategory } from './knowledgeBaseData'
 import { extractPdfText, parsePdfIntoFormValues } from '../../../../utils/pdf/pdfFieldExtractor'
+import useApi from '../../../../hooks/useApi'
 
 
 const { Title, Text } = Typography
@@ -68,6 +69,7 @@ const KnowledgeEntryForm = ({
     const [idTouched, setIdTouched] = useState(false)
     const [tagTouched, setTagTouched] = useState(false)
     const [preview, setPreview] = useState(null)
+    const { post } = useApi();
 
     // inside your component, where `form` is your Form instance:
     const [extractedText, setExtractedText] = useState('');
@@ -108,6 +110,7 @@ const KnowledgeEntryForm = ({
         setPreview(form.getFieldsValue())
     }
 
+
     const draggerProps = {
         accept: '.pdf',
         multiple: false,
@@ -115,22 +118,115 @@ const KnowledgeEntryForm = ({
         beforeUpload: async (file) => {
             setPdfLoading(true);
             try {
-                const text = await extractPdfText(file);
-                setExtractedText(text);
+                // 1. Prepare the requested keys to extract
+                const fieldsArray = [
+                    "Title",
+                    "Topic",
+                    "Subcategory",
+                    "ID",
+                    "Tag",
+                    "Boost",
+                    "Keywords",
+                    "Snippet",
+                    "Explanation",
+                    "Note",
+                    "Example",
+                    "RelatedEntries",
+                    "stat boxes",
+                    "Plain-English explaination"
+                ];
 
-                const values = parsePdfIntoFormValues(text);
-                form.setFieldsValue(values);
+                // 2. Wrap file and fields inside FormData for multipart/form-data request
+                const formData = new FormData();
+                formData.append("file", file);
+
+                // Since your Express backend expects a comma-separated string for 'fields_to_extract':
+                formData.append("fields_to_extract", JSON.stringify(fieldsArray));
+
+                // 3. Hit your new Express backend API
+                const response = await post("/ai/extractData", formData)
+
+                console.log(response)
+
+                // Your original string
+                const rawString = response.data?.["stat boxes"];
+
+                // Regex to capture everything up to the dollar amount, and the dollar amount itself
+                const regex = /(.*?\$[0-9,]+)/g;
+
+                // Match all pairs and map them into your desired object structure
+                const statBoxesArray = (rawString.match(regex) || []).map(item => {
+                    // Split each match at the "$" sign
+                    const [key, value] = item.split('$');
+
+                    return {
+                        key: key.trim(),        // e.g., "MLS Free (Families)"
+                        value: `$${value.trim()}` // e.g., "$202,000"
+                    };
+                });
+
+                let data = {
+
+                    "title": response.data.Title || "",
+                    "topic": response.data.Topic || "",
+                    "subcategory": response.data.Subcategory || "",
+                    "slugId": response.data.ID || "",
+                    "tag": response.data.Tag || "",
+                    "boost": response.data.Boost || "",
+                    "keywords": response.data.Keywords.split(',').map(item => item.trim()) || [],
+                    "snippet": response.data.Snippet || "",
+                    "explanation": response.data.Explanation || "",
+                    "note": response.data.Note || "",
+                    "example": response.data.Example || "",
+                    "relatedEntries": response.data.RelatedEntries || "",
+                    "statBoxes": statBoxesArray,
+                    explanation: response.data?.["Plain-English explaination"]
+                }
+
+                // 4. (Optional) Store raw response if your UI needs it
+                if (setExtractedText) {
+
+                    setExtractedText(JSON.stringify(response.data));
+                }
+
+                // 5. Populate form values with the exact keys returned from Groq
+                form.setFieldsValue(data);
 
                 message.success('Form fields populated from PDF — please review before saving.');
             } catch (err) {
                 console.error(err);
-                message.error('Could not read that PDF. Try pasting the text manually.');
+                message.error(err.message || 'Could not read that PDF. Try pasting the text manually.');
             } finally {
                 setPdfLoading(false);
             }
-            return false; // stop antd's default upload behavior — we handle it ourselves
+            return false; // Stop AntD's default upload POST behavior
         },
     };
+
+
+    // const draggerProps = {
+    //     accept: '.pdf',
+    //     multiple: false,
+    //     showUploadList: false,
+    //     beforeUpload: async (file) => {
+    //         setPdfLoading(true);
+    //         try {
+    //             const text = await extractPdfText(file);
+    //             setExtractedText(text);
+
+    //             const values = parsePdfIntoFormValues(text);
+    //             form.setFieldsValue(values);
+
+    //             message.success('Form fields populated from PDF — please review before saving.');
+    //         } catch (err) {
+    //             console.error(err);
+    //             message.error('Could not read that PDF. Try pasting the text manually.');
+    //         } finally {
+    //             setPdfLoading(false);
+    //         }
+    //         return false; // stop antd's default upload behavior — we handle it ourselves
+    //     },
+    // };
 
     const livePreviewTitle = preview?.title
     const livePreviewSnippet = preview?.snippet
@@ -281,7 +377,7 @@ const KnowledgeEntryForm = ({
                 name="keywords"
                 label={
                     <FieldLabel>
-                        Keywords 1122 <Text style={{ fontWeight: 400, color: '#9ca3af' }}>(space-separated search terms)</Text>
+                        Keywords <Text style={{ fontWeight: 400, color: '#9ca3af' }}>(space-separated search terms)</Text>
                     </FieldLabel>
                 }
             >
