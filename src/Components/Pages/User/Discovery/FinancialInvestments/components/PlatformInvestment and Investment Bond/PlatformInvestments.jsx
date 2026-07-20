@@ -12,7 +12,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
-// import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
@@ -580,6 +580,29 @@ export default function PlatformInvestments({ modalData }) {
     [platformOptions],
   );
 
+  const PLATFORM_PDF_SCAN_KEYS = [
+  {
+    key: "platformName",
+    labels: ["Institution"],
+  },
+  {
+    key: "accountNumber",
+    labels: ["Account Number", "Account No", "Acc No", "Policy Number", "Member Number"],
+  },
+  {
+    key: "portfolioValue",
+    labels: ["Portfolio Value", "Total Portfolio Value", "Current Value", "Asset Value", "Balance", "Market Value"],
+  },
+  {
+    key: "totalPortfolioCost",
+    labels: ["Total Cost Base", "Portfolio Cost Base", "Total Cost", "Cost Base", "Purchase Price"],
+  },
+  {
+    key: "serviceFee",
+    labels: ["Ongoing Advice Fee", "Service Fee", "Advice Fee", "Adviser Fee", "Ongoing Fee", "Service", "fee"],
+  },
+];
+
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
@@ -604,7 +627,7 @@ export default function PlatformInvestments({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          {/* {editing && (
+          {editing && (
               <NattyAiScanCard
                 rowCount={sortedDetailRows.length}
                 targetRow={scanTargetRow}
@@ -620,7 +643,7 @@ export default function PlatformInvestments({ modalData }) {
                 resolveFieldValue={resolvePlatformScanValue}
                 onAfterFormUpdate={(entries) => syncParentValues(entries)}
               />
-          )} */}
+          )}
           <Col
             xs={24}
             md={7}

@@ -11,11 +11,10 @@ import {
   Typography,
 } from "antd";
 import nattyAvatar from "../../assets/image/ProfileImages/NattyAI.png";
-// import {
-//   applyExtractedFieldsToFormRow,
-//   extractFieldsFromPdfFiles,
-//   normalizeScanKeys,
-// } from "../../utils/pdf/pdfFieldExtractor";
+import {
+  extractTableRowsFromPdfFiles,
+  applyExtractedRowsToForm,
+} from "../../utils/pdf/pdfFieldExtractor";
 
 const { Title } = Typography;
 
@@ -84,11 +83,10 @@ export default function NattyAiScanCard({
   const [isScanning, setIsScanning] = useState(false);
   const [internalTargetRow, setInternalTargetRow] = useState(defaultTargetRow);
 
-  const normalizedScanKeys = useMemo(
-    () => normalizeScanKeys(scanKeys),
-    [scanKeys],
-  );
-  const canExtractFields = normalizedScanKeys.length > 0;
+  // parseTableRows works off the raw {key, labels} shape directly (it needs
+  // every label to search the header row with), so no normalization step
+  // is needed here anymore.
+  const canExtractFields = Array.isArray(scanKeys) && scanKeys.length > 0;
 
   const isControlled = targetRow !== undefined;
   const activeTargetRow = isControlled ? targetRow : internalTargetRow;
@@ -150,49 +148,51 @@ export default function NattyAiScanCard({
     hideStatus();
 
     try {
-      const extracted = await extractFieldsFromPdfFiles(files, normalizedScanKeys, {
+      // Each PDF can contain multiple holdings (table rows), so this returns
+      // { fileName: [row1, row2, ...] } - flatten across all uploaded files.
+      const resultsByFile = await extractTableRowsFromPdfFiles(files, scanKeys, {
         debug: debugScan,
       });
+      const rows = Object.values(resultsByFile).flat();
 
       if (debugScan) {
-        console.log("[Natty PDF Scan] Extracted fields for form:", extracted);
+        console.log("[Natty PDF Scan] Extracted rows for form:", rows);
       }
-      const filledKeys = Object.keys(extracted).filter((key) =>
-        String(extracted[key] ?? "").trim(),
-      );
 
-      if (!filledKeys.length) {
+      if (!rows.length) {
         setScanStatus({
           show: true,
           type: "warning",
           message:
-            "Could not find matching fields in the PDF. Check scanKeys labels match the statement.",
+            "Could not find any holdings in the PDF. Check that scanKeys labels match the statement's column headers.",
         });
         return;
       }
 
       let formUpdate = null;
       if (form) {
-        formUpdate = applyExtractedFieldsToFormRow({
+        // Fills starting at activeTargetRow and extends the row list as needed -
+        // e.g. scanning a 4-holding statement starting at row 1 fills rows 1-4.
+        formUpdate = applyExtractedRowsToForm({
           form,
           rowFieldName,
-          targetRow: activeTargetRow,
-          extracted,
+          startRow: activeTargetRow,
+          rows,
           fieldFormatters,
           resolveFieldValue,
         });
-        onAfterFormUpdate?.(formUpdate?.rows, activeTargetRow, extracted, formUpdate);
+        onAfterFormUpdate?.(formUpdate?.rows, activeTargetRow, rows, formUpdate);
       }
 
       onScanComplete?.({
         targetRow: activeTargetRow,
-        extracted,
+        rows,
         files,
         formUpdate,
       });
 
       message.success(
-        `Filled ${filledKeys.length} field(s) on row ${activeTargetRow} from PDF.`,
+        `Filled ${rows.length} row(s) starting at row ${activeTargetRow} from PDF.`,
       );
     } catch (error) {
       setScanStatus({

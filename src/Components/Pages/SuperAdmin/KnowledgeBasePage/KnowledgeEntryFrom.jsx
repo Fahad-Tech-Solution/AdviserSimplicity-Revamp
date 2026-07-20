@@ -18,7 +18,7 @@ import TextArea from 'antd/es/input/TextArea'
 import { CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import React from 'react'
 import { SelectedCategory } from './knowledgeBaseData'
-import { extractPdfText, parsePdfIntoFormValues } from '../../../../utils/pdf/pdfFieldExtractor'
+// import { extractPdfText, parsePdfIntoFormValues } from '../../../../utils/pdf/pdfFieldExtractor'
 import useApi from '../../../../hooks/useApi'
 
 
