@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal";
-// import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import { InvestmentOffersData } from "../../../../../../../store/authState";
@@ -121,13 +121,13 @@ function buildSuperFundEntries(count, entries = []) {
       balanceBenefit: entry?.balanceBenefit || "",
       balanceBenefitDetails:
         entry?.balanceBenefitDetails &&
-        typeof entry.balanceBenefitDetails === "object"
+          typeof entry.balanceBenefitDetails === "object"
           ? entry.balanceBenefitDetails
           : {},
       groupInsurance: entry?.groupInsurance || "No",
       groupInsuranceDetails:
         entry?.groupInsuranceDetails &&
-        typeof entry.groupInsuranceDetails === "object"
+          typeof entry.groupInsuranceDetails === "object"
           ? entry.groupInsuranceDetails
           : {},
       contributions: entry?.contributions || "No",
@@ -138,7 +138,7 @@ function buildSuperFundEntries(count, entries = []) {
       nominatedBeneficiaries: entry?.nominatedBeneficiaries || "No",
       nominatedBeneficiariesDetails:
         entry?.nominatedBeneficiariesDetails &&
-        typeof entry.nominatedBeneficiariesDetails === "object"
+          typeof entry.nominatedBeneficiariesDetails === "object"
           ? entry.nominatedBeneficiariesDetails
           : {},
       annualAdvice: entry?.annualAdvice || "",
@@ -170,8 +170,8 @@ function hasMeaningfulValues(initialValues = {}) {
 function buildFundOptions(investmentOffers, entries = []) {
   const offers =
     investmentOffers &&
-    typeof investmentOffers === "object" &&
-    !Array.isArray(investmentOffers)
+      typeof investmentOffers === "object" &&
+      !Array.isArray(investmentOffers)
       ? investmentOffers
       : {};
 
@@ -610,6 +610,82 @@ export default function SuperFunds({ modalData }) {
     [fundOptions],
   );
 
+  const SuperFund_PDF_SCAN_KEYS = [
+  {
+    key: "platformName",
+    labels: [
+      "Fund Name",
+      "Super Fund",
+      "Fund",
+      "Provider",
+      "Institution",
+      "Platform Name",
+      "Product Name",
+    ],
+  },
+  {
+    key: "memberNumber",
+    labels: [
+      "Member Number",
+      "Member No",
+      "Account Number",
+      "Account No",
+      "Policy Number",
+      "Client ID",
+    ],
+  },
+  {
+    key: "balanceBenefit",
+    labels: [
+      "Balance and Details",
+      "Balance",
+      "Current Balance",
+      "Account Balance",
+      "Total Balance",
+      "Withdrawal Benefit",
+    ],
+  },
+  {
+    key: "groupInsurance",
+    labels: [
+      "Insurance",
+      "Group Insurance",
+      "Insurance Cover",
+      "Total Cover",
+      "Life Cover",
+    ],
+  },
+  {
+    key: "contributions",
+    labels: [
+      "Contributions",
+      "Contribution Details",
+      "Annual Contributions",
+      "Employer Contributions",
+    ],
+  },
+  {
+    key: "nominatedBeneficiaries",
+    labels: [
+      "Beneficiaries",
+      "Nominated Beneficiaries",
+      "Beneficiary",
+      "Nomination",
+    ],
+  },
+  {
+    key: "annualAdvice",
+    labels: [
+      "Ongoing Advice Fee",
+      "Annual Advice",
+      "Advice Fee",
+      "Adviser Fee",
+      "Service Fee",
+      "Ongoing Fee",
+    ],
+  },
+];
+
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
@@ -634,23 +710,25 @@ export default function SuperFunds({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          {/* {editing ? (
-            // <NattyAiScanCard
-            //   title="Natty AI - Scan Super Fund Statement(s)"
-            //   subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
-            //   rowCount={sortedRows.length}
-            //   targetRow={scanTargetRow}
-            //   onTargetRowChange={setScanTargetRow}
-            //   scanKeys={SUPER_PDF_SCAN_KEYS}
-            //   form={form}
-            //   rowFieldName="superFunds"
-            //   fieldFormatters={{
-            //     balanceBenefit: formatCurrencyValue,
-            //   }}
-            //   resolveFieldValue={resolveSuperFundScanValue}
-            //   onAfterFormUpdate={(entries) => syncParentValues(entries)}
-            // />
-          // ) : null} */}
+          {editing ? (
+            <NattyAiScanCard
+              title="Natty AI - Scan Super Fund Statement(s)"
+              subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
+              rowCount={sortedRows.length}
+              targetRow={scanTargetRow}
+              onTargetRowChange={setScanTargetRow}
+              scanKeys={SuperFund_PDF_SCAN_KEYS}
+              form={form}
+              rowFieldName="superFunds"
+              fieldFormatters={{
+                portfolioValue: formatCurrencyValue,
+                totalPortfolioCost: formatCurrencyValue,
+                serviceFee: formatCurrencyValue,
+              }}
+              resolveFieldValue={resolveSuperFundScanValue}
+              onAfterFormUpdate={(entries) => syncParentValues(entries)}
+            />
+          ) : null}
           <Col xs={24} md={6}>
             <Form.Item
               label="Number of Super Funds"

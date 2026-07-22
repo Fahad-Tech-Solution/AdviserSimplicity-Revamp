@@ -169,30 +169,32 @@ export default function NattyAiScanCard({
         return;
       }
 
+      const rowsToFill = rows.slice(0, Math.max(0, Number(activeTargetRow) || 0));
+
       let formUpdate = null;
       if (form) {
-        // Fills starting at activeTargetRow and extends the row list as needed -
-        // e.g. scanning a 4-holding statement starting at row 1 fills rows 1-4.
+        // Fills starting at activeTargetRow and only writes the number of rows
+        // implied by the selected target row, e.g. row 3 will fill 3 rows max.
         formUpdate = applyExtractedRowsToForm({
           form,
           rowFieldName,
           startRow: activeTargetRow,
-          rows,
+          rows: rowsToFill,
           fieldFormatters,
           resolveFieldValue,
         });
-        onAfterFormUpdate?.(formUpdate?.rows, activeTargetRow, rows, formUpdate);
+        onAfterFormUpdate?.(formUpdate?.rows, activeTargetRow, rowsToFill, formUpdate);
       }
 
       onScanComplete?.({
         targetRow: activeTargetRow,
-        rows,
+        rows: rowsToFill,
         files,
         formUpdate,
       });
 
       message.success(
-        `Filled ${rows.length} row(s) starting at row ${activeTargetRow} from PDF.`,
+        `Filled ${rowsToFill.length} row(s) starting at row ${activeTargetRow} from PDF.`,
       );
     } catch (error) {
       setScanStatus({

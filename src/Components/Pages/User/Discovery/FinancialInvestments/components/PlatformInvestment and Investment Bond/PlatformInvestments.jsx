@@ -196,6 +196,7 @@ export default function PlatformInvestments({ modalData }) {
     order: null,
   });
   const [scanTargetRow, setScanTargetRow] = useState(1);
+  const hasHydratedInitialValues = React.useRef(false);
   const renderTitleBlock = useTitleBlock();
 
   // console.log(modalData?.sectionKey, "modalData?.sectionKey");
@@ -227,7 +228,11 @@ export default function PlatformInvestments({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-    setEditing(!hasMeaningfulValues(initialValues));
+
+    if (!hasHydratedInitialValues.current) {
+      hasHydratedInitialValues.current = true;
+      setEditing(!hasMeaningfulValues(initialValues));
+    }
   }, [form, initialValues]);
 
   useEffect(() => {

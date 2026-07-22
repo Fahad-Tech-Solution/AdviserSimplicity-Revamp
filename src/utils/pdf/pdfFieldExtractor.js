@@ -157,6 +157,7 @@ export async function extractTableRowsFromPdfFiles(files, scanKeys, options = {}
     for (const file of files) {
         if (debug) console.log(`[PDF parser] Processing file: ${file.name}`);
         const pdfText = await extractPdfText(file);
+        console.log(scanKeys)
         const rows = parseTableRows(pdfText, scanKeys);
         results[file.name] = rows;
         if (debug) console.log(`[PDF parser] Extracted ${rows.length} rows from ${file.name}`, rows);
