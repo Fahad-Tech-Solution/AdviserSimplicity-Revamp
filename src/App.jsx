@@ -68,6 +68,7 @@ export default function App() {
           }
         />
 
+
         {/* Protected: Main user area */}
         <Route
           path="/user/*"

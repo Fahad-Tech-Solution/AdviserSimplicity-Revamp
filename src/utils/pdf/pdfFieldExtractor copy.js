@@ -1,171 +1,180 @@
-import * as pdfjsLib from "pdfjs-dist";
+import * as pdfjsLib from 'pdfjs-dist';
 
-// CDN worker avoids bundler-specific import paths (works with CRA, Vite, etc.)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 // --- Step 1: pull text out of the PDF, preserving line breaks ---
 export async function extractPdfText(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = "";
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    let lastY = null;
-    let line = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        let lastY = null;
+        let line = '';
 
-    content.items.forEach((item) => {
-      // a big jump in Y position means we've moved to a new line
-      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
-        fullText += line.trim() + "\n";
-        line = "";
-      }
-      line += item.str + " ";
-      lastY = item.transform[5];
+        content.items.forEach((item) => {
+            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+                fullText += line.trim() + '\n';
+                line = '';
+            }
+            line += item.str + ' ';
+            lastY = item.transform[5];
+        });
+        fullText += line.trim() + '\n';
+    }
+
+    return fullText;
+}
+
+const collapseSpaces = (s) => s.replace(/\s+/g, ' ').trim();
+
+/**
+ * WHY THE OLD APPROACH FAILED ON THESE PDFs
+ * ------------------------------------------
+ * The previous extractor (`extractFieldsByCustomKeys`) was built for
+ * "Label: value" prose, e.g. "Title: My Article". It searched for a
+ * label + colon, then grabbed text up to the next label-like line.
+ *
+ * Your statements don't have that shape at all - they have TABLE rows:
+ *   1 Netwealth Wrap NW-883921 $540,000.00 $430,000.00 $2,700.00
+ * There's no colon, and each row holds 5-6 different values, not one.
+ * No regex built around "label:" will ever match a table row, and even
+ * if it did, the old code only ever stored a single scalar per key -
+ * there's nowhere to put holding #2, #3, #4.
+ *
+ * This version instead:
+ *   1. Finds the header row by matching your scanKey labels against it
+ *      (using ALL labels you list, not just the first guess) - so it
+ *      still works if the PDF says "Policy Ref" or "Asset Value"
+ *      instead of the exact words you expected.
+ *   2. Reads off the column ORDER from that header row.
+ *   3. Walks every data row, strips the currency values out (in the
+ *      order the header told us), and treats what's left as
+ *      "name" + "id" (the id is the trailing policy/account code).
+ *   4. Returns an ARRAY of row objects - one per holding - instead of
+ *      a single flat object.
+ *   5. Skips totals/aggregate rows automatically (they don't carry an
+ *      account/policy id).
+ */
+
+// --- find currency-looking tokens in a line, e.g. $540,000.00 or 1,050.00 ---
+function extractCurrencyValues(line) {
+    return line.match(/\$?-?[\d,]+\.\d{2}/g) || [];
+}
+
+// --- figure out which scanKey column appears first, second, third... in a header line ---
+function detectColumnOrder(headerLine, scanKeys) {
+    const order = [];
+    scanKeys.forEach(({ key, labels }) => {
+        let bestIndex = Infinity;
+        labels.forEach((label) => {
+            const idx = headerLine.toLowerCase().indexOf(label.toLowerCase());
+            if (idx !== -1 && idx < bestIndex) bestIndex = idx;
+        });
+        if (bestIndex !== Infinity) order.push({ key, index: bestIndex });
     });
-    fullText += line.trim() + "\n";
-  }
-  console.log("RAW PDF TEXT:\n", fullText);
-  return fullText;
+    order.sort((a, b) => a.index - b.index);
+    return order.map((o) => o.key);
 }
 
-// --- Step 2: map form field -> heading text as it appears in the PDF ---
-const FIELD_HEADINGS = [
-  { key: "title", heading: "Title" },
-  { key: "topic", heading: "Topic" },
-  { key: "subcategory", heading: "Subcategory" },
-  { key: "slugId", heading: "ID" },
-  { key: "tag", heading: "Tag" },
-  { key: "boost", heading: "Boost" },
-  { key: "keywords", heading: "Keywords" },
-  { key: "snippet", heading: "Snippet" },
-  { key: "explanation", heading: "Plain - English explanation" },
-  { key: "note", heading: "Note" },
-  { key: "example", heading: "Example" },
-  { key: "relatedEntries", heading: "Related Entries" },
-  { key: "statBoxes", heading: "Stat Box" },
-];
+/**
+ * Parse every holding/account row out of statement text.
+ *
+ * @param {string} text - full text from extractPdfText()
+ * @param {Array<{key: string, labels: string[]}>} scanKeys - same shape you already use
+ * @returns {Array<Object>} one object per table row, keyed by scanKey `key`
+ */
+export function parseTableRows(text, scanKeys) {
+    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
 
-// --- Step 3: split the raw text into sections by heading (robust version) ---
-function splitIntoSections(text) {
-  const lines = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+    // The name/id columns don't have fixed labels in the header (they're
+    // free text), so only use the "value-like" columns to locate + order the header.
+    const valueKeys = scanKeys.filter((k) => k.key !== 'platformName' && k.key !== 'accountNumber');
 
-  // Build a regex per heading: matches "Heading", "Heading:", "1. Heading", etc.,
-  // optionally followed by inline content on the same line.
-  const headingRegexes = FIELD_HEADINGS.map(({ key, heading }) => ({
-    key,
-    heading,
-    regex: new RegExp(
-      `^(?:\\d+[.)]\\s*)?${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:?\\s*(.*)$`,
-      "i",
-    ),
-  }));
+    // Whichever line matches the most distinct value-column labels is the header.
+    let headerLine = '';
+    let headerScore = 0;
+    lines.forEach((line) => {
+        const order = detectColumnOrder(line, valueKeys);
+        if (order.length > headerScore) {
+            headerScore = order.length;
+            headerLine = line;
+        }
+    });
 
-  const matches = [];
-  lines.forEach((line, idx) => {
-    for (const { key, regex } of headingRegexes) {
-      const m = line.match(regex);
-      // require the matched heading portion to be short relative to the line,
-      // so we don't accidentally match a heading word buried in a sentence
-      if (m && m[0].length <= line.length + 1) {
-        matches.push({ key, idx, inline: m[1]?.trim() || "" });
-        break;
-      }
+    if (!headerScore) {
+        console.warn('[PDF parser] Could not find a header row matching any scanKey labels');
+        return [];
     }
-  });
 
-  matches.sort((a, b) => a.idx - b.idx);
+    const columnOrder = detectColumnOrder(headerLine, valueKeys);
 
-  const sections = {};
-  matches.forEach((m, i) => {
-    const start = m.idx + 1;
-    const end = i + 1 < matches.length ? matches[i + 1].idx : lines.length;
-    const bodyLines = lines.slice(start, end);
-    // if there was inline content right after the heading on the same line, prepend it
-    sections[m.key] = m.inline ? [m.inline, ...bodyLines] : bodyLines;
-  });
+    const rows = [];
+    lines.forEach((line) => {
+        if (line === headerLine) return;
 
-  return sections;
+        const currencies = extractCurrencyValues(line);
+        if (currencies.length < 2) return; // a real holding row has at least value + cost
+
+        if (/^(total|aggregate|combined|subtotal)/i.test(line)) return; // skip summary rows
+
+        let labelPart = line;
+        currencies.forEach((c) => {
+            labelPart = labelPart.replace(c, '').trim();
+        });
+        labelPart = labelPart.replace(/^\d+\s+/, '').replace(/\$\s*$/, '').trim();
+
+        // the trailing token that looks like a policy/account/member id, e.g. NW-883921, CFS-7728109
+        const idMatch =
+            labelPart.match(/([A-Z]{2,6}-\d{4,})\s*$/) || labelPart.match(/([A-Z]{2,}\d{4,})\s*$/);
+        if (!idMatch) return; // rows without an id are almost always totals/footers, not holdings
+
+        const accountNumber = idMatch[1];
+        const platformName = collapseSpaces(labelPart.slice(0, idMatch.index));
+
+        const row = { platformName, accountNumber };
+        columnOrder.forEach((key, i) => {
+            if (currencies[i] !== undefined) row[key] = currencies[i];
+        });
+        rows.push(row);
+    });
+
+    return rows;
 }
 
-// --- Step 4: parse stat box lines into { key, value } pairs ---
-function parseStatBoxes(content) {
-  const lines = content
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const boxes = [];
+// --- Step: extract table rows from multiple PDF files, returning { fileName: rows[] } ---
+export async function extractTableRowsFromPdfFiles(files, scanKeys, options = {}) {
+    const { debug = false } = options;
+    const results = {};
 
-  // matches a trailing currency/number/percent token at the end of the line
-  // e.g. "$101,000", "1,200", "50%", "-3.5"
-  const valuePattern = /(\$?-?[\d,]+(?:\.\d+)?%?)\s*$/;
-
-  lines.forEach((line) => {
-    const match = line.match(valuePattern);
-
-    if (match) {
-      const value = match[1].trim();
-      const key = line.slice(0, match.index).trim();
-      if (key && value) boxes.push({ key, value });
-      return;
+    if (!files || !files.length) {
+        if (debug) console.log('[PDF parser] No files provided');
+        return results;
     }
 
-    // fallback for non-numeric stat values (e.g. "Status: Active")
-    const parts = line.split(/\s{2,}|\t|\s*:\s*/).filter(Boolean);
-    if (parts.length >= 2) {
-      boxes.push({
-        key: collapseSpaces(parts[0]),
-        value: collapseSpaces(parts.slice(1).join(" ")),
-      });
+    for (const file of files) {
+        if (debug) console.log(`[PDF parser] Processing file: ${file.name}`);
+        const pdfText = await extractPdfText(file);
+        console.log(scanKeys)
+        const rows = parseTableRows(pdfText, scanKeys);
+        results[file.name] = rows;
+        if (debug) console.log(`[PDF parser] Extracted ${rows.length} rows from ${file.name}`, rows);
     }
-  });
 
-  return boxes;
+    return results;
 }
 
-// --- Step 5: turn sections into a Form.setFieldsValue-ready object ---
-export function parsePdfIntoFormValues(text) {
-  console.log("Parsed text from PDF:", text);
-  const sections = splitIntoSections(text);
+// --- apply extracted rows to a dynamic form field (e.g. Ant Design Form.List) ---
+export function applyExtractedRowsToForm({ form, rowFieldName = 'managedFunds', rows = [] }) {
+    if (!form || !rows.length) return null;
 
-  console.log("Parsed sections from PDF:", sections);
-  const values = {};
-
-  [
-    "title",
-    "topic",
-    "subcategory",
-    "slugId",
-    "tag",
-    "snippet",
-    "explanation",
-    "note",
-    "example",
-    "relatedEntries",
-  ].forEach((key) => {
-    if (sections[key]) values[key] = sections[key].join(" ").trim();
-  });
-
-  if (sections.boost) {
-    const num = parseFloat(sections.boost.join(" ").replace(/[^\d.-]/g, ""));
-    values.boost = Number.isNaN(num) ? 0 : num;
-  }
-
-  if (sections.keywords) {
-    values.keywords = sections.keywords
-      .join(" ")
-      .split(/[,•\-\n]/)
-      .map((k) => k.trim())
-      .filter(Boolean);
-  }
-
-  if (sections.statBoxes) {
-    values.statBoxes = parseStatBoxes(sections.statBoxes);
-  }
-
-  return values;
+    try {
+        form.setFieldValue(rowFieldName, rows);
+        return { success: true, rows, rowCount: rows.length };
+    } catch (error) {
+        console.error('[PDF parser] Error applying extracted rows to form:', error);
+        throw error;
+    }
 }

@@ -100,6 +100,7 @@ export default function UserLayout() {
   }, [location.pathname]);
 
   const visibleRoutes = useMemo(() => {
+    console.log("pura con log",allUserRoutes);
     return allUserRoutes;
   }, []);
 
@@ -156,7 +157,7 @@ export default function UserLayout() {
                   : "calc(100vh - 27vh)",
                 overflowY: "auto",
               }}
-              // style={{ flex: 1, overflowY: "auto" }}
+            // style={{ flex: 1, overflowY: "auto" }}
             >
               <ConfigProvider
                 theme={{
@@ -213,7 +214,7 @@ export default function UserLayout() {
                 {!session?.user?.profileImage &&
                   (capitalizeWords(
                     session?.user?.firstName?.charAt(0) +
-                      session?.user?.lastName?.charAt(0),
+                    session?.user?.lastName?.charAt(0),
                   ) ||
                     "JD")}
               </Avatar>
@@ -222,7 +223,7 @@ export default function UserLayout() {
                 <div style={{ fontWeight: 500, fontSize: "12px" }}>
                   {capitalizeWords(
                     session?.user?.firstName + " " + session?.user?.lastName ||
-                      "John Doe",
+                    "John Doe",
                   )}
                 </div>
                 <div style={{ fontSize: "10px", color: "#888" }}>
@@ -354,7 +355,6 @@ export default function UserLayout() {
                     />
                   ))}
               </Route>
-              
             </Routes>
           </div>
         </Content>

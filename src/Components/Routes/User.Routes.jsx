@@ -54,6 +54,7 @@ import SMSFAccumulationAccount from "../Pages/User/Discovery/SMSF/components/SMS
 import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObjectives.jsx";
 import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
 import ProfilePage from "../Pages/User/Clients/ProfilePage.jsx";
+import AdviserKnowledgeBase from "../Pages/User/Strategy/AdviserKnowledgeBase.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1076,6 +1077,18 @@ export function getNextDiscoveryNavKey(pathname, questions) {
 }
 
 export const strategyRoutes = [
+  {
+    key: "/user/strategy/knowledge-base",
+    path: "/strategy/knowledge-base",
+    ...withSpacing({
+      icon: "📚",
+      label: "Knowledge Base",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <AdviserKnowledgeBase />,
+    condition: () => true,
+  },
   {
     key: "/strategy/denaro-deck",
     path: "/strategy/denaro-deck",
