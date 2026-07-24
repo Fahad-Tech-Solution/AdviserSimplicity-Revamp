@@ -154,6 +154,7 @@ export const INITIAL_KNOWLEDGE_ENTRIES = [
 export const SelectedCategory = [
   {
     value: "Super",
+    icon: "🏦",
     label: "Super",
     subCategories: [
       { value: "Contributions", label: "Contributions" },
@@ -165,6 +166,7 @@ export const SelectedCategory = [
     ],
   },
   {
+    icon: "💰",
     value: "Age Pension & Centrelink",
     label: "Age Pension & Centrelink",
     subCategories: [
@@ -177,6 +179,7 @@ export const SelectedCategory = [
   {
     value: "Tax",
     label: "Tax",
+    icon: "📊",
     subCategories: [
       { value: "Income tax", label: "Income tax" },
       { value: "Deductions", label: "Deductions" },
@@ -188,6 +191,7 @@ export const SelectedCategory = [
   {
     value: "Investment",
     label: "Investment",
+    icon: "📈",
     subCategories: [
       { value: "Portfolio basics", label: "Portfolio basics" },
       { value: "Products", label: "Products" },
@@ -198,6 +202,7 @@ export const SelectedCategory = [
   {
     value: "Budgeting & Wealth",
     label: "Budgeting & Wealth",
+    icon: "💼",
     subCategories: [
       {
         value: "Budgeting basics",
@@ -215,6 +220,7 @@ export const SelectedCategory = [
   {
     value: "Small Business",
     label: "Small Business",
+    icon: "🏢",
     subCategories: [
       { value: "Structures", label: "Structures" },
       { value: "CGT & exit", label: "CGT & exit" },
@@ -225,6 +231,7 @@ export const SelectedCategory = [
   {
     value: "Self-Managed Super (SMSF)",
     label: "Self-Managed Super (SMSF)",
+    icon: "📋",
     subCategories: [
       { value: "Setup & compliance", label: "Setup & compliance" },
       { value: "Investments", label: "Investments" },
@@ -235,6 +242,7 @@ export const SelectedCategory = [
   {
     value: "Mortgages & Debt",
     label: "Mortgages & Debt",
+    icon: "🏠",
     subCategories: [
       { value: "Mortgages", label: "Mortgages" },
       { value: "Credit scores", label: "Credit scores" },
@@ -245,6 +253,7 @@ export const SelectedCategory = [
   {
     value: "Insurance",
     label: "Insurance",
+    icon: "🛡️",
     subCategories: [
       { value: "Life & TPD", label: "Life & TPD" },
       {
@@ -258,6 +267,7 @@ export const SelectedCategory = [
   {
     value: "Aged Care",
     label: "Aged Care",
+    icon: "👴",
     subCategories: [
       { value: "Residential care", label: "Residential care" },
       { value: "Home care", label: "Home care" },
@@ -267,6 +277,7 @@ export const SelectedCategory = [
   {
     value: "Buying Your First Home",
     label: "Buying Your First Home",
+    icon: "🔑",
     subCategories: [
       { value: "Government schemes", label: "Government schemes" },
       { value: "Deposit & borrowing", label: "Deposit & borrowing" },
@@ -276,6 +287,7 @@ export const SelectedCategory = [
   {
     value: "Redundancy & Leaving Work",
     label: "Redundancy & Leaving Work",
+    icon: "🚪",
     subCategories: [
       { value: "Redundancy", label: "Redundancy" },
       { value: "Termination payments", label: "Termination payments" },

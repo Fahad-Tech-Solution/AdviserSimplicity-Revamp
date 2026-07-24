@@ -1,0 +1,48 @@
+.KnowledgeBasePage .custom-home-tag {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(15, 37, 71, 0.05);
+  border: 1px solid #e3e6ea;
+  transition: all 0.3s ease; /* Makes the hover effect smooth */
+}
+
+/* Your hover effect goes here */
+.KnowledgeBasePage .custom-home-tag:hover {
+  background-color: #f5f7fa;
+  border-color: #22c55e; /* Ant Design's default primary blue, change as needed */
+  cursor: pointer;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.KnowledgeBasePage .interactive-card {
+  border-radius: 12px;
+  height: 100%;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.KnowledgeBasePage .interactive-card:hover {
+  transform: translateY(-5px);
+  border-color: #22c55e;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+.KnowledgeBasePage .subCategory {
+  border-radius: 12px;
+  height: 100%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid #fff;
+
+}
+.KnowledgeBasePage .subCategory:hover {
+  transform: translateY(-5px);
+  border-color: #22c55e;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+  background-color: #22c55e23;
+}

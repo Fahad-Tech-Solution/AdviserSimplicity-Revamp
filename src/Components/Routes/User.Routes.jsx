@@ -1078,8 +1078,8 @@ export function getNextDiscoveryNavKey(pathname, questions) {
 
 export const strategyRoutes = [
   {
-    key: "/user/strategy/knowledge-base",
-    path: "/strategy/knowledge-base",
+    key: "/user/strategy/knowledge-base/",
+    path: "/strategy/knowledge-base/*",
     ...withSpacing({
       icon: "📚",
       label: "Knowledge Base",

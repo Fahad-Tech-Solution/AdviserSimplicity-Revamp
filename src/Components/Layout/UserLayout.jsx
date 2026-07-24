@@ -100,7 +100,6 @@ export default function UserLayout() {
   }, [location.pathname]);
 
   const visibleRoutes = useMemo(() => {
-    console.log("pura con log",allUserRoutes);
     return allUserRoutes;
   }, []);
 
