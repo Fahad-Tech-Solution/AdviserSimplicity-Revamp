@@ -195,7 +195,7 @@ const SubCategoryPage = ({
                 <Col md={24}>
                     {!subCategory ? (
                         <>
-                            <Link to={"/user/strategy/knowledge-base"} style={{ color: "#22c55e", textDecoration: "none",  fontWeight: 500, }}>← All topics</Link>
+                            <Link to={"/user/strategy/knowledge-base"} style={{ color: "#22c55e", textDecoration: "none", fontWeight: 500, }}>← All topics</Link>
                             <Card
                                 style={{
                                     borderRadius: 12,
@@ -269,11 +269,12 @@ const SubCategoryPage = ({
                                     height: "100%",
                                     border: "1px solid #f0f0f0",
                                     boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                                    maxHeight: "57vh", overflowY: "auto"
+
                                 }}
                                 styles={{
                                     body: {
                                         padding: "15px 10px 0px 10px", display: "flex", flexDirection: "column", gap: "10px",
-                                        maxHeight: "500vh", overflowY: "auto"
                                     }
                                 }}
                             >
@@ -290,7 +291,6 @@ const SubCategoryPage = ({
                                         <Card
                                             key={articleId}
                                             className="subCategory"
-                                            hoverable
                                             onClick={() =>
                                                 navigate(
                                                     `/user/strategy/knowledge-base/article?id=${encodeURIComponent(articleId)}`

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Tag, Space, Typography, Flex, Skeleton, Empty } from 'antd';
+import { Card, Button, Tag, Space, Typography, Flex, Skeleton, Empty, Row, Col } from 'antd';
 import {
   SoundOutlined,
   MailOutlined,
@@ -11,6 +11,8 @@ import {
   StopOutlined,
 } from '@ant-design/icons';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTextToSpeech } from '../../../../../hooks/useTextToSpeech';
+import { HiMiniArrowPath } from "react-icons/hi2";
 
 const { Text, Paragraph } = Typography;
 
@@ -22,6 +24,10 @@ const ArticleDetailPage = ({
 }) => {
   const [searchParams] = useSearchParams();
   const [activeMode, setActiveMode] = useState('main'); // "main" | "analogy" | "example" | "simpler"
+
+  // Inject Global Speech Functionality
+  const { speechState, speak, toggle, stop } = useTextToSpeech();
+
 
   // Read URL query parameters
   const topic = searchParams.get('topic');
@@ -40,63 +46,6 @@ const ArticleDetailPage = ({
 
   // Category Color Accent (uses prop with fallback green)
   const categoryColor = CATEGORY_COLORS[article?.cat] || '#22c55e';
-
-  // Speech State Management
-  const [speechState, setSpeechState] = useState('stopped'); // 'speaking' | 'paused' | 'stopped'
-
-  // Clean up speech synthesis when navigating away or unmounting
-  useEffect(() => {
-    return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  // Handle Speech Toggle (Play, Pause, Resume)
-  const handleToggleSpeech = () => {
-    if (!('speechSynthesis' in window) || !article) return;
-
-    const synth = window.speechSynthesis;
-
-    // 1. If currently PAUSED -> RESUME
-    if (speechState === 'paused') {
-      synth.resume();
-      setSpeechState('speaking');
-      return;
-    }
-
-    // 2. If currently SPEAKING -> PAUSE
-    if (speechState === 'speaking') {
-      synth.pause();
-      setSpeechState('paused');
-      return;
-    }
-
-    // 3. If STOPPED -> START FRESH
-    synth.cancel(); // Clear any previous queue
-    const textToRead =
-      activeMode === 'analogy' && article.analogy
-        ? article.analogy
-        : article.explanation;
-
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-
-    // Reset state back to 'stopped' when reading finishes naturally
-    utterance.onend = () => setSpeechState('stopped');
-    utterance.onerror = () => setSpeechState('stopped');
-
-    synth.speak(utterance);
-    setSpeechState('speaking');
-  };
-
-  // Handle Complete Stop
-  const handleStopSpeech = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setSpeechState('stopped');
-    }
-  };
 
   // 1. Skeleton Loading State
   if (loading) {
@@ -131,6 +80,9 @@ const ArticleDetailPage = ({
       ? article.analogy
       : article.explanation;
 
+
+
+
   return (
     <div style={{ padding: '10px', maxWidth: '1100px', margin: '0 auto' }}>
       {/* Navigation Back Link */}
@@ -152,8 +104,8 @@ const ArticleDetailPage = ({
       <Card
         style={{
           borderRadius: 16,
-          borderColor: '#dcfce7',
-          backgroundColor: '#fbfdfb',
+          borderColor: '#22c55e',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
         }}
         styles={{ body: { padding: '28px' } }}
@@ -180,47 +132,46 @@ const ArticleDetailPage = ({
           {/* Action Buttons */}
           <Space size={8}>
             {/* Play / Pause / Resume Button */}
-            <Button
-              icon={
-                speechState === 'speaking' ? (
-                  <PauseCircleOutlined />
-                ) : speechState === 'paused' ? (
-                  <PlayCircleOutlined />
-                ) : (
-                  <SoundOutlined />
-                )
-              }
-              onClick={handleToggleSpeech}
-              style={{
-                backgroundColor: speechState === 'paused' ? '#ca8a04' : '#1e293b',
-                color: '#ffffff',
-                borderRadius: 6,
-                fontSize: 12,
-                height: 32,
-              }}
-            >
-              {speechState === 'speaking'
-                ? 'Pause'
-                : speechState === 'paused'
-                  ? 'Resume'
-                  : 'Read aloud'}
-            </Button>
-
-            {/* Optional Stop Button when speech is active or paused */}
-            {speechState !== 'stopped' && (
+            {speechState == "stopped" ?
               <Button
-                icon={<StopOutlined />}
-                onClick={handleStopSpeech}
-                danger
+                icon={
+                  <HiMiniArrowPath />
+                }
+                onClick={async () => { await stop(); toggle(article.explanation, article.title) }}
                 style={{
+                  backgroundColor: '#fff',
+                  color: '#1e293b',
+                  border: "1px solid #1e293b",
                   borderRadius: 6,
                   fontSize: 12,
                   height: 32,
                 }}
               >
-                Stop
+                Again
               </Button>
-            )}
+
+              :
+              <Button
+                icon={
+                  speechState === 'speaking' ? (
+                    <StopOutlined />
+                  ) : (
+                    <SoundOutlined />
+                  )
+                }
+                onClick={() => speechState === 'speaking' ? stop() : toggle(article.explanation, article.title)}
+                style={{
+                  backgroundColor: speechState === 'speaking' ? '#ca043f' : '#1e293b',
+                  color: '#ffffff',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  height: 32,
+                }}
+              >
+                {speechState === 'speaking' ? 'Stop' : 'Read aloud'}
+              </Button>
+            }
+
             <Button
               icon={<MailOutlined />}
               style={{
@@ -322,32 +273,29 @@ const ArticleDetailPage = ({
               }}
             >
               {article.statBoxes.map((box, idx) => (
-                <Flex
+                <Row
                   key={idx}
-                  justify="space-between"
-                  align="center"
-                  style={{
-                    padding: '10px 0',
-                    borderBottom:
-                      idx === article.statBoxes.length - 1
-                        ? 'none'
-                        : '1px solid #f8fafc',
-                  }}
+                  gutter={[24, 24]}
+                  className={`py-1 ${idx !== article.statBoxes.length - 1 && 'border-bottom'}`}
                 >
-                  <Text style={{ fontSize: 13, color: '#334155', fontWeight: 600 }}>
-                    {box.key}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: '#0f172a', fontWeight: 700 }}>
-                    {box.value}
-                  </Text>
-                </Flex>
+                  <Col sm={12} className='py-1'>
+                    <Text style={{ fontSize: 13, color: '#334155', fontWeight: 600 }}>
+                      {box.key}
+                    </Text>
+                  </Col>
+                  <Col sm={12} className='py-1'>
+                    <Text style={{ fontSize: 13, color: '#0f172a', fontWeight: 700 }}>
+                      {box.value}
+                    </Text>
+                  </Col>
+                </Row>
               ))}
             </div>
           </div>
         )}
 
         {/* Important Warning Callout */}
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ marginBottom: 18 }}>
           <Space align="center" style={{ marginBottom: 8 }}>
             <span
               style={{
@@ -377,7 +325,7 @@ const ArticleDetailPage = ({
         </div>
 
         {/* WANT ME TO Section */}
-        <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 18, marginBottom: 20 }}>
+        <div style={{ border: '1px dashed #cbd5e1', borderRadius: "12px", padding: "10px", marginBottom: 20 }}>
           <Text
             style={{
               fontSize: 10,
@@ -392,44 +340,23 @@ const ArticleDetailPage = ({
           </Text>
           <Space size={10} wrap>
             <Button
-              icon={<BulbOutlined />}
+              icon={"💡"}
               onClick={() => setActiveMode(activeMode === 'analogy' ? 'main' : 'analogy')}
-              style={{
-                borderRadius: 20,
-                borderColor: activeMode === 'analogy' ? '#22c55e' : '#bbf7d0',
-                backgroundColor: activeMode === 'analogy' ? '#f0fdf4' : '#ffffff',
-                color: '#15803d',
-                fontSize: 12,
-                fontWeight: 500,
-              }}
+              className={`want-me-to ${activeMode === 'analogy' && "active"}`}
             >
               Give an analogy
             </Button>
             <Button
-              icon={<EyeOutlined />}
+              icon={"📊"}
               onClick={() => setActiveMode(activeMode === 'example' ? 'main' : 'example')}
-              style={{
-                borderRadius: 20,
-                borderColor: activeMode === 'example' ? '#22c55e' : '#bbf7d0',
-                backgroundColor: activeMode === 'example' ? '#f0fdf4' : '#ffffff',
-                color: '#15803d',
-                fontSize: 12,
-                fontWeight: 500,
-              }}
+              className={`want-me-to ${activeMode === 'example' && "active"}`}
             >
               Show an example
             </Button>
             <Button
-              icon={<SmileOutlined />}
+              icon={"✨"}
               onClick={() => setActiveMode(activeMode === 'simpler' ? 'main' : 'simpler')}
-              style={{
-                borderRadius: 20,
-                borderColor: activeMode === 'simpler' ? '#22c55e' : '#bbf7d0',
-                backgroundColor: activeMode === 'simpler' ? '#f0fdf4' : '#ffffff',
-                color: '#15803d',
-                fontSize: 12,
-                fontWeight: 500,
-              }}
+              className={`want-me-to ${activeMode === 'simpler' && "active"}`}
             >
               Make it simpler
             </Button>
@@ -455,14 +382,15 @@ const ArticleDetailPage = ({
               {article.keywords.slice(0, 6).map((kw, idx) => (
                 <Tag
                   key={idx}
-                  style={{
-                    borderRadius: 16,
-                    border: '1px solid #bbf7d0',
-                    backgroundColor: '#ffffff',
-                    color: '#166534',
-                    padding: '4px 12px',
-                    fontSize: 12,
-                  }}
+                  className={`related-topic`}
+                // style={{
+                //   borderRadius: 16,
+                //   border: '1px solid #bbf7d0',
+                //   backgroundColor: '#ffffff',
+                //   color: '#166534',
+                //   padding: '4px 12px',
+                //   fontSize: 12,
+                // }}
                 >
                   {kw}
                 </Tag>

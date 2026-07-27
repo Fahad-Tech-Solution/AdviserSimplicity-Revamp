@@ -22,6 +22,7 @@ import { useAtom } from "jotai";
 import BaseTypes from "./components/BaseTypes";
 import SubCategoryPage from "./components/SubCategoryPage";
 import ArticleDetailView from "./components/ArticleDetailView";
+import NattyAiSpeakingCard from "../../../Common/NattyAiSpeakingCard";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -103,11 +104,13 @@ const AdviserKnowledgeBase = () => {
     }
   };
 
+  let [readableArticle, setReadableArticle] = useState()
+
   return (
     <Row gutter={[24, 24]} style={{ padding: "24px 8px" }} className="KnowledgeBasePage">
       <Col
-        // md={14}
-        md={24}
+        md={16}
+      // md={24}
       >
         <div style={{ marginBottom: 24 }}>
           <Tag className="custom-home-tag"
@@ -166,10 +169,17 @@ const AdviserKnowledgeBase = () => {
         </Routes>
 
       </Col>
-      {/* <Col
-        md={10}>
-
-      </Col> */}
+      <Col
+        md={8}>
+        <NattyAiSpeakingCard
+          loading={loading}
+          filteredArticles={filteredArticles}
+          CATEGORY_COLORS={CATEGORY_COLORS}
+          topicAndSubCategories={topicAndSubCategories}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        />
+      </Col>
     </Row>
   );
 };

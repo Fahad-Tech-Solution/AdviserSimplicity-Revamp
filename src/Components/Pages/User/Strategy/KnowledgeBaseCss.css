@@ -33,16 +33,52 @@
 }
 
 .KnowledgeBasePage .subCategory {
-  border-radius: 12px;
+  border-radius: 8px;
   height: 100%;
   transition: all 0.3s ease;
   cursor: pointer;
   border: 1px solid #fff;
-
 }
 .KnowledgeBasePage .subCategory:hover {
-  transform: translateY(-5px);
-  border-color: #22c55e;
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+  border-color: #e5e7eb;
   background-color: #22c55e23;
+}
+
+.KnowledgeBasePage .want-me-to {
+  border-radius: 20px;
+  border-color: #bbf7d0;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.KnowledgeBasePage .want-me-to.active {
+  border-radius: 20px;
+  border-color: #bbf7d0;
+  background-color: #22c55e !important;
+  color: #fff !important;
+  font-size: 12px;
+  font-weight: 500;
+}
+.KnowledgeBasePage .want-me-to:hover {
+  border-color: #e5e7eb;
+  background-color: #22c55e !important;
+  color: #fff !important;
+}
+
+.KnowledgeBasePage .related-topic {
+  border-radius: 20px;
+  border-color: #bbf7d0;
+  background-color: #ffffff;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+}
+
+.KnowledgeBasePage .related-topic:hover {
+  border-color: #22c55e;
+  background-color: #1f2937;
+  color: #fff;
 }

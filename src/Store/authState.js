@@ -114,3 +114,9 @@ export const KnowledgeBaseEntriesAtom = atomWithStorage(
   "KnowledgeBaseEntriesAtom",
   [],
 );
+
+export const ttsTextAtom = atom("");
+export const ttsTopicAtom = atom(""); // Topic title to display when active
+export const ttsStateAtom = atom("stopped"); // 'speaking' | 'paused' | 'stopped'
+export const ttsSpeedAtom = atom(1.0); // Playback rate (0.5x - 2.0x)
+export const ttsVoiceAtom = atom(null); // Selected SpeechSynthesisVoice URI or name
