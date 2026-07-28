@@ -576,7 +576,7 @@ export default function SuperFunds({ modalData }) {
     );
 
     syncParentValues(savedEntries);
-    setEditing(false);
+    // setEditing(false);
     modalData?.closeModal?.();
     modalData?.switchToEditMode?.();
   };

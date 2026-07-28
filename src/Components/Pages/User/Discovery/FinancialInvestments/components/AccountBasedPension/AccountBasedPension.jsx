@@ -12,6 +12,7 @@ import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
 import AcountBalanceBenefit from "./AcountBalanceBenefit.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -51,19 +52,19 @@ function buildAccountBasedPensionEntries(count, entries = []) {
       balanceBenefit: entry?.balanceBenefit || "",
       balanceBenefitDetails:
         entry?.balanceBenefitDetails &&
-        typeof entry.balanceBenefitDetails === "object"
+          typeof entry.balanceBenefitDetails === "object"
           ? entry.balanceBenefitDetails
           : {},
       pensionPayment: entry?.pensionPayment || "",
       pensionPaymentArray:
         entry?.pensionPaymentArray &&
-        typeof entry.pensionPaymentArray === "object"
+          typeof entry.pensionPaymentArray === "object"
           ? entry.pensionPaymentArray
           : {},
       nominatedBeneficiaries: entry?.nominatedBeneficiaries || "No",
       nominatedBeneficiariesDetails:
         entry?.nominatedBeneficiariesDetails &&
-        typeof entry.nominatedBeneficiariesDetails === "object"
+          typeof entry.nominatedBeneficiariesDetails === "object"
           ? entry.nominatedBeneficiariesDetails
           : {},
       annualAdvice: entry?.annualAdvice || "",
@@ -158,6 +159,7 @@ export default function AccountBasedPension({ modalData }) {
     columnKey: null,
     order: null,
   });
+  const [scanTargetRow, setScanTargetRow] = useState(1);
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -483,7 +485,7 @@ export default function AccountBasedPension({ modalData }) {
     );
 
     syncParentValues(savedEntries);
-    setEditing(false);
+    // setEditing(false);
     modalData?.closeModal?.();
     modalData?.switchToEditMode?.();
   };
@@ -495,6 +497,117 @@ export default function AccountBasedPension({ modalData }) {
       order: nextSorter?.order || null,
     });
   };
+
+  const PENSION_PDF_SCAN_KEYS = [
+    {
+      key: "platformName",
+      type: "text",
+      labels: [
+        "Fund Name",
+        "Pension Fund",
+        "Platform Name",
+        "Institution",
+        "Provider",
+        "Your fund",
+        "Fund provider",
+        "AustralianSuper",
+        "REST Super",
+        "Hostplus",
+        "HESTA",
+        "UniSuper",
+        "CBUS",
+        "Aware Super",
+        "Colonial First State",
+        "MLC",
+        "AMP",
+      ],
+    },
+    {
+      key: "memberNumber",
+      type: "id",
+      labels: [
+        "Member Number",
+        "Member No",
+        "Account Number",
+        "Account No",
+        "Membership Number",
+        "Pension Account No",
+        "Policy Number",
+      ],
+    },
+    {
+      key: "balanceBenefit",
+      type: "currency",
+      labels: [
+        "Balance and Details",
+        "Balance",
+        "Current Balance",
+        "Total Balance",
+        "Pension Balance",
+        "Account Balance",
+        "Closing Balance",
+      ],
+    },
+    {
+      key: "pensionPayment",
+      type: "currency",
+      labels: [
+        "Annual Pension Payment",
+        "Pension Payment",
+        "Annual Payment",
+        "Pension Amount",
+        "Ongoing Pension",
+        "Drawdown Amount",
+      ],
+    },
+    {
+      key: "nominatedBeneficiaries",
+      type: "text",
+      labels: [
+        "Beneficiaries",
+        "Nominated Beneficiaries",
+        "Binding Beneficiary",
+      ],
+    },
+    {
+      key: "annualAdvice",
+      type: "currency",
+      labels: [
+        "Ongoing Advice Fee",
+        "Ongoing Advice",
+        "Advice Fee",
+        "Annual Fee",
+        "Ongoing Fee",
+      ],
+    },
+  ];
+
+  const resolveSuperFundScanValue = useCallback(
+    (key, rawValue) => {
+      if (key !== "platformName") return rawValue;
+
+      const normalized = String(rawValue || "").trim().toLowerCase();
+      if (!normalized) return rawValue;
+
+      const exactMatch = fundOptions.find(
+        (option) => String(option.label).trim().toLowerCase() === normalized,
+      );
+      if (exactMatch) return exactMatch.value;
+
+      const partialMatch = fundOptions.find((option) => {
+        const label = String(option.label).trim().toLowerCase();
+        return label.includes(normalized) || normalized.includes(label);
+      });
+      return partialMatch?.value || rawValue;
+    },
+    [fundOptions],
+  );
+
+
+  function formatCurrencyValue(value) {
+    const numeric = parseCurrencyValue(value);
+    return numeric ? toCommaAndDollar(numeric) : "";
+  }
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -518,8 +631,33 @@ export default function AccountBasedPension({ modalData }) {
         {renderModalContent(detailModalData)}
       </AppModal>
 
+
+
+
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
+
+          {editing ? (
+            <NattyAiScanCard
+              title="Natty AI - Scan Pension Fund Statement(s)"
+              subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
+              rowCount={sortedRows.length}
+              targetRow={scanTargetRow}
+              onTargetRowChange={setScanTargetRow}
+              scanKeys={PENSION_PDF_SCAN_KEYS}
+              form={form}
+              rowFieldName="superFunds"
+              fieldFormatters={{
+                balanceBenefit: formatCurrencyValue,
+                annualAdvice: formatCurrencyValue,
+              }}
+              resolveFieldValue={resolveSuperFundScanValue}
+              onAfterFormUpdate={(entries) => {
+                syncParentValues(entries);
+              }}
+            />
+          ) : null}
+
           <Col xs={24} md={8}>
             <Form.Item
               label="Number of Account Based Pensions"
