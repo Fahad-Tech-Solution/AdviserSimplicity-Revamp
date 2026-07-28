@@ -134,8 +134,8 @@ function hasMeaningfulValues(initialValues = {}) {
 function buildPlatformOptions(investmentOffers, entries = [], key) {
   const offers =
     investmentOffers &&
-    typeof investmentOffers === "object" &&
-    !Array.isArray(investmentOffers)
+      typeof investmentOffers === "object" &&
+      !Array.isArray(investmentOffers)
       ? investmentOffers
       : {};
 
@@ -349,11 +349,11 @@ export default function PlatformInvestments({ modalData }) {
         "SMSFManagedFunds",
       ].includes(modalData?.sectionKey)
         ? investmentOffers?.InvestmentPlatforms?.find(
-            (item) => String(item?._id) === selectedPlatform,
-          ) || null
+          (item) => String(item?._id) === selectedPlatform,
+        ) || null
         : investmentOffers?.InvestmentBonds?.find(
-            (item) => String(item?._id) === selectedPlatform,
-          ) || null;
+          (item) => String(item?._id) === selectedPlatform,
+        ) || null;
 
       setDetailModalOpen(true);
       setDetailModalData({
@@ -585,28 +585,64 @@ export default function PlatformInvestments({ modalData }) {
     [platformOptions],
   );
 
-  const PLATFORM_PDF_SCAN_KEYS = [
-  {
-    key: "platformName",
-    labels: ["Institution"],
-  },
-  {
-    key: "accountNumber",
-    labels: ["Account Number", "Account No", "Acc No", "Policy Number", "Member Number"],
-  },
-  {
-    key: "portfolioValue",
-    labels: ["Portfolio Value", "Total Portfolio Value", "Current Value", "Asset Value", "Balance", "Market Value"],
-  },
-  {
-    key: "totalPortfolioCost",
-    labels: ["Total Cost Base", "Portfolio Cost Base", "Total Cost", "Cost Base", "Purchase Price"],
-  },
-  {
-    key: "serviceFee",
-    labels: ["Ongoing Advice Fee", "Service Fee", "Advice Fee", "Adviser Fee", "Ongoing Fee", "Service", "fee"],
-  },
-];
+  //   const PLATFORM_PDF_SCAN_KEYS = [
+const PLATFORM_PDF_SCAN_KEYS = [
+    {
+      key: "platformName",
+      type: "text",
+      labels: ["INSTITUTION", "Platform Name", "Platform", "Provider", "Investment Platform"],
+    },
+    {
+      key: "accountNumber",
+      type: "id",
+      labels: [
+        "MEMBER / ACC ID",
+        "MEMBER",
+        "ACC ID",
+        "Account Number",
+        "Account No",
+        "Acc No",
+        "Policy Number",
+        "Member Number",
+      ],
+    },
+    {
+      key: "portfolioValue",
+      type: "currency",
+      labels: [
+        "Asset Value",
+        "Portfolio Value",
+        "Total Portfolio Value",
+        "Current Value",
+        "Balance",
+        "Market Value",
+      ],
+    },
+    {
+      key: "totalPortfolioCost",
+      type: "currency",
+      labels: [
+        "Cost Base",
+        "Total Cost Base",
+        "Portfolio Cost Base",
+        "Total Cost",
+        "Purchase Price",
+      ],
+    },
+    {
+      key: "serviceFee",
+      type: "currency",
+      labels: [
+        "Service Fee",
+        "Annual Service Fee",
+        "Ongoing Advice Fee",
+        "Advice Fee",
+        "Adviser Fee",
+        "Ongoing Fee",
+        "Service",
+      ],
+    },
+  ];
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -633,26 +669,26 @@ export default function PlatformInvestments({ modalData }) {
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           {editing && (
-              <NattyAiScanCard
-                rowCount={sortedDetailRows.length}
-                targetRow={scanTargetRow}
-                onTargetRowChange={setScanTargetRow}
-                scanKeys={PLATFORM_PDF_SCAN_KEYS}
-                form={form}
-                rowFieldName="managedFunds"
-                fieldFormatters={{
-                  portfolioValue: formatCurrencyValue,
-                  totalPortfolioCost: formatCurrencyValue,
-                  serviceFee: formatCurrencyValue,
-                }}
-                resolveFieldValue={resolvePlatformScanValue}
-                onAfterFormUpdate={(entries) => syncParentValues(entries)}
-              />
+            <NattyAiScanCard
+              rowCount={sortedDetailRows.length}
+              targetRow={scanTargetRow}
+              onTargetRowChange={setScanTargetRow}
+              scanKeys={PLATFORM_PDF_SCAN_KEYS}
+              form={form}
+              rowFieldName="managedFunds"
+              fieldFormatters={{
+                portfolioValue: formatCurrencyValue,
+                totalPortfolioCost: formatCurrencyValue,
+                serviceFee: formatCurrencyValue,
+              }}
+              resolveFieldValue={resolvePlatformScanValue}
+              onAfterFormUpdate={(entries) => syncParentValues(entries)}
+            />
           )}
           <Col
             xs={24}
             md={7}
-            // className={editing ? "" : "d-none"}
+          // className={editing ? "" : "d-none"}
           >
             <Form.Item
               label="Number of Platforms"

@@ -28,7 +28,6 @@ const ArticleDetailPage = ({
   // Inject Global Speech Functionality
   const { speechState, speak, toggle, stop } = useTextToSpeech();
 
-
   // Read URL query parameters
   const topic = searchParams.get('topic');
   const subCategory = searchParams.get('subCategory');
@@ -46,6 +45,24 @@ const ArticleDetailPage = ({
 
   // Category Color Accent (uses prop with fallback green)
   const categoryColor = CATEGORY_COLORS[article?.cat] || '#22c55e';
+
+  // Main Rendered Content
+  const mainContent =
+    activeMode === 'analogy' && article?.analogy
+      ? article.analogy
+      : article?.explanation;
+
+  // AUTO-PLAY FEATURE: Trigger text-to-speech automatically when page loads or article changes
+  useEffect(() => {
+    if (article && mainContent) {
+      speak(mainContent, article.title);
+    }
+
+    // Optional: Stop speech when user navigates away from this page
+    return () => {
+      stop();
+    };
+  }, [article?._id]); // Re-runs if the article ID changes
 
   // 1. Skeleton Loading State
   if (loading) {
@@ -73,15 +90,6 @@ const ArticleDetailPage = ({
       </div>
     );
   }
-
-  // 3. Main Rendered Content
-  const mainContent =
-    activeMode === 'analogy' && article.analogy
-      ? article.analogy
-      : article.explanation;
-
-
-
 
   return (
     <div style={{ padding: '10px', maxWidth: '1100px', margin: '0 auto' }}>
@@ -124,7 +132,7 @@ const ArticleDetailPage = ({
             >
               ANSWER
             </Text>
-            <Text style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: '#111827', }}>
               {article.title}
             </Text>
           </Space>
@@ -132,45 +140,33 @@ const ArticleDetailPage = ({
           {/* Action Buttons */}
           <Space size={8}>
             {/* Play / Pause / Resume Button */}
-            {speechState == "stopped" ?
-              <Button
-                icon={
-                  <HiMiniArrowPath />
-                }
-                onClick={async () => { await stop(); toggle(article.explanation, article.title) }}
-                style={{
-                  backgroundColor: '#fff',
-                  color: '#1e293b',
-                  border: "1px solid #1e293b",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  height: 32,
-                }}
-              >
-                Again
-              </Button>
 
-              :
-              <Button
-                icon={
-                  speechState === 'speaking' ? (
-                    <StopOutlined />
-                  ) : (
-                    <SoundOutlined />
-                  )
+            <Button
+              icon={
+                speechState === 'speaking' ? (
+                  <StopOutlined />
+                ) : (
+                  <SoundOutlined />
+                )
+              }
+              onClick={() => {
+                if (speechState === 'speaking') {
+                  stop()
+                } else {
+                  stop();
+                  toggle(mainContent, article.title)
                 }
-                onClick={() => speechState === 'speaking' ? stop() : toggle(article.explanation, article.title)}
-                style={{
-                  backgroundColor: speechState === 'speaking' ? '#ca043f' : '#1e293b',
-                  color: '#ffffff',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  height: 32,
-                }}
-              >
-                {speechState === 'speaking' ? 'Stop' : 'Read aloud'}
-              </Button>
-            }
+              }}
+              style={{
+                backgroundColor: speechState === 'speaking' ? '#ca043f' : '#1e293b',
+                color: '#ffffff',
+                borderRadius: 6,
+                fontSize: 12,
+                height: 32,
+              }}
+            >
+              {speechState === 'speaking' ? 'Stop' : 'Read aloud'}
+            </Button>
 
             <Button
               icon={<MailOutlined />}
@@ -194,10 +190,10 @@ const ArticleDetailPage = ({
             lineHeight: 1.6,
             color: '#334155',
             marginBottom: 24,
-            whiteSpace: 'pre-line',
+            whiteSpace: 'pre-line'
           }}
         >
-          {mainContent}
+          {mainContent?.replace(/\\n/g, '\n')}
         </Paragraph>
 
         {/* Snippet Section */}
@@ -380,18 +376,7 @@ const ArticleDetailPage = ({
             </Text>
             <Space size={8} wrap>
               {article.keywords.slice(0, 6).map((kw, idx) => (
-                <Tag
-                  key={idx}
-                  className={`related-topic`}
-                // style={{
-                //   borderRadius: 16,
-                //   border: '1px solid #bbf7d0',
-                //   backgroundColor: '#ffffff',
-                //   color: '#166534',
-                //   padding: '4px 12px',
-                //   fontSize: 12,
-                // }}
-                >
+                <Tag key={idx} className={`related-topic`}>
                   {kw}
                 </Tag>
               ))}
@@ -399,7 +384,7 @@ const ArticleDetailPage = ({
           </div>
         )}
       </Card>
-    </div>
+    </div >
   );
 };
 

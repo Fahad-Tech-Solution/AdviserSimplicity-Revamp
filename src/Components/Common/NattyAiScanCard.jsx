@@ -171,10 +171,10 @@ export default function NattyAiScanCard({
 
       const rowsToFill = rows.slice(0, Math.max(0, Number(activeTargetRow) || 0));
 
+      // Inside NattyAiScanCard.jsx -> runPdfScan function
+
       let formUpdate = null;
       if (form) {
-        // Fills starting at activeTargetRow and only writes the number of rows
-        // implied by the selected target row, e.g. row 3 will fill 3 rows max.
         formUpdate = applyExtractedRowsToForm({
           form,
           rowFieldName,
@@ -183,7 +183,7 @@ export default function NattyAiScanCard({
           fieldFormatters,
           resolveFieldValue,
         });
-        onAfterFormUpdate?.(formUpdate?.rows, activeTargetRow, rowsToFill, formUpdate);
+        onAfterFormUpdate?.(formUpdate?.rows || rowsToFill, activeTargetRow, rowsToFill, formUpdate);
       }
 
       onScanComplete?.({

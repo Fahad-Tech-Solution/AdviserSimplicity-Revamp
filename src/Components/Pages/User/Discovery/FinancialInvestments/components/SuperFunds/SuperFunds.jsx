@@ -611,80 +611,42 @@ export default function SuperFunds({ modalData }) {
   );
 
   const SuperFund_PDF_SCAN_KEYS = [
-  {
-    key: "platformName",
-    labels: [
-      "Fund Name",
-      "Super Fund",
-      "Fund",
-      "Provider",
-      "Institution",
-      "Platform Name",
-      "Product Name",
-    ],
-  },
-  {
-    key: "memberNumber",
-    labels: [
-      "Member Number",
-      "Member No",
-      "Account Number",
-      "Account No",
-      "Policy Number",
-      "Client ID",
-    ],
-  },
-  {
-    key: "balanceBenefit",
-    labels: [
-      "Balance and Details",
-      "Balance",
-      "Current Balance",
-      "Account Balance",
-      "Total Balance",
-      "Withdrawal Benefit",
-    ],
-  },
-  {
-    key: "groupInsurance",
-    labels: [
-      "Insurance",
-      "Group Insurance",
-      "Insurance Cover",
-      "Total Cover",
-      "Life Cover",
-    ],
-  },
-  {
-    key: "contributions",
-    labels: [
-      "Contributions",
-      "Contribution Details",
-      "Annual Contributions",
-      "Employer Contributions",
-    ],
-  },
-  {
-    key: "nominatedBeneficiaries",
-    labels: [
-      "Beneficiaries",
-      "Nominated Beneficiaries",
-      "Beneficiary",
-      "Nomination",
-    ],
-  },
-  {
-    key: "annualAdvice",
-    labels: [
-      "Ongoing Advice Fee",
-      "Annual Advice",
-      "Advice Fee",
-      "Adviser Fee",
-      "Service Fee",
-      "Ongoing Fee",
-    ],
-  },
-];
+    {
+      key: "platformName",
+      type: "text",
+      labels: ["Fund Name", "Super Fund", "Platform Name", "Institution"],
+    },
+    {
+      key: "memberNumber",
+      type: "id",
+      labels: ["Member Number", "Member No", "Account Number"],
+    },
+    {
+      key: "balanceBenefit",
+      type: "currency",
+      labels: ["Balance and Details", "Balance", "Current Balance", "Total Balance"],
+    },
+    {
+      key: "groupInsurance",
+      type: "text",
+      labels: ["Insurance", "Group Insurance"],
+    },
+    {
+      key: "contributions",
+      type: "text",
+      labels: ["Contributions"],
+    },
+    {
+      key: "nominatedBeneficiaries",
+      type: "text",
+      labels: ["Beneficiaries", "Nominated Beneficiaries"],
+    },
+    {
+      key: "annualAdvice",
+      type: "currency",
+      labels: ["Ongoing Advice Fee", "Ongoing Advice", "Advice Fee", "Ongoing Fee"],
+    },
+  ];
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -721,12 +683,13 @@ export default function SuperFunds({ modalData }) {
               form={form}
               rowFieldName="superFunds"
               fieldFormatters={{
-                portfolioValue: formatCurrencyValue,
-                totalPortfolioCost: formatCurrencyValue,
-                serviceFee: formatCurrencyValue,
+                balanceBenefit: formatCurrencyValue,
+                annualAdvice: formatCurrencyValue,
               }}
               resolveFieldValue={resolveSuperFundScanValue}
-              onAfterFormUpdate={(entries) => syncParentValues(entries)}
+              // onAfterFormUpdate={(entries) => {
+              //   syncParentValues(entries);
+              // }}
             />
           ) : null}
           <Col xs={24} md={6}>
