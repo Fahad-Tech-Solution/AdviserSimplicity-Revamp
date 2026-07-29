@@ -1,6 +1,6 @@
 import { Button, Col, Form, message, Row, Select, Tabs } from "antd";
 import { useAtomValue, useSetAtom } from "jotai";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   discoveryDataAtom,
   InvestmentOffersData,
@@ -20,6 +20,7 @@ import PersonalInsurancePremiumsModal from "./PersonalInsurancePremiumsModal.jsx
 import EstatePlanningDescriptionModal from "../../EstatePlanning/components/wills/EstatePlanningDescriptionModal.jsx";
 import BeneficiariesModal from "../../FinancialInvestments/components/SuperFunds/BeneficiariesModal.jsx";
 import { confirmRemoveData } from "../../../../../Common/confirmationModal.js";
+import NattyAiScanCard from "../../../../../Common/NattyAiScanCard.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -492,6 +493,206 @@ function OwnerTabContent({
     });
   };
 
+
+  const PERSONAL_INSURANCE_PDF_SCAN_KEYS = [
+    {
+      key: "provider",
+      type: "text",
+      labels: [
+        "Provider",
+        "Insurance Provider",
+        "Insurer",
+        "Product Provider",
+        "TAL",
+        "AIA",
+        "Zurich",
+        "MLC",
+        "OnePath",
+        "ClearView",
+        "NEOS",
+        "MetLife",
+        "NobleOak",
+        "Resolution Life",
+      ],
+    },
+    {
+      key: "policyNo",
+      type: "id",
+      labels: [
+        "Policy No",
+        "Policy Number",
+        "Policy #",
+        "Plan Number",
+        "Member Number",
+        "Reference No",
+      ],
+    },
+    {
+      key: "Owner",
+      type: "text",
+      labels: [
+        "Owner",
+        "Policy Owner",
+        "Policyholder",
+        "Ownership",
+        "SMSF",
+        "Super Trustees",
+        "Company (Pty Ltd)",
+        "Family Trust",
+      ],
+    },
+    {
+      key: "startDate",
+      type: "text",
+      labels: [
+        "Start Date",
+        "Policy Start Date",
+        "Inception Date",
+        "Commencement Date",
+        "Issue Date",
+      ],
+    },
+    {
+      key: "smoker",
+      type: "text",
+      labels: [
+        "Smoker",
+        "Smoker Status",
+        "Smoking Status",
+        "Tobacco Use",
+      ],
+    },
+    {
+      key: "life",
+      type: "currency",
+      labels: [
+        "Life Cover",
+        "Life Insurance",
+        "Sum Insured - Life",
+        "Death Cover",
+        "Life Benefit Amount",
+        "Life",
+      ],
+    },
+    {
+      key: "TPD",
+      type: "currency",
+      labels: [
+        "TPD",
+        "TPD Cover",
+        "Total and Permanent Disability",
+        "Sum Insured - TPD",
+        "TPD Benefit Amount",
+      ],
+    },
+    {
+      key: "trauma",
+      type: "currency",
+      labels: [
+        "Trauma",
+        "Trauma Cover",
+        "Critical Illness",
+        "Sum Insured - Trauma",
+        "Trauma Benefit Amount",
+      ],
+    },
+    {
+      key: "IP",
+      type: "currency",
+      labels: [
+        "IP",
+        "Income Protection",
+        "Monthly Benefit",
+        "IP Benefit Amount",
+        "Disability Income",
+      ],
+    },
+    {
+      key: "premiums",
+      type: "currency",
+      labels: [
+        "Premiums p.a",
+        "Annual Premium",
+        "Total Premium",
+        "Premium Amount",
+        "Yearly Premium",
+        "Gross Premium",
+      ],
+    },
+    {
+      key: "loadingExclusion",
+      type: "text",
+      labels: [
+        "Loading/ Exclusion",
+        "Loading",
+        "Exclusion",
+        "Medical Loading",
+        "Policy Exclusion",
+      ],
+    },
+    {
+      key: "beneficiary",
+      type: "text",
+      labels: [
+        "Beneficiary",
+        "Nominated Beneficiary",
+        "Beneficiaries",
+      ],
+    },
+  ];
+
+
+  const [scanTargetRow, setScanTargetRow] = useState(1);
+
+  // 1. Helper function to safely parse currency inputs
+  function parseCurrencyValue(value) {
+    if (value === null || value === undefined || value === "") return 0;
+    const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+
+  // 2. Format helper for currency values
+  function formatCurrencyValue(value) {
+    const numeric = parseCurrencyValue(value);
+    return numeric ? toCommaAndDollar(numeric) : "";
+  }
+
+  // 3. Helper to synchronize policies with the form state after scanning
+  const syncParentValues = useCallback(
+    (nextEntries) => {
+      const ownerBlock = form.getFieldValue(ownerKey) || {};
+      form.setFieldValue(ownerKey, {
+        ...ownerBlock,
+        policies: nextEntries,
+        NumberOfMaps: nextEntries.length,
+      });
+    },
+    [form, ownerKey],
+  );
+
+
+  const resolveInsuranceProviderScanValue = useCallback(
+    (key, rawValue) => {
+      if (key !== "provider") return rawValue;
+
+      const normalized = String(rawValue || "").trim().toLowerCase();
+      if (!normalized) return rawValue;
+
+      const exactMatch = providerOptions.find(
+        (option) => String(option.label).trim().toLowerCase() === normalized
+      );
+      if (exactMatch) return exactMatch.value;
+
+      const partialMatch = providerOptions.find((option) => {
+        const label = String(option.label).trim().toLowerCase();
+        return label.includes(normalized) || normalized.includes(label);
+      });
+
+      return partialMatch?.value || rawValue;
+    },
+    [providerOptions]
+  );
+
   return (
     <Row gutter={[16, 0]}>
       <AppModal
@@ -504,7 +705,36 @@ function OwnerTabContent({
         {renderModalContent(modalData)}
       </AppModal>
 
-      <Col xs={24} md={6}>
+      {editing ? (
+        <NattyAiScanCard
+          title="Natty AI - Scan Insurance Certificate of Currency (COC)"
+          subtitle="Drag & drop COC PDFs here, or click Scan PDF(s). Auto-fills row + lumpsum + IP + premium details."
+          clientReport={true}
+          rowCount={rows.length}
+          targetRow={scanTargetRow}
+          onTargetRowChange={setScanTargetRow}
+          scanKeys={PERSONAL_INSURANCE_PDF_SCAN_KEYS}
+          form={form}
+          rowFieldName="personalInsurance" // Matches your Form list field name
+          fieldFormatters={{
+            life: formatCurrencyValue,
+            TPD: formatCurrencyValue,
+            trauma: formatCurrencyValue,
+            IP: formatCurrencyValue,
+            premiums: formatCurrencyValue,
+          }}
+          resolveFieldValue={resolveInsuranceProviderScanValue}
+          onAfterFormUpdate={(entries) => {
+            syncParentValues(entries);
+            setEditing(true); // Keeps section in EDIT mode after scanning
+          }}
+          columns={columns}
+          ownerLabel={ownerLabel}
+          providerOptions={providerOptions}
+        />
+      ) : null}
+
+      <Col xs={24} md={6} className="mt-3">
         <Form.Item name={[ownerKey, "NumberOfMaps"]} label="Number of Policies">
           <Select
             options={Array.from({ length: 10 }, (_, index) => ({
@@ -520,7 +750,7 @@ function OwnerTabContent({
           />
         </Form.Item>
       </Col>
-      <Col xs={24} md={6}>
+      <Col xs={24} md={6} className="mt-3">
         <Form.Item label="Insurance Cover (Group) :" name="groupCover">
           <Button
             key="groupCover"
@@ -614,11 +844,11 @@ export default function PersonalInsuranceModal({ modalData }) {
       },
       partner: allowPartner
         ? {
-            NumberOfMaps: Array.isArray(partnerPolicies)
-              ? partnerPolicies.length
-              : 0,
-            policies: Array.isArray(partnerPolicies) ? partnerPolicies : [],
-          }
+          NumberOfMaps: Array.isArray(partnerPolicies)
+            ? partnerPolicies.length
+            : 0,
+          policies: Array.isArray(partnerPolicies) ? partnerPolicies : [],
+        }
         : undefined,
       groupCover: groupCoverDetails || {},
     };
@@ -676,32 +906,32 @@ export default function PersonalInsuranceModal({ modalData }) {
       clientHasPersonalInsurance: clientPolicies.length > 0 ? "Yes" : "No",
       ...(allowPartner && partnerTotals
         ? {
-            partner: {
-              ...(pi.partner && typeof pi.partner === "object"
-                ? pi.partner
-                : {}),
-              PersonalInsurance: partnerPolicies,
-              numberOfPolicies: partnerPolicies.length,
-            },
-            partnerLifeInsuranceTotal: toCommaAndDollar(
-              partnerTotals.LifeInsuranceTotal,
-            ),
-            partnerTPDTotal: toCommaAndDollar(partnerTotals.TPDTotal),
-            partnerTraumaTotal: toCommaAndDollar(partnerTotals.TraumaTotal),
-            partnerIncomeProtectionTotal: toCommaAndDollar(
-              partnerTotals.IncomeProtectionTotal,
-            ),
-            partnerHasPersonalInsurance:
-              partnerPolicies.length > 0 ? "Yes" : "No",
-          }
+          partner: {
+            ...(pi.partner && typeof pi.partner === "object"
+              ? pi.partner
+              : {}),
+            PersonalInsurance: partnerPolicies,
+            numberOfPolicies: partnerPolicies.length,
+          },
+          partnerLifeInsuranceTotal: toCommaAndDollar(
+            partnerTotals.LifeInsuranceTotal,
+          ),
+          partnerTPDTotal: toCommaAndDollar(partnerTotals.TPDTotal),
+          partnerTraumaTotal: toCommaAndDollar(partnerTotals.TraumaTotal),
+          partnerIncomeProtectionTotal: toCommaAndDollar(
+            partnerTotals.IncomeProtectionTotal,
+          ),
+          partnerHasPersonalInsurance:
+            partnerPolicies.length > 0 ? "Yes" : "No",
+        }
         : {
-            partner: pi.partner,
-            partnerLifeInsuranceTotal: pi.partnerLifeInsuranceTotal,
-            partnerTPDTotal: pi.partnerTPDTotal,
-            partnerTraumaTotal: pi.partnerTraumaTotal,
-            partnerIncomeProtectionTotal: pi.partnerIncomeProtectionTotal,
-            partnerHasPersonalInsurance: pi.partnerHasPersonalInsurance,
-          }),
+          partner: pi.partner,
+          partnerLifeInsuranceTotal: pi.partnerLifeInsuranceTotal,
+          partnerTPDTotal: pi.partnerTPDTotal,
+          partnerTraumaTotal: pi.partnerTraumaTotal,
+          partnerIncomeProtectionTotal: pi.partnerIncomeProtectionTotal,
+          partnerHasPersonalInsurance: pi.partnerHasPersonalInsurance,
+        }),
     };
 
     // console.log("payload", payload);
@@ -727,8 +957,8 @@ export default function PersonalInsuranceModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to save personal insurance",
+        error?.message ||
+        "Failed to save personal insurance",
       );
     } finally {
       setSaving(false);
@@ -767,21 +997,21 @@ export default function PersonalInsuranceModal({ modalData }) {
                 },
                 ...(allowPartner
                   ? [
-                      {
-                        key: "partner",
-                        label: partnerName,
-                        children: (
-                          <OwnerTabContent
-                            form={form}
-                            ownerKey="partner"
-                            ownerLabel={partnerName}
-                            editing={editing}
-                            setEditing={setEditing}
-                            activeTabKey={activeTab}
-                          />
-                        ),
-                      },
-                    ]
+                    {
+                      key: "partner",
+                      label: partnerName,
+                      children: (
+                        <OwnerTabContent
+                          form={form}
+                          ownerKey="partner"
+                          ownerLabel={partnerName}
+                          editing={editing}
+                          setEditing={setEditing}
+                          activeTabKey={activeTab}
+                        />
+                      ),
+                    },
+                  ]
                   : []),
               ]}
             />

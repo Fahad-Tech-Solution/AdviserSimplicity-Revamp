@@ -15,6 +15,7 @@ import {
   extractTableRowsFromPdfFiles,
   applyExtractedRowsToForm,
 } from "../../utils/pdf/pdfFieldExtractor";
+import { generatePersonalInsurancePdf } from "../../utils/pdf/generatePersonalInsurancePdf";
 
 const { Title } = Typography;
 
@@ -73,6 +74,10 @@ export default function NattyAiScanCard({
   accept = "application/pdf,.pdf",
   multiple = true,
   style,
+  clientReport = false,
+  columns = [],
+  ownerLabel = "",
+  providerOptions = []
 }) {
   const { message } = AntdApp.useApp();
   const pdfInputRef = useRef(null);
@@ -81,6 +86,7 @@ export default function NattyAiScanCard({
   const [scanDragActive, setScanDragActive] = useState(false);
   const [scanStatus, setScanStatus] = useState({ show: false, type: "error", message: "" });
   const [isScanning, setIsScanning] = useState(false);
+  const [createPdf, setCreatePdf] = useState(false);
   const [internalTargetRow, setInternalTargetRow] = useState(defaultTargetRow);
 
   // parseTableRows works off the raw {key, labels} shape directly (it needs
@@ -266,6 +272,37 @@ export default function NattyAiScanCard({
 
   const isButtonLoading = scanButtonLoading || isScanning;
 
+
+  const createPDFFunction = async () => {
+    try {
+      setCreatePdf(true);
+
+      // Fetch the table records from the Ant Design form instance
+      const formData = form?.getFieldValue(rowFieldName) || [];
+
+      if (!formData || formData.length === 0) {
+        message.warning("No form data available to export.");
+        return;
+      }
+
+      // Generate PDF
+      generatePersonalInsurancePdf(columns, formData, {
+        title: "Personal Insurance Statement",
+        subtitle: "Comprehensive overview mapped strictly to PERSONAL_INSURANCE_PDF_SCAN_KEYS schema",
+        fileName: "personal_insurance_keys.pdf",
+        ownerLabel,
+        providerOptions,
+      });
+
+      message.success("PDF report generated successfully!");
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      message.error("Failed to generate PDF report.");
+    } finally {
+      setCreatePdf(false);
+    }
+  };
+
   return (
     <Col xs={24} md={24}>
       {scanStatus.show ? (
@@ -439,6 +476,50 @@ export default function NattyAiScanCard({
                   />
                 </>
               ) : null}
+
+              {
+                clientReport && <>
+                  <Button
+                    type="primary"
+                    icon={"📄"}
+                    onClick={createPDFFunction}
+                    loading={createPdf}
+                    disabled={disabled || createPdf}
+                    style={{
+                      height: 32,
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      fontFamily: "Arial, serif",
+                      background: "#22c55e",
+                      borderColor: "#22c55e",
+                      boxShadow: "0 6px 16px #22c55e3f",
+                      paddingInline: 15,
+                      fontSize: 12,
+                    }}
+                  >
+                    Client Report
+                  </Button>
+                  <Button
+                    icon={"✉️"}
+                    type="primary"
+                    style={{
+                      height: 32,
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      fontFamily: "Arial, serif",
+                      background: "#3b82f6",
+                      borderColor: "#3b82f6",
+                      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.35)",
+                      paddingInline: 15,
+                      fontSize: 12,
+                    }}
+                  >
+                    Email Report
+                  </Button>
+                </>
+              }
+
+
               <Button
                 type="primary"
                 onClick={handleScanPdfClick}

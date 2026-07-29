@@ -12,6 +12,7 @@ import AnnualAdviceModal from "../SuperFunds/AnnualAdviceModal.jsx";
 import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
+import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -74,7 +75,7 @@ function buildAnnuityEntries(count, entries = []) {
       annualAnnuityPayment: entry?.annualAnnuityPayment || "",
       annualAnnuityPaymentArray:
         entry?.annualAnnuityPaymentArray &&
-        typeof entry.annualAnnuityPaymentArray === "object"
+          typeof entry.annualAnnuityPaymentArray === "object"
           ? entry.annualAnnuityPaymentArray
           : {},
       annuityType: normalizeSelectValue(entry?.annuityType),
@@ -83,7 +84,7 @@ function buildAnnuityEntries(count, entries = []) {
       nominatedBeneficiaries: entry?.nominatedBeneficiaries || "No",
       nominatedBeneficiariesDetails:
         entry?.nominatedBeneficiariesDetails &&
-        typeof entry.nominatedBeneficiariesDetails === "object"
+          typeof entry.nominatedBeneficiariesDetails === "object"
           ? entry.nominatedBeneficiariesDetails
           : {},
       annualAdvice: entry?.annualAdvice || "",
@@ -183,6 +184,7 @@ export default function Annuities({ modalData }) {
     order: null,
   });
   const renderTitleBlock = useTitleBlock();
+  const [scanTargetRow, setScanTargetRow] = useState(1);
 
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
@@ -552,7 +554,7 @@ export default function Annuities({ modalData }) {
     );
 
     syncParentValues(savedEntries);
-    setEditing(false);
+    // setEditing(false);
     modalData?.closeModal?.();
     modalData?.switchToEditMode?.();
   };
@@ -564,6 +566,169 @@ export default function Annuities({ modalData }) {
       order: nextSorter?.order || null,
     });
   };
+
+  const fundOptions = useMemo(
+    () =>
+      buildProviderOptions(
+        investmentOffers,
+        initialValues?.annuities || [],
+      ),
+    [initialValues?.annuities, investmentOffers],
+  );
+
+  const ANNUITY_PDF_SCAN_KEYS = [
+    {
+      key: "productProvider",
+      type: "text",
+      labels: [
+        "Product Provider",
+        "Provider",
+        "Issuer",
+        "Institution",
+        "Challenger",
+        "TAL",
+        "CommInsure",
+        "Resolution Life",
+        "Allianz",
+        "Fiducian",
+      ],
+    },
+    {
+      key: "accountNumber",
+      type: "id",
+      labels: [
+        "Account Number",
+        "Account No",
+        "Policy Number",
+        "Policy No",
+        "Contract Number",
+        "Contract No",
+        "Reference Number",
+      ],
+    },
+    {
+      key: "sourceFunds",
+      type: "text",
+      labels: [
+        "Source of Funds",
+        "Fund Source",
+        "Purchase Source",
+        "Superannuation",
+        "Non-Superannuation",
+      ],
+    },
+    {
+      key: "originalInvestmentAmount",
+      type: "currency",
+      labels: [
+        "Initial Investment",
+        "Original Investment Amount",
+        "Purchase Price",
+        "Initial Deposit",
+        "Capital Amount",
+        "Investment Amount",
+      ],
+    },
+    {
+      key: "returnCapitalValue",
+      type: "currency",
+      labels: [
+        "Return of Capital Value",
+        "Return of Capital",
+        "Capital Value",
+        "Residual Capital Value",
+        "RCV",
+        "Guaranteed Withdrawal Value",
+      ],
+    },
+    {
+      key: "annualAnnuityPayment",
+      type: "currency",
+      labels: [
+        "Annual Annuity Payment",
+        "Annuity Payment",
+        "Annual Payment Amount",
+        "Regular Income",
+        "Annual Payment",
+        "Payment Amount",
+      ],
+    },
+    {
+      key: "annuityType",
+      type: "text",
+      labels: [
+        "Annuity Type",
+        "Type of Annuity",
+        "Plan Type",
+        "Lifetime",
+        "Term Certain",
+        "Fixed Term",
+      ],
+    },
+    {
+      key: "term",
+      type: "text",
+      labels: [
+        "Term",
+        "Annuity Term",
+        "Contract Term",
+        "Term Duration",
+        "Term (Years)",
+      ],
+    },
+    {
+      key: "yearsMaturity",
+      type: "text",
+      labels: [
+        "Years to Maturity",
+        "Maturity Period",
+        "Remaining Term",
+        "Years Remaining",
+      ],
+    },
+    {
+      key: "nominatedBeneficiaries",
+      type: "text",
+      labels: [
+        "Beneficiaries",
+        "Nominated Beneficiaries",
+        "Reversionary Beneficiary",
+      ],
+    },
+    {
+      key: "annualAdvice",
+      type: "currency",
+      labels: [
+        "Annual Advice Fee",
+        "Ongoing Advice Fee",
+        "Advice Fee",
+        "Adviser Fee",
+        "Annual Fee",
+      ],
+    },
+  ];
+
+  const resolveSuperFundScanValue = useCallback(
+    (key, rawValue) => {
+      if (key !== "platformName") return rawValue;
+
+      const normalized = String(rawValue || "").trim().toLowerCase();
+      if (!normalized) return rawValue;
+
+      const exactMatch = fundOptions.find(
+        (option) => String(option.label).trim().toLowerCase() === normalized,
+      );
+      if (exactMatch) return exactMatch.value;
+
+      const partialMatch = fundOptions.find((option) => {
+        const label = String(option.label).trim().toLowerCase();
+        return label.includes(normalized) || normalized.includes(label);
+      });
+      return partialMatch?.value || rawValue;
+    },
+    [fundOptions],
+  );
+
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -589,6 +754,32 @@ export default function Annuities({ modalData }) {
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
+
+          {editing ? (
+            <NattyAiScanCard
+              title="Natty AI - Scan Annuity Statement(s)"
+              subtitle="Drag & drop annuity statements here, or click Scan PDF(s). Auto-fills provider, account number, investments, payments, and fees."
+              rowCount={sortedRows.length}
+              targetRow={scanTargetRow}
+              onTargetRowChange={setScanTargetRow}
+              scanKeys={ANNUITY_PDF_SCAN_KEYS}
+              form={form}
+              rowFieldName="annuities" // Fixed: Matches Form field name for Annuities
+              fieldFormatters={{
+                originalInvestmentAmount: formatCurrencyValue,
+                returnCapitalValue: formatCurrencyValue,
+                annualAnnuityPayment: formatCurrencyValue,
+                annualAdvice: formatCurrencyValue,
+              }}
+              resolveFieldValue={resolveSuperFundScanValue}
+              onAfterFormUpdate={(entries) => {
+                syncParentValues(entries);
+                // setEditing(true); // Forces component to stay in EDIT mode after PDF scanning completes
+              }}
+            />
+          ) : null}
+
+
           <Col xs={24} md={4}>
             <Form.Item
               label="Number of Annuities"
