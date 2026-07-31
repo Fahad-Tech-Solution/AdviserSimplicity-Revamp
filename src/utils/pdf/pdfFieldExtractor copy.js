@@ -1,180 +1,397 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from "pdfjs-dist";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-// --- Step 1: pull text out of the PDF, preserving line breaks ---
+// --- Step 1: Extract text preserving layout lines ---
 export async function extractPdfText(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        let lastY = null;
-        let line = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let lastY = null;
+    let line = "";
 
-        content.items.forEach((item) => {
-            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
-                fullText += line.trim() + '\n';
-                line = '';
-            }
-            line += item.str + ' ';
-            lastY = item.transform[5];
-        });
-        fullText += line.trim() + '\n';
-    }
-
-    return fullText;
-}
-
-const collapseSpaces = (s) => s.replace(/\s+/g, ' ').trim();
-
-/**
- * WHY THE OLD APPROACH FAILED ON THESE PDFs
- * ------------------------------------------
- * The previous extractor (`extractFieldsByCustomKeys`) was built for
- * "Label: value" prose, e.g. "Title: My Article". It searched for a
- * label + colon, then grabbed text up to the next label-like line.
- *
- * Your statements don't have that shape at all - they have TABLE rows:
- *   1 Netwealth Wrap NW-883921 $540,000.00 $430,000.00 $2,700.00
- * There's no colon, and each row holds 5-6 different values, not one.
- * No regex built around "label:" will ever match a table row, and even
- * if it did, the old code only ever stored a single scalar per key -
- * there's nowhere to put holding #2, #3, #4.
- *
- * This version instead:
- *   1. Finds the header row by matching your scanKey labels against it
- *      (using ALL labels you list, not just the first guess) - so it
- *      still works if the PDF says "Policy Ref" or "Asset Value"
- *      instead of the exact words you expected.
- *   2. Reads off the column ORDER from that header row.
- *   3. Walks every data row, strips the currency values out (in the
- *      order the header told us), and treats what's left as
- *      "name" + "id" (the id is the trailing policy/account code).
- *   4. Returns an ARRAY of row objects - one per holding - instead of
- *      a single flat object.
- *   5. Skips totals/aggregate rows automatically (they don't carry an
- *      account/policy id).
- */
-
-// --- find currency-looking tokens in a line, e.g. $540,000.00 or 1,050.00 ---
-function extractCurrencyValues(line) {
-    return line.match(/\$?-?[\d,]+\.\d{2}/g) || [];
-}
-
-// --- figure out which scanKey column appears first, second, third... in a header line ---
-function detectColumnOrder(headerLine, scanKeys) {
-    const order = [];
-    scanKeys.forEach(({ key, labels }) => {
-        let bestIndex = Infinity;
-        labels.forEach((label) => {
-            const idx = headerLine.toLowerCase().indexOf(label.toLowerCase());
-            if (idx !== -1 && idx < bestIndex) bestIndex = idx;
-        });
-        if (bestIndex !== Infinity) order.push({ key, index: bestIndex });
+    content.items.forEach((item) => {
+      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+        fullText += line.trim() + "\n";
+        line = "";
+      }
+      line += item.str + " ";
+      lastY = item.transform[5];
     });
-    order.sort((a, b) => a.index - b.index);
-    return order.map((o) => o.key);
+    fullText += line.trim() + "\n";
+  }
+
+  return fullText;
 }
 
-/**
- * Parse every holding/account row out of statement text.
- *
- * @param {string} text - full text from extractPdfText()
- * @param {Array<{key: string, labels: string[]}>} scanKeys - same shape you already use
- * @returns {Array<Object>} one object per table row, keyed by scanKey `key`
- */
+const collapseSpaces = (s) => (s || "").replace(/\s+/g, " ").trim();
+
+// Extract currency strings
+function extractCurrencyValues(text) {
+  if (!text) return [];
+
+  // Match standard positive currency tokens like $412,775.88 or 412,775.88
+  // ignoring leading dash separators from pipe splits
+  const matches = text.match(/\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})/g) || [];
+
+  return matches.map((val) => {
+    // Clean any stray characters and format consistently
+    const cleanNum = val.replace(/[^0-9.]/g, "");
+    const numeric = parseFloat(cleanNum);
+    return Number.isFinite(numeric)
+      ? `$${numeric.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : val;
+  });
+}
+
+// Split table line by Pipe (|), Tab (\t), or 2+ consecutive spaces
+function splitLineIntoCells(line) {
+  if (line.includes("|")) {
+    return line
+      .split("|")
+      .map((cell) => cell.trim())
+      .filter(Boolean);
+  }
+  if (line.includes("\t")) {
+    return line
+      .split("\t")
+      .map((cell) => cell.trim())
+      .filter(Boolean);
+  }
+  return line
+    .split(/\s{2,}/)
+    .map((cell) => cell.trim())
+    .filter(Boolean);
+}
+
+// Detect column indices based on header matches
+function detectHeaderColumns(headerCells, scanKeys) {
+  const mapping = {};
+
+  scanKeys.forEach(({ key, labels }) => {
+    const index = headerCells.findIndex((cell) => {
+      const cellLower = cell.toLowerCase();
+      return labels.some((label) => cellLower.includes(label.toLowerCase()));
+    });
+    if (index !== -1) {
+      mapping[key] = index;
+    }
+  });
+
+  return mapping;
+}
+
+// pdfFieldExtractor.js
+
+// export function parseTableRows(text, scanKeys) {
+//   const lines = text
+//     .split("\n")
+//     .map((l) => l.trim())
+//     .filter(Boolean);
+//   if (!lines.length) return [];
+
+//   // Declare variables in outer scope so they are available after the loop
+//   let headerLineIndex = -1;
+//   let maxMatches = 0;
+//   let headerCells = [];
+
+//   lines.forEach((line, idx) => {
+//     const cells = splitLineIntoCells(line);
+//     let matches = 0;
+
+//     scanKeys.forEach(({ labels }) => {
+//       const matched = cells.some((cell) =>
+//         labels.some((label) =>
+//           cell.toLowerCase().includes(label.toLowerCase()),
+//         ),
+//       );
+//       if (matched) matches++;
+//     });
+
+//     if (matches > maxMatches) {
+//       maxMatches = matches;
+//       headerLineIndex = idx;
+//       headerCells = cells; // Assigned here and accessible below
+//     }
+//   });
+
+//   if (headerLineIndex === -1 || maxMatches < 2) {
+//     console.warn("[PDF parser] Could not find header line matching scanKeys");
+//     return [];
+//   }
+
+//   // headerCells is now defined and populated
+//   const columnMapping = detectHeaderColumns(headerCells, scanKeys);
+//   const rows = [];
+
+//   for (let i = headerLineIndex + 1; i < lines.length; i++) {
+//     const line = lines[i];
+
+//     // Skip summary / aggregate / footer rows
+//     if (/^(total|aggregate|combined|subtotal|heritage|generated)/i.test(line))
+//       continue;
+
+//     const cells = splitLineIntoCells(line);
+//     const cleanedCells = cells.filter((c) => !/^\d+$/.test(c));
+
+//     if (cleanedCells.length < 2) continue;
+
+//     const row = {};
+//     let hasData = false;
+
+//     scanKeys.forEach((keyObj) => {
+//       const { key, type } = keyObj;
+//       const colIndex = columnMapping[key];
+
+//       if (colIndex !== undefined && colIndex < cleanedCells.length) {
+//         let cellValue = cleanedCells[colIndex] || "";
+
+//         if (type === "currency") {
+//           const currencies = extractCurrencyValues(cellValue);
+//           if (currencies.length > 0) {
+//             cellValue = currencies[0];
+//           }
+//         } else if (type === "id") {
+//           cellValue = cellValue.replace(/^#\s*/, "").trim();
+//         }
+
+//         if (cellValue) {
+//           row[key] = collapseSpaces(cellValue);
+//           hasData = true;
+//         }
+//       }
+//     });
+
+//     // Fallback for unstructured single-string lines
+//     if (
+//       !hasData ||
+//       (!row.platformName && !row.memberNumber && !row.accountNumber)
+//     ) {
+//       const rawText = cleanedCells.join(" ");
+//       const currencies = extractCurrencyValues(rawText);
+
+//       if (currencies.length > 0) {
+//         const idMatch = rawText.match(/([A-Z0-9]{3,12}-\d+|[A-Z]{2,6}\d{5,})/i);
+//         if (idMatch) {
+//           const idKeyObj = scanKeys.find((k) => k.type === "id") || scanKeys[1];
+//           const currencyKeyObj =
+//             scanKeys.find((k) => k.type === "currency") || scanKeys[2];
+
+//           if (idKeyObj) row[idKeyObj.key] = idMatch[1];
+
+//           const namePart = rawText
+//             .split(idMatch[1])[0]
+//             .replace(/^\d+\s*/, "")
+//             .trim();
+//           if (namePart) row.platformName = collapseSpaces(namePart);
+
+//           if (currencyKeyObj) row[currencyKeyObj.key] = currencies[0];
+//           hasData = true;
+//         }
+//       }
+//     }
+
+//     if (hasData) {
+//       rows.push(row);
+//     }
+//   }
+
+//   return rows;
+// }
+
+// pdfFieldExtractor.js
+
 export function parseTableRows(text, scanKeys) {
-    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length) return [];
 
-    // The name/id columns don't have fixed labels in the header (they're
-    // free text), so only use the "value-like" columns to locate + order the header.
-    const valueKeys = scanKeys.filter((k) => k.key !== 'platformName' && k.key !== 'accountNumber');
+  let headerLineIndex = -1;
+  let maxMatches = 0;
+  let headerCells = [];
 
-    // Whichever line matches the most distinct value-column labels is the header.
-    let headerLine = '';
-    let headerScore = 0;
-    lines.forEach((line) => {
-        const order = detectColumnOrder(line, valueKeys);
-        if (order.length > headerScore) {
-            headerScore = order.length;
-            headerLine = line;
+  lines.forEach((line, idx) => {
+    const cells = splitLineIntoCells(line);
+    let matches = 0;
+
+    scanKeys.forEach(({ labels }) => {
+      const matched = cells.some((cell) =>
+        labels.some((label) =>
+          cell.toLowerCase().includes(label.toLowerCase()),
+        ),
+      );
+      if (matched) matches++;
+    });
+
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      headerLineIndex = idx;
+      headerCells = cells;
+    }
+  });
+
+  if (headerLineIndex === -1 || maxMatches < 2) {
+    console.warn("[PDF parser] Could not find header line matching scanKeys");
+    return [];
+  }
+
+  const columnMapping = detectHeaderColumns(headerCells, scanKeys);
+  const rows = [];
+
+  for (let i = headerLineIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Skip summary / aggregate / footer rows
+    if (/^(total|aggregate|combined|subtotal|heritage|generated)/i.test(line))
+      continue;
+
+    // Keep raw split cells so column indexes match header mapping 1:1
+    const cells = splitLineIntoCells(line);
+    if (cells.length < 2) continue;
+
+    const row = {};
+    let hasData = false;
+
+    scanKeys.forEach((keyObj) => {
+      const { key, type } = keyObj;
+      const colIndex = columnMapping[key];
+
+      if (colIndex !== undefined && colIndex < cells.length) {
+        let cellValue = cells[colIndex] || "";
+
+        if (type === "currency") {
+          const currencies = extractCurrencyValues(cellValue);
+          if (currencies.length > 0) {
+            cellValue = currencies[0];
+          }
+        } else if (type === "id") {
+          cellValue = cellValue.replace(/^#\s*/, "").trim();
         }
+
+        if (cellValue) {
+          row[key] = collapseSpaces(cellValue);
+          hasData = true;
+        }
+      }
     });
 
-    if (!headerScore) {
-        console.warn('[PDF parser] Could not find a header row matching any scanKey labels');
-        return [];
+    // Fallback for un-delimited lines
+    if (
+      !hasData ||
+      (!row.platformName && !row.memberNumber && !row.accountNumber)
+    ) {
+      const rawText = cells.join(" ");
+      const currencies = extractCurrencyValues(rawText);
+
+      if (currencies.length > 0) {
+        const idMatch = rawText.match(/([A-Z0-9]{3,12}-\d+|[A-Z]{2,6}\d{5,})/i);
+        if (idMatch) {
+          const idKeyObj = scanKeys.find((k) => k.type === "id") || scanKeys[1];
+          const currencyKeyObj =
+            scanKeys.find((k) => k.type === "currency") || scanKeys[2];
+
+          if (idKeyObj) row[idKeyObj.key] = idMatch[1];
+
+          const namePart = rawText
+            .split(idMatch[1])[0]
+            .replace(/^\d+\s*/, "")
+            .trim();
+          if (namePart) row.platformName = collapseSpaces(namePart);
+
+          if (currencyKeyObj) row[currencyKeyObj.key] = currencies[0];
+          hasData = true;
+        }
+      }
     }
 
-    const columnOrder = detectColumnOrder(headerLine, valueKeys);
+    if (hasData) {
+      rows.push(row);
+    }
+  }
 
-    const rows = [];
-    lines.forEach((line) => {
-        if (line === headerLine) return;
+  return rows;
+}
 
-        const currencies = extractCurrencyValues(line);
-        if (currencies.length < 2) return; // a real holding row has at least value + cost
+export async function extractTableRowsFromPdfFiles(
+  files,
+  scanKeys,
+  options = {},
+) {
+  const { debug = false } = options;
+  const results = {};
 
-        if (/^(total|aggregate|combined|subtotal)/i.test(line)) return; // skip summary rows
+  if (!files || !files.length) return results;
 
-        let labelPart = line;
-        currencies.forEach((c) => {
-            labelPart = labelPart.replace(c, '').trim();
-        });
-        labelPart = labelPart.replace(/^\d+\s+/, '').replace(/\$\s*$/, '').trim();
+  for (const file of files) {
+    if (debug) console.log(`[PDF parser] Processing file: ${file.name}`);
+    const pdfText = await extractPdfText(file);
+    const rows = parseTableRows(pdfText, scanKeys);
+    results[file.name] = rows;
+    if (debug)
+      console.log(
+        `[PDF parser] Extracted ${rows.length} rows from ${file.name}`,
+        rows,
+      );
+  }
 
-        // the trailing token that looks like a policy/account/member id, e.g. NW-883921, CFS-7728109
-        const idMatch =
-            labelPart.match(/([A-Z]{2,6}-\d{4,})\s*$/) || labelPart.match(/([A-Z]{2,}\d{4,})\s*$/);
-        if (!idMatch) return; // rows without an id are almost always totals/footers, not holdings
+  return results;
+}
 
-        const accountNumber = idMatch[1];
-        const platformName = collapseSpaces(labelPart.slice(0, idMatch.index));
+// pdfFieldExtractor.js
+export function applyExtractedRowsToForm({
+  form,
+  rowFieldName = "superFunds",
+  rows = [],
+  rowCountToFill = rows.length, // 3rd argument specifies HOW MANY rows to fill
+  resolveFieldValue,
+  fieldFormatters,
+}) {
+  if (!form || !rows.length) return null;
 
-        const row = { platformName, accountNumber };
-        columnOrder.forEach((key, i) => {
-            if (currencies[i] !== undefined) row[key] = currencies[i];
-        });
-        rows.push(row);
+  try {
+    const currentValues = form.getFieldValue(rowFieldName) || [];
+
+    // Take only the specified number of rows from the extracted PDF rows
+    const rowsToApply = rows.slice(0, Number(rowCountToFill) || rows.length);
+
+    const processedRows = rowsToApply.map((row) => {
+      const updatedRow = { ...row };
+
+      Object.keys(updatedRow).forEach((key) => {
+        if (typeof resolveFieldValue === "function") {
+          updatedRow[key] = resolveFieldValue(key, updatedRow[key]);
+        }
+        if (fieldFormatters && typeof fieldFormatters[key] === "function") {
+          updatedRow[key] = fieldFormatters[key](updatedRow[key]);
+        }
+      });
+
+      return updatedRow;
     });
 
-    return rows;
-}
+    // Fill/overwrite form rows starting from index 0 up to rowCountToFill
+    const newFormValues = [...currentValues];
+    processedRows.forEach((row, idx) => {
+      newFormValues[idx] = {
+        ...(newFormValues[idx] || {}),
+        ...row,
+      };
+    });
 
-// --- Step: extract table rows from multiple PDF files, returning { fileName: rows[] } ---
-export async function extractTableRowsFromPdfFiles(files, scanKeys, options = {}) {
-    const { debug = false } = options;
-    const results = {};
-
-    if (!files || !files.length) {
-        if (debug) console.log('[PDF parser] No files provided');
-        return results;
-    }
-
-    for (const file of files) {
-        if (debug) console.log(`[PDF parser] Processing file: ${file.name}`);
-        const pdfText = await extractPdfText(file);
-        console.log(scanKeys)
-        const rows = parseTableRows(pdfText, scanKeys);
-        results[file.name] = rows;
-        if (debug) console.log(`[PDF parser] Extracted ${rows.length} rows from ${file.name}`, rows);
-    }
-
-    return results;
-}
-
-// --- apply extracted rows to a dynamic form field (e.g. Ant Design Form.List) ---
-export function applyExtractedRowsToForm({ form, rowFieldName = 'managedFunds', rows = [] }) {
-    if (!form || !rows.length) return null;
-
-    try {
-        form.setFieldValue(rowFieldName, rows);
-        return { success: true, rows, rowCount: rows.length };
-    } catch (error) {
-        console.error('[PDF parser] Error applying extracted rows to form:', error);
-        throw error;
-    }
+    form.setFieldValue(rowFieldName, newFormValues);
+    return {
+      success: true,
+      rows: newFormValues,
+      rowCount: newFormValues.length,
+    };
+  } catch (error) {
+    console.error("[PDF parser] Error applying extracted rows to form:", error);
+    throw error;
+  }
 }

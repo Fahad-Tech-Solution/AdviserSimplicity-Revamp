@@ -586,7 +586,7 @@ export default function PlatformInvestments({ modalData }) {
   );
 
   //   const PLATFORM_PDF_SCAN_KEYS = [
-const PLATFORM_PDF_SCAN_KEYS = [
+  const PLATFORM_PDF_SCAN_KEYS = [
     {
       key: "platformName",
       type: "text",
@@ -668,7 +668,7 @@ const PLATFORM_PDF_SCAN_KEYS = [
 
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
-          {editing && (
+          {editing && modalData?.sectionKey !== "investmentBondFinance" && (
             <NattyAiScanCard
               rowCount={sortedDetailRows.length}
               targetRow={scanTargetRow}

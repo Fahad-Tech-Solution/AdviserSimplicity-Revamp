@@ -624,7 +624,7 @@ export default function SuperFunds({ modalData }) {
     {
       key: "balanceBenefit",
       type: "currency",
-      labels: ["Balance and Details", "Balance", "Current Balance", "Total Balance"],
+      labels: ["Balance and Details", "Your account balance", "Current Balance", "Total Balance"],
     },
     {
       key: "groupInsurance",
@@ -646,7 +646,165 @@ export default function SuperFunds({ modalData }) {
       type: "currency",
       labels: ["Ongoing Advice Fee", "Ongoing Advice", "Advice Fee", "Ongoing Fee"],
     },
+    {
+      key: "eligibleServiceDate",
+      type: "currency",
+      labels: ["Eligible Service Date",],
+    },
+    {
+      key: "taxFreeComponent",
+      type: "currency",
+      labels: ["Tax Free Component", "Tax Free"],
+    },
+    {
+      key: "taxFreeComponent",
+      type: "currency",
+      labels: ["Tax Free Component", "Tax Free"],
+    },
   ];
+
+
+  // const SuperFund_PDF_SCAN_KEYS = [
+  //   {
+  //     key: "platformName",
+  //     type: "text",
+  //     labels: [
+  //       "Fund Name",
+  //       "Super Fund",
+  //       "Platform Name",
+  //       "Institution",
+  //       "Product Name",
+  //       "Account Type",
+  //       "FirstChoice Personal Super",
+  //       "FirstChoice Wholesale",
+  //       "CFS Edge",
+  //       "MyNorth Super",
+  //       "MyNorth Pension"
+  //     ]
+  //   },
+  //   {
+  //     key: "memberNumber",
+  //     type: "id",
+  //     labels: [
+  //       "Member Number",
+  //       "Member No",
+  //       "Membership Number",
+  //       "Account Number",
+  //       "Account No",
+  //       "Policy Number",
+  //       "Client Reference Number",
+  //       "Account ID"
+  //     ]
+  //   },
+  //   {
+  //     key: "balanceBenefit",
+  //     type: "currency",
+  //     labels: [
+  //       "Account Balance",
+  //       "Current Balance",
+  //       "Current Estimated Balance",
+  //       "Account Value",
+  //       "Portfolio Value",
+  //       "Total Portfolio Balance",
+  //       "Total Portfolio Valuation",
+  //       "Closing Balance",
+  //       "Closing Account Value",
+  //       "Total Benefit",
+  //       "Your Balance",
+  //       "Balance",
+  //       "Account Valuation"
+  //     ]
+  //   },
+  //   {
+  //     key: "commencementDate",
+  //     type: "date",
+  //     labels: [
+  //       "Date Joined Fund",
+  //       "Date Joined",
+  //       "Commencement Date",
+  //       "Date of Commencement",
+  //       "Fund Start Date",
+  //       "Account Start Date",
+  //       "Creation Date",
+  //       "Member Since"
+  //     ]
+  //   },
+  //   {
+  //     key: "eligibleServiceDate",
+  //     type: "date",
+  //     labels: [
+  //       "Eligible Service Date",
+  //       "Eligible Service Period Start Date",
+  //       "Service Date"
+  //     ]
+  //   },
+  //   {
+  //     key: "fundType",
+  //     type: "text",
+  //     labels: [
+  //       "Accumulation",
+  //       "Accumulation Account",
+  //       "Pension",
+  //       "Pension Account",
+  //       "Transition to Retirement",
+  //       "TTR",
+  //       "Defined Benefit",
+  //       "Employer Sponsored",
+  //       "Super"
+  //     ]
+  //   },
+  //   {
+  //     key: "taxable",
+  //     type: "currency",
+  //     labels: [
+  //       "Taxable",
+  //       "Taxable Amount",
+  //       "Taxable Component",
+  //       "Taxable Component*",
+  //       "Taxed / Taxable",
+  //       "Taxed Element"
+  //     ]
+  //   },
+  //   {
+  //     key: "taxFree",
+  //     type: "currency",
+  //     labels: [
+  //       "Tax Free",
+  //       "Tax-Free",
+  //       "Tax Free Amount",
+  //       "Tax Free Component",
+  //       "Tax Free Component*",
+  //       "Non-Taxable"
+  //     ]
+  //   },
+  //   {
+  //     key: "preserved",
+  //     type: "currency",
+  //     labels: [
+  //       "Preserved",
+  //       "Preserved Amount",
+  //       "Preserved Benefit",
+  //       "Preserved Component",
+  //       "Your Preserved Benefit"
+  //     ]
+  //   },
+  //   {
+  //     key: "restrictedNonPreserved",
+  //     type: "currency",
+  //     labels: [
+  //       "Restricted Non-Preserved",
+  //       "Restricted Non Preserved"
+  //     ]
+  //   },
+  //   {
+  //     key: "unrestrictedNonPreserved",
+  //     type: "currency",
+  //     labels: [
+  //       "Unrestricted Non-Preserved",
+  //       "Unrestricted Non Preserved"
+  //     ]
+  //   }
+  // ];
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -687,9 +845,9 @@ export default function SuperFunds({ modalData }) {
                 annualAdvice: formatCurrencyValue,
               }}
               resolveFieldValue={resolveSuperFundScanValue}
-              // onAfterFormUpdate={(entries) => {
-              //   syncParentValues(entries);
-              // }}
+            // onAfterFormUpdate={(entries) => {
+            //   syncParentValues(entries);
+            // }}
             />
           ) : null}
           <Col xs={24} md={6}>
