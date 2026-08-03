@@ -15,6 +15,7 @@ import ContributionsModal from "./ContributionsModal.jsx";
 import AnnualAdviceModal from "./AnnualAdviceModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
+import NattyAiScanCardTestSample from "../../../../../../Common/NattyAiScanCardTestSample.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -260,8 +261,12 @@ export default function SuperFunds({ modalData }) {
   );
 
   useEffect(() => {
-    form.setFieldsValue(initialValues);
-    setEditing(!hasMeaningfulValues(initialValues));
+    // Only set initial values if form is pristine / empty
+    const currentValues = form.getFieldValue("superFunds");
+    if (!currentValues || currentValues.length === 0) {
+      form.setFieldsValue(initialValues);
+      setEditing(!hasMeaningfulValues(initialValues));
+    }
   }, [form, initialValues]);
 
   useEffect(() => {
@@ -576,7 +581,7 @@ export default function SuperFunds({ modalData }) {
     );
 
     syncParentValues(savedEntries);
-    // setEditing(false);
+    setEditing(true);
     modalData?.closeModal?.();
     modalData?.switchToEditMode?.();
   };
@@ -589,222 +594,25 @@ export default function SuperFunds({ modalData }) {
     });
   };
 
-  const resolveSuperFundScanValue = useCallback(
-    (key, rawValue) => {
-      if (key !== "platformName") return rawValue;
+  // Handle scanned data populating the parent form directly
+  const handleScanComplete = (extractedJson) => {
+    console.log("Full Nested Extracted JSON:", extractedJson);
 
-      const normalized = String(rawValue || "").trim().toLowerCase();
-      if (!normalized) return rawValue;
+    // 1. Prepare formatted entries array
+    const scannedFundEntries = buildSuperFundEntries(1, [extractedJson]);
 
-      const exactMatch = fundOptions.find(
-        (option) => String(option.label).trim().toLowerCase() === normalized,
-      );
-      if (exactMatch) return exactMatch.value;
+    // 2. Set local modal form state (updates the EditableDynamicTable)
+    form.setFieldsValue({
+      NumberOfMap: 1,
+      superFunds: scannedFundEntries,
+    });
 
-      const partialMatch = fundOptions.find((option) => {
-        const label = String(option.label).trim().toLowerCase();
-        return label.includes(normalized) || normalized.includes(label);
-      });
-      return partialMatch?.value || rawValue;
-    },
-    [fundOptions],
-  );
+    // 3. Sync values back up to parent form
+    syncParentValues(scannedFundEntries);
 
-  const SuperFund_PDF_SCAN_KEYS = [
-    {
-      key: "platformName",
-      type: "text",
-      labels: ["Fund Name", "Super Fund", "Platform Name", "Institution"],
-    },
-    {
-      key: "memberNumber",
-      type: "id",
-      labels: ["Member Number", "Member No", "Account Number"],
-    },
-    {
-      key: "balanceBenefit",
-      type: "currency",
-      labels: ["Balance and Details", "Your account balance", "Current Balance", "Total Balance"],
-    },
-    {
-      key: "groupInsurance",
-      type: "text",
-      labels: ["Insurance", "Group Insurance"],
-    },
-    {
-      key: "contributions",
-      type: "text",
-      labels: ["Contributions"],
-    },
-    {
-      key: "nominatedBeneficiaries",
-      type: "text",
-      labels: ["Beneficiaries", "Nominated Beneficiaries"],
-    },
-    {
-      key: "annualAdvice",
-      type: "currency",
-      labels: ["Ongoing Advice Fee", "Ongoing Advice", "Advice Fee", "Ongoing Fee"],
-    },
-    {
-      key: "eligibleServiceDate",
-      type: "currency",
-      labels: ["Eligible Service Date",],
-    },
-    {
-      key: "taxFreeComponent",
-      type: "currency",
-      labels: ["Tax Free Component", "Tax Free"],
-    },
-    {
-      key: "taxFreeComponent",
-      type: "currency",
-      labels: ["Tax Free Component", "Tax Free"],
-    },
-  ];
-
-
-  // const SuperFund_PDF_SCAN_KEYS = [
-  //   {
-  //     key: "platformName",
-  //     type: "text",
-  //     labels: [
-  //       "Fund Name",
-  //       "Super Fund",
-  //       "Platform Name",
-  //       "Institution",
-  //       "Product Name",
-  //       "Account Type",
-  //       "FirstChoice Personal Super",
-  //       "FirstChoice Wholesale",
-  //       "CFS Edge",
-  //       "MyNorth Super",
-  //       "MyNorth Pension"
-  //     ]
-  //   },
-  //   {
-  //     key: "memberNumber",
-  //     type: "id",
-  //     labels: [
-  //       "Member Number",
-  //       "Member No",
-  //       "Membership Number",
-  //       "Account Number",
-  //       "Account No",
-  //       "Policy Number",
-  //       "Client Reference Number",
-  //       "Account ID"
-  //     ]
-  //   },
-  //   {
-  //     key: "balanceBenefit",
-  //     type: "currency",
-  //     labels: [
-  //       "Account Balance",
-  //       "Current Balance",
-  //       "Current Estimated Balance",
-  //       "Account Value",
-  //       "Portfolio Value",
-  //       "Total Portfolio Balance",
-  //       "Total Portfolio Valuation",
-  //       "Closing Balance",
-  //       "Closing Account Value",
-  //       "Total Benefit",
-  //       "Your Balance",
-  //       "Balance",
-  //       "Account Valuation"
-  //     ]
-  //   },
-  //   {
-  //     key: "commencementDate",
-  //     type: "date",
-  //     labels: [
-  //       "Date Joined Fund",
-  //       "Date Joined",
-  //       "Commencement Date",
-  //       "Date of Commencement",
-  //       "Fund Start Date",
-  //       "Account Start Date",
-  //       "Creation Date",
-  //       "Member Since"
-  //     ]
-  //   },
-  //   {
-  //     key: "eligibleServiceDate",
-  //     type: "date",
-  //     labels: [
-  //       "Eligible Service Date",
-  //       "Eligible Service Period Start Date",
-  //       "Service Date"
-  //     ]
-  //   },
-  //   {
-  //     key: "fundType",
-  //     type: "text",
-  //     labels: [
-  //       "Accumulation",
-  //       "Accumulation Account",
-  //       "Pension",
-  //       "Pension Account",
-  //       "Transition to Retirement",
-  //       "TTR",
-  //       "Defined Benefit",
-  //       "Employer Sponsored",
-  //       "Super"
-  //     ]
-  //   },
-  //   {
-  //     key: "taxable",
-  //     type: "currency",
-  //     labels: [
-  //       "Taxable",
-  //       "Taxable Amount",
-  //       "Taxable Component",
-  //       "Taxable Component*",
-  //       "Taxed / Taxable",
-  //       "Taxed Element"
-  //     ]
-  //   },
-  //   {
-  //     key: "taxFree",
-  //     type: "currency",
-  //     labels: [
-  //       "Tax Free",
-  //       "Tax-Free",
-  //       "Tax Free Amount",
-  //       "Tax Free Component",
-  //       "Tax Free Component*",
-  //       "Non-Taxable"
-  //     ]
-  //   },
-  //   {
-  //     key: "preserved",
-  //     type: "currency",
-  //     labels: [
-  //       "Preserved",
-  //       "Preserved Amount",
-  //       "Preserved Benefit",
-  //       "Preserved Component",
-  //       "Your Preserved Benefit"
-  //     ]
-  //   },
-  //   {
-  //     key: "restrictedNonPreserved",
-  //     type: "currency",
-  //     labels: [
-  //       "Restricted Non-Preserved",
-  //       "Restricted Non Preserved"
-  //     ]
-  //   },
-  //   {
-  //     key: "unrestrictedNonPreserved",
-  //     type: "currency",
-  //     labels: [
-  //       "Unrestricted Non-Preserved",
-  //       "Unrestricted Non Preserved"
-  //     ]
-  //   }
-  // ];
+    // 4. Force state to stay in edit mode
+    setEditing(true);
+  };
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -831,24 +639,7 @@ export default function SuperFunds({ modalData }) {
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           {editing ? (
-            <NattyAiScanCard
-              title="Natty AI - Scan Super Fund Statement(s)"
-              subtitle="Drag & drop super fund PDFs here, or click Scan PDF(s). Auto-fills fund, member number, and balance."
-              rowCount={sortedRows.length}
-              targetRow={scanTargetRow}
-              onTargetRowChange={setScanTargetRow}
-              scanKeys={SuperFund_PDF_SCAN_KEYS}
-              form={form}
-              rowFieldName="superFunds"
-              fieldFormatters={{
-                balanceBenefit: formatCurrencyValue,
-                annualAdvice: formatCurrencyValue,
-              }}
-              resolveFieldValue={resolveSuperFundScanValue}
-            // onAfterFormUpdate={(entries) => {
-            //   syncParentValues(entries);
-            // }}
-            />
+            <NattyAiScanCardTestSample onScanComplete={handleScanComplete} />
           ) : null}
           <Col xs={24} md={6}>
             <Form.Item

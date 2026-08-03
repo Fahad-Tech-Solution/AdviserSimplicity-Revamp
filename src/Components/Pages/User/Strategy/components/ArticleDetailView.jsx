@@ -190,7 +190,8 @@ const ArticleDetailPage = ({
             lineHeight: 1.6,
             color: '#334155',
             marginBottom: 24,
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre-line',
+            textAlign: 'justify',
           }}
         >
           {mainContent?.replace(/\\n/g, '\n')}
