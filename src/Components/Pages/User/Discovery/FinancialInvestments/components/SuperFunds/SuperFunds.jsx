@@ -16,6 +16,7 @@ import AnnualAdviceModal from "./AnnualAdviceModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 import NattyAiScanCardTestSample from "../../../../../../Common/NattyAiScanCardTestSample.jsx";
+import { parseSuperStatement } from "../../../../../../../utils/pdf/pdfParcing.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -639,7 +640,13 @@ export default function SuperFunds({ modalData }) {
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           {editing ? (
-            <NattyAiScanCardTestSample onScanComplete={handleScanComplete} />
+            // <NattyAiScanCardTestSample onScanComplete={handleScanComplete} />
+            <NattyAiScanCard
+              title="Natty AI - Scan Super Fund Statement"
+              subtitle="Auto-fills super fund details, account numbers, and balances."
+              parseFunction={parseSuperStatement}
+              onScanComplete={handleScanComplete}
+            />
           ) : null}
           <Col xs={24} md={6}>
             <Form.Item

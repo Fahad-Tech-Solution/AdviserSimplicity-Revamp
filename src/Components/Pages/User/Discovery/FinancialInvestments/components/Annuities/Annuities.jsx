@@ -13,6 +13,7 @@ import BeneficiariesModal from "../SuperFunds/BeneficiariesModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
 import NattyAiScanCard from "../../../../../../Common/NattyAiScanCard.jsx";
+import { parseAnnuityStatement } from "../../../../../../../utils/pdf/pdfParcing.js";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -730,6 +731,20 @@ export default function Annuities({ modalData }) {
   );
 
 
+  const handleScanComplete = (extractedJson) => {
+    console.log("Extracted Annuities JSON:", extractedJson);
+
+    // Set form fields with extracted annuity data
+    form.setFieldsValue(extractedJson);
+
+    // Sync with parent form state
+    syncParentValues([extractedJson]);
+
+    // Force form to stay in edit mode
+    setEditing(true);
+  };
+
+
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
       <AppModal
@@ -759,23 +774,8 @@ export default function Annuities({ modalData }) {
             <NattyAiScanCard
               title="Natty AI - Scan Annuity Statement(s)"
               subtitle="Drag & drop annuity statements here, or click Scan PDF(s). Auto-fills provider, account number, investments, payments, and fees."
-              rowCount={sortedRows.length}
-              targetRow={scanTargetRow}
-              onTargetRowChange={setScanTargetRow}
-              scanKeys={ANNUITY_PDF_SCAN_KEYS}
-              form={form}
-              rowFieldName="annuities" // Fixed: Matches Form field name for Annuities
-              fieldFormatters={{
-                originalInvestmentAmount: formatCurrencyValue,
-                returnCapitalValue: formatCurrencyValue,
-                annualAnnuityPayment: formatCurrencyValue,
-                annualAdvice: formatCurrencyValue,
-              }}
-              resolveFieldValue={resolveSuperFundScanValue}
-              onAfterFormUpdate={(entries) => {
-                syncParentValues(entries);
-                // setEditing(true); // Forces component to stay in EDIT mode after PDF scanning completes
-              }}
+              parseFunction={parseAnnuityStatement}
+              onScanComplete={handleScanComplete}
             />
           ) : null}
 

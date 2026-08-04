@@ -21,6 +21,7 @@ import ServiceFeeModal from ".././ServiceFeeModal";
 import { renderModalContent } from "../../../../../../Common/renderModalContent";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal";
+import { parsePlatformInvestmentStatement } from "../../../../../../../utils/pdf/pdfParcing";
 const TABLE_PROPS = {
   showCount: false,
   noPagination: true,
@@ -564,85 +565,18 @@ export default function PlatformInvestments({ modalData }) {
     });
   };
 
-  const resolvePlatformScanValue = useCallback(
-    (key, rawValue) => {
-      if (key !== "platformName") return rawValue;
+  const handleScanComplete = (extractedJson) => {
+    console.log("Extracted Platform Data:", extractedJson);
 
-      const normalized = String(rawValue || "").trim().toLowerCase();
-      if (!normalized) return rawValue;
+    // Set form fields with extracted platform data
+    form.setFieldsValue(extractedJson);
 
-      const exactMatch = platformOptions.find(
-        (option) => String(option.label).trim().toLowerCase() === normalized,
-      );
-      if (exactMatch) return exactMatch.value;
+    // Sync with parent state if needed
+    syncParentValues([extractedJson]);
 
-      const partialMatch = platformOptions.find((option) => {
-        const label = String(option.label).trim().toLowerCase();
-        return label.includes(normalized) || normalized.includes(label);
-      });
-      return partialMatch?.value || rawValue;
-    },
-    [platformOptions],
-  );
-
-  //   const PLATFORM_PDF_SCAN_KEYS = [
-  const PLATFORM_PDF_SCAN_KEYS = [
-    {
-      key: "platformName",
-      type: "text",
-      labels: ["INSTITUTION", "Platform Name", "Platform", "Provider", "Investment Platform"],
-    },
-    {
-      key: "accountNumber",
-      type: "id",
-      labels: [
-        "MEMBER / ACC ID",
-        "MEMBER",
-        "ACC ID",
-        "Account Number",
-        "Account No",
-        "Acc No",
-        "Policy Number",
-        "Member Number",
-      ],
-    },
-    {
-      key: "portfolioValue",
-      type: "currency",
-      labels: [
-        "Asset Value",
-        "Portfolio Value",
-        "Total Portfolio Value",
-        "Current Value",
-        "Balance",
-        "Market Value",
-      ],
-    },
-    {
-      key: "totalPortfolioCost",
-      type: "currency",
-      labels: [
-        "Cost Base",
-        "Total Cost Base",
-        "Portfolio Cost Base",
-        "Total Cost",
-        "Purchase Price",
-      ],
-    },
-    {
-      key: "serviceFee",
-      type: "currency",
-      labels: [
-        "Service Fee",
-        "Annual Service Fee",
-        "Ongoing Advice Fee",
-        "Advice Fee",
-        "Adviser Fee",
-        "Ongoing Fee",
-        "Service",
-      ],
-    },
-  ];
+    // Force edit mode to stay enabled
+    setEditing(true);
+  };
 
   return (
     <div style={{ padding: "0px 4px 0px 4px" }}>
@@ -670,19 +604,11 @@ export default function PlatformInvestments({ modalData }) {
         <Row gutter={[16, 16]}>
           {editing && modalData?.sectionKey !== "investmentBondFinance" && (
             <NattyAiScanCard
-              rowCount={sortedDetailRows.length}
-              targetRow={scanTargetRow}
-              onTargetRowChange={setScanTargetRow}
-              scanKeys={PLATFORM_PDF_SCAN_KEYS}
-              form={form}
-              rowFieldName="managedFunds"
-              fieldFormatters={{
-                portfolioValue: formatCurrencyValue,
-                totalPortfolioCost: formatCurrencyValue,
-                serviceFee: formatCurrencyValue,
-              }}
-              resolveFieldValue={resolvePlatformScanValue}
-              onAfterFormUpdate={(entries) => syncParentValues(entries)}
+
+              title="Natty AI - Scan Platform Investment Statement(s)"
+              subtitle="Drag & drop platform investment PDFs here, or click Scan PDF(s). Auto-fills holdings."
+              parseFunction={parsePlatformInvestmentStatement}
+              onScanComplete={handleScanComplete}
             />
           )}
           <Col

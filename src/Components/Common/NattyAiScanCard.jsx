@@ -1,546 +1,136 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Alert,
-  App as AntdApp,
-  Avatar,
-  Button,
-  Card,
-  Col,
-  Select,
-  Typography,
-} from "antd";
+import React, { useState, useRef } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+import { Card, Button, Typography, Alert, Col, Avatar } from "antd";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import nattyAvatar from "../../assets/image/ProfileImages/NattyAI.png";
-import {
-  extractTableRowsFromPdfFiles,
-  applyExtractedRowsToForm,
-} from "../../utils/pdf/pdfFieldExtractor";
-import { generatePersonalInsurancePdf } from "../../utils/pdf/generatePersonalInsurancePdf";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const { Title } = Typography;
 
-const NATTY_SCAN_SELECT_STYLES = {
-  root: {
-    background: "rgb(26, 46, 94)",
-    border: "1px solid rgba(148, 163, 184, 0.45)",
-    borderRadius: 8,
-    color: "#fff",
-    minWidth: 88,
-  },
-  option: {
-    color: "#fff",
-  },
-  suffix: {
-    color: "#fff",
-  },
-  content: {
-    color: "#fff",
-  },
-};
+// Generic helper to extract raw PDF text
+export async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = "";
 
-const DEFAULT_TITLE = "Natty AI - Scan Platform Investment Statement(s)";
-const DEFAULT_SUBTITLE =
-  "Drag & drop platform investment PDFs here, or click Scan PDF(s). Auto-fills holdings.";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let lastY = null;
+    let line = "";
 
-const DROP_ZONE_BG_IDLE =
-  "linear-gradient(135deg, rgb(15, 28, 58), rgb(26, 46, 94))";
-const DROP_ZONE_BG_ACTIVE =
-  "linear-gradient(135deg, rgb(28, 52, 102), rgb(42, 72, 138))";
+    content.items.forEach((item) => {
+      if (lastY !== null && Math.abs(item.transform[5] - lastY) > 2) {
+        fullText += line.trim() + "\n";
+        line = "";
+      }
+      line += item.str + " ";
+      lastY = item.transform[5];
+    });
+    fullText += line.trim() + "\n";
+  }
+  return fullText;
+}
 
 export default function NattyAiScanCard({
-  title = DEFAULT_TITLE,
-  subtitle = DEFAULT_SUBTITLE,
-  rowCount = 1,
-  rowOptions: rowOptionsProp,
-  targetRow,
-  defaultTargetRow = 1,
-  onTargetRowChange,
-  scanKeys = [],
-  form,
-  rowFieldName = "managedFunds",
-  fieldFormatters,
-  resolveFieldValue,
+  title = "Natty AI - Scan Document",
+  subtitle = "Drag & drop PDF here, or click Scan PDF. Auto-fills form fields.",
   onScanComplete,
-  onAfterFormUpdate,
-  onFilesSelected,
-  onScanClick,
-  showRowSelector = true,
-  rowLabel = "Next row:",
+  parseFunction, // <-- Pass custom parser function here
   avatarSrc = nattyAvatar,
-  buttonText = "Scan PDF(s)",
-  scanButtonLoading = false,
-  disabled = false,
-  debugScan = import.meta.env.DEV,
-  accept = "application/pdf,.pdf",
-  multiple = true,
-  style,
-  clientReport = false,
-  columns = [],
-  ownerLabel = "",
-  providerOptions = []
+  accept = "application/pdf",
 }) {
-  const { message } = AntdApp.useApp();
   const pdfInputRef = useRef(null);
-  const dropZoneRef = useRef(null);
-  const dragDepthRef = useRef(0);
-  const [scanDragActive, setScanDragActive] = useState(false);
-  const [scanStatus, setScanStatus] = useState({ show: false, type: "error", message: "" });
   const [isScanning, setIsScanning] = useState(false);
-  const [createPdf, setCreatePdf] = useState(false);
-  const [internalTargetRow, setInternalTargetRow] = useState(defaultTargetRow);
+  const [status, setStatus] = useState({ show: false, type: "info", message: "" });
 
-  // parseTableRows works off the raw {key, labels} shape directly (it needs
-  // every label to search the header row with), so no normalization step
-  // is needed here anymore.
-  const canExtractFields = Array.isArray(scanKeys) && scanKeys.length > 0;
-
-  const isControlled = targetRow !== undefined;
-  const activeTargetRow = isControlled ? targetRow : internalTargetRow;
-
-  const setActiveTargetRow = (value) => {
-    if (isControlled) {
-      onTargetRowChange?.(value);
-      return;
-    }
-    setInternalTargetRow(value);
-  };
-
-  const rowOptions = useMemo(() => {
-    if (Array.isArray(rowOptionsProp) && rowOptionsProp.length) {
-      return rowOptionsProp;
-    }
-
-    return Array.from(
-      { length: Math.max(Number(rowCount) || 1, 1) },
-      (_, index) => ({
-        value: index + 1,
-        label: `Row ${index + 1}`,
-      }),
-    );
-  }, [rowCount, rowOptionsProp]);
-
-  useEffect(() => {
-    const maxRow = rowOptions[rowOptions.length - 1]?.value || 1;
-    if (activeTargetRow > maxRow) {
-      setActiveTargetRow(maxRow);
-    }
-  }, [activeTargetRow, rowOptions]);
-
-  const hideStatus = () => {
-    setScanStatus({ show: false, type: "error", message: "" });
-  };
-
-  const runPdfScan = async (fileList) => {
-    const files = Array.from(fileList || []).filter(
-      (file) =>
-        String(file?.type || "").includes("pdf") ||
-        String(file?.name || "").toLowerCase().endsWith(".pdf"),
-    );
-
-    if (!files.length) {
-      message.warning("Please upload PDF files only.");
-      return;
-    }
-
-    if (!canExtractFields) {
-      onFilesSelected?.(files, activeTargetRow);
-      message.info(
-        `Selected ${files.length} PDF(s) for row ${activeTargetRow}. Pass scanKeys to enable auto-fill.`,
-      );
+  const processFile = async (file) => {
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) {
+      setStatus({ show: true, type: "warning", message: "Please select a valid PDF document." });
       return;
     }
 
     setIsScanning(true);
-    hideStatus();
+    setStatus({ show: false, type: "info", message: "" });
 
     try {
-      // Each PDF can contain multiple holdings (table rows), so this returns
-      // { fileName: [row1, row2, ...] } - flatten across all uploaded files.
-      const resultsByFile = await extractTableRowsFromPdfFiles(files, scanKeys, {
-        debug: debugScan,
-      });
-      const rows = Object.values(resultsByFile).flat();
+      // 1. Extract raw text from PDF
+      const pdfText = await extractPdfText(file);
 
-      if (debugScan) {
-        console.log("[Natty PDF Scan] Extracted rows for form:", rows);
+      // 2. Run custom parser passed via props (or fallback to raw text if no parser)
+      const parsedData = typeof parseFunction === "function" ? parseFunction(pdfText) : { rawText: pdfText };
+
+      setStatus({ show: true, type: "success", message: `Successfully extracted data from ${file.name}` });
+
+      // 3. Send parsed data back to parent form handler
+      if (typeof onScanComplete === "function") {
+        onScanComplete(parsedData);
       }
-
-      if (!rows.length) {
-        setScanStatus({
-          show: true,
-          type: "warning",
-          message:
-            "Could not find any holdings in the PDF. Check that scanKeys labels match the statement's column headers.",
-        });
-        return;
-      }
-
-      const rowsToFill = rows.slice(0, Math.max(0, Number(activeTargetRow) || 0));
-
-      // Inside NattyAiScanCard.jsx -> runPdfScan function
-
-      let formUpdate = null;
-      if (form) {
-        formUpdate = applyExtractedRowsToForm({
-          form,
-          rowFieldName,
-          startRow: activeTargetRow,
-          rows: rowsToFill,
-          fieldFormatters,
-          resolveFieldValue,
-        });
-        onAfterFormUpdate?.(formUpdate?.rows || rowsToFill, activeTargetRow, rowsToFill, formUpdate);
-      }
-
-      onScanComplete?.({
-        targetRow: activeTargetRow,
-        rows: rowsToFill,
-        files,
-        formUpdate,
-      });
-
-      message.success(
-        `Filled ${rowsToFill.length} row(s) starting at row ${activeTargetRow} from PDF.`,
-      );
-    } catch (error) {
-      setScanStatus({
-        show: true,
-        type: "error",
-        message: error?.message || "Failed to read PDF. Please try another file.",
-      });
+    } catch (err) {
+      console.error("[NattyAiScanCard] Extraction Error:", err);
+      setStatus({ show: true, type: "error", message: err?.message || "Failed to parse PDF document." });
     } finally {
       setIsScanning(false);
     }
   };
 
-  const handlePdfFiles = (fileList) => {
-    if (disabled || isScanning) return;
-    runPdfScan(fileList);
-  };
-
-  const handleScanPdfClick = () => {
-    if (disabled || isScanning) return;
-
-    if (onScanClick) {
-      onScanClick(activeTargetRow);
-      return;
-    }
-
-    pdfInputRef.current?.click();
-  };
-
-  const resetDragState = () => {
-    dragDepthRef.current = 0;
-    setScanDragActive(false);
-  };
-
-  const handleDragEnter = (event) => {
-    if (disabled) return;
-    event.preventDefault();
-    dragDepthRef.current += 1;
-    if (dragDepthRef.current === 1) {
-      setScanDragActive(true);
-    }
-  };
-
-  const handleDragLeave = (event) => {
-    if (disabled) return;
-
-    const nextTarget = event.relatedTarget;
-    if (nextTarget && dropZoneRef.current?.contains(nextTarget)) {
-      return;
-    }
-
-    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-    if (dragDepthRef.current === 0) {
-      setScanDragActive(false);
-    }
-  };
-
-  const handleDragOver = (event) => {
-    if (disabled) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDrop = (event) => {
-    if (disabled) return;
-    event.preventDefault();
-    resetDragState();
-    handlePdfFiles(event.dataTransfer?.files);
-  };
-
-  const isButtonLoading = scanButtonLoading || isScanning;
-
-
-  const createPDFFunction = async () => {
-    try {
-      setCreatePdf(true);
-
-      // Fetch the table records from the Ant Design form instance
-      const formData = form?.getFieldValue(rowFieldName) || [];
-
-      if (!formData || formData.length === 0) {
-        message.warning("No form data available to export.");
-        return;
-      }
-
-      // Generate PDF
-      generatePersonalInsurancePdf(columns, formData, {
-        title: "Personal Insurance Statement",
-        subtitle: "Comprehensive overview mapped strictly to PERSONAL_INSURANCE_PDF_SCAN_KEYS schema",
-        fileName: "personal_insurance_keys.pdf",
-        ownerLabel,
-        providerOptions,
-      });
-
-      message.success("PDF report generated successfully!");
-    } catch (error) {
-      console.error("PDF generation failed:", error);
-      message.error("Failed to generate PDF report.");
-    } finally {
-      setCreatePdf(false);
-    }
-  };
-
   return (
-    <Col xs={24} md={24}>
-      {scanStatus.show ? (
-        <motion.div
-          initial={{ opacity: 0, translateY: -10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-        >
-          <Alert
-            type={scanStatus.type}
-            showIcon
-            description={scanStatus.message}
-            style={{ padding: 10, marginBottom: 10 }}
-            closable
-            onClose={hideStatus}
-            styles={{
-              close: {
-                width: "auto",
-                height: "auto",
-              },
-              root: {
-                width: "auto",
-                height: "auto",
-                color: "#000",
-                fontSize: 12,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              },
-            }}
-          />
-        </motion.div>
-      ) : null}
+    <Col xs={24} style={{ padding: "0 0 16px 0" }}>
+      {status.show && (
+        <Alert
+          type={status.type}
+          message={status.message}
+          showIcon
+          closable
+          onClose={() => setStatus({ show: false, type: "info", message: "" })}
+          style={{ marginBottom: 12 }}
+        />
+      )}
+
       <Card
         style={{
           borderRadius: 14,
-          overflow: "hidden",
-          border: "none",
+          background: "linear-gradient(135deg, rgb(15, 28, 58), rgb(26, 46, 94))",
+          border: "1px solid rgba(59, 130, 246, 0.25)",
           boxShadow: "0 10px 28px rgba(15, 23, 42, 0.18)",
-          ...style,
-        }}
-        styles={{
-          body: {
-            padding: 0,
-            background: "transparent",
-          },
+          color: "#fff",
         }}
       >
-        <div
-          ref={dropZoneRef}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          style={{
-            padding: "14px 16px",
-            borderRadius: 14,
-            background: scanDragActive
-              ? DROP_ZONE_BG_ACTIVE
-              : DROP_ZONE_BG_IDLE,
-            border: scanDragActive
-              ? "1px solid #60a5fa"
-              : "1px solid rgba(59, 130, 246, 0.25)",
-            boxShadow: scanDragActive
-              ? "0 0 0 2px rgba(59, 130, 246, 0.25)"
-              : "none",
-            transition:
-              "background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease",
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept={accept}
+          style={{ display: "none" }}
+          onChange={(e) => {
+            if (e.target.files?.[0]) processFile(e.target.files[0]);
+            e.target.value = "";
           }}
-        >
-          <input
-            ref={pdfInputRef}
-            type="file"
-            accept={accept}
-            multiple={multiple}
-            style={{ display: "none" }}
-            disabled={disabled || isScanning}
-            onChange={(event) => {
-              handlePdfFiles(event.target.files);
-              event.target.value = "";
-            }}
-          />
+        />
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                minWidth: 0,
-                flex: "1 1 280px",
-              }}
-            >
-              <Avatar
-                src={avatarSrc}
-                alt="Natty AI"
-                size={44}
-                style={{
-                  flexShrink: 0,
-                  background: "#ffffff",
-                  border: "2px solid #3b82f6",
-                  scale: 1.1,
-                }}
-              />
-              <div style={{ minWidth: 0 }}>
-                <Title
-                  level={5}
-                  style={{
-                    margin: 0,
-                    color: "#fff",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    fontFamily: "Arial, serif",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {title}
-                </Title>
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: 11,
-                    fontWeight: 400,
-                    fontFamily: "Arial, serif",
-                    lineHeight: 1.5,
-                    color: "rgba(255, 255, 255, 0.55)",
-                  }}
-                >
-                  {subtitle}
-                </p>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                flexShrink: 0,
-                marginLeft: "auto",
-              }}
-            >
-              {showRowSelector ? (
-                <>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 400,
-                      fontFamily: "Arial, serif",
-                      color: "rgba(255, 255, 255, 0.55)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {rowLabel}
-                  </span>
-                  <Select
-                    value={activeTargetRow}
-                    onChange={setActiveTargetRow}
-                    options={rowOptions}
-                    styles={NATTY_SCAN_SELECT_STYLES}
-                    popupMatchSelectWidth={false}
-                    disabled={disabled || isScanning}
-                  />
-                </>
-              ) : null}
-
-              {
-                clientReport && <>
-                  <Button
-                    type="primary"
-                    icon={"📄"}
-                    onClick={createPDFFunction}
-                    loading={createPdf}
-                    disabled={disabled || createPdf}
-                    style={{
-                      height: 32,
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      fontFamily: "Arial, serif",
-                      background: "#22c55e",
-                      borderColor: "#22c55e",
-                      boxShadow: "0 6px 16px #22c55e3f",
-                      paddingInline: 15,
-                      fontSize: 12,
-                    }}
-                  >
-                    Client Report
-                  </Button>
-                  <Button
-                    icon={"✉️"}
-                    type="primary"
-                    style={{
-                      height: 32,
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      fontFamily: "Arial, serif",
-                      background: "#3b82f6",
-                      borderColor: "#3b82f6",
-                      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.35)",
-                      paddingInline: 15,
-                      fontSize: 12,
-                    }}
-                  >
-                    Email Report
-                  </Button>
-                </>
-              }
-
-
-              <Button
-                type="primary"
-                onClick={handleScanPdfClick}
-                loading={isButtonLoading}
-                disabled={disabled || isScanning}
-                style={{
-                  height: 32,
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontFamily: "Arial, serif",
-                  background: "#3b82f6",
-                  borderColor: "#3b82f6",
-                  boxShadow: "0 6px 16px rgba(59, 130, 246, 0.35)",
-                  paddingInline: 15,
-                  fontSize: 12,
-                }}
-              >
-                {buttonText}
-              </Button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Avatar src={avatarSrc} alt="Natty AI" size={44} style={{ background: "#fff", border: "2px solid #3b82f6" }} />
+            <div>
+              <Title level={5} style={{ margin: 0, color: "#fff" }}>{title}</Title>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>{subtitle}</p>
             </div>
           </div>
+
+          <Button
+            type="primary"
+            loading={isScanning}
+            onClick={() => pdfInputRef.current?.click()}
+            style={{
+              height: 36,
+              borderRadius: 8,
+              fontWeight: 700,
+              background: "#3b82f6",
+              borderColor: "#3b82f6",
+            }}
+          >
+            {isScanning ? "Scanning PDF..." : "Scan PDF(s)"}
+          </Button>
         </div>
       </Card>
     </Col>
