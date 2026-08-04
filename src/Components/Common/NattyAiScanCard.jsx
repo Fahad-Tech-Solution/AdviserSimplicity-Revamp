@@ -1,12 +1,31 @@
 import React, { useState, useRef } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { Card, Button, Typography, Alert, Col, Avatar } from "antd";
+import { Card, Button, Typography, Alert, Col, Avatar, Select } from "antd";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import nattyAvatar from "../../assets/image/ProfileImages/NattyAI.png";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const { Title } = Typography;
+
+const NATTY_SCAN_SELECT_STYLES = {
+  root: {
+    background: "rgb(26, 46, 94)",
+    border: "1px solid rgba(148, 163, 184, 0.45)",
+    borderRadius: 8,
+    color: "#fff",
+    minWidth: 88,
+  },
+  option: {
+    color: "#fff",
+  },
+  suffix: {
+    color: "#fff",
+  },
+  content: {
+    color: "#fff",
+  },
+};
 
 // Generic helper to extract raw PDF text
 export async function extractPdfText(file) {
@@ -40,6 +59,17 @@ export default function NattyAiScanCard({
   parseFunction, // <-- Pass custom parser function here
   avatarSrc = nattyAvatar,
   accept = "application/pdf",
+  showRowSelector = true,
+  rowLabel = "Next row:",
+  rowOptions = 1,
+  rowCount = 1,
+  activeTargetRow = 1,
+  setActiveTargetRow = () => { },
+  disabled = false,
+  clientReport = false,
+  createPDFFunction = () => { },
+  createPdf = false,
+
 }) {
   const pdfInputRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -117,20 +147,100 @@ export default function NattyAiScanCard({
             </div>
           </div>
 
-          <Button
-            type="primary"
-            loading={isScanning}
-            onClick={() => pdfInputRef.current?.click()}
+
+          <div
             style={{
-              height: 36,
-              borderRadius: 8,
-              fontWeight: 700,
-              background: "#3b82f6",
-              borderColor: "#3b82f6",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexShrink: 0,
+              marginLeft: "auto",
             }}
           >
-            {isScanning ? "Scanning PDF..." : "Scan PDF(s)"}
-          </Button>
+            {showRowSelector ? (
+              <>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 400,
+                    fontFamily: "Arial, serif",
+                    color: "rgba(255, 255, 255, 0.55)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {rowLabel}
+                </span>
+                <Select
+                  value={activeTargetRow}
+                  onChange={setActiveTargetRow}
+                  options={rowOptions}
+                  styles={NATTY_SCAN_SELECT_STYLES}
+                  popupMatchSelectWidth={false}
+                  disabled={disabled || isScanning}
+                />
+              </>
+            ) : null}
+
+            {
+              clientReport && <>
+                <Button
+                  type="primary"
+                  icon={"📄"}
+                  onClick={createPDFFunction}
+                  loading={createPdf}
+                  disabled={disabled || createPdf}
+                  style={{
+                    height: 32,
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontFamily: "Arial, serif",
+                    background: "#22c55e",
+                    borderColor: "#22c55e",
+                    boxShadow: "0 6px 16px #22c55e3f",
+                    paddingInline: 15,
+                    fontSize: 12,
+                  }}
+                >
+                  Client Report
+                </Button>
+                <Button
+                  icon={"✉️"}
+                  type="primary"
+                  style={{
+                    height: 32,
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontFamily: "Arial, serif",
+                    background: "#3b82f6",
+                    borderColor: "#3b82f6",
+                    boxShadow: "0 6px 16px rgba(59, 130, 246, 0.35)",
+                    paddingInline: 15,
+                    fontSize: 12,
+                  }}
+                >
+                  Email Report
+                </Button>
+              </>
+            }
+
+
+
+            <Button
+              type="primary"
+              loading={isScanning}
+              onClick={() => pdfInputRef.current?.click()}
+              style={{
+                height: 36,
+                borderRadius: 8,
+                fontWeight: 700,
+                background: "#3b82f6",
+                borderColor: "#3b82f6",
+              }}
+            >
+              {isScanning ? "Scanning PDF..." : "Scan PDF(s)"}
+            </Button>
+
+          </div>
         </div>
       </Card>
     </Col>
