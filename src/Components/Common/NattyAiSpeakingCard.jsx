@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Select, Slider, Checkbox, Button, Avatar, ConfigProvider, Typography, Space } from 'antd';
+import { Card, Input, Select, Slider, Checkbox, Button, Avatar, ConfigProvider, Typography, Space, Divider } from 'antd';
 import {
     SearchOutlined,
     AudioOutlined,
@@ -60,6 +60,9 @@ const NattyAiSpeakingCard = ({
     filteredArticles = [],
     topicAndSubCategories = [],
     searchText = '',
+    SectionKey = "",
+    next = () => { },
+    back = () => { },
 }) => {
     const {
         speechState,
@@ -97,6 +100,20 @@ const NattyAiSpeakingCard = ({
     const isPaused = speechState === 'paused';
     const isActive = isSpeaking || isPaused;
 
+    const repeat = () => {
+
+        speak(
+            `
+                                    ${filteredArticles?.title || "Please provide a topic to speak."}
+                                    \n
+                                    ${filteredArticles?.question || "Please provide a topic to speak."}
+                                    \n
+                                    ${filteredArticles?.choices.map((choice, index) => `${String.fromCharCode(65 + index)}. ${choice}`).join("\n") || "Please provide a topic to speak."}
+                                    `
+            , "Prompt to Speak");
+
+    }
+
     return (
         <div
             className="d-flex justify-content-center align-items-center p-3"
@@ -114,6 +131,9 @@ const NattyAiSpeakingCard = ({
                     backgroundColor: '#ffffff',
                 }}
             >
+
+
+
                 {/* Header Section (Dark Blue Background) */}
                 <div
                     style={{
@@ -166,6 +186,52 @@ const NattyAiSpeakingCard = ({
                     <AudioWaveform isPlaying={isSpeaking} />
                 </div>
 
+                {SectionKey == "riskProfileAiCard" &&
+                    <>
+                        <div style={{ backgroundColor: 'rgb(240, 253, 244)', color: "#16a34a", padding: '8px 16px', fontWeight: 500, fontSize: 11, textAlign: 'start' }}>
+                            Ready — pick an answer or say Next
+                        </div>
+
+                        <div style={{ maxHeight: "10vh", overflowY: "auto", padding: '8px 16px', fontSize: 12, textAlign: 'start', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)' }}>
+                            <Text
+                                style={{
+                                    fontSize: 9,
+                                    lineHeight: 2,
+                                    fontFamily: "Arial, sans-serif",
+                                }}
+                            >
+                                <strong style={{
+                                    color: '#16a34a',
+                                    letterSpacing: "1px",
+                                }}>Q1 of 8 </strong>
+                                <br />
+                                {filteredArticles?.question || "Please provide a topic to speak."}
+                                <Divider style={{ margin: "8px 0" }} />
+                                <span style={{ textTransform: "uppercase", fontWeight: "bold", color: 'rgb(37, 99, 235)' }}>Your Options:</span>
+                                {filteredArticles?.choices?.length
+                                    ? filteredArticles.choices.map((choice, index) => (
+                                        <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
+                                            <div style={{
+                                                width: 20, display: "inline-block", textAlign: "center", marginRight: 6,
+                                                padding: "1px 4px",
+                                                borderRadius: "4px", backgroundColor: 'rgb(219, 234, 254)', textTransform: "uppercase", fontWeight: "bold", color: 'rgb(37, 99, 235)'
+                                            }}>{String.fromCharCode(65 + index)}</div>  {choice}
+                                        </div>
+                                    ))
+                                    : "Please provide a topic to speak."}
+
+                                <Divider style={{ margin: "8px 0", background: "#16a34a38" }} />
+                                <div style={{ textTransform: "uppercase", fontWeight: "bold", color: '#16a34a' }}>Explanation:</div>
+                                {filteredArticles?.ex || "Please provide a topic to speak."}
+
+                            </Text>
+                        </div>
+                    </>
+                }
+
+
+
+
                 {/* Body Content Section */}
                 <div style={{ padding: 16 }}>
                     {/* SEARCH / VOICE INPUT BOX */}
@@ -184,7 +250,7 @@ const NattyAiSpeakingCard = ({
                     />
 
                     {/* DYNAMIC TOPIC & PLAYBACK SECTION (Appears when text is provided globally) */}
-                    {currentText && (
+                    {SectionKey !== "riskProfileAiCard" && currentText && (
                         <div
                             style={{
                                 backgroundColor: '#f8fafc',
@@ -261,43 +327,75 @@ const NattyAiSpeakingCard = ({
                             padding: '12px 12px',
                             backgroundColor: '#ffffff',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                            width: '100%',
+
                         }}
                     >
                         {/* Voice Selector & Preview Button */}
                         <div
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: 14,
+                                display: "flex",
+                                flexWrap: "wrap", // Allows the Preview button to drop to a new line on small screens
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "10px", // Provides clean spacing between the elements
+                                marginBottom: 5,
+                                width: "100%",
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                                <SoundOutlined style={{ fontSize: 12, color: '#333' }} />
-                                <span style={{ fontWeight: 600, fontSize: 12, color: '#333' }}>Voice</span>
+                            {/* Left Section: Voice Icon, Label, and Dropdown */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    flex: "1 1 180px", // Keeps full flex priority until screen drops below 220px
+                                    minWidth: 0, // Prevents flex item from overflowing horizontally
+                                }}
+                            >
+                                <SoundOutlined style={{ fontSize: 12, color: "#333", flexShrink: 0 }} />
+                                <span
+                                    style={{
+                                        fontWeight: 600,
+                                        fontSize: 12,
+                                        color: "#333",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    Voice
+                                </span>
 
                                 <Select
                                     value={voiceURI}
                                     onChange={(val) => setVoiceURI(val)}
                                     suffixIcon={<DownOutlined style={{ fontSize: 8 }} />}
-                                    style={{ flex: 1, marginLeft: 4, maxWidth: '120px' }}
+                                    style={{
+                                        flex: 1,
+                                        minWidth: 80, // Prevents the dropdown from shrinking down unreadably
+                                    }}
                                     options={availableVoices.map((v) => ({
                                         value: v.voiceURI,
-                                        label: `${v.lang.slice(0, 2).toUpperCase()} - ${v.name.slice(0, 10)}...`,
+                                        label: `${v.lang.slice(0, 2).toUpperCase()} - ${v.name.slice(
+                                            0,
+                                            10
+                                        )}...`,
                                     }))}
                                 />
                             </div>
 
+                            {/* Right Section: Preview Button */}
                             <Button
                                 size="small"
-                                onClick={() => speak('This is a test preview of the selected voice.', 'Voice Preview')}
+                                onClick={() =>
+                                    speak("This is a test preview of the selected voice.", "Voice Preview")
+                                }
                                 style={{
-                                    marginLeft: 8,
+                                    flex: "1 1 20px", // Grows to fill the full row when wrapped, shrinks when side-by-side
                                     borderRadius: 6,
                                     fontSize: 12,
                                     fontWeight: 500,
-                                    color: '#434343',
-                                    borderColor: '#d9d9d9',
+                                    color: "#434343",
+                                    borderColor: "#d9d9d9",
                                     height: 32,
                                 }}
                             >
@@ -348,6 +446,180 @@ const NattyAiSpeakingCard = ({
                         </Checkbox>
                     </div>
                 </div>
+
+                {SectionKey == "riskProfileAiCard" &&
+                    <div
+                        style={{
+                            padding: " 0px 16px 16px 16px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 10,
+                            maxWidth: "100%",
+                            fontFamily: "Arial, sans-serif",
+                        }}
+                    >
+
+                        {/* Main Action Button: Tap to Speak */}
+
+
+                        {speechState == "stopped" ?
+                            <Button
+                                type="primary"
+                                style={{
+                                    backgroundColor: "#16a34a",
+                                    borderColor: "#16a34a",
+                                    width: "100%",
+                                    borderRadius: 10,
+                                    fontWeight: 600,
+                                    fontSize: 12,
+                                    boxShadow: "0 4px 12px rgba(22, 163, 74, 0.25)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                                onClick={() => {
+                                    speak(
+                                        `
+                                    ${filteredArticles?.title || "Please provide a topic to speak."}
+                                    \n
+                                    ${filteredArticles?.question || "Please provide a topic to speak."}
+                                    \n
+                                    ${filteredArticles?.choices.map((choice, index) => `${String.fromCharCode(65 + index)}. ${choice}`).join("\n") || "Please provide a topic to speak."}
+                                    `
+                                        , "Prompt to Speak");
+                                }}
+                            >
+                                Tap to Read Aloud
+                            </Button>
+                            :
+                            <Button
+                                type="primary"
+                                icon={isSpeaking ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                                onClick={() => toggle()}
+                                style={{
+                                    backgroundColor: isPaused ? '#ca8a04' : '#0f172a',
+                                    borderColor: isPaused ? '#ca8a04' : '#0f172a',
+                                    width: "100%",
+                                    borderRadius: 10,
+                                    fontWeight: 600,
+                                    fontSize: 12,
+                                    boxShadow: `0 4px 12px ${isPaused ? '#ca8b043d' : '#0f172a4f'}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {isSpeaking ? 'Pause' : 'Resume'}
+                            </Button>
+                        }
+
+                        {/* Quick Action Pills Row */}
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: 5,
+                                width: "100%",
+                                justifyContent: "space-between",
+                                // padding: "0px 5px",
+                            }}
+                        >
+                            <Button
+                                style={{
+                                    borderRadius: 6,
+                                    borderColor: isSpeaking ? "#a5242471" : "#e5e7eb",
+                                    color: isSpeaking ? "#a52424" : "#374151",
+                                    fontWeight: 600,
+                                    fontSize: 10,
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                    flex: "1 1 100px",
+                                    width: "50px",
+
+
+                                }}
+                                onClick={() => {
+                                    stop();
+                                    if (!isSpeaking) {
+                                        repeat();
+                                    }
+                                }}
+                            >
+                                {isSpeaking ? "Stop" : "Repeat"}
+                            </Button>
+
+
+                            <Button
+                                style={{
+                                    borderRadius: 6,
+                                    borderColor: "#e5e7eb",
+                                    color: "#374151",
+                                    fontWeight: 600,
+                                    fontSize: 10,
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                    flex: "1 1 100px",
+                                    width: "50px",
+                                }}
+                                onClick={() => {
+                                    stop()
+                                    speak(
+                                        ` For Example:
+                                    ${filteredArticles?.ex || "Please provide a topic to speak."}
+                                    `
+                                        , "Prompt to Speak");
+                                }}
+                            >
+                                Examples
+                            </Button>
+
+                            <Button
+                                style={{
+                                    borderRadius: 6,
+                                    borderColor: "#e5e7eb",
+                                    color: "#374151",
+                                    fontWeight: 600,
+                                    fontSize: 10,
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                                    flex: "1 1 100px"
+                                }}
+                                onClick={back}
+                            >
+                                Back
+                            </Button>
+
+                            <Button
+                                type="primary"
+                                style={{
+                                    borderRadius: 6,
+                                    backgroundColor: "#16a34a",
+                                    borderColor: "#16a34a",
+                                    color: "#ffffff",
+                                    fontWeight: 600,
+                                    fontSize: 10,
+                                    boxShadow: "0 4px 12px rgba(22, 163, 74, 0.25)",
+                                    flex: "1 1 100px"
+
+                                }}
+                                onClick={next}
+                            >
+                                Next
+                            </Button>
+                        </div>
+
+                        {/* Footer Helper Text */}
+                        <div
+                            style={{
+                                marginTop: 8,
+                                fontSize: 8,
+                                color: "#9ca3af",
+                                fontWeight: 600,
+                                textAlign: "center",
+                                letterSpacing: "0.2px",
+                            }}
+                        >
+                            Say "A" "B" "C"... · "Next" · "Back" · "Explain" · "Repeat"
+                        </div>
+                    </div>
+                }
             </Card>
         </div>
     );

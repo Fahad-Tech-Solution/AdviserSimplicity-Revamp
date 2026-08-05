@@ -1,7 +1,9 @@
 import { Button, Card, Radio } from "antd";
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import nattyAiAvatar from "../../../../../assets/image/ProfileImages/NattyAI.png";
 
+//  ../../assets/image/ProfileImages/NattyAI.png
 const IntroStep = ({
   joinedProfile,
   onJoinedProfileChange,
@@ -292,6 +294,98 @@ const IntroStep = ({
         >
           Submit
         </Button>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 12,
+          alignItems: "center",
+        }}
+      >
+        {/* Natty Ai Section Card */}
+        <div
+          style={{
+            backgroundColor: "#0F2147",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            maxWidth: "600px",
+            width: "100%",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            border: "1px solid #1A346B",
+          }}
+        >
+          {/* Avatar with Glowing/Ring Border */}
+          <div
+            style={{
+              position: "relative",
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              padding: "3px",
+              background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                overflow: "hidden",
+                backgroundColor: "#FFFFFF",
+                border: "2px solid #0F2147",
+              }}
+            >
+              <img
+                src={nattyAiAvatar} // Replace this URL with your actual image path/avatar source
+                alt="Natty AI"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Text Content */}
+          <div style={{ textAlign: "left", flex: 1 }}>
+            <h3
+              style={{
+                color: "#3B82F6",
+                fontSize: "15px",
+                fontWeight: "700",
+                margin: "0 0 6px 0",
+                fontFamily: "Arial, sans-serif",
+              }}
+            >
+              Natty AI will guide your client through every step
+            </h3>
+            <p
+              style={{
+                color: "#94A3B8",
+                fontSize: "12.5px",
+                lineHeight: "1.5",
+                margin: 0,
+                fontFamily: "Arial, sans-serif",
+              }}
+            >
+              She reads each question aloud, explains with real-world examples, flags
+              inconsistencies, and describes the risk profile result. Say{" "}
+              <strong style={{ color: "#22C55E" }}>"Next"</strong>,{" "}
+              <strong style={{ color: "#22C55E" }}>"Explain"</strong>, or{" "}
+              <strong style={{ color: "#22C55E" }}>"Repeat"</strong>.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
