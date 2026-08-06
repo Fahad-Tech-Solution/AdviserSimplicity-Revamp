@@ -397,7 +397,6 @@ const QUESTION_STEPS = [
       "I would prefer to have a minimum of  80% of my money invested in   Australian and international shares, possibly up to 100% if needed, aiming for higher returns even if there are significant ups and downs and wild swings like recent market events such as  COVID (2020), or the Global Financial Crises (2008)  because I won't need the money for a long time (10 years minimum).",
     ],
     ex: "Here is the most visual way I can explain this. Imagine five smoothie recipes. The cash smoothie is all yogurt and banana — safe, mild, predictable. The conservative smoothie adds a small splash of something bold. The balanced smoothie is half classic, half adventurous. The growth smoothie leans heavily into bold flavours — more shares, more ups and downs, but higher long-term potential. And the high growth smoothie? Full chilli. Maximum intensity, mostly shares, significant volatility, but historically the best long-term returns if you can hold for ten years or more. Which smoothie are you ordering?"
-
   },
   {
     route: "detection-matrix",

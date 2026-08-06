@@ -192,7 +192,7 @@ const NattyAiSpeakingCard = ({
                             Ready — pick an answer or say Next
                         </div>
 
-                        <div style={{ maxHeight: "10vh", overflowY: "auto", padding: '8px 16px', fontSize: 12, textAlign: 'start', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)' }}>
+                        <div style={{ maxHeight: "20vh", overflowY: "auto", padding: '8px 16px', fontSize: 12, textAlign: 'start', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)' }}>
                             <Text
                                 style={{
                                     fontSize: 9,
@@ -203,7 +203,7 @@ const NattyAiSpeakingCard = ({
                                 <strong style={{
                                     color: '#16a34a',
                                     letterSpacing: "1px",
-                                }}>Q1 of 8 </strong>
+                                }}> <span style={{ textTransform: "uppercase" }}>{filteredArticles?.route || ""}</span> of 8 </strong>
                                 <br />
                                 {filteredArticles?.question || "Please provide a topic to speak."}
                                 <Divider style={{ margin: "8px 0" }} />
@@ -404,7 +404,7 @@ const NattyAiSpeakingCard = ({
                         </div>
 
                         {/* Speed Slider */}
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: SectionKey !== "riskProfileAiCard" ? 12 : 0 }}>
                             <span style={{ width: 65, fontWeight: 600, fontSize: 12, color: '#333' }}>
                                 Speed
                             </span>
@@ -431,19 +431,21 @@ const NattyAiSpeakingCard = ({
                                 {speed}x
                             </span>
                         </div>
-
-                        <div style={{ borderTop: '1px dashed #e8e8e8', margin: '12px 0' }} />
-
-                        {/* Checkbox Option */}
-                        <Checkbox
-                            checked={autoSpeak}
-                            onChange={(e) => setAutoSpeak(e.target.checked)}
-                            style={{ fontSize: 13, color: '#666', alignItems: 'flex-start' }}
-                        >
-                            <span style={{ lineHeight: '1.4', display: 'inline-block' }}>
-                                Auto-speak the answer when I ask a question by voice
-                            </span>
-                        </Checkbox>
+                        {SectionKey !== "riskProfileAiCard" &&
+                            <>
+                                <div style={{ borderTop: '1px dashed #e8e8e8', margin: '12px 0' }} />
+                                {/* Checkbox Option */}
+                                <Checkbox
+                                    checked={autoSpeak}
+                                    onChange={(e) => setAutoSpeak(e.target.checked)}
+                                    style={{ fontSize: 13, color: '#666', alignItems: 'flex-start' }}
+                                >
+                                    <span style={{ lineHeight: '1.4', display: 'inline-block' }}>
+                                        Auto-speak the answer when I ask a question by voice
+                                    </span>
+                                </Checkbox>
+                            </>
+                        }
                     </div>
                 </div>
 

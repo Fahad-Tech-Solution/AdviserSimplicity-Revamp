@@ -10,6 +10,7 @@ import {
   goalsDataAtom,
   SelectedClient,
 } from "../../../../../store/authState.js";
+import NattyAiSpeechToText from "../../../../Common/NattyAiSpeechToText.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -93,8 +94,8 @@ export default function GoalsFromModal({ modalData }) {
     form.setFieldsValue(initialValues);
     setEditing(
       !currentGoalData?.clientFK &&
-        !currentGoalData?._id &&
-        !hasMeaningfulGoalData(initialValues),
+      !currentGoalData?._id &&
+      !hasMeaningfulGoalData(initialValues),
     );
   }, [currentGoalData?._id, currentGoalData?.clientFK, form, initialValues]);
 
@@ -134,13 +135,6 @@ export default function GoalsFromModal({ modalData }) {
 
   const columns = useMemo(
     () => [
-      // {
-      //   title: "No#",
-      //   dataIndex: "rowNumber",
-      //   key: "rowNumber",
-      //   width: 50,
-      //   editable: false,
-      // },
       {
         title: "Scope of Advice",
         dataIndex: "scopeOfAdvice",
@@ -190,7 +184,7 @@ export default function GoalsFromModal({ modalData }) {
       setSaving(true);
 
       const values = form.getFieldsValue(true);
-      
+
       const nextDescription = String(
         formattedContentRef.current?.innerHTML ?? values?.description ?? "",
       ).trim();
@@ -220,8 +214,8 @@ export default function GoalsFromModal({ modalData }) {
 
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to save ${modalData?.title || "goal"}`,
+        error?.message ||
+        `Failed to save ${modalData?.title || "goal"}`,
       );
     } finally {
       setSaving(false);
@@ -252,6 +246,22 @@ export default function GoalsFromModal({ modalData }) {
               columns={columns}
               data={rows}
               tableProps={TABLE_PROPS}
+            />
+          </Col>
+
+          <Col xs={24}>
+            <NattyAiSpeechToText
+              editing={editing}
+              onTranscript={(transcript) => {
+                // console.log("Transcript received:", transcript);
+                // 1. Update the Ant Design form instance
+                form.setFieldValue("description", transcript);
+
+                // 2. Directly update the contentEditable DOM node
+                if (formattedContentRef.current) {
+                  formattedContentRef.current.innerHTML = transcript;
+                }
+              }}
             />
           </Col>
 
