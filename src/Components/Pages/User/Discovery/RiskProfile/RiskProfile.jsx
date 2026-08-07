@@ -1006,7 +1006,7 @@ export default function RiskProfile() {
 
   return (
     <Row gutter={[12, 12]} style={{ paddingTop: 16, }}>
-      <Col md={17} style={{ paddingTop: 16, }}>
+      <Col md={currentQuestion?.ex ? 17 : 24} style={{ paddingTop: 16, }}>
 
         <div style={{ marginBottom: 16, }}>
           <div
@@ -1219,20 +1219,22 @@ export default function RiskProfile() {
           )}
         </div>
       </Col>
-      <Col md={7} style={{
-        paddingTop: 16, minHeight: "calc(100vh - 32px)",
-        overflowY: "auto", display: "flex", flexDirection: "column", gap: 16,
-      }}>
-        <NattyAiSpeakingCard
-          SectionKey="riskProfileAiCard"
-          filteredArticles={currentQuestion}
-          topicAndSubCategories={currentQuestion}
-          searchText=""
-          loading={loading}
-          next={handleNext}
-          back={handleBack}
-        />
-      </Col>
+      {currentQuestion?.ex && (
+        <Col md={7} style={{
+          paddingTop: 16, minHeight: "calc(100vh - 32px)",
+          overflowY: "auto", display: "flex", flexDirection: "column", gap: 16,
+        }}>
+          <NattyAiSpeakingCard
+            SectionKey="riskProfileAiCard"
+            filteredArticles={currentQuestion}
+            topicAndSubCategories={currentQuestion}
+            searchText=""
+            loading={loading}
+            next={handleNext}
+            back={handleBack}
+          />
+        </Col>
+      )}
     </Row>
   );
 }
