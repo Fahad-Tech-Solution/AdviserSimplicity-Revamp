@@ -159,7 +159,7 @@ const DenaroDeck = () => {
                 <Col md={24} className="p-0">
                     <div  style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center", justifyContent: "center" }}>
                         {(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0])?.cards.map(card => (
-                            <DenaroDeckCards key={card.name} card={card} width={"14vw"} height={"35vh"}
+                            <DenaroDeckCards key={card.name} card={card} width={"11vw"} height={"35vh"}
                                 selectedCards={selectedCards?.[card.title] || []}
                                 paraVisibleLines={6}
                                 icon={(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0]).icon}

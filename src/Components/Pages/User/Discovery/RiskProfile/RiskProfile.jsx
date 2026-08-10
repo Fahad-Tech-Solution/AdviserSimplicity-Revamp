@@ -42,6 +42,7 @@ import ResultsStepV2 from "./ResultsStep copy.jsx";
 import { FaDownload } from "react-icons/fa";
 import { loggedInUser } from "../../../../../store/authState.js";
 import { generateRiskProfileDocument } from "../../../../Common/docx/generateRiskProfileDocument.js";
+import NattyAiSpeakingCard from "../../../../Common/NattyAiSpeakingCard.jsx";
 
 const { TextArea } = Input;
 
@@ -287,6 +288,7 @@ const QUESTION_STEPS = [
       "3 – 5 years",
       "More than 5 years",
     ],
+    ex: "Think of it like planting a fruit tree. If you need the fruit in three months, you will not get much — the tree has not had time to grow. But leave it five or ten years and it will be producing fruit every season. Investments work the same way. Someone saving for a house deposit next year needs very different investments to someone building wealth for retirement in twenty years. There is also a third group worth thinking about — clients who are nearing retirement or planning to retire in the next one to two years. They need access to their money soon, but not in one big lump sum. Instead, they need it drawn down gradually as a regular income stream to live on through retirement. That changes the picture too — part of the money may need to be liquid soon to start the income, while the rest can stay invested for the long haul. So when do you think you might genuinely need access to this money, and is it for a one-off purpose or to draw an ongoing income?"
   },
   {
     route: "q2",
@@ -296,6 +298,8 @@ const QUESTION_STEPS = [
     question:
       "Question 2: Your desired rate of return. What annual rate of return do you expect your investments to achieve in order to satisfy your previously stated goals?",
     choices: ["Less than 5%", "5% - 10%", "More than 10%"],
+    ex: "Let us make this real with numbers. Invest one hundred thousand dollars today. At five percent per year, after one year you have a hundred and five thousand. At ten percent, you have a hundred and ten thousand. But to get there, you generally take on more risk — more ups and downs. Think of it like a ladder. The higher the rung you want to reach, the further the fall if you slip. A term deposit might give you four or five percent safely. The share market might give eight to twelve percent over the long run, but some years it drops twenty percent before bouncing back."
+
   },
   {
     route: "q3",
@@ -310,6 +314,8 @@ const QUESTION_STEPS = [
       "I am comfortable with the value of my investment going up and down in value over time to try and achieve higher returns over the long term.",
       "I'm comfortable and prepared to take on high risk for the chance of getting higher returns on my money over the long term.",
     ],
+    ex: "Here are four investors to help you find where you sit. First, Sarah — she is fifty-eight, close to retirement, and losing sleep over market news. She would rather earn four percent safely than risk seeing her balance drop. Capital protection is everything to her — that is Option A. Then there is David — he is sixty-five, just retired, and his super is now his income. He does not want to leave everything sitting in cash because he knows inflation will quietly chip away at his lifestyle over a twenty-year retirement. But he is not interested in a roller-coaster either. He is happy with steady, gentle growth and is willing to accept small ups and downs along the way, so long as his capital stays relatively stable and his income keeps coming in. That is Option B. Then there is Michael — forty-two, stable income, knows his super has twenty years to grow. He barely looks at the balance and focuses on the long-term number. That is Option C. And there is Emma — thirty, no dependants, sees a market dip as a buying opportunity. She loves volatility. That is Option D. Which of these four feels most like you?"
+
   },
   {
     route: "q4",
@@ -325,6 +331,8 @@ const QUESTION_STEPS = [
       "Very concerned",
       "Highly concerned",
     ],
+    ex: "Here is a number that might surprise you. If your weekly grocery shop costs two hundred dollars today, in ten years at three percent annual inflation that same shop costs two hundred and sixty-nine dollars. Now imagine your savings are earning just one percent in a bank account. Your money is growing slower than prices are rising — meaning in real terms, you are going backwards. Inflation is a silent tax on savings. The question is whether you are worried enough to consider investments that can beat inflation, even if that means some ups and downs."
+
   },
   {
     route: "q5",
@@ -339,6 +347,8 @@ const QUESTION_STEPS = [
       "If there are potential changes in the law, I am willing to adjust my finances to protect my financial situation.",
       "If it improves my situation now, I'm willing to rearrange my investments and finances, regardless of future changes in the law.",
     ],
+    ex: "Here are four scenarios to help you find where you sit. First, Helen — she only uses strategies that still make sense even if the rules shift. Her plan does not depend on any specific law staying in place. That is Option A. Then there is Tom — he is open to making changes for a benefit, but only if the risk of the rules shifting seems small. He acts cautiously and walks away from anything that feels too uncertain. That is Option B. Then there is Margaret — she stays alert to potential changes and is willing to adjust her finances to keep her plan aligned with current rules. That is Option C. And there is James — he is comfortable restructuring his finances now to access a benefit, even knowing the rules could change down the track. That is Option D. Which of these four scenarios feels most like you?"
+
   },
   {
     route: "q6",
@@ -353,6 +363,8 @@ const QUESTION_STEPS = [
       "I understand that markets like the Australian ASX 200 and US S&P 500 and others can go up and down, each with different income, growth, and tax characteristics. I understand the importance of diversification to help me reduce risk and avoid putting all my eggs in the one basket.",
       "I am experienced with all investment sectors and understand the various factors that can impact investment performance. In the past, I have invested in some or all of the following assets: shares, ETFs, and managed funds.",
     ],
+    ex: "Think of it like driving a car. Level one — never driven before, no idea what is under the hood. Level two — you can drive fine but you would call a mechanic for anything beyond a flat tyre. You know markets go up and down but are not sure why. Level three — you understand how different assets like shares, bonds, and property behave. You know what diversification means. Level four — you are an experienced investor who has actively bought and sold shares, ETFs, or managed funds and understands concepts like sequencing risk. Which level feels most accurate for you?"
+
   },
   {
     route: "q7",
@@ -367,6 +379,8 @@ const QUESTION_STEPS = [
       "I would be confident in my investment strategy and keep my money where it is and stick to my long-term plan.",
       "I would see this as an opportunity and if I had more money, invest into more growth assets such as Australian and international shares. ",
     ],
+    ex: "Picture this. You invested one hundred thousand dollars last year. You check your balance today and it is showing eighty thousand. Twenty thousand down — on paper. Investor one panics, sells everything, moves to cash. The market recovers six months later and they have locked in a real loss. Investor two feels sick but does nothing, hopes it bounces back. Investor three does not blink — they have seen this before and know twenty percent drops are normal in a growth portfolio. Investor four gets excited and puts in more because they see shares on sale. Which investor sounds most like you, honestly?"
+
   },
   {
     route: "q8",
@@ -382,6 +396,7 @@ const QUESTION_STEPS = [
       "I would prefer to have my money invested in a well diversified portfolio which includes more than 600% to Australian and international shares and property with the balance to cash and fixed interest/term deposits.",
       "I would prefer to have a minimum of  80% of my money invested in   Australian and international shares, possibly up to 100% if needed, aiming for higher returns even if there are significant ups and downs and wild swings like recent market events such as  COVID (2020), or the Global Financial Crises (2008)  because I won't need the money for a long time (10 years minimum).",
     ],
+    ex: "Here is the most visual way I can explain this. Imagine five smoothie recipes. The cash smoothie is all yogurt and banana — safe, mild, predictable. The conservative smoothie adds a small splash of something bold. The balanced smoothie is half classic, half adventurous. The growth smoothie leans heavily into bold flavours — more shares, more ups and downs, but higher long-term potential. And the high growth smoothie? Full chilli. Maximum intensity, mostly shares, significant volatility, but historically the best long-term returns if you can hold for ten years or more. Which smoothie are you ordering?"
   },
   {
     route: "detection-matrix",
@@ -735,6 +750,7 @@ export default function RiskProfile() {
     () => buildConflictRows(values, includePartner),
     [includePartner, values],
   );
+
   const lockedStepKeys = useMemo(
     () => [
       ...new Set(conflicts.flatMap((conflict) => conflict.affectedSteps || [])),
@@ -953,6 +969,10 @@ export default function RiskProfile() {
       });
   };
 
+  const currentQuestion = useMemo(() => {
+    return QUESTION_STEPS.filter((step) => step.key.startsWith("question")).find((step) => step.route === currentStep?.route);
+  }, [QUESTION_STEPS, currentStep]);
+
   const showReviewInconsistenciesButton =
     conflicts.length > 0 &&
     location.pathname.includes("/user/discovery/risk-profile/detection-matrix");
@@ -985,216 +1005,236 @@ export default function RiskProfile() {
   }
 
   return (
-    <div style={{ paddingTop: 16 }}>
-      <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 8,
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <Text
-              style={{
-                display: "block",
-                fontSize: 11,
-                letterSpacing: 3,
-                color: "#22c55e",
-                textTransform: "uppercase",
-                marginBottom: 8,
-                fontWeight: 400,
-                fontFamily: "Arial, sans-serif",
-              }}
-            >
-              Discovery
-            </Text>
-            <Title
-              level={2}
-              style={{
-                marginTop: 18,
-                marginBottom: 24,
-                fontFamily: "Georgia, serif",
-                fontWeight: 400,
-                fontSize: 28,
-                color: "#111827",
-              }}
-            >
-              Risk Profile
-            </Title>
-          </div>
-        </div>
-        <RiskProfileSteps
-          currentStep={currentStep}
-          steps={QUESTION_STEPS}
-          lockedStepKeys={lockedStepKeys}
-          conflicts={conflicts}
-        />
-      </div>
+    <Row gutter={[12, 12]} style={{ paddingTop: 16, }}>
+      <Col md={currentQuestion?.ex ? 17 : 24} style={{ paddingTop: 16, }}>
 
-      <Routes>
-        {QUESTION_STEPS.filter((step) => step.key.startsWith("question")).map(
-          (step) => (
-            <Route
-              key={step.key}
-              path={step.route}
-              element={
-                <QuestionStep
-                  step={step}
+        <div style={{ marginBottom: 16, }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 8,
+              flexWrap: "wrap",
+
+            }}
+          >
+            <div>
+              <Text
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  letterSpacing: 3,
+                  color: "#22c55e",
+                  textTransform: "uppercase",
+                  marginBottom: 8,
+                  fontWeight: 400,
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                Discovery
+              </Text>
+              <Title
+                level={2}
+                style={{
+                  marginTop: 18,
+                  marginBottom: 24,
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 400,
+                  fontSize: 28,
+                  color: "#111827",
+                }}
+              >
+                Risk Profile
+              </Title>
+            </div>
+          </div>
+          <RiskProfileSteps
+            currentStep={currentStep}
+            steps={QUESTION_STEPS}
+            lockedStepKeys={lockedStepKeys}
+            conflicts={conflicts}
+          />
+        </div>
+
+        <Routes>
+          {QUESTION_STEPS.filter((step) => step.key.startsWith("question")).map(
+            (step) => (
+              <Route
+                key={step.key}
+                path={step.route}
+                element={
+                  <QuestionStep
+                    step={step}
+                    values={values}
+                    includePartner={includePartner}
+                    clientName={clientName}
+                    partnerName={partnerName}
+                    onAnswerChange={handleAnswerChange}
+                  />
+                }
+              />
+            ),
+          )}
+          <Route
+            path="detection-matrix"
+            element={
+              <DetectionMatrixStep
+                conflicts={conflicts}
+                clientName={clientName}
+                partnerName={partnerName}
+              />
+            }
+          />
+          <Route
+            path="cards"
+            element={
+              <>
+                <ResultsStep
+                  riskGoals={RISK_GOALS}
                   values={values}
                   includePartner={includePartner}
                   clientName={clientName}
                   partnerName={partnerName}
-                  onAnswerChange={handleAnswerChange}
+                  onGoalChange={handleGoalChange}
+                  onTextChange={handleTextChange}
+                  onCheckboxChange={handleCheckboxChange}
+                  getRiskGoalByValue={getRiskGoalByValue}
+                  CONFIRMATION_LABELS={CONFIRMATION_LABELS}
+                  calculateScore={calculateScore}
                 />
-              }
-            />
-          ),
-        )}
-        <Route
-          path="detection-matrix"
-          element={
-            <DetectionMatrixStep
-              conflicts={conflicts}
-              clientName={clientName}
-              partnerName={partnerName}
-            />
-          }
-        />
-        <Route
-          path="cards"
-          element={
-            <>
-              <ResultsStep
-                riskGoals={RISK_GOALS}
-                values={values}
-                includePartner={includePartner}
-                clientName={clientName}
-                partnerName={partnerName}
-                onGoalChange={handleGoalChange}
-                onTextChange={handleTextChange}
-                onCheckboxChange={handleCheckboxChange}
-                getRiskGoalByValue={getRiskGoalByValue}
-                CONFIRMATION_LABELS={CONFIRMATION_LABELS}
-                calculateScore={calculateScore}
-              />
-            </>
-          }
-        />
-        <Route path="*" element={<Navigate to="." replace />} />
-      </Routes>
+              </>
+            }
+          />
+          <Route path="*" element={<Navigate to="." replace />} />
+        </Routes>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            normalizedStepIndex === 0 ? "flex-end" : "space-between",
-          marginTop: 20,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        {normalizedStepIndex > 0 ? (
-          <Button
-            onClick={handleBack}
-            style={{
-              padding: "20px 32px",
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              fontFamily: "Arial",
-              color: "rgb(55, 65, 81)",
-              background: "rgb(255, 255, 255)",
-              cursor: "pointer",
-              transition: "0.2s",
-            }}
-          >
-            <Space>
-              <FaArrowLeftLong />
-              Back
-            </Space>
-          </Button>
-        ) : null}
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              normalizedStepIndex === 0 ? "flex-end" : "space-between",
+            marginTop: 20,
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          {normalizedStepIndex > 0 ? (
+            <Button
+              onClick={handleBack}
+              style={{
+                padding: "20px 32px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                fontFamily: "Arial",
+                color: "rgb(55, 65, 81)",
+                background: "rgb(255, 255, 255)",
+                cursor: "pointer",
+                transition: "0.2s",
+              }}
+            >
+              <Space>
+                <FaArrowLeftLong />
+                Back
+              </Space>
+            </Button>
+          ) : null}
 
-        {currentStep?.route === "cards" && (
-          //Download Button
-          <Button
-            type="primary"
-            onClick={handleDownload}
-            style={{
-              padding: "20px 32px",
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow:
-                conflicts.length > 0
+          {currentStep?.route === "cards" && (
+            //Download Button
+            <Button
+              type="primary"
+              onClick={handleDownload}
+              style={{
+                padding: "20px 32px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow:
+                  conflicts.length > 0
+                    ? "none"
+                    : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+                transition: "0.2s",
+              }}
+            >
+              Download Risk Profile <FaDownload />
+            </Button>
+          )}
+
+          {currentStep?.route === "cards" ? (
+            <Button
+              type="primary"
+              loading={submitting}
+              onClick={handleSubmit}
+              style={{
+                padding: "20px 32px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow:
+                  conflicts.length > 0
+                    ? "none"
+                    : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
+                transition: "0.2s",
+              }}
+            >
+              Submit
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              onClick={handleNext}
+              style={{
+                padding: "20px 32px",
+                borderRadius: 8,
+                background: showReviewInconsistenciesButton
+                  ? "rgb(209, 213, 219)"
+                  : "rgb(34, 197, 94)",
+                color: showReviewInconsistenciesButton
+                  ? "rgb(156, 163, 175)"
+                  : "rgb(255, 255, 255)",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: showReviewInconsistenciesButton
                   ? "none"
                   : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
-              transition: "0.2s",
-            }}
-          >
-            Download Risk Profile <FaDownload />
-          </Button>
-        )}
-
-        {currentStep?.route === "cards" ? (
-          <Button
-            type="primary"
-            loading={submitting}
-            onClick={handleSubmit}
-            style={{
-              padding: "20px 32px",
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow:
-                conflicts.length > 0
-                  ? "none"
-                  : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
-              transition: "0.2s",
-            }}
-          >
-            Submit
-          </Button>
-        ) : (
-          <Button
-            type="primary"
-            onClick={handleNext}
-            style={{
-              padding: "20px 32px",
-              borderRadius: 8,
-              background: showReviewInconsistenciesButton
-                ? "rgb(209, 213, 219)"
-                : "rgb(34, 197, 94)",
-              color: showReviewInconsistenciesButton
-                ? "rgb(156, 163, 175)"
-                : "rgb(255, 255, 255)",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: showReviewInconsistenciesButton
-                ? "none"
-                : "rgba(34, 197, 94, 0.3) 0px 2px 8px",
-              transition: "0.2s",
-            }}
-            disabled={showReviewInconsistenciesButton}
-          >
-            <Space>
-              {showReviewInconsistenciesButton
-                ? " 🔒 Review Inconsistencies"
-                : normalizedStepIndex === 0
-                  ? "Start"
-                  : "Next"}
-              <FaArrowRightLong />
-            </Space>
-          </Button>
-        )}
-      </div>
-    </div>
+                transition: "0.2s",
+              }}
+              disabled={showReviewInconsistenciesButton}
+            >
+              <Space>
+                {showReviewInconsistenciesButton
+                  ? " 🔒 Review Inconsistencies"
+                  : normalizedStepIndex === 0
+                    ? "Start"
+                    : "Next"}
+                <FaArrowRightLong />
+              </Space>
+            </Button>
+          )}
+        </div>
+      </Col>
+      {currentQuestion?.ex && (
+        <Col md={7} style={{
+          paddingTop: 16, minHeight: "calc(100vh - 32px)",
+          overflowY: "auto", display: "flex", flexDirection: "column", gap: 16,
+        }}>
+          <NattyAiSpeakingCard
+            SectionKey="riskProfileAiCard"
+            filteredArticles={currentQuestion}
+            topicAndSubCategories={currentQuestion}
+            searchText=""
+            loading={loading}
+            next={handleNext}
+            back={handleBack}
+          />
+        </Col>
+      )}
+    </Row>
   );
 }
