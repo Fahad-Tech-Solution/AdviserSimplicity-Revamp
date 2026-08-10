@@ -6,7 +6,7 @@ import denaroDeckCardSvg from '../../../../../assets/svg/DenaroDeck.svg'
 
 const { Title, Paragraph, Text } = Typography
 
-const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLines = 6, icon = "🛡️", selectedCards = [], onToggleSelect, flippedCards, onToggleFlipped }) => {
+const DenaroDeckCards = ({ card, width = 220, selectedCards = [], onToggleSelect, flippedCards, onToggleFlipped }) => {
     // false = SVG (default) view, true = text detail view
     // const [isFlipped, setIsFlipped] = useState(false)
 
@@ -16,6 +16,7 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
 
     const handleCardClick = (e) => {
         // setIsFlipped((prev) => !prev)
+        console.log("ma chala")
         e.stopPropagation()
         onToggleFlipped?.(card)
     }
@@ -56,7 +57,7 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
     })
 
     return (
-        <div style={{ width, height, marginBottom: 40 }}>
+        <div style={{ width: "11vw", height: "35vh", marginBottom: 40 }}>
             <motion.div
                 style={{
                     position: 'relative',
@@ -64,8 +65,6 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                     height: '100%',
                     cursor: 'pointer',
                     transformStyle: 'preserve-3d',
-                    // border: isSelected ? "" : "3px solid #22c55e"
-
                 }}
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
                 transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
@@ -80,7 +79,6 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: isSelected ? "3px solid #22c55e" : ""
                     }}
                 >
                     <div
@@ -115,8 +113,6 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                         ...faceBaseStyle,
                         transform: 'rotateY(180deg)',
                         padding: 8,
-                        border: isSelected ? "3px solid #22c55e" : ""
-
                     }}
                 >
                     <Flex
@@ -132,7 +128,7 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                         {/* Header */}
                         <Flex align="center" justify="space-between">
                             <Flex align="center" gap={6}>
-                                <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+                                <span style={{ fontSize: 16, lineHeight: 1 }}>🛡️</span>
                                 <Text strong style={{ color: '#24ab55', fontSize: 18 }}>
                                     {formattedNumber}
                                 </Text>
@@ -168,7 +164,7 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                             </div>
 
                             <Paragraph
-                                ellipsis={{ rows: paraVisibleLines, }}
+                                ellipsis={{ rows: 9, }}
                                 style={{
                                     fontSize: 10,
                                     color: 'rgba(0,0,0,0.65)',

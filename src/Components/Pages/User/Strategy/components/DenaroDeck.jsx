@@ -1,17 +1,13 @@
-import { Button, Card, Col, Row, Space, Tag, Typography } from 'antd';
+import { Button, Card, Col, Row, Typography } from 'antd';
 import React, { useState } from 'react'
 import "./DenaroDeck.css"
 import DenaroDeckCards from './DenaroDeckCards';
-import { IoEyeOutline, IoReloadOutline, IoSwapHorizontalOutline, IoSwapVerticalOutline } from 'react-icons/io5';
-import DenaroDeckPresent from './DenaroDeckPresent';
 
 const DenaroDeck = () => {
     let { Title, Text } = Typography;
     let [activeSection, setActiveSection] = useState("Personal Insurance Strategy");
     let [selectedCards, setSelectedCards] = useState([]);
     let [flippedCards, setFlippedCards] = useState([]);
-    let [flipAllSelectedFlag, setFlipAllSelectedFlag] = useState(false);
-    const [isPresenting, setIsPresenting] = useState(false)
 
     const DECK_DATA = {
         insurance: {
@@ -76,28 +72,6 @@ const DenaroDeck = () => {
         },
     };
 
-    const count = Object.values(selectedCards || {}).reduce(
-        (total, cards) => total + (cards?.length || 0),
-        0
-    );
-
-    const onClear = () => {
-        setSelectedCards([])
-        // setFlippedCards
-    }
-
-    const onFlipBack = () => {
-        // setSelectedCards([])
-        setFlippedCards([])
-        setFlipAllSelectedFlag(false)
-    }
-
-    const onFlipSelected = () => {
-        // setSelectedCards([])
-        setFlippedCards(selectedCards)
-        setFlipAllSelectedFlag(true)
-    }
-
     return (
         <div
             className="DenaroDeckHeader"
@@ -157,13 +131,12 @@ const DenaroDeck = () => {
                     </div>
                 </Col>
                 <Col md={24} className="p-0">
-                    <div  style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center", justifyContent: "center" }}>
                         {(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0])?.cards.map(card => (
-                            <DenaroDeckCards key={card.name} card={card} width={"14vw"} height={"35vh"}
+                            <DenaroDeckCards key={card.name} card={card} width={"10vw"} height={"35vh"}
                                 selectedCards={selectedCards?.[card.title] || []}
-                                paraVisibleLines={6}
-                                icon={(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0]).icon}
                                 onToggleSelect={(c) => {
+                                    console.log("Selected Cards Before Toggle:", selectedCards, c);
                                     if (selectedCards?.[c.title] && selectedCards[c.title].includes(c.n)) {
                                         setSelectedCards((prev) => {
                                             const updated = { ...prev };
@@ -185,6 +158,7 @@ const DenaroDeck = () => {
 
                                 flippedCards={flippedCards?.[card.title] || []}
                                 onToggleFlipped={(c) => {
+                                    console.log("Selected Cards Before Toggle:", c, flippedCards);
                                     if (flippedCards?.[c.title] && flippedCards[c.title].includes(c.n)) {
                                         setFlippedCards((prev) => {
                                             const updated = { ...prev };
@@ -207,155 +181,7 @@ const DenaroDeck = () => {
                         ))}
                     </div>
                 </Col>
-                {Object.values(selectedCards || {}).some((cards) => cards?.length > 0) && (
-                    <Col md={24} >
-                        <Card
-                            style={{
-                                borderRadius: 16,
-                                marginBottom: 20,
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
-                            }}
-                            bodyStyle={{ padding: '16px 24px' }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    flexWrap: 'wrap',
-                                    gap: 12
-                                }}
-                            >
-                                {/* Left Side: Title & Tag */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', maxWidth: "32vW", }}>
-                                    <Title
-                                        level={5}
-                                        style={{
-                                            margin: 0,
-                                            textTransform: 'uppercase',
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                            letterSpacing: '2px',
-                                            color: '#16a34a'
-                                        }}
-                                        onClick={() => { console.log(selectedCards) }}
-                                    >
-                                        {count} {count === 1 ? 'CARD SELECTED' : 'CARDS SELECTED'}
-                                    </Title>
-
-                                    {/* <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', maxWidth: "30vW", border: "1px solid red" }}> */}
-                                    {Object.entries(selectedCards)
-                                        .filter(([_, numbers]) => Array.isArray(numbers) && numbers.length > 0)
-                                        .map(([title, numbers], index) => {
-                                            // Sequentially counts rendered tags: 1, 2, 3...
-                                            const displayCount = index + 1
-                                            const formattedNumber = `#${String(displayCount).padStart(2, '0')}`
-
-                                            return (
-                                                <Tag
-                                                    key={title}
-                                                    style={{
-                                                        borderRadius: 6,
-                                                        padding: '2px 10px',
-                                                        backgroundColor: '#f0fdf4',
-                                                        borderColor: '#bbf7d0',
-                                                        color: '#374151',
-                                                        fontSize: 13,
-                                                        margin: 0,
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            color: '#16a34a',
-                                                            fontWeight: 700,
-                                                            marginRight: 6,
-                                                        }}
-                                                    >
-                                                        {formattedNumber}
-                                                    </span>
-                                                    {title}
-                                                </Tag>
-                                            )
-                                        })}
-                                    {/* </div> */}
-                                </div>
-
-                                {/* Right Side: Action Buttons */}
-                                <div style={{ marginLeft: 'auto' }}>
-                                    <Space size={10}>
-                                        <Button
-                                            onClick={onClear}
-                                            style={{
-                                                borderRadius: 8,
-                                                fontWeight: 600,
-                                                color: '#374151'
-                                            }}
-                                        >
-                                            Clear
-                                        </Button>
-
-                                        {flipAllSelectedFlag ?
-                                            <Button
-                                                icon={<IoReloadOutline />}
-                                                onClick={onFlipBack}
-                                                style={{
-                                                    borderRadius: 8,
-                                                    fontWeight: 600,
-                                                    color: '#374151'
-                                                }}
-                                            >
-                                                Flip All Back
-                                            </Button> :
-
-
-                                            <Button
-                                                icon={<IoReloadOutline />}
-                                                onClick={onFlipSelected}
-                                                style={{
-                                                    borderRadius: 8,
-                                                    fontWeight: 600,
-                                                    borderColor: '#16a34a',
-                                                    color: '#16a34a',
-                                                    backgroundColor: '#f0fdf4'
-                                                }}
-                                            >
-                                                Flip All Selected
-                                            </Button>
-                                        }
-
-                                        <Button
-                                            type="primary"
-                                            icon={"🎴"}
-                                            onClick={() => { setIsPresenting(true) }}
-                                            style={{
-                                                borderRadius: 8,
-                                                fontWeight: 600,
-                                                backgroundColor: '#16a34a',
-                                                borderColor: '#16a34a'
-                                            }}
-                                        >
-                                            Present Selected Cards
-                                        </Button>
-                                    </Space>
-                                </div>
-                            </div>
-                        </Card>
-                    </Col>
-                )}
             </Row>
-
-            <DenaroDeckPresent
-                isOpen={isPresenting}
-                onClose={() => setIsPresenting(false)}
-                cardsList={DECK_DATA}
-                selectedCards={selectedCards}
-                onToggleSelect={(c) => { }}
-                flippedCards={flippedCards}
-                setFlippedCards={setFlippedCards}
-            />
-
         </div>
     )
 }
