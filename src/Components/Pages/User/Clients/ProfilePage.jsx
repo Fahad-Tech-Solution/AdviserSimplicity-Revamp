@@ -149,8 +149,7 @@ export default function ProfilePage() {
   const roleLabel = getRoleLabel(user);
   const email = session?.email || user?.email || "No email available";
   const profileLink =
-    // "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=Prod1" ||
-    "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=dev1" ||
+    "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID ||
     "No profile link available";
 
   const [open, setOpen] = useState(false);

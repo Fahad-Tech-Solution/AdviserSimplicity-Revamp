@@ -1,18 +1,21 @@
 import axios from "axios";
 
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "";
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
+const apiPath =
+  import.meta.env.VITE_API_PATH ||
+  (import.meta.env.DEV ? "/dev_api" : "/api");
 
 /**
  * Cookie-based auth: the backend sets an HttpOnly session/JWT cookie on login.
  * The browser sends it automatically on every request when withCredentials is true.
  * Do NOT read or store the token in JS, localStorage, or jotai.
  *
- * Dev: leave VITE_API_BASE_URL empty so `/*` is proxied by vite.config.js.
- * Production (GitHub Pages): set VITE_API_BASE_URL to the real API host.
+ * Dev default: /dev_api
+ * Production default: /api
+ * You can override with VITE_API_PATH if needed.
  */
 const http = axios.create({
-  // baseURL: apiBaseURL+"/api",
-  baseURL: apiBaseURL + "/dev_api",
+  baseURL: apiBaseURL ? `${apiBaseURL}${apiPath}` : apiPath,
   timeout: 20000,
   withCredentials: true,
 });
