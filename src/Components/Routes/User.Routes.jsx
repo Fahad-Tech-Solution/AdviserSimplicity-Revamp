@@ -55,7 +55,6 @@ import GoalsObjectives from "../Pages/User/Discovery/GoalsObjectives/GoalsObject
 import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
 import ProfilePage from "../Pages/User/Clients/ProfilePage.jsx";
 import AdviserKnowledgeBase from "../Pages/User/Strategy/AdviserKnowledgeBase.jsx";
-import DenaroDeck from "../Pages/User/Strategy/components/DenaroDeck.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1091,15 +1090,15 @@ export const strategyRoutes = [
     condition: () => true,
   },
   {
-    key: "/user/strategy/denaro-deck",
-    path: "/strategy/denaro-deck/*",
+    key: "/strategy/denaro-deck",
+    path: "/strategy/denaro-deck",
     ...withSpacing({
       icon: "🃏",
       label: "Denaro Deck",
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: <DenaroDeck />,
+    component: null,
     condition: () => true,
   },
   {
