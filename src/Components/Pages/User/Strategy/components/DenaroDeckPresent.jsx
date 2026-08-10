@@ -55,7 +55,7 @@ const DenaroDeckPresent = ({
     >
       <div className="w-100 d-flex flex-column align-items-center justify-content-between p-3 select-none">
 
-        {/* Header Bar */}
+        {/* Header Bar setting */}
         <div className="w-100 d-flex align-items-center justify-content-between mb-4 px-2">
 
           {/* Left Title Group */}
