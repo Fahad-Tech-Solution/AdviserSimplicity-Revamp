@@ -17,7 +17,7 @@ const DenaroDeckPresent = ({
   const screens = useBreakpoint()
 
   const cardWidth = screens.xl ? '250px' : screens.md ? '280px' : screens.sm ? '22vw' : '28vw'
-  const cardHeight = screens.xl ? '350px' : screens.md ? '400px' : '35vh'
+  const cardHeight = screens.xl ? '400px' : screens.md ? '400px' : '35vh'
   const modalWidth = screens.xl ? '80vw' : screens.md ? '88vw' : screens.sm ? '94vw' : '96vw'
 
   // 1. Flatten all cards from DECK_DATA object
@@ -120,7 +120,7 @@ const DenaroDeckPresent = ({
               <DenaroDeckCards
                 width={cardWidth}
                 height={cardHeight}
-                paraVisibleLines={9}
+                paraVisibleLines={10}
 
                 icon={Object.values(cardsList).find((cat) => cat.cards.some((c) => c.title === card.title))?.icon}
                 key={`${card.title}-${card.n ?? card.id}`}
