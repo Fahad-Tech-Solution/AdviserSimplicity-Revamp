@@ -16,8 +16,8 @@ const DenaroDeckPresent = ({
 }) => {
   const screens = useBreakpoint()
 
-  const cardWidth = screens.xl ? '250px' : screens.md ? '280px' : screens.sm ? '22vw' : '28vw'
-  const cardHeight = screens.xl ? '400px' : screens.md ? '400px' : '35vh'
+  const cardWidth = screens.xl ? '300px' : screens.md ? '300px' : screens.sm ? '22vw' : '28vw'
+  const cardHeight = screens.xl ? '500px' : screens.md ? '500px' : '35vh'
   const modalWidth = screens.xl ? '80vw' : screens.md ? '88vw' : screens.sm ? '94vw' : '96vw'
 
   // 1. Flatten all cards from DECK_DATA object
