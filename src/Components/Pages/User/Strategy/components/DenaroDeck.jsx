@@ -157,11 +157,11 @@ const DenaroDeck = () => {
                     </div>
                 </Col>
                 <Col md={24} className="p-0">
-                    <div  style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center", justifyContent: "center" }}>
                         {(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0])?.cards.map(card => (
-                            <DenaroDeckCards key={card.name} card={card} width={"11vw"} height={"35vh"}
+                            <DenaroDeckCards key={card.name} card={card} width={"200px"} height={"350px"}
                                 selectedCards={selectedCards?.[card.title] || []}
-                                paraVisibleLines={6}
+                                paraVisibleLines={8}
                                 icon={(Object.values(DECK_DATA).find(deck => deck.label === activeSection) || Object.values(DECK_DATA)[0]).icon}
                                 onToggleSelect={(c) => {
                                     if (selectedCards?.[c.title] && selectedCards[c.title].includes(c.n)) {
@@ -344,6 +344,14 @@ const DenaroDeck = () => {
                         </Card>
                     </Col>
                 )}
+                <Col>
+                    <Text style={{
+                        marginTop: 12,
+                        fontSize: 10,
+                        color: "rgb(156, 163, 175)",
+                        letterSpacing: 1,
+                    }}>CLICK A CARD TO FLIP · TICK ✓ TO SELECT</Text>
+                </Col>
             </Row>
 
             <DenaroDeckPresent

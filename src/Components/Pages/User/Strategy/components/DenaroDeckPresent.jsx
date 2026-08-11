@@ -1,8 +1,9 @@
 import React from 'react'
-import { Modal, Button, Tag, Typography } from 'antd'
+import { Modal, Button, Tag, Typography, Grid } from 'antd'
 import DenaroDeckCards from './DenaroDeckCards'
 
 const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 
 const DenaroDeckPresent = ({
   isOpen,
@@ -13,6 +14,12 @@ const DenaroDeckPresent = ({
   flippedCards,
   setFlippedCards
 }) => {
+  const screens = useBreakpoint()
+
+  const cardWidth = screens.xl ? '250px' : screens.md ? '280px' : screens.sm ? '22vw' : '28vw'
+  const cardHeight = screens.xl ? '350px' : screens.md ? '400px' : '35vh'
+  const modalWidth = screens.xl ? '80vw' : screens.md ? '88vw' : screens.sm ? '94vw' : '96vw'
+
   // 1. Flatten all cards from DECK_DATA object
   const allCards = Array.isArray(cardsList)
     ? cardsList
@@ -33,7 +40,7 @@ const DenaroDeckPresent = ({
       footer={null}
       closeIcon={null}
       centered
-      width="80vw"
+      width={modalWidth}
       maxHeight="90vh"
       destroyOnClose
       maskClosable={false}
@@ -111,8 +118,9 @@ const DenaroDeckPresent = ({
           {selectedCardsList.length > 0 ? (
             selectedCardsList.map((card) => (
               <DenaroDeckCards
-                width={"15vw"} height={"40vh"}
-                paraVisibleLines={8}
+                width={cardWidth}
+                height={cardHeight}
+                paraVisibleLines={9}
 
                 icon={Object.values(cardsList).find((cat) => cat.cards.some((c) => c.title === card.title))?.icon}
                 key={`${card.title}-${card.n ?? card.id}`}

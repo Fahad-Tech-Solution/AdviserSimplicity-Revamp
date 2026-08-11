@@ -150,27 +150,27 @@ const DenaroDeckCards = ({ card, width = "11vw", height = "35vh", paraVisibleLin
                         {/* Content */}
                         <Flex vertical align="center" justify="center" gap={8} style={{ flex: 1, textAlign: 'center' }}>
                             <Title
-                                level={5}
+                                // level={5}
                                 style={{
                                     margin: 0,
                                     textTransform: 'uppercase',
                                     maxWidth: '85%',
                                     lineHeight: 1.2,
-                                    fontSize: 15,
+                                    fontSize: 'clamp(9px, 1.2vw, 14px)',
                                     fontWeight: 900,
                                 }}
                             >
                                 {card.title}
                             </Title>
 
-                            <div style={{ fontSize: 36, margin: '4px 0' }}>
+                            <div style={{ fontSize: 'clamp(26px, 14cqw, 33px)', margin: '4px 0' }}>
                                 {card.emoji || '💼'}
                             </div>
 
                             <Paragraph
                                 ellipsis={{ rows: paraVisibleLines, }}
                                 style={{
-                                    fontSize: 10,
+                                    fontSize: "clamp(2px, 3.2cqw, 10px)",
                                     color: 'rgba(0,0,0,0.65)',
                                     lineHeight: 1.6,
                                     textAlign: 'left',
