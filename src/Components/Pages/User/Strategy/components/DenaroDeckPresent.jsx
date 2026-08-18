@@ -106,7 +106,7 @@ const DenaroDeckPresent = ({
               color: '#ffffff',
             }}
           >
-            <span>✕</span> Show All Cards
+            <span>✕</span> Close All Cards
           </Button>
         </div>
 
@@ -167,7 +167,7 @@ const DenaroDeckPresent = ({
             letterSpacing: '0.15em',
           }}
         >
-          CLICK A CARD TO FLIP · CLICK "SHOW ALL CARDS" TO EXIT
+          CLICK A CARD TO FLIP · CLICK "CLOSE ALL CARDS" TO EXIT
         </div>
 
       </div>

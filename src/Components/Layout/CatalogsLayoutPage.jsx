@@ -56,7 +56,7 @@ function CatalogCategoryCard({ route, active, onClick, count }) {
         }}
         aria-hidden
       >
-        {icon}
+        {icon} 
       </span>
       <Text
         style={{

@@ -201,7 +201,7 @@ export default function InvestmentSectionsPage() {
       try {
         await api.patch("/investmentoffer/Delete", { _id: id });
         message.success("Investment deleted successfully.");
-        setInvestments(investments.filter((item) => item._id !== id));
+        setInvestments((prev) => prev.filter((item) => item._id !== id));
       } catch (error) {
         message.error("Failed to delete investment.");
       } finally {
@@ -292,7 +292,7 @@ export default function InvestmentSectionsPage() {
                 size="small"
                 danger={true}
                 icon={
-                  <DeleteOutlined style={{  fontSize: 14 }} />
+                  <DeleteOutlined style={{ fontSize: 14 }} />
                 }
                 onClick={() => deleteInvestment(record._id)}
               />
@@ -363,7 +363,7 @@ export default function InvestmentSectionsPage() {
         }}
       >
         <TypeBadge type={row?.type} fallback={config?.defaultType} />{" "} &nbsp;&nbsp;
-        {investments.length} underlying investment 
+        {investments.length} underlying investment
         {investments.length === 1 ? "" : "s"}
       </Text>
 

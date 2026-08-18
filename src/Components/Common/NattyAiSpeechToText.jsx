@@ -59,7 +59,8 @@ const NattyAiSpeechToText = ({ editing, onTranscript }) => {
       if (event.error === "not-allowed") {
         message.error("Microphone access was denied. Please check permissions.");
       } else if (event.error !== "no-speech") {
-        message.error(`Recognition error: ${event.error}`);
+        // message.error(`Recognition error: ${event.error}`);
+        message.error(`Voice recognition stopped`);
       }
     };
 
