@@ -154,19 +154,22 @@ export default function InvestmentSectionsPage() {
   const { row, config } = location.state ?? {};
   const [searchText, setSearchText] = useState("");
   const [openModal, setOpenModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [modalData, setModalData] = useState(null);
-  const [investments, setInvestments] = useState(() =>
-    getUnderlyingInvestments(row),
+  const [investments, setInvestments] = useState([]
   );
+
   const setCatalogsData = useSetAtom(catalogsDataAtom);
 
   const platformId = row?._id ?? row?.id;
 
   useEffect(() => {
-    setInvestments(getUnderlyingInvestments(row));
+
+    refreshInvestments()
   }, [row]);
 
   const refreshInvestments = useCallback(async () => {
+    setLoading(true)
     if (!config?.catalogDataKey || !platformId) return;
 
     try {
@@ -182,6 +185,9 @@ export default function InvestmentSectionsPage() {
       setInvestments(getUnderlyingInvestments(updatedPlatform ?? row));
     } catch {
       // Keep current list if refresh fails.
+    }
+    finally {
+      setLoading(false)
     }
   }, [api, config?.catalogDataKey, platformId, row, setCatalogsData]);
 
@@ -202,6 +208,7 @@ export default function InvestmentSectionsPage() {
         await api.patch("/investmentoffer/Delete", { _id: id });
         message.success("Investment deleted successfully.");
         setInvestments((prev) => prev.filter((item) => item._id !== id));
+
       } catch (error) {
         message.error("Failed to delete investment.");
       } finally {
@@ -501,6 +508,7 @@ export default function InvestmentSectionsPage() {
 
         <div style={{ padding: "0 12px 12px" }}>
           <DynamicDataTable
+            loading={loading}
             columns={columns}
             data={tableData}
             total={tableData.length}

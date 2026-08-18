@@ -26,6 +26,7 @@ export default function DynamicDataTable({
   wrapperStyle = {},
   headerFontSize = 12,
   bodyFontSize = 14,
+  loading = false
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -111,6 +112,7 @@ export default function DynamicDataTable({
         }}
       >
         <Table
+          loading={loading}
           columns={resolvedColumns}
           dataSource={data}
           className={className}
@@ -123,16 +125,16 @@ export default function DynamicDataTable({
           pagination={
             !noPagination
               ? {
-                  current: currentPage,
-                  total: computedTotal,
-                  pageSize,
-                  showSizeChanger: false,
-                  showQuickJumper: false,
-                  placement: ["bottomRight"],
-                  showTotal: () => `Page ${currentPage} of ${totalPages}`,
-                  onChange: (page) => setCurrentPage(page),
-                  ...pagination,
-                }
+                current: currentPage,
+                total: computedTotal,
+                pageSize,
+                showSizeChanger: false,
+                showQuickJumper: false,
+                placement: ["bottomRight"],
+                showTotal: () => `Page ${currentPage} of ${totalPages}`,
+                onChange: (page) => setCurrentPage(page),
+                ...pagination,
+              }
               : false
           }
           styles={{
