@@ -67,7 +67,7 @@ export default function LoginForm() {
       //   msg = "Invalid email or password";
       // }
       message.error(err?.response?.status === 401 ? "Invalid email or password" : msg);
-      setError(msg);
+      setError(err?.response?.status === 401 ? "Invalid email or password" : msg);
     } finally {
       setSubmitting(false);
     }
