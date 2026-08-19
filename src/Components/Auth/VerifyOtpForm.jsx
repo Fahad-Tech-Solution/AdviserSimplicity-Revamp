@@ -70,6 +70,7 @@ export default function VerifyOtpForm() {
       const res = await api.post("/auth/login-verify-otp", {
         email,
         otp: cleanedOtp,
+        roleName: isAdminLogin ? "superAdmin" : "Adviser",
       });
 
       if (res?.action === "dashboard" || res?.action === "superAdmin") {
@@ -94,8 +95,8 @@ export default function VerifyOtpForm() {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          err?.message ||
-          "OTP verification failed.",
+        err?.message ||
+        "OTP verification failed.",
       );
     } finally {
       setSubmitting(false);
