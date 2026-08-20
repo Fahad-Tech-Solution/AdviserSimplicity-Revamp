@@ -246,6 +246,7 @@ export default function InvestmentSectionsPage() {
         title: "INVESTMENT NAME",
         dataIndex: "displayName",
         key: "displayName",
+        sorter: (a, b) => (a.displayName || "").localeCompare(b.displayName || ""),
         render: (name) => (
           <span style={{ fontWeight: 600, color: "#111827", fontSize: 13 }}>
             {name || "—"}
@@ -256,6 +257,7 @@ export default function InvestmentSectionsPage() {
         title: "CODE",
         dataIndex: "displayCode",
         key: "displayCode",
+        sorter: (a, b) => (a.displayCode || "").localeCompare(b.displayCode || ""),
         // width: 160,
         render: (code) => (
           <span

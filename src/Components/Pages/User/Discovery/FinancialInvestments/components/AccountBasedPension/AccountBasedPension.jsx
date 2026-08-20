@@ -362,7 +362,7 @@ export default function AccountBasedPension({ modalData }) {
       onChange: (value, record, column, currentForm) => {
         const nextValue = normalizeSelectValue(value);
         const currentValue = normalizeSelectValue(
-          currentForm.getFieldValue([...record.formPath, column.field]),
+          record.platformName,
         );
 
         currentForm.setFieldValue(
@@ -372,16 +372,13 @@ export default function AccountBasedPension({ modalData }) {
 
         if (currentValue && currentValue !== nextValue) {
           currentForm.setFieldValue([...record.formPath], {
+            ...record,
             platformName: nextValue,
-            memberNumber: "",
-            balanceBenefit: "",
-            balanceBenefitDetails: {},
-            pensionPayment: "",
-            pensionPaymentArray: {},
-            nominatedBeneficiaries: "No",
-            nominatedBeneficiariesDetails: {},
-            annualAdvice: "",
-            annualAdviceArray: {},
+            balanceBenefitDetails: {
+              ...record.balanceBenefitDetails,
+              portfolioArray: [],
+              portfolioValue: []
+            },
           });
         }
       },

@@ -74,6 +74,7 @@ const SECTION_ADD_FORM_CONFIG = {
       { value: "Retail", label: "Retail" },
       { value: "Public Sector", label: "Public Sector" },
       { value: "Corporate", label: "Corporate" },
+      { value: "Wrap", label: "Wrap" },
     ],
   },
   AccountBasedPensions: {
@@ -84,11 +85,16 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
-      { value: "Building Society", label: "Building Society" },
-      { value: "Mutual Bank", label: "Mutual Bank" },
-      { value: "Other", label: "Other" },
+      // { value: "Bank", label: "Bank" },
+      // { value: "Credit Union", label: "Credit Union" },
+      // { value: "Building Society", label: "Building Society" },
+      // { value: "Mutual Bank", label: "Mutual Bank" },
+      // { value: "Other", label: "Other" },
+      { value: "Industry", label: "Industry" },
+      { value: "Retail", label: "Retail" },
+      { value: "Public Sector", label: "Public Sector" },
+      { value: "Corporate", label: "Corporate" },
+      { value: "Wrap", label: "Wrap" },
     ],
   },
   Annuities: {
@@ -356,9 +362,9 @@ export default function AddSectionModal({
     } catch (err) {
       message.error(
         err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Something went wrong.",
+        err?.response?.data?.message ||
+        err?.message ||
+        "Something went wrong.",
       );
     } finally {
       setSubmitting(false);

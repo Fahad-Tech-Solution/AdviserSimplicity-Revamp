@@ -441,7 +441,7 @@ export default function PlatformInvestments({ modalData }) {
       onChange: (value, record, column, currentForm) => {
         const nextValue = normalizeSelectValue(value);
         const currentValue = normalizeSelectValue(
-          currentForm.getFieldValue([...record.formPath, column.field]),
+          record.platformName,
         );
 
         currentForm.setFieldValue(

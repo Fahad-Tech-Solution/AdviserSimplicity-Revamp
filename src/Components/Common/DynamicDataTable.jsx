@@ -26,7 +26,8 @@ export default function DynamicDataTable({
   wrapperStyle = {},
   headerFontSize = 12,
   bodyFontSize = 14,
-  loading = false
+  loading = false,
+  onChange = () => { }
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -112,6 +113,7 @@ export default function DynamicDataTable({
         }}
       >
         <Table
+          onChange={onChange} // 👈 2. Pass it directly to AntD Table
           loading={loading}
           columns={resolvedColumns}
           dataSource={data}

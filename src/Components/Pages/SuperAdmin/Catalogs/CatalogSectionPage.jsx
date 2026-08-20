@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FilterFilled } from "@ant-design/icons";
 import { useAtom } from "jotai";
 import { useLocation, useNavigate } from "react-router-dom";
 import { catalogChildRouteConfigs } from "../../../Routes/catalogRouteConfig";
@@ -124,6 +124,15 @@ export default function CatalogSectionPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
 
+  // Added Table Filter and Sort States
+  const [filteredInfo, setFilteredInfo] = useState({});
+  const [sortedInfo, setSortedInfo] = useState({});
+
+  const handleTableChange = (pagination, filters, sorter) => {
+    setFilteredInfo(filters);
+    setSortedInfo(sorter);
+  };
+
   const closeAddModal = useCallback(() => {
     setAddModalOpen(false);
     setEditingRecord(null);
@@ -191,9 +200,9 @@ export default function CatalogSectionPage() {
           } catch (error) {
             message.error(
               error?.response?.data?.error ||
-                error?.response?.data?.message ||
-                error?.message ||
-                "Failed to delete item.",
+              error?.response?.data?.message ||
+              error?.message ||
+              "Failed to delete item.",
             );
             throw error;
           }
@@ -229,6 +238,14 @@ export default function CatalogSectionPage() {
     [filteredItems],
   );
 
+  // Extract unique platformType values dynamically for filters
+  const platformTypeFilters = useMemo(() => {
+    const uniqueTypes = Array.from(
+      new Set(tableData.map((item) => item.platformType || defaultType).filter(Boolean))
+    );
+    return uniqueTypes.map((type) => ({ text: type, value: type }));
+  }, [tableData, defaultType]);
+
   const columns = useMemo(() => {
     const baseColumns = [
       {
@@ -245,6 +262,8 @@ export default function CatalogSectionPage() {
         title: "NAME",
         key: "name",
         width: 200,
+        sorter: (a, b) => (a.displayName || "").localeCompare(b.displayName || ""),
+        sortOrder: sortedInfo.columnKey === "name" ? sortedInfo.order : null,
         render: (_, row, index) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
@@ -274,13 +293,39 @@ export default function CatalogSectionPage() {
 
     if (showTypeColumn) {
       baseColumns.push({
-        title:
-          catalogDataKey === "PersonalInsurances" ? "Product Name" : "TYPE",
+        title: catalogDataKey === "PersonalInsurances" ? "Product Name" : "TYPE",
         dataIndex: "platformType",
         key: "platformType",
         width: 140,
+
+        filters: platformTypeFilters,
+        filteredValue: filteredInfo.platformType || null,
+
+        // ✅ Match against row.platformType with defaultType fallback
+        onFilter: (value, record) => {
+          const actualType = record.platformType || defaultType;
+          return actualType === value;
+        },
+
+        sorter: (a, b) => {
+          const typeA = a.platformType || defaultType;
+          const typeB = b.platformType || defaultType;
+          return typeA.localeCompare(typeB);
+        },
+        sortOrder: sortedInfo.columnKey === "platformType" ? sortedInfo.order : null,
+        ellipsis: true,
         render: (_, row) => (
           <TypeBadge type={row.platformType} fallback={defaultType} />
+        ),
+
+        // 🎨 Custom active filter icon styling
+        filterIcon: (filtered) => (
+          <FilterFilled
+            style={{
+              color: filtered ? "#ffffff" : "rgba(255, 255, 255, 0.65)", // Bright white when active, soft white when inactive
+              fontSize: 14,
+            }}
+          />
         ),
       });
     }
@@ -353,13 +398,16 @@ export default function CatalogSectionPage() {
 
     return baseColumns;
   }, [
+    catalogDataKey,
     config,
     defaultType,
     deleteItem,
-    deleteSuccessLabel,
+    filteredInfo,
     navigate,
+    platformTypeFilters,
     showTypeColumn,
     showTypeInvestmentSection,
+    sortedInfo,
     tableData.length,
   ]);
 
@@ -450,6 +498,7 @@ export default function CatalogSectionPage() {
           total={tableData.length}
           pageSize={10}
           showCount={false}
+          onChange={handleTableChange}
           bordered
           size="small"
           tableStyle={{ borderRadius: 8, overflow: "hidden" }}
