@@ -268,8 +268,11 @@ export default function CatalogSectionPage() {
         title: "NAME",
         key: "name",
         width: 200,
+
         sorter: (a, b) => (a.displayName || "").localeCompare(b.displayName || ""),
         sortOrder: sortedInfo.columnKey === "name" ? sortedInfo.order : null,
+        sortDirections: ["descend", "ascend", "descend"],
+
         render: (_, row, index) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
@@ -319,6 +322,7 @@ export default function CatalogSectionPage() {
           return typeA.localeCompare(typeB);
         },
         sortOrder: sortedInfo.columnKey === "platformType" ? sortedInfo.order : null,
+        sortDirections: ["descend", "ascend", "descend"],
         ellipsis: true,
         render: (_, row) => (
           <TypeBadge type={row.platformType} fallback={defaultType} />
