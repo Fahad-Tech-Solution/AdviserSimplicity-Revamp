@@ -220,13 +220,19 @@ export default function InvestmentSectionsPage() {
 
   const tableData = useMemo(
     () =>
-      filteredInvestments.map((item, index) => ({
-        ...item,
-        key: item._id ?? item.id ?? String(index),
-        index: index + 1,
-        displayName: getInvestmentName(item),
-        displayCode: getInvestmentCode(item),
-      })),
+      [...filteredInvestments]
+        .sort((a, b) => {
+          const nameA = getInvestmentName(a).toLowerCase();
+          const nameB = getInvestmentName(b).toLowerCase();
+          return nameA.localeCompare(nameB);
+        })
+        .map((item, index) => ({
+          ...item,
+          key: item._id ?? item.id ?? String(index),
+          index: index + 1,
+          displayName: getInvestmentName(item),
+          displayCode: getInvestmentCode(item),
+        })),
     [filteredInvestments],
   );
 

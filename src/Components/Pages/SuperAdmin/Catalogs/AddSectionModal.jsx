@@ -27,10 +27,10 @@ const SECTION_ADD_FORM_CONFIG = {
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
       { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
       { value: "Building Society", label: "Building Society" },
+      { value: "Credit Union", label: "Credit Union" },
       { value: "Mutual Bank", label: "Mutual Bank" },
-      { value: "Other", label: "Other" }, // for other types of institutions
+      { value: "Other", label: "Other" },
     ],
   },
   InvestmentPlatforms: {
@@ -41,11 +41,11 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Wrap", label: "Wrap" },
-      { value: "Master Trust", label: "Master Trust" },
       { value: "IDPS", label: "IDPS" },
       { value: "Investor Directed", label: "Investor Directed" },
-    ],
+      { value: "Master Trust", label: "Master Trust" },
+      { value: "Wrap", label: "Wrap" },
+    ]
   },
   InvestmentBonds: {
     modalTitle: "Add Investment Bond",
@@ -56,11 +56,11 @@ const SECTION_ADD_FORM_CONFIG = {
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
       { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
       { value: "Building Society", label: "Building Society" },
+      { value: "Credit Union", label: "Credit Union" },
       { value: "Mutual Bank", label: "Mutual Bank" },
       { value: "Other", label: "Other" },
-    ],
+    ]
   },
   SuperannuationFunds: {
     modalTitle: "Add Superannuation Fund",
@@ -70,12 +70,12 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      { value: "Industry", label: "Industry" },
-      { value: "Retail", label: "Retail" },
-      { value: "Public Sector", label: "Public Sector" },
       { value: "Corporate", label: "Corporate" },
+      { value: "Industry", label: "Industry" },
+      { value: "Public Sector", label: "Public Sector" },
+      { value: "Retail", label: "Retail" },
       { value: "Wrap", label: "Wrap" },
-    ],
+    ]
   },
   AccountBasedPensions: {
     modalTitle: "Add Account Based Pension",
@@ -85,17 +85,12 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
-      // { value: "Bank", label: "Bank" },
-      // { value: "Credit Union", label: "Credit Union" },
-      // { value: "Building Society", label: "Building Society" },
-      // { value: "Mutual Bank", label: "Mutual Bank" },
-      // { value: "Other", label: "Other" },
-      { value: "Industry", label: "Industry" },
-      { value: "Retail", label: "Retail" },
-      { value: "Public Sector", label: "Public Sector" },
       { value: "Corporate", label: "Corporate" },
+      { value: "Industry", label: "Industry" },
+      { value: "Public Sector", label: "Public Sector" },
+      { value: "Retail", label: "Retail" },
       { value: "Wrap", label: "Wrap" },
-    ],
+    ]
   },
   Annuities: {
     modalTitle: "Add Annuity",
@@ -105,11 +100,11 @@ const SECTION_ADD_FORM_CONFIG = {
     nameHelper: "Advisers will see this name in their discovery dropdowns.",
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
+      { value: "Deferred Lifetime", label: "Deferred Lifetime" },
+      { value: "Fixed-Term", label: "Fixed-Term" },
       { value: "Lifetime", label: "Lifetime" },
       { value: "Term", label: "Term" },
-      { value: "Fixed-Term", label: "Fixed-Term" },
-      { value: "Deferred Lifetime", label: "Deferred Lifetime" },
-    ],
+    ]
   },
   PersonalInsurances: {
     modalTitle: "Add Personal Insurance",
@@ -120,11 +115,11 @@ const SECTION_ADD_FORM_CONFIG = {
     typeHelper: "Helps advisers filter and group entries in their forms.",
     typeOptions: [
       { value: "Bank", label: "Bank" },
-      { value: "Credit Union", label: "Credit Union" },
       { value: "Building Society", label: "Building Society" },
+      { value: "Credit Union", label: "Credit Union" },
       { value: "Mutual Bank", label: "Mutual Bank" },
       { value: "Other", label: "Other" },
-    ],
+    ]
   },
 };
 

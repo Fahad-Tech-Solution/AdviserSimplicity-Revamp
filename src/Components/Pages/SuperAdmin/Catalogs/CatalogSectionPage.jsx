@@ -229,12 +229,18 @@ export default function CatalogSectionPage() {
 
   const tableData = useMemo(
     () =>
-      filteredItems.map((row, index) => ({
-        ...row,
-        key: row.id ?? row._id ?? String(index),
-        index: index + 1,
-        displayName: getCatalogItemName(row),
-      })),
+      [...filteredItems]
+        .sort((a, b) => {
+          const nameA = getCatalogItemName(a).toLowerCase();
+          const nameB = getCatalogItemName(b).toLowerCase();
+          return nameA.localeCompare(nameB);
+        })
+        .map((row, index) => ({
+          ...row,
+          key: row.id ?? row._id ?? String(index),
+          index: index + 1,
+          displayName: getCatalogItemName(row),
+        })),
     [filteredItems],
   );
 
