@@ -37,7 +37,12 @@ const useApi = () => {
       return http.post(url, data, { responseType: "blob", ...config });
     };
 
-    return { get, post, put, patch, remove, postBlob, deleteApi };
+    // Inside useApi hook return object
+    const getBlob = async (url, config = {}) => {
+      return http.get(url, { responseType: "blob", ...config });
+    };
+
+    return { get, post, put, patch, remove, postBlob, getBlob, deleteApi };
   }, []);
 };
 

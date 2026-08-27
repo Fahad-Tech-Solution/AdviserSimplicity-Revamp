@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import axios from 'axios';
 import { Upload, message, Card, Typography, Button, Space, Alert, Table, Tag } from 'antd';
 import { InboxOutlined, FileExcelOutlined, WarningOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { MdCloudDownload, MdOutlineSync } from 'react-icons/md';
 import AppModal from '../../../../Common/AppModal';
+import useApi from '../../../../../hooks/useApi';
 
 const { Dragger } = Upload;
 const { Text } = Typography;
@@ -172,6 +173,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
     const [loading, setLoading] = useState(false);
     const [downloadingTemplate, setDownloadingTemplate] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
+    const { getBlob } = useApi();
 
     // Generic Dynamic Validator Engine
     const validateExcelData = (jsonData) => {
@@ -312,27 +314,36 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         setValidationErrors([]);
     };
 
-    const handleDownloadXlsx = () => {
-        setDownloadingTemplate(true);
-        axios
-            .get('/api/clients/import-template', { responseType: 'blob' })
-            .then((response) => {
-                const blob = response.data;
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = 'clients-import-template.xlsx';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-            })
-            .catch((error) => {
-                message.error(error.response?.data?.message || error.message || 'Failed to download the template.');
-            })
-            .finally(() => {
-                setDownloadingTemplate(false);
+    const handleDownloadTemplate = async () => {
+        try {
+            // 1. Fetch file as Blob
+            const response = await getBlob("/clientImport/template"); // Update with your actual endpoint
+
+            // 2. Extract filename from headers (Optional) or hardcode it
+            const contentDisposition = response.headers["content-disposition"];
+            let filename = "Client_Import_Template.xlsx";
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^";]+)"?/);
+                if (match && match[1]) filename = match[1];
+            }
+
+            // 3. Create URL and trigger download
+            const blob = new Blob([response.data], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+
+            // 4. Cleanup
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to download template:", error);
+        }
     };
 
     const errorColumns = [
@@ -404,7 +415,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                             style={{ margin: '10px 0px 0px 0px', width: '100%' }}
                             type="primary"
                             icon={<MdCloudDownload />}
-                            onClick={handleDownloadXlsx}
+                            onClick={handleDownloadTemplate}
                             loading={downloadingTemplate}
                         >
                             Download Template

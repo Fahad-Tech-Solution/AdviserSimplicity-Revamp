@@ -23,6 +23,7 @@ import {
   getUnderlyingInvestments,
   normalizeCatalogsData,
 } from "./catalogHelpers";
+import { confirmRemoveData } from "../../../Common/confirmationModal";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -203,19 +204,35 @@ export default function InvestmentSectionsPage() {
   }, [investments, searchText]);
 
   const deleteInvestment = useCallback(
-    async (id) => {
-      try {
-        await api.patch("/investmentoffer/Delete", { _id: id });
-        message.success("Investment deleted successfully.");
-        setInvestments((prev) => prev.filter((item) => item._id !== id));
+    (row) => {
+      const rowId = typeof row === "object" ? (row?._id ?? row?.id) : row;
+      if (!rowId) return;
 
-      } catch (error) {
-        message.error("Failed to delete investment.");
-      } finally {
-        setLoading(false);
-      }
+      const itemName = typeof row === "object" ? (row?.investmentName || row?.title || "this investment") : "this investment";
+
+      confirmRemoveData(
+        async () => {
+          try {
+            await api.patch("/investmentoffer/Delete", { _id: rowId });
+            setInvestments((prev) => prev.filter((item) => (item?._id ?? item?.id) !== rowId));
+            message.success("Investment deleted successfully.");
+          } catch (error) {
+            message.error(
+              error?.response?.data?.error ||
+              error?.response?.data?.message ||
+              error?.message ||
+              "Failed to delete investment.",
+            );
+            throw error;
+          }
+        },
+        {
+          title: "Remove Platform?",
+          content: `This will permanently remove "${itemName}" from the platform.`,
+        },
+      );
     },
-    [api, message, investments],
+    [api, message, confirmRemoveData], // Make sure to add confirmRemoveData if it comes from props/hooks
   );
 
   const tableData = useMemo(
@@ -312,7 +329,7 @@ export default function InvestmentSectionsPage() {
                 icon={
                   <DeleteOutlined style={{ fontSize: 14 }} />
                 }
-                onClick={() => deleteInvestment(record._id)}
+                onClick={() => deleteInvestment(record)}
               />
             </Tooltip>
           </Space>

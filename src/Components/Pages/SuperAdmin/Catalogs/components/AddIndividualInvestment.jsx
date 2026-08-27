@@ -60,10 +60,10 @@ export default function AddIndividualInvestment({
     } catch (error) {
       message.error(
         error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          error?.response?.data ||
-          error?.message ||
-          "Failed to add investment.",
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        error?.message ||
+        "Failed to add investment.",
       );
     } finally {
       setSubmitting(false);
@@ -110,7 +110,7 @@ export default function AddIndividualInvestment({
           marginBottom: 6,
         }}
       >
-        NEW
+        {data.editing ? "" : "NEW"}
       </Text>
 
       <Title
@@ -122,7 +122,7 @@ export default function AddIndividualInvestment({
           fontSize: 26,
         }}
       >
-        Add Investment
+        {data.editing ? "Update" : "Add"} Investment
       </Title>
 
       <Text
@@ -135,7 +135,7 @@ export default function AddIndividualInvestment({
           lineHeight: 1.5,
         }}
       >
-        Add a new underlying investment to this entity.
+        {data.editing ? "Update a this" : "Add a new"}    underlying investment to this entity.
       </Text>
 
       <div
@@ -169,7 +169,7 @@ export default function AddIndividualInvestment({
 
         <Form.Item
           name="investmentCode"
-          label={<FieldLabel required>Investment Code</FieldLabel>}
+          label={<FieldLabel>Investment Code</FieldLabel>}
           // rules={[{ required: true, message: "Enter investment code" }]}
           extra={
             <Text style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.45 }}>
@@ -216,7 +216,7 @@ export default function AddIndividualInvestment({
             alignItems: "center",
           }}
         >
-          Add Investment
+          {data.editing ? "Update" : "Add"} Investment
         </Button>
       </div>
     </div>
