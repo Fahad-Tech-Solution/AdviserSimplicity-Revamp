@@ -120,18 +120,41 @@ function hasMeaningfulValues(initialValues = {}) {
 
 function buildProviderOptions(investmentOffers, entries = []) {
   const providers = investmentOffers?.Annuities || [];
-  const options = providers.map((item) => ({
+  const options = providers.filter((item) => !item?.softDelete).map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
   }));
 
   entries.forEach((entry) => {
     const currentValue = normalizeSelectValue(entry?.productProvider);
+
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
-      options.unshift({ value: currentValue, label: currentValue });
+      // 1. Locate the product provider in your raw source list (e.g., productProviders / providers)
+      const matchedItem = providers.find((item) => {
+        const itemValue = normalizeSelectValue(
+          item?._id ?? item?.value ?? item?.productProvider ?? item?.name
+        );
+        return itemValue === currentValue;
+      });
+
+      // 2. Resolve the display label
+      const baseLabel =
+        matchedItem?.productProvider ||
+        matchedItem?.label ||
+        matchedItem?.name ||
+        matchedItem?.platformName ||
+        matchedItem?._id ||
+        currentValue;
+
+      // 3. Append discontinued text and set disabled for AntD
+      options.unshift({
+        value: currentValue,
+        label: `${baseLabel} (Discontinued)`,
+        disabled: true,
+      });
     }
   });
 

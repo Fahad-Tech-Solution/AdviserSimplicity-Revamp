@@ -38,10 +38,6 @@ const PersonalInsurance = () => {
   const location = useLocation();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
-
-  console.log("discoveryData", discoveryData);
-  console.log("discoveryQuestions", discoveryQuestions);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
 
@@ -63,9 +59,7 @@ const PersonalInsurance = () => {
   const visibleCards = useMemo(
     () =>
       (currentRoute?.Cards || []).filter((card) => {
-        console.log("discoveryQuestions[card.key]", discoveryQuestions[card.key], card.key);
         const isYes = discoveryQuestions[card.key] === "Yes";
-        console.log("isYes", isYes);
         return isYes;
       }),
     [currentRoute?.Cards, discoveryQuestions],

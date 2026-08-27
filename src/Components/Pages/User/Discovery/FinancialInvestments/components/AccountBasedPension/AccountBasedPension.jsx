@@ -95,18 +95,40 @@ function hasMeaningfulValues(initialValues = {}) {
 
 function buildFundOptions(investmentOffers, entries = []) {
   const funds = investmentOffers?.AccountBasedPensions || [];
-  const options = funds.map((item) => ({
+  const options = funds.filter((item) => !item?.softDelete).map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
   }));
 
   entries.forEach((entry) => {
     const currentValue = normalizeSelectValue(entry?.platformName);
+
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
-      options.unshift({ value: currentValue, label: currentValue });
+      // 1. Locate the item from the source array (e.g., platforms / investmentOffers)
+      const matchedItem = funds.find((item) => {
+        const itemValue = normalizeSelectValue(
+          item?._id ?? item?.value ?? item?.platformName
+        );
+        return itemValue === currentValue;
+      });
+
+      // 2. Resolve the clearest label available
+      const baseLabel =
+        matchedItem?.platformName ||
+        matchedItem?.label ||
+        matchedItem?.name ||
+        matchedItem?._id ||
+        currentValue;
+
+      // 3. Unshift with discontinued tag and disabled status
+      options.unshift({
+        value: currentValue,
+        label: `${baseLabel} (Discontinued)`,
+        disabled: true,
+      });
     }
   });
 

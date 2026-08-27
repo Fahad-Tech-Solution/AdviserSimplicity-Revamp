@@ -15,7 +15,6 @@ import ContributionsModal from "./ContributionsModal.jsx";
 import AnnualAdviceModal from "./AnnualAdviceModal.jsx";
 import useTitleBlock from "../../../../../../../hooks/useTitleBlock.jsx";
 import { confirmRemoveData } from "../../../../../../Common/confirmationModal.js";
-import NattyAiScanCardTestSample from "../../../../../../Common/NattyAiScanCardTestSample.jsx";
 import { parseSuperStatement } from "../../../../../../../utils/pdf/pdfParcing.js";
 
 const TABLE_PROPS = {
@@ -178,21 +177,42 @@ function buildFundOptions(investmentOffers, entries = []) {
       : {};
 
   const funds = offers.SuperannuationFunds || [];
-  const options = funds.map((item) => ({
+  const options = funds.filter((item) => !item?.softDelete).map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
   }));
 
   entries.forEach((entry) => {
     const currentValue = normalizeSelectValue(entry?.platformName);
+
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
-      options.unshift({ value: currentValue, label: currentValue });
+      // 1. Look up the matching item in your source array (e.g., platforms / offers)
+      const matchedItem = funds.find((item) => {
+        const itemValue = normalizeSelectValue(
+          item?._id ?? item?.value ?? item?.platformName
+        );
+        return itemValue === currentValue;
+      });
+
+      // 2. Extract the best display label available
+      const baseLabel =
+        matchedItem?.platformName ||
+        matchedItem?.label ||
+        matchedItem?.name ||
+        matchedItem?._id ||
+        currentValue;
+
+      // 3. Unshift with discontinued context and disabled state for AntD
+      options.unshift({
+        value: currentValue,
+        label: `${baseLabel} (Discontinued)`,
+        disabled: true,
+      });
     }
   });
-
   return options.filter((option) => option.value && option.label);
 }
 
@@ -634,7 +654,7 @@ export default function SuperFunds({ modalData }) {
       <Form form={form} initialValues={initialValues} requiredMark={false}>
         <Row gutter={[16, 16]}>
           {editing ? (
-            // <NattyAiScanCardTestSample onScanComplete={handleScanComplete} />
+        
             <NattyAiScanCard
               title="Natty AI - Scan Super Fund Statement"
               subtitle="Auto-fills super fund details, account numbers, and balances."

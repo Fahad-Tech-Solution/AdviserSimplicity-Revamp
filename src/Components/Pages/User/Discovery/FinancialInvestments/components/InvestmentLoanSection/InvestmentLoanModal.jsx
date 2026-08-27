@@ -229,9 +229,37 @@ export default function InvestmentLoanModal({ modalData }) {
     return options;
   }, [allowPartner, discoveryData]);
 
+  // const lenderOption = useMemo(() => {
+  //   const institutions = investmentOffers?.FinancialInstitutions || [];
+  //   const mapped = institutions
+  //     .map((item) => ({
+  //       value: String(item?._id ?? item?.value ?? ""),
+  //       label:
+  //         item?.platformName || item?.label || item?.name || item?._id || "",
+  //     }))
+  //     .filter((option) => option.value && option.label);
+
+  //   const existingValues = [
+  //     sectionData?.client?.lender,
+  //     sectionData?.partner?.lender,
+  //     sectionData?.joint?.lender,
+  //   ].filter(Boolean);
+
+  //   existingValues.forEach((value) => {
+  //     if (!mapped.some((option) => option.value === value)) {
+  //       mapped.unshift({ value, label: value });
+  //     }
+  //   });
+
+  //   return mapped;
+  // }, [investmentOffers, sectionData]);
+
   const lenderOption = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
+
+    // 1. Map active (non-soft-deleted) institutions
     const mapped = institutions
+      .filter((item) => !item?.softDelete)
       .map((item) => ({
         value: String(item?._id ?? item?.value ?? ""),
         label:
@@ -245,9 +273,30 @@ export default function InvestmentLoanModal({ modalData }) {
       sectionData?.joint?.lender,
     ].filter(Boolean);
 
+    // 2. Safely iterate existing values to prepend discontinued options
     existingValues.forEach((value) => {
-      if (!mapped.some((option) => option.value === value)) {
-        mapped.unshift({ value, label: value });
+      const currentValue = String(value);
+
+      if (!mapped.some((option) => option.value === currentValue)) {
+        const matchedItem = institutions.find((item) => {
+          const itemValue = String(
+            item?._id ?? item?.value ?? item?.platformName ?? ""
+          );
+          return itemValue === currentValue;
+        });
+
+        const baseLabel =
+          matchedItem?.platformName ||
+          matchedItem?.label ||
+          matchedItem?.name ||
+          matchedItem?._id ||
+          currentValue;
+
+        mapped.unshift({
+          value: currentValue,
+          label: `${baseLabel} (Discontinued)`,
+          disabled: true,
+        });
       }
     });
 
@@ -481,10 +530,10 @@ export default function InvestmentLoanModal({ modalData }) {
       columns.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [columns],
@@ -567,18 +616,18 @@ export default function InvestmentLoanModal({ modalData }) {
 
       client: clientSelected
         ? buildLoanPayload(
-            sourceValues.client,
-            sectionData.client,
-            isMarginLoan,
-          )
+          sourceValues.client,
+          sectionData.client,
+          isMarginLoan,
+        )
         : {},
 
       partner: partnerSelected
         ? buildLoanPayload(
-            sourceValues.partner,
-            sectionData.partner,
-            isMarginLoan,
-          )
+          sourceValues.partner,
+          sectionData.partner,
+          isMarginLoan,
+        )
         : {},
 
       joint: jointSelected
@@ -671,14 +720,14 @@ export default function InvestmentLoanModal({ modalData }) {
       clientTotal:
         clientSelected || jointSelected
           ? formatCurrencyValue(
-              (clientSelected ? clientLoanBalance : 0) + jointHalf,
-            )
+            (clientSelected ? clientLoanBalance : 0) + jointHalf,
+          )
           : "",
       partnerTotal:
         partnerSelected || jointSelected
           ? formatCurrencyValue(
-              (partnerSelected ? partnerLoanBalance : 0) + jointHalf,
-            )
+            (partnerSelected ? partnerLoanBalance : 0) + jointHalf,
+          )
           : "",
     };
 
@@ -700,8 +749,8 @@ export default function InvestmentLoanModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Investment Loan"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Investment Loan"}`,
       );
     } finally {
       setSaving(false);

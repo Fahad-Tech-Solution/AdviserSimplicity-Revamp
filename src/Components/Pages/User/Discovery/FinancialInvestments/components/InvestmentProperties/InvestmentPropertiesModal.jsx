@@ -177,14 +177,54 @@ export default function InvestmentPropertiesModal({ modalData }) {
 
   const lenderOptions = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
-    return institutions
+
+    // 1. Map active options
+    const options = institutions
+      .filter((item) => !item?.softDelete)
       .map((item) => ({
         value: String(item?._id ?? item?.value ?? ""),
-        label:
-          item?.platformName || item?.label || item?.name || item?._id || "",
+        label: item?.platformName || item?.label || item?.name || item?._id || "",
       }))
       .filter((option) => option.value && option.label);
-  }, [investmentOffers]);
+
+    const existing = Array.isArray(sectionData?.[collectionKey])
+      ? sectionData[collectionKey].map(normalizeProperty)
+      : [];
+
+    // 2. Safely iterate existing items to prepend discontinued options
+    existing.forEach((entry) => {
+      // Optional chaining prevents crashes if propertyLoanDetailsArray is empty or undefined
+      const rawLender = entry?.propertyLoanDetailsArray?.[0]?.LenderCurrent;
+      const currentValue = (rawLender);
+
+      if (
+        currentValue &&
+        !options.some((option) => String(option.value) === currentValue)
+      ) {
+        const matchedItem = institutions.find((item) => {
+          const itemValue =
+            item?._id ?? item?.value ?? item?.platformName
+            ;
+          return itemValue === currentValue;
+        });
+
+        const baseLabel =
+          matchedItem?.platformName ||
+          matchedItem?.label ||
+          matchedItem?.name ||
+          matchedItem?._id ||
+          currentValue;
+
+        options.unshift({
+          value: currentValue,
+          label: `${baseLabel} (Discontinued)`,
+          disabled: true,
+        });
+      }
+    });
+
+    return options;
+  }, [investmentOffers, sectionData, collectionKey]);
 
   const initialValues = useMemo(() => {
     const existing = Array.isArray(sectionData?.[collectionKey])
@@ -200,6 +240,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
   const numberOfProperties =
     Form.useWatch("numberOfProperties", form) ??
     initialValues.numberOfProperties;
+
   const properties =
     Form.useWatch("investmentProperties", form) ??
     initialValues.investmentProperties;
@@ -411,49 +452,49 @@ export default function InvestmentPropertiesModal({ modalData }) {
 
     const ownershipCols = isOwnershipEnabled
       ? [
-          {
-            title: "Client Ownership",
-            dataIndex: "clientOwnership",
-            key: "clientOwnership",
-            field: "clientOwnership",
-            type: "text",
-            placeholder: "Client Ownership",
-            onChange: (value, record, column, currentForm) => {
-              const numeric = parsePercentValue(getChangedValue(value)) || 0;
-              const bounded = Math.min(Math.max(numeric, 0), 100);
-              const partner = 100 - bounded;
-              currentForm.setFieldValue(
-                [...record.formPath, "clientOwnership"],
-                `${bounded.toFixed(2)}%`,
-              );
-              currentForm.setFieldValue(
-                [...record.formPath, "partnerOwnership"],
-                `${partner.toFixed(2)}%`,
-              );
-            },
+        {
+          title: "Client Ownership",
+          dataIndex: "clientOwnership",
+          key: "clientOwnership",
+          field: "clientOwnership",
+          type: "text",
+          placeholder: "Client Ownership",
+          onChange: (value, record, column, currentForm) => {
+            const numeric = parsePercentValue(getChangedValue(value)) || 0;
+            const bounded = Math.min(Math.max(numeric, 0), 100);
+            const partner = 100 - bounded;
+            currentForm.setFieldValue(
+              [...record.formPath, "clientOwnership"],
+              `${bounded.toFixed(2)}%`,
+            );
+            currentForm.setFieldValue(
+              [...record.formPath, "partnerOwnership"],
+              `${partner.toFixed(2)}%`,
+            );
           },
-          {
-            title: "Partner Ownership",
-            dataIndex: "partnerOwnership",
-            key: "partnerOwnership",
-            field: "partnerOwnership",
-            type: "text",
-            placeholder: "Partner Ownership",
-            onChange: (value, record, column, currentForm) => {
-              const numeric = parsePercentValue(getChangedValue(value)) || 0;
-              const bounded = Math.min(Math.max(numeric, 0), 100);
-              const client = 100 - bounded;
-              currentForm.setFieldValue(
-                [...record.formPath, "partnerOwnership"],
-                `${bounded.toFixed(2)}%`,
-              );
-              currentForm.setFieldValue(
-                [...record.formPath, "clientOwnership"],
-                `${client.toFixed(2)}%`,
-              );
-            },
+        },
+        {
+          title: "Partner Ownership",
+          dataIndex: "partnerOwnership",
+          key: "partnerOwnership",
+          field: "partnerOwnership",
+          type: "text",
+          placeholder: "Partner Ownership",
+          onChange: (value, record, column, currentForm) => {
+            const numeric = parsePercentValue(getChangedValue(value)) || 0;
+            const bounded = Math.min(Math.max(numeric, 0), 100);
+            const client = 100 - bounded;
+            currentForm.setFieldValue(
+              [...record.formPath, "partnerOwnership"],
+              `${bounded.toFixed(2)}%`,
+            );
+            currentForm.setFieldValue(
+              [...record.formPath, "clientOwnership"],
+              `${client.toFixed(2)}%`,
+            );
           },
-        ]
+        },
+      ]
       : [];
 
     const tail = [
@@ -618,8 +659,8 @@ export default function InvestmentPropertiesModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Investment Properties"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Investment Properties"}`,
       );
     } finally {
       setSaving(false);
@@ -675,7 +716,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
               label="Number of Investment Properties"
               name="numberOfProperties"
               style={{ marginBottom: 0 }}
-              // rules={[{ required: true, message: "Number is required" }]}
+            // rules={[{ required: true, message: "Number is required" }]}
             >
               <Select
                 placeholder="Select"

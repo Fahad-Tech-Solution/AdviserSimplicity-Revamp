@@ -19,17 +19,21 @@ export default defineConfig({
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
         target:
           process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        // target: "http://192.168.18.146:7000",
+        // target: "http://192.168.18.120:7000",
         changeOrigin: true,
         secure: false,
+        ws: true,
+        cookieDomainRewrite: "",
       },
       "/dev_api": {
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
         target:
           process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        // target: "http://192.168.18.146:7000",
+        // target: "http://192.168.18.120:7000",
         changeOrigin: true,
         secure: false,
+        ws: true,
+        cookieDomainRewrite: "",
       },
     },
   },

@@ -66,30 +66,32 @@ const NEXT_BUTTON_STYLE = {
   fontWeight: 600,
 };
 
-const TITLE_OPTIONS = ["Mr.", "Mrs.", "Ms.", "Miss", "Dr.", "Prof."];
-const GENDER_OPTIONS = ["Male", "Female", "Other"];
+const TITLE_OPTIONS = ["Dr.", "Miss", "Mr.", "Mrs.", "Ms.", "Prof."];
+const GENDER_OPTIONS = ["Female", "Male", "Other"];
 const MARITAL_OPTIONS = [
-  "Single",
-  "Married",
   "De Facto",
+  "Married",
   "Partnered",
+  "Single",
   "Widowed",
 ];
 const EMPLOYMENT_OPTIONS = [
+  "Centrelink Recipient",
+  "Centrelink Retiree",
   "Employee",
   "Homemaker",
   "Not Working",
-  "Self-funded Retiree",
-  "Centrelink Retiree",
-  "Centrelink Recipient",
   "Self Employed",
+  "Self-funded Retiree",
   "Student",
   "Unemployed",
 ];
+
 const YES_NO = ["Yes", "No"];
-const HEALTH_OPTIONS = ["Excellent", "Good", "Average", "Poor"];
 const SMOKER_OPTIONS = ["Yes", "No"];
-const RELATIONSHIP_OPTIONS = ["Son", "Daughter", "Step Daughter", "Step Son"];
+const HEALTH_OPTIONS = ["Average", "Excellent", "Good", "Poor"];
+const RELATIONSHIP_OPTIONS = ["Daughter", "Son", "Step Daughter", "Step Son"];
+
 const PARTNER_HIDDEN_MARITAL_STATUSES = new Set(["single", "widowed"]);
 const AUS_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
 
@@ -974,19 +976,19 @@ export default function PersonalDetailsFrom({
         const nextPd =
           saved && typeof saved === "object"
             ? {
-                ...(pd ?? {}),
-                ...saved,
-                _id: saved._id ?? payload._id,
-                client: saved.client ?? payload.client,
-                partner: saved.partner ?? payload.partner,
-                children: saved.children ?? payload.children,
-                haveAnyChildren:
-                  saved.haveAnyChildren ?? payload.haveAnyChildren,
-              }
+              ...(pd ?? {}),
+              ...saved,
+              _id: saved._id ?? payload._id,
+              client: saved.client ?? payload.client,
+              partner: saved.partner ?? payload.partner,
+              children: saved.children ?? payload.children,
+              haveAnyChildren:
+                saved.haveAnyChildren ?? payload.haveAnyChildren,
+            }
             : {
-                ...(pd ?? {}),
-                ...payload,
-              };
+              ...(pd ?? {}),
+              ...payload,
+            };
 
         setPd(nextPd);
 
@@ -1032,9 +1034,9 @@ export default function PersonalDetailsFrom({
       } catch (error) {
         message.error(
           error?.response?.data?.error ||
-            error?.response?.data?.message ||
-            error?.message ||
-            "Save failed.",
+          error?.response?.data?.message ||
+          error?.message ||
+          "Save failed.",
         );
       } finally {
         setSubmitting(false);

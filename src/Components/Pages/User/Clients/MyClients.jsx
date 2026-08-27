@@ -16,9 +16,14 @@ import {
 } from "../../../../store/authState";
 import HouseholdTable from "./HouseholdTable";
 import useApi from "../../../../hooks/useApi";
+import { FaDownload, FaUpload } from "react-icons/fa";
+import AppModal from "../../../Common/AppModal";
+import useTitleBlock from "../../../../hooks/useTitleBlock";
+import ImportDataSection from "./components/ImportDataSection";
 
 const MyClients = () => {
   const [searchText, setSearchText] = useState("");
+  const [openModal, setOpenModal] = useState(false);
   const navigate = useNavigate();
   const setMyClientsData = useSetAtom(MyClientsData);
   const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
@@ -31,6 +36,11 @@ const MyClients = () => {
   const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
   const api = useApi();
+
+  const HEADING_STYLE = { fontFamily: "Georgia,serif" };
+  const renderTitleBlock = useTitleBlock({
+    titleStyle: HEADING_STYLE,
+  });
 
   useEffect(() => {
     setCreatingNewClient(false);
@@ -116,6 +126,10 @@ const MyClients = () => {
     navigate("/user/discovery/personal-details");
   };
 
+  const handleImportData = () => {
+    setOpenModal(true)
+  }
+
   return (
     <div>
       <div
@@ -161,10 +175,21 @@ const MyClients = () => {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search..."
-              //   prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
               prefix={"🔍"}
               style={{ width: 210, borderRadius: 7 }}
             />
+            <Button
+              type="primary"
+              style={{
+                borderRadius: 8,
+                fontWeight: 700,
+                padding: "17px 20px",
+                fontSize: 13,
+              }}
+              onClick={handleImportData}
+            >
+              Import Data <FaUpload />
+            </Button>
             <Button
               type="primary"
               style={{
@@ -182,6 +207,17 @@ const MyClients = () => {
       </div>
 
       <HouseholdTable searchText={searchText} />
+
+
+      <ImportDataSection
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={renderTitleBlock({
+          title: "Import Data",
+          icon: "📥",
+        })}
+      />
+
     </div>
   );
 };

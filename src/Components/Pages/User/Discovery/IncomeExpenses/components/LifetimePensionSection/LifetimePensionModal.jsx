@@ -74,8 +74,8 @@ function buildInitialPerson(person = {}, totalValue = "") {
 
   const regularIncomePA = formatCurrencyValue(
     person?.regularIncomePA ||
-      totalValue ||
-      (parseCurrencyValue(regularIncomePerFortnight) || 0) * 26,
+    totalValue ||
+    (parseCurrencyValue(regularIncomePerFortnight) || 0) * 26,
   );
 
   return {
@@ -128,13 +128,13 @@ export default function LifetimePensionModal({ modalData }) {
   );
 
   const fundOptions = [
-    { value: "ESS Super", label: "ESS Super" },
-    { value: "PSS", label: "PSS" },
-    { value: "CSC", label: "CSC" },
-    { value: "Uni Super", label: "Uni Super" },
-    { value: "Telstra", label: "Telstra" },
-    { value: "Other", label: "Other" },
-  ];
+    { label: "CSC", value: "CSC" },
+    { label: "ESS Super", value: "ESS Super" },
+    { label: "Other", value: "Other" },
+    { label: "PSS", value: "PSS" },
+    { label: "Telstra", value: "Telstra" },
+    { label: "Uni Super", value: "Uni Super" },
+  ]
 
   const LIFETIME_PENSION_COLUMNS = [
     { title: "Owner", key: "owner", kind: "owner", width: 80 },
@@ -206,10 +206,10 @@ export default function LifetimePensionModal({ modalData }) {
       LIFETIME_PENSION_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [LIFETIME_PENSION_COLUMNS],
@@ -282,35 +282,35 @@ export default function LifetimePensionModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            fundName: sourceValues?.client?.fundName || "",
-            regularIncomePerFortnight: formatCurrencyValue(
-              sourceValues?.client?.regularIncomePerFortnight,
-            ),
-            regularIncomePA: formatCurrencyValue(
-              sourceValues?.client?.regularIncomePA,
-            ),
-            centrelinkDeductibleAmount: formatCurrencyValue(
-              sourceValues?.client?.centrelinkDeductibleAmount,
-            ),
-            isPension: toYesNo(sourceValues?.client?.isPension),
-          }
+          ...(sectionData?.client || {}),
+          fundName: sourceValues?.client?.fundName || "",
+          regularIncomePerFortnight: formatCurrencyValue(
+            sourceValues?.client?.regularIncomePerFortnight,
+          ),
+          regularIncomePA: formatCurrencyValue(
+            sourceValues?.client?.regularIncomePA,
+          ),
+          centrelinkDeductibleAmount: formatCurrencyValue(
+            sourceValues?.client?.centrelinkDeductibleAmount,
+          ),
+          isPension: toYesNo(sourceValues?.client?.isPension),
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            fundName: sourceValues?.partner?.fundName || "",
-            regularIncomePerFortnight: formatCurrencyValue(
-              sourceValues?.partner?.regularIncomePerFortnight,
-            ),
-            regularIncomePA: formatCurrencyValue(
-              sourceValues?.partner?.regularIncomePA,
-            ),
-            centrelinkDeductibleAmount: formatCurrencyValue(
-              sourceValues?.partner?.centrelinkDeductibleAmount,
-            ),
-            isPension: toYesNo(sourceValues?.partner?.isPension),
-          }
+          ...(sectionData?.partner || {}),
+          fundName: sourceValues?.partner?.fundName || "",
+          regularIncomePerFortnight: formatCurrencyValue(
+            sourceValues?.partner?.regularIncomePerFortnight,
+          ),
+          regularIncomePA: formatCurrencyValue(
+            sourceValues?.partner?.regularIncomePA,
+          ),
+          centrelinkDeductibleAmount: formatCurrencyValue(
+            sourceValues?.partner?.centrelinkDeductibleAmount,
+          ),
+          isPension: toYesNo(sourceValues?.partner?.isPension),
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(sourceValues?.client?.regularIncomePA)
@@ -339,8 +339,8 @@ export default function LifetimePensionModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Lifetime Pension"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Lifetime Pension"}`,
       );
     } finally {
       setSaving(false);

@@ -19,22 +19,21 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
-
 const PAYMENT_TYPE_OPTIONS = [
-  { value: "Age Pension", label: "Age Pension" },
-  { value: "Disability Pension", label: "Disability Pension" },
-  { value: "Carer Payment", label: "Carer Payment" },
-  { value: "Carer Allowance", label: "Carer Allowance" },
-  { value: "Jobseeker", label: "Jobseeker" },
-  { value: "Family Tax Benefit A", label: "Family Tax Benefit A" },
-  { value: "Family Tax Benefit B", label: "Family Tax Benefit B" },
-  { value: "Rent Assistance", label: "Rent Assistance" },
+  { label: "Age Pension", value: "Age Pension" },
+  { label: "Carer Allowance", value: "Carer Allowance" },
+  { label: "Carer Payment", value: "Carer Payment" },
+  { label: "Disability Pension", value: "Disability Pension" },
+  { label: "Family Tax Benefit A", value: "Family Tax Benefit A" },
+  { label: "Family Tax Benefit B", value: "Family Tax Benefit B" },
+  { label: "Jobseeker", value: "Jobseeker" },
+  { label: "Rent Assistance", value: "Rent Assistance" },
 ];
 
 const CONCESSION_CARD_OPTIONS = [
-  { value: "Pensioner Card", label: "Pensioner Card" },
-  { value: "Low Income Card", label: "Low Income Card" },
-  { value: "Commonwealth Seniors Card", label: "Commonwealth Seniors Card" },
+  { label: "Commonwealth Seniors Card", value: "Commonwealth Seniors Card" },
+  { label: "Low Income Card", value: "Low Income Card" },
+  { label: "Pensioner Card", value: "Pensioner Card" },
 ];
 
 function parseCurrencyValue(value) {
@@ -82,8 +81,8 @@ function buildInitialPerson(person = {}, totalValue = "") {
   const fortnightlyPayment = formatCurrencyValue(person?.fortnightlyPayment);
   const annualPaymentAmount = formatCurrencyValue(
     person?.annualPaymentAmount ||
-      totalValue ||
-      (parseCurrencyValue(fortnightlyPayment) || 0) * 26,
+    totalValue ||
+    (parseCurrencyValue(fortnightlyPayment) || 0) * 26,
   );
 
   return {
@@ -203,10 +202,10 @@ export default function CentrelinkModal({ modalData }) {
       CENTRELINK_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [],
@@ -279,43 +278,43 @@ export default function CentrelinkModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            CRN: sourceValues?.client?.CRN || "",
-            paymentType: Array.isArray(sourceValues?.client?.paymentType)
-              ? sourceValues.client.paymentType
-              : [],
-            fortnightlyPayment: formatCurrencyValue(
-              sourceValues?.client?.fortnightlyPayment,
-            ),
-            annualPaymentAmount: formatCurrencyValue(
-              sourceValues?.client?.annualPaymentAmount,
-            ),
-            centrelinkCardsHeld: Array.isArray(
-              sourceValues?.client?.centrelinkCardsHeld,
-            )
-              ? sourceValues.client.centrelinkCardsHeld
-              : [],
-          }
+          ...(sectionData?.client || {}),
+          CRN: sourceValues?.client?.CRN || "",
+          paymentType: Array.isArray(sourceValues?.client?.paymentType)
+            ? sourceValues.client.paymentType
+            : [],
+          fortnightlyPayment: formatCurrencyValue(
+            sourceValues?.client?.fortnightlyPayment,
+          ),
+          annualPaymentAmount: formatCurrencyValue(
+            sourceValues?.client?.annualPaymentAmount,
+          ),
+          centrelinkCardsHeld: Array.isArray(
+            sourceValues?.client?.centrelinkCardsHeld,
+          )
+            ? sourceValues.client.centrelinkCardsHeld
+            : [],
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            CRN: sourceValues?.partner?.CRN || "",
-            paymentType: Array.isArray(sourceValues?.partner?.paymentType)
-              ? sourceValues.partner.paymentType
-              : [],
-            fortnightlyPayment: formatCurrencyValue(
-              sourceValues?.partner?.fortnightlyPayment,
-            ),
-            annualPaymentAmount: formatCurrencyValue(
-              sourceValues?.partner?.annualPaymentAmount,
-            ),
-            centrelinkCardsHeld: Array.isArray(
-              sourceValues?.partner?.centrelinkCardsHeld,
-            )
-              ? sourceValues.partner.centrelinkCardsHeld
-              : [],
-          }
+          ...(sectionData?.partner || {}),
+          CRN: sourceValues?.partner?.CRN || "",
+          paymentType: Array.isArray(sourceValues?.partner?.paymentType)
+            ? sourceValues.partner.paymentType
+            : [],
+          fortnightlyPayment: formatCurrencyValue(
+            sourceValues?.partner?.fortnightlyPayment,
+          ),
+          annualPaymentAmount: formatCurrencyValue(
+            sourceValues?.partner?.annualPaymentAmount,
+          ),
+          centrelinkCardsHeld: Array.isArray(
+            sourceValues?.partner?.centrelinkCardsHeld,
+          )
+            ? sourceValues.partner.centrelinkCardsHeld
+            : [],
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(sourceValues?.client?.annualPaymentAmount)
@@ -344,8 +343,8 @@ export default function CentrelinkModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Centrelink"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Centrelink"}`,
       );
     } finally {
       setSaving(false);

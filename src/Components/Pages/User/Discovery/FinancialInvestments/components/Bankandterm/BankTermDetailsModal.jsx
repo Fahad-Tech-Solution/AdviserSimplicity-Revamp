@@ -47,10 +47,10 @@ function buildEntries(count, entries = [], sectionKey) {
     currentBalance: entries?.[index]?.currentBalance || "",
     ...(["SMSFBank", "familyBank"].includes(sectionKey)
       ? {
-          serviceFee: entries?.[index]?.serviceFee || "",
-          serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
-          serviceFeeType: entries?.[index]?.serviceFeeType || "",
-        }
+        serviceFee: entries?.[index]?.serviceFee || "",
+        serviceFeeArray: entries?.[index]?.serviceFeeArray || {},
+        serviceFeeType: entries?.[index]?.serviceFeeType || "",
+      }
       : {}),
   }));
 }
@@ -68,20 +68,37 @@ function hasMeaningfulValues(initialValues = {}) {
 
 function buildInstitutionOptions(investmentOffers, initialValues) {
   const institutions = investmentOffers?.FinancialInstitutions || [];
-  const options = institutions.map((item) => ({
-    value: String(item?._id ?? item?.value ?? ""),
-    label: item?.platformName || item?.label || item?.name || item?._id || "",
-  }));
 
+  // 1. Filter out soft-deleted items for standard options
+  const options = institutions
+    .filter((item) => !item?.softDelete)
+    .map((item) => ({
+      value: String(item?._id ?? item?.value ?? ""),
+      label: item?.platformName || item?.label || item?.name || item?._id || "",
+    }));
+
+  // 2. Ensure initialValues entries exist in options (re-adding soft-deleted items with proper labels if necessary)
   (initialValues?.entries || []).forEach((entry) => {
     const currentValue = String(entry?.Institution || "").trim();
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
+      const matchedInstitution = institutions.find(
+        (item) => String(item?._id ?? item?.value ?? "") === currentValue
+      );
+
+      const label =
+        matchedInstitution?.platformName ||
+        matchedInstitution?.label ||
+        matchedInstitution?.name ||
+        matchedInstitution?._id ||
+        currentValue;
+
       options.unshift({
         value: currentValue,
-        label: currentValue,
+        label: label + " (Discontinued)",
+        disabled: true,
       });
     }
   });

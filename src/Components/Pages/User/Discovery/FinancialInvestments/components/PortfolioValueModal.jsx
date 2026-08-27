@@ -54,12 +54,15 @@ function buildPortfolioEntries(count, entries = []) {
 
 function buildOfferOptions(platform, entries = []) {
   const offers = platform?.arrayOfOffers || [];
-  const options = offers.map((offer) => ({
+  console.log(platform)
+  const ParentStatus = platform?.softDelete || false;
+  const options = offers.filter((item) => !item?.softDelete).map((offer) => ({
     value: String(offer?._id ?? offer?.value ?? ""),
     label:
       offer?.investmentName && offer?.investmentCode
-        ? `${offer.investmentName} (${offer.investmentCode})`
+        ? `${offer.investmentName} (${ParentStatus ? "Discontinued" : offer.investmentCode})`
         : offer?.investmentName || offer?.investmentCode || offer?._id || "",
+    disabled: ParentStatus, // Prevents re-selection in AntD once changed
   }));
 
   entries.forEach((entry) => {
@@ -68,7 +71,29 @@ function buildOfferOptions(platform, entries = []) {
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
-      options.unshift({ value: currentValue, label: currentValue });
+
+      const matchedItem = offers.find((item) => {
+        const itemValue = normalizeSelectValue(
+          item?._id
+        );
+        return itemValue === currentValue;
+      });
+
+      // 2. Resolve the base label
+      const baseLabel =
+        matchedItem?.investmentName ||
+        matchedItem?.label ||
+        matchedItem?.name ||
+        matchedItem?._id ||
+        currentValue;
+
+
+      // 3. Add to options with the discontinued tag and disabled status
+      options.unshift({
+        value: currentValue,
+        label: `${baseLabel} (Discontinued)`,
+        disabled: true, // Prevents re-selection in AntD once changed
+      });
     }
   });
 
@@ -88,6 +113,7 @@ function resolveSorterKey(sorter) {
 export default function PortfolioValueModal({ modalData }) {
   const [form] = Form.useForm();
   const renderTitleBlock = useTitleBlock();
+
   const initialValues = useMemo(
     () => ({
       NumberOfMap:
@@ -103,9 +129,11 @@ export default function PortfolioValueModal({ modalData }) {
     }),
     [modalData],
   );
+
   const [editing, setEditing] = useState(
     () => !hasMeaningfulValues(initialValues),
   );
+
   const [sortState, setSortState] = useState({
     columnKey: null,
     order: null,

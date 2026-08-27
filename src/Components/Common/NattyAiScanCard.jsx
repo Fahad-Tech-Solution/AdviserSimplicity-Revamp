@@ -1,10 +1,11 @@
 import React, { useState, useRef } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Card, Button, Typography, Alert, Col, Avatar, Select } from "antd";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import nattyAvatar from "../../assets/image/ProfileImages/NattyAI.png";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// Set worker source via official CDN matching your installed package version
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 const { Title } = Typography;
 

@@ -170,7 +170,7 @@ export default function AddIndividualInvestment({
         <Form.Item
           name="investmentCode"
           label={<FieldLabel required>Investment Code</FieldLabel>}
-          rules={[{ required: true, message: "Enter investment code" }]}
+          // rules={[{ required: true, message: "Enter investment code" }]}
           extra={
             <Text style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.45 }}>
               APIR, ARSN, or ticker code that uniquely identifies this

@@ -150,18 +150,40 @@ function buildPlatformOptions(investmentOffers, entries = [], key) {
       : offers.InvestmentBonds
   ) || [];
 
-  const options = platforms.map((item) => ({
+  const options = platforms.filter((item) => !item?.softDelete).map((item) => ({
     value: String(item?._id ?? item?.value ?? ""),
     label: item?.platformName || item?.label || item?.name || item?._id || "",
   }));
 
   entries.forEach((entry) => {
     const currentValue = normalizeSelectValue(entry?.platformName);
+
     if (
       currentValue &&
       !options.some((option) => String(option.value) === currentValue)
     ) {
-      options.unshift({ value: currentValue, label: currentValue });
+      // 1. Find the platform in the full source array (including soft-deleted ones)
+      const matchedItem = platforms.find((item) => {
+        const itemValue = normalizeSelectValue(
+          item?._id ?? item?.value ?? item?.platformName
+        );
+        return itemValue === currentValue;
+      });
+
+      // 2. Resolve the base label
+      const baseLabel =
+        matchedItem?.platformName ||
+        matchedItem?.label ||
+        matchedItem?.name ||
+        matchedItem?._id ||
+        currentValue;
+
+      // 3. Add to options with the discontinued tag and disabled status
+      options.unshift({
+        value: currentValue,
+        label: `${baseLabel} (Discontinued)`,
+        disabled: true, // Prevents re-selection in AntD once changed
+      });
     }
   });
 

@@ -19,11 +19,11 @@ import { renderModalContent } from "../../../../../../Common/renderModalContent.
 
 const OWNER_SELECT_CLASS = "employment-owner-select";
 const EMPLOYMENT_STATUS_OPTIONS = [
-  "Full Time",
-  "Part Time",
   "Casual",
   "Contract",
+  "Full Time",
   "On Leave",
+  "Part Time",
 ];
 
 const TABLE_PROPS = {
@@ -365,10 +365,10 @@ export default function EmploymentModal({ modalData }) {
       EMPLOYMENT_TABLE_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [],
@@ -444,91 +444,91 @@ export default function EmploymentModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            occupation: sourceValues?.client?.occupation || "",
-            employmentStatus: sourceValues?.client?.employmentStatus || "",
-            nameOfCompany: sourceValues?.client?.nameOfCompany || "",
-            startDate:
-              sourceValues?.client?.startDate?.toISOString?.() ||
-              sourceValues?.client?.startDate ||
-              "",
-            hoursWorked: parseDigitsValue(sourceValues?.client?.hoursWorked),
-            choiceOfFund: sourceValues?.client?.choiceOfFund || "",
-            salaryPackagingRadio:
-              sourceValues?.client?.salaryPackagingRadio || "",
-            SalaryPackagingModal: {
-              ...(sectionData?.client?.SalaryPackagingModal || {}),
-              ...(sourceValues?.client?.SalaryPackagingModal ||
-                sourceValues?.client?.salaryPackagingModal ||
-                {}),
-            },
-            LeaveEntitlementsModal: {
-              ...(sectionData?.client?.LeaveEntitlementsModal || {}),
-              ...(sourceValues?.client?.LeaveEntitlementsModal ||
-                sourceValues?.client?.leaveEntitlementsModal ||
-                {}),
-            },
-            leaveEntitlementsRadio:
-              sourceValues?.client?.leaveEntitlementsRadio || "",
-            SalaryPackageModal: {
-              ...(sectionData?.client?.SalaryPackageModal || {}),
-              ...(sourceValues?.client?.SalaryPackageModal || {}),
-              grossSalary: formatCurrencyValue(
-                sourceValues?.client?.SalaryPackageModal?.grossSalary ||
-                  sourceValues?.client?.grossSalary,
-              ),
-            },
-          }
+          ...(sectionData?.client || {}),
+          occupation: sourceValues?.client?.occupation || "",
+          employmentStatus: sourceValues?.client?.employmentStatus || "",
+          nameOfCompany: sourceValues?.client?.nameOfCompany || "",
+          startDate:
+            sourceValues?.client?.startDate?.toISOString?.() ||
+            sourceValues?.client?.startDate ||
+            "",
+          hoursWorked: parseDigitsValue(sourceValues?.client?.hoursWorked),
+          choiceOfFund: sourceValues?.client?.choiceOfFund || "",
+          salaryPackagingRadio:
+            sourceValues?.client?.salaryPackagingRadio || "",
+          SalaryPackagingModal: {
+            ...(sectionData?.client?.SalaryPackagingModal || {}),
+            ...(sourceValues?.client?.SalaryPackagingModal ||
+              sourceValues?.client?.salaryPackagingModal ||
+              {}),
+          },
+          LeaveEntitlementsModal: {
+            ...(sectionData?.client?.LeaveEntitlementsModal || {}),
+            ...(sourceValues?.client?.LeaveEntitlementsModal ||
+              sourceValues?.client?.leaveEntitlementsModal ||
+              {}),
+          },
+          leaveEntitlementsRadio:
+            sourceValues?.client?.leaveEntitlementsRadio || "",
+          SalaryPackageModal: {
+            ...(sectionData?.client?.SalaryPackageModal || {}),
+            ...(sourceValues?.client?.SalaryPackageModal || {}),
+            grossSalary: formatCurrencyValue(
+              sourceValues?.client?.SalaryPackageModal?.grossSalary ||
+              sourceValues?.client?.grossSalary,
+            ),
+          },
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            occupation: sourceValues?.partner?.occupation || "",
-            employmentStatus: sourceValues?.partner?.employmentStatus || "",
-            nameOfCompany: sourceValues?.partner?.nameOfCompany || "",
-            startDate:
-              sourceValues?.partner?.startDate?.toISOString?.() ||
-              sourceValues?.partner?.startDate ||
-              "",
-            hoursWorked: parseDigitsValue(sourceValues?.partner?.hoursWorked),
-            choiceOfFund: sourceValues?.partner?.choiceOfFund || "",
-            salaryPackagingRadio:
-              sourceValues?.partner?.salaryPackagingRadio || "",
-            SalaryPackagingModal: {
-              ...(sectionData?.partner?.SalaryPackagingModal || {}),
-              ...(sourceValues?.partner?.SalaryPackagingModal ||
-                sourceValues?.partner?.salaryPackagingModal ||
-                {}),
-            },
-            LeaveEntitlementsModal: {
-              ...(sectionData?.partner?.LeaveEntitlementsModal || {}),
-              ...(sourceValues?.partner?.LeaveEntitlementsModal ||
-                sourceValues?.partner?.leaveEntitlementsModal ||
-                {}),
-            },
-            leaveEntitlementsRadio:
-              sourceValues?.partner?.leaveEntitlementsRadio || "",
-            SalaryPackageModal: {
-              ...(sectionData?.partner?.SalaryPackageModal || {}),
-              ...(sourceValues?.partner?.SalaryPackageModal || {}),
-              grossSalary: formatCurrencyValue(
-                sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
-                  sourceValues?.partner?.grossSalary,
-              ),
-            },
-          }
+          ...(sectionData?.partner || {}),
+          occupation: sourceValues?.partner?.occupation || "",
+          employmentStatus: sourceValues?.partner?.employmentStatus || "",
+          nameOfCompany: sourceValues?.partner?.nameOfCompany || "",
+          startDate:
+            sourceValues?.partner?.startDate?.toISOString?.() ||
+            sourceValues?.partner?.startDate ||
+            "",
+          hoursWorked: parseDigitsValue(sourceValues?.partner?.hoursWorked),
+          choiceOfFund: sourceValues?.partner?.choiceOfFund || "",
+          salaryPackagingRadio:
+            sourceValues?.partner?.salaryPackagingRadio || "",
+          SalaryPackagingModal: {
+            ...(sectionData?.partner?.SalaryPackagingModal || {}),
+            ...(sourceValues?.partner?.SalaryPackagingModal ||
+              sourceValues?.partner?.salaryPackagingModal ||
+              {}),
+          },
+          LeaveEntitlementsModal: {
+            ...(sectionData?.partner?.LeaveEntitlementsModal || {}),
+            ...(sourceValues?.partner?.LeaveEntitlementsModal ||
+              sourceValues?.partner?.leaveEntitlementsModal ||
+              {}),
+          },
+          leaveEntitlementsRadio:
+            sourceValues?.partner?.leaveEntitlementsRadio || "",
+          SalaryPackageModal: {
+            ...(sectionData?.partner?.SalaryPackageModal || {}),
+            ...(sourceValues?.partner?.SalaryPackageModal || {}),
+            grossSalary: formatCurrencyValue(
+              sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
+              sourceValues?.partner?.grossSalary,
+            ),
+          },
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(
-            sourceValues?.client?.SalaryPackageModal?.grossSalary ||
-              sourceValues?.client?.grossSalary,
-          )
+          sourceValues?.client?.SalaryPackageModal?.grossSalary ||
+          sourceValues?.client?.grossSalary,
+        )
         : "",
       partnerTotal: partnerSelected
         ? formatCurrencyValue(
-            sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
-              sourceValues?.partner?.grossSalary,
-          )
+          sourceValues?.partner?.SalaryPackageModal?.grossSalary ||
+          sourceValues?.partner?.grossSalary,
+        )
         : "",
     };
 
@@ -551,8 +551,8 @@ export default function EmploymentModal({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Employment"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Employment"}`,
       );
     } finally {
       setSaving(false);

@@ -15,9 +15,9 @@ const TABLE_PROPS = {
 };
 
 const EMPLOYER_FBT_STATUS_OPTIONS = [
-  "Full FBT",
   "Exempt (17K Cap)",
   "Exempt (30K Cap)",
+  "Full FBT",
   "Rebatable",
 ];
 
@@ -51,8 +51,8 @@ function getInitialValues(modalData) {
   const packaging =
     ownerKey && parentForm
       ? parentForm.getFieldValue([ownerKey, "SalaryPackagingModal"]) ||
-        parentForm.getFieldValue([ownerKey, "salaryPackagingModal"]) ||
-        {}
+      parentForm.getFieldValue([ownerKey, "salaryPackagingModal"]) ||
+      {}
       : modalData?.initialValues || {};
 
   return buildInitialValues(packaging);

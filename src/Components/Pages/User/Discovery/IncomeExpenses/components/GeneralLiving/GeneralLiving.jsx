@@ -30,13 +30,13 @@ const TABLE_PROPS = {
 };
 
 const FREQUENCY_OPTIONS = [
-  { value: "52", label: "Weekly" },
-  { value: "26", label: "Fortnightly" },
-  { value: "12", label: "Monthly" },
-  { value: "4", label: "Quarterly" },
-  { value: "2", label: "Half Yearly" },
-  { value: "1", label: "Annually" },
-];
+  { label: "Annually", value: "1" },
+  { label: "Fortnightly", value: "26" },
+  { label: "Half Yearly", value: "2" },
+  { label: "Monthly", value: "12" },
+  { label: "Quarterly", value: "4" },
+  { label: "Weekly", value: "52" },
+]
 
 const SECTION_DEFINITIONS = [
   {
@@ -349,8 +349,8 @@ export default function GeneralLiving({ modalData }) {
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "General Living"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "General Living"}`,
       );
     } finally {
       setSaving(false);

@@ -12,27 +12,26 @@ const TABLE_PROPS = {
   headerFontSize: 11,
   bodyFontSize: 12,
 };
-
-const TIME_OPTIONS = ["Days", "Weeks", "Hours"];
+const TIME_OPTIONS = ["Days", "Hours", "Weeks"];
 
 const LEAVE_ROW_META = [
   {
+    amountField: "annualLeaveAmount",
     key: "annual",
     leaveType: "Annual Leave",
-    amountField: "annualLeaveAmount",
     timeField: "annualLeaveTime",
   },
   {
-    key: "sick",
-    leaveType: "Sick Leave",
-    amountField: "sickLeaveAmount",
-    timeField: "sickLeaveTime",
-  },
-  {
+    amountField: "longServiceLeaveAmount",
     key: "longService",
     leaveType: "Long Service Leave",
-    amountField: "longServiceLeaveAmount",
     timeField: "longServiceLeaveTime",
+  },
+  {
+    amountField: "sickLeaveAmount",
+    key: "sick",
+    leaveType: "Sick Leave",
+    timeField: "sickLeaveTime",
   },
 ];
 

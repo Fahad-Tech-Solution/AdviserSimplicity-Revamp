@@ -153,11 +153,47 @@ function OwnerTabContent({
       ? investmentOffers.PersonalInsurances
       : [];
 
-    return funds.map((item) => ({
+    let options = funds.filter((item) => !item?.softDelete).map((item) => ({
       value: item?._id || item?.value || item?.platformName || item?.name || "",
       label: item?.platformName || item?.label || item?.name || "Unknown",
     }));
+
+    let listOfValues = form.getFieldValue([ownerKey, "policies"]);
+    if (listOfValues.length > 0) {
+      listOfValues.map((element, index) => {
+        const rawProvider = element.provider;
+        if (
+          rawProvider &&
+          !options.some((option) => String(option.value) === rawProvider)
+        ) {
+          const matchedItem = funds.find((item) => {
+            const itemValue =
+              item?._id ?? item?.value ?? item?.platformName
+              ;
+            return itemValue === rawProvider;
+          });
+
+          const baseLabel =
+            matchedItem?.platformName ||
+            matchedItem?.label ||
+            matchedItem?.name ||
+            matchedItem?._id ||
+            rawProvider;
+
+          options.unshift({
+            value: rawProvider,
+            label: `${baseLabel} (Discontinued)`,
+            disabled: true,
+          });
+        }
+      })
+    }
+
+
+    return options;
   }, [investmentOffers]);
+
+
 
   const handleRemoveRow = (rowIndex) => {
     const ownerBlock = form.getFieldValue(ownerKey) || {};

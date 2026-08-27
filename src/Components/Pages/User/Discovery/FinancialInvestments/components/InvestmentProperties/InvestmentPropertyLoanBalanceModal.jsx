@@ -118,7 +118,6 @@ function calculateAnnualRepayments(record, currentForm) {
 
 export default function InvestmentPropertyLoanBalanceModal({ modalData }) {
   const renderTitleBlock = useTitleBlock();
-  console.log("modalData", modalData);
 
   const resolvedValueArray = modalData?.valueArray ?? valueArray ?? [];
   const resolvedOnSave = modalData?.onSave ?? onSave;
@@ -141,8 +140,7 @@ export default function InvestmentPropertyLoanBalanceModal({ modalData }) {
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
-    console.log(resolvedValueArray, initialValues);
-    setLocalEditing(!hasMeaningfulValues({loanRows:resolvedValueArray}));
+    setLocalEditing(!hasMeaningfulValues({ loanRows: resolvedValueArray }));
   }, [form, initialValues, modalData?._id]);
 
   const columns = useMemo(
