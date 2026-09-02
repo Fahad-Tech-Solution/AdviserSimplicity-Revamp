@@ -3,6 +3,7 @@ import {
   App as AntdApp,
   Button,
   Input,
+  Segmented,
   Space,
   Tooltip,
   Typography,
@@ -12,7 +13,7 @@ import { useAtom } from "jotai";
 import { useLocation, useNavigate } from "react-router-dom";
 import { catalogChildRouteConfigs } from "../../../Routes/catalogRouteConfig";
 import { BiSearch } from "react-icons/bi";
-import { MdAdd } from "react-icons/md";
+import { MdAdd, MdOutlineDoDisturb } from "react-icons/md";
 import DynamicDataTable from "../../../Common/DynamicDataTable";
 import { confirmRemoveData } from "../../../Common/confirmationModal";
 import useApi from "../../../../hooks/useApi";
@@ -25,6 +26,8 @@ import {
   normalizeCatalogsData,
 } from "./catalogHelpers";
 import AddSectionModal from "./AddSectionModal";
+import { HiMiniXMark } from "react-icons/hi2";
+import { FaRegCircleCheck } from "react-icons/fa6";
 
 const { Text } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -128,6 +131,8 @@ export default function CatalogSectionPage() {
   const [filteredInfo, setFilteredInfo] = useState({});
   const [sortedInfo, setSortedInfo] = useState({});
 
+  const [StatusFlag, setStatusFlag] = useState(false);
+
   const handleTableChange = (pagination, filters, sorter) => {
     setFilteredInfo(filters);
     setSortedInfo(sorter);
@@ -170,16 +175,21 @@ export default function CatalogSectionPage() {
   );
 
   const removeItem = useCallback(
-    (rowId) => {
+    (rowId, nextSoftDelete) => {
       if (!catalogDataKey) return;
       setCatalogsData((prev) => {
         const normalized = normalizeCatalogsData(prev);
         const currentList = getCatalogSectionList(prev, catalogDataKey);
         return {
           ...normalized,
-          [catalogDataKey]: currentList.filter(
-            (item) => (item.id ?? item._id) !== rowId,
-          ),
+          [catalogDataKey]: currentList.map((item) => {
+            const itemId = item.id ?? item._id;
+            if (itemId !== rowId) return item;
+            return {
+              ...item,
+              softDelete: nextSoftDelete,
+            };
+          }),
         };
       });
     },
@@ -191,12 +201,19 @@ export default function CatalogSectionPage() {
       const rowId = row?._id ?? row?.id;
       if (!rowId) return;
 
+      const nextSoftDelete = StatusFlag === true ? false : true;
+
       confirmRemoveData(
         async () => {
           try {
-            await api.patch("/platform/Delete", { _id: rowId });
-            removeItem(rowId);
-            message.success(`${deleteSuccessLabel} removed.`);
+            await api.patch("/platform/Delete", {
+              _id: rowId,
+              softDelete: nextSoftDelete,
+            });
+            removeItem(rowId, nextSoftDelete);
+            message.success(
+              `${deleteSuccessLabel} ${nextSoftDelete ? "disabled" : "activated"}.`,
+            );
           } catch (error) {
             message.error(
               error?.response?.data?.error ||
@@ -208,12 +225,12 @@ export default function CatalogSectionPage() {
           }
         },
         {
-          title: `Remove ${deleteSuccessLabel}?`,
-          content: `This will permanently remove "${getCatalogItemName(row)}" from the catalog.`,
+          title: StatusFlag !== true ? `Disable ${deleteSuccessLabel}?` : `Activate ${deleteSuccessLabel}?`,
+          content: `This will ${StatusFlag !== true ? "disable" : "activate"} "${getCatalogItemName(row)}" from the catalog.`,
         },
       );
     },
-    [api, deleteSuccessLabel, message, removeItem],
+    [api, deleteSuccessLabel, message, removeItem, StatusFlag],
   );
 
   const filteredItems = useMemo(() => {
@@ -263,6 +280,7 @@ export default function CatalogSectionPage() {
         onCell: () => ({
           style: { color: "#9ca3af", fontWeight: 700, fontSize: 12 },
         }),
+        // render: (_, __, index) => index + 1, // Display row index starting from 1
       },
       {
         title: "NAME",
@@ -346,6 +364,14 @@ export default function CatalogSectionPage() {
         dataIndex: "createdAt",
         key: "createdAt",
         width: 110,
+        // Controlled sort order from your state
+        sortOrder: sortedInfo.columnKey === "createdAt" ? sortedInfo.order : null,
+        // Safe comparison handling null/undefined values
+        sorter: (a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeA - timeB;
+        },
         render: (createdAt) => (
           <span style={{ color: "#374151", fontSize: 13 }}>
             {formatAddedDate(createdAt)}
@@ -391,14 +417,20 @@ export default function CatalogSectionPage() {
                 }}
               />
             </Tooltip>
-            <Tooltip title="Delete">
+            <Tooltip title={StatusFlag !== true ? "Disable" : "Active"}>
               <Button
                 type="text"
                 size="small"
+                danger={StatusFlag !== true}
                 icon={
-                  <DeleteOutlined style={{ color: "#d1d5db", fontSize: 14 }} />
+                  StatusFlag === true ? (
+                    <FaRegCircleCheck style={{ color: '#52c41a', fontSize: 14 }} />
+                  ) : (
+                    <MdOutlineDoDisturb style={{ fontSize: 14 }} />
+                  )
                 }
                 onClick={() => deleteItem(row)}
+
               />
             </Tooltip>
           </Space>
@@ -419,7 +451,17 @@ export default function CatalogSectionPage() {
     showTypeInvestmentSection,
     sortedInfo,
     tableData.length,
+    StatusFlag,
   ]);
+
+
+  // Inside your component:
+  const filteredData = useMemo(() => {
+    return tableData.filter((item) => item.softDelete === StatusFlag).map((item, index) => ({
+      ...item,
+      index: index + 1, // Pre-calculate 1, 2, 3... 30
+    }));;
+  }, [tableData, StatusFlag]);
 
   return (
     <div
@@ -501,11 +543,33 @@ export default function CatalogSectionPage() {
         </Space>
       </div>
 
+
+      <div style={{ padding: "0 12px 12px" }}>
+        <Segmented
+          value={StatusFlag}
+          onChange={(value) =>
+            setStatusFlag(value)}
+          options={[
+            {
+              label: <span style={{ color: StatusFlag === false ? '#52c41a' : 'inherit' }}>Active</span>,
+              value: false,
+              icon: <FaRegCircleCheck style={{ color: '#52c41a' }} />
+            },
+            {
+              label: <span style={{ color: StatusFlag === true ? '#ff4d4f' : 'inherit' }}>Disabled</span>,
+              value: true,
+              icon: <MdOutlineDoDisturb style={{ color: '#ff4d4f' }} />
+            },
+          ]}
+        />
+      </div>
+
+
       <div style={{ padding: "0 12px 12px" }}>
         <DynamicDataTable
           columns={columns}
-          data={tableData}
-          total={tableData.length}
+          data={filteredData}
+          total={filteredData.length}
           pageSize={10}
           showCount={false}
           onChange={handleTableChange}

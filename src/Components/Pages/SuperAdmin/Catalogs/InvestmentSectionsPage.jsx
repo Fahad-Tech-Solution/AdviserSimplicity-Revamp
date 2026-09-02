@@ -5,6 +5,7 @@ import {
   Col,
   Input,
   Row,
+  Segmented,
   Space,
   Tooltip,
   Typography,
@@ -24,6 +25,8 @@ import {
   normalizeCatalogsData,
 } from "./catalogHelpers";
 import { confirmRemoveData } from "../../../Common/confirmationModal";
+import { FaRegCircleCheck } from "react-icons/fa6";
+import { MdOutlineDoDisturb } from "react-icons/md";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -50,6 +53,16 @@ const TYPE_STYLES = {
     border: "1px solid #fed7aa",
   },
 };
+function formatAddedDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-AU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
 function TypeBadge({ type, fallback = "Bank" }) {
   const style = TYPE_STYLES[type] || TYPE_STYLES[fallback] || TYPE_STYLES.Bank;
@@ -159,6 +172,8 @@ export default function InvestmentSectionsPage() {
   const [modalData, setModalData] = useState(null);
   const [investments, setInvestments] = useState([]
   );
+  const [StatusFlag, setStatusFlag] = useState(false);
+
 
   const setCatalogsData = useSetAtom(catalogsDataAtom);
 
@@ -208,31 +223,42 @@ export default function InvestmentSectionsPage() {
       const rowId = typeof row === "object" ? (row?._id ?? row?.id) : row;
       if (!rowId) return;
 
+      const currentSoftDelete = Boolean(typeof row === "object" ? row?.softDelete : false);
+      const nextSoftDelete = !currentSoftDelete;
       const itemName = typeof row === "object" ? (row?.investmentName || row?.title || "this investment") : "this investment";
 
       confirmRemoveData(
         async () => {
           try {
-            await api.patch("/investmentoffer/Delete", { _id: rowId });
-            setInvestments((prev) => prev.filter((item) => (item?._id ?? item?.id) !== rowId));
-            message.success("Investment deleted successfully.");
+            await api.patch("/investmentoffer/Delete", {
+              _id: rowId,
+              softDelete: nextSoftDelete,
+            });
+
+            setInvestments((prev) =>
+              prev.map((item) => {
+                const id = item?._id ?? item?.id;
+                return id === rowId ? { ...item, softDelete: nextSoftDelete } : item;
+              }),
+            );
+            message.success(`Investment ${nextSoftDelete ? "disabled" : "activated"} successfully.`);
           } catch (error) {
             message.error(
               error?.response?.data?.error ||
               error?.response?.data?.message ||
               error?.message ||
-              "Failed to delete investment.",
+              "Failed to update investment.",
             );
             throw error;
           }
         },
         {
-          title: "Remove Platform?",
-          content: `This will permanently remove "${itemName}" from the platform.`,
+          title: nextSoftDelete ? "Disable Investment?" : "Activate Investment?",
+          content: `This will ${nextSoftDelete ? "disable" : "activate"} the "${itemName}" from the platform`,
         },
       );
     },
-    [api, message, confirmRemoveData], // Make sure to add confirmRemoveData if it comes from props/hooks
+    [api, message, confirmRemoveData, StatusFlag],
   );
 
   const tableData = useMemo(
@@ -249,6 +275,7 @@ export default function InvestmentSectionsPage() {
           index: index + 1,
           displayName: getInvestmentName(item),
           displayCode: getInvestmentCode(item),
+          softDelete: Boolean(item.softDelete),
         })),
     [filteredInvestments],
   );
@@ -298,6 +325,25 @@ export default function InvestmentSectionsPage() {
         ),
       },
       {
+        title: "ADDED",
+        dataIndex: "createdAt",
+        key: "createdAt",
+        width: 110,
+        // Controlled sort order from your state
+        // sortOrder: sortedInfo.columnKey === "createdAt" ? sortedInfo.order : null,
+        // Safe comparison handling null/undefined values
+        sorter: (a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeA - timeB;
+        },
+        render: (createdAt) => (
+          <span style={{ color: "#374151", fontSize: 13 }}>
+            {formatAddedDate(createdAt)}
+          </span>
+        ),
+      },
+      {
         title: "ACTIONS",
         key: "actions",
         width: 90,
@@ -321,13 +367,17 @@ export default function InvestmentSectionsPage() {
                 }}
               />
             </Tooltip>
-            <Tooltip title="Delete">
+            <Tooltip title={StatusFlag !== true ? "Disable" : "Active"}>
               <Button
                 type="text"
                 size="small"
-                danger={true}
+                danger={StatusFlag !== true}
                 icon={
-                  <DeleteOutlined style={{ fontSize: 14 }} />
+                  StatusFlag === true ? (
+                    <FaRegCircleCheck style={{ color: '#52c41a', fontSize: 14 }} />
+                  ) : (
+                    <MdOutlineDoDisturb style={{ fontSize: 14 }} />
+                  )
                 }
                 onClick={() => deleteInvestment(record)}
               />
@@ -336,8 +386,17 @@ export default function InvestmentSectionsPage() {
         ),
       },
     ],
-    [message],
+    [message, deleteInvestment, StatusFlag],
   );
+
+
+  // Inside your component:
+  const filteredData = useMemo(() => {
+    return tableData.filter((item) => item.softDelete === StatusFlag).map((item, index) => ({
+      ...item,
+      index: index + 1, // Pre-calculate 1, 2, 3... 30
+    }));;
+  }, [tableData, StatusFlag]);
 
   return (
     <div
@@ -535,11 +594,32 @@ export default function InvestmentSectionsPage() {
         </div>
 
         <div style={{ padding: "0 12px 12px" }}>
+          <Segmented
+            value={StatusFlag}
+            onChange={(value) =>
+              setStatusFlag(value)}
+            options={[
+              {
+                label: <span style={{ color: StatusFlag === false ? '#52c41a' : 'inherit' }}>Active</span>,
+                value: false,
+                icon: <FaRegCircleCheck style={{ color: '#52c41a' }} />
+              },
+              {
+                label: <span style={{ color: StatusFlag === true ? '#ff4d4f' : 'inherit' }}>Disabled</span>,
+                value: true,
+                icon: <MdOutlineDoDisturb style={{ color: '#ff4d4f' }} />
+              },
+            ]}
+          />
+        </div>
+
+
+        <div style={{ padding: "0 12px 12px" }}>
           <DynamicDataTable
             loading={loading}
             columns={columns}
-            data={tableData}
-            total={tableData.length}
+            data={filteredData}
+            total={filteredData.length}
             pageSize={10}
             showCount={false}
             bordered

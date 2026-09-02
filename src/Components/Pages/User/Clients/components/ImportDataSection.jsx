@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { MdCloudDownload, MdOutlineSync } from 'react-icons/md';
 import AppModal from '../../../../Common/AppModal';
 import useApi from '../../../../../hooks/useApi';
+import IncompleteRowsEditor from './IncompleteRowsEditor';
 
 const { Dragger } = Upload;
 const { Text } = Typography;
@@ -273,9 +274,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
 
         try {
             const parsedInfo = await processExcelFile(file);
-            console.log(parsedInfo.data)
-
-
+            // console.log(parsedInfo.data)
             setFileInfo(parsedInfo);
             message.success(`${file.name} uploaded and processed successfully.`);
         } catch (error) {
@@ -361,6 +360,12 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         },
     ];
 
+    // 2. Add handler for sending filtered data to API
+    const handleImportSubmit = (finalRows) => {
+        console.log('Sending processed data to API:', finalRows);
+        // TODO: Call backend API endpoint here
+    };
+
     return (
         <AppModal
             open={open}
@@ -436,6 +441,11 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                                     Reset
                                 </Button>
                             }
+                        />
+
+                        <IncompleteRowsEditor
+                            data={fileInfo.data}
+                            onProceed={handleImportSubmit}
                         />
                     </Space>
                 )}

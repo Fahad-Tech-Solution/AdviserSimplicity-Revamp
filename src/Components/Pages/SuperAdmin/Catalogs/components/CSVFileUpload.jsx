@@ -85,17 +85,17 @@ export default function CSVFileUpload({ data = {}, onClose, onSuccess }) {
     setSubmitting(true);
     try {
       const res = await api.post("/investmentCSV/upload", formData);
-      message.success("Investments imported successfully.");
+      message.success(res.message || "Investments imported successfully.");
       setFileList([]);
       onSuccess?.(res);
       onClose?.();
     } catch (error) {
       message.error(
         error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          error?.response?.data ||
-          error?.message ||
-          "Failed to import investments.",
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        error?.message ||
+        "Failed to import investments.",
       );
     } finally {
       setSubmitting(false);
