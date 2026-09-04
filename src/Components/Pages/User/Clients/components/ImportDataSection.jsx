@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Upload, message, Card, Typography, Button, Space, Alert, Table, Tag } from 'antd';
 import { InboxOutlined, FileExcelOutlined, WarningOutlined } from '@ant-design/icons';
@@ -174,7 +174,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
     const [loading, setLoading] = useState(false);
     const [downloadingTemplate, setDownloadingTemplate] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
-    const { getBlob } = useApi();
+    const { getBlob, post } = useApi();
 
     // Generic Dynamic Validator Engine
     const validateExcelData = (jsonData) => {
@@ -360,11 +360,117 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         },
     ];
 
-    // 2. Add handler for sending filtered data to API
-    const handleImportSubmit = (finalRows) => {
-        console.log('Sending processed data to API:', finalRows);
-        // TODO: Call backend API endpoint here
+    // Helper to calculate age from DD/MM/YYYY format
+    const calculateAge = (dobString) => {
+        if (!dobString) return null;
+        const parts = dobString.split('/');
+        if (parts.length !== 3) return null;
+
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Months are 0-indexed in JS
+        const year = parseInt(parts[2], 10);
+
+        const dob = new Date(year, month, day);
+        const today = new Date();
+
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            age--;
+        }
+
+        return age;
     };
+
+    const handleImportSubmit = async (finalRows) => {
+        // Transform each row into the required payload structure
+        const payload = finalRows.filter((row) => !row._isSkipped).map((row) => {
+            return ({
+                clientTitle: row["Title"] || "",
+                clientGivenName: row["First Name"] || "",
+                clientMiddleName: row["Middle Name"] || "",
+                clientLastName: row["Last Name"] || "",
+                clientPreferredName: row["Preferred Name"] || "",
+                clientGender: row["Gender"] || "",
+                clientDOB: row["Date of Birth"] || "",
+                clientAge: calculateAge(row["Date of Birth"]),
+                clientMaritalStatus: row["Marital Status"] || "",
+                clientEmploymentStatus: row["Work Status"] || "",
+                clientHealth: row["Health"] || "",
+                clientSmoker: row["Smoker"] || "",
+                clientPlannedRetirementAge: row["Retirement Age"] ? parseInt(row["Retirement Age"], 10) : null,
+                clientHomeAddress: row["Home Address"] || "",
+                clientPostcode: row["Home Postcode"] || "",
+                clientHomePhone: row["Home Phone"] || "",
+                clientWorkPhone: row["Work Phone"] || "",
+                clientMobile: row["Mobile Phone"] || "",
+                Email: row["Email"] || "",
+                clientPostalAddress: row["Postal Address"] || "",
+                clientPostalPostCode: row["Postal Postcode"] || "",
+                clientOccupationID: row["Occupation"] || "",
+                clientTaxResidentRadio: row["Tax Resident"] || "No",
+                clientPrivateHealthCoverRadio: row["Private Health Cover"] || "No",
+                clientHELPSDebtRadio: row["HELP Debt"] || "No",
+                clientSameAsAbove: false,
+
+                partnerTitle: row["Partner Title"] || "",
+                partnerGivenName: row["Partner First Name"] || "",
+                partnerMiddleName: row["Partner Middle Name"] || "",
+                partnerLastName: row["Partner Last Name"] || "",
+                partnerPreferredName: row["Partner Preferred Name"] || "",
+                partnerGender: row["Partner Gender"] || "",
+                partnerDOB: row["Partner Date of Birth"] || "",
+                partnerAge: calculateAge(row["Partner Date of Birth"]),
+                partnerMaritalStatus: row["Partner Marital Status"] || "",
+                partnerEmploymentStatus: row["Partner Work Status"] || "",
+                partnerHealth: row["Partner Health"] || "",
+                partnerSmoker: row["Partner Smoker"] || "",
+                partnerPlannedRetirementAge: row["Partner Retirement Age"] ? parseInt(row["Partner Retirement Age"], 10) : null,
+                partnerHomeAddress: row["Partner Home Address"] || "",
+                partnerPostcode: row["Partner Postcode"] || "",
+                partnerHomePhone: row["Partner Home Phone"] || "",
+                partnerWorkPhone: row["Partner Work Phone"] || "",
+                partnerMobile: row["Partner Mobile"] || "",
+                partnerEmail: row["Partner Email"] || "",
+                partnerPostalAddress: row["Partner Postal Address"] || "",
+                partnerPostalPostCode: row["Partner Postal Postcode"] || "",
+                partnerOccupationID: row["Partner Occupation"] || "",
+                partnerTaxResidentRadio: row["Partner Tax Resident"] || "No",
+                partnerPrivateHealthCoverRadio: row["Partner Private Health Cover"] || "No",
+                partnerHELPSDebtRadio: row["Partner HELP Debt"] || "No",
+                partnerSameAsClient: row["Home Address"] === row["Partner Home Address"] && Boolean(row["Partner Home Address"])
+            })
+        });
+
+        console.log('Sending processed data to API:', payload);
+
+        try {
+            const response = await post('/clientImport', payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            });
+            console.log('API Response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error submitting import data:', error);
+            return error.response?.data
+        }
+    };
+
+    // Inside your component:
+    const enrichedData = useMemo(() => {
+        if (!fileInfo?.data) return [];
+
+        return fileInfo.data.map((row, idx) => ({
+            ...row,
+            _key: row.key || `row_${idx}`,
+            _isSkipped: false,
+            _status: 'pending',
+        }));
+    }, [fileInfo?.data]);
 
     return (
         <AppModal
@@ -428,24 +534,10 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     </>
                 ) : (
                     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        <Alert
-                            message="File Processed Successfully"
-                            type="success"
-                            showIcon
-                            action={
-                                <Button
-                                    type="primary"
-                                    icon={<MdOutlineSync />}
-                                    onClick={handleReset}
-                                >
-                                    Reset
-                                </Button>
-                            }
-                        />
-
                         <IncompleteRowsEditor
-                            data={fileInfo.data}
+                            data={enrichedData}
                             onProceed={handleImportSubmit}
+                            handleReset={handleReset}
                         />
                     </Space>
                 )}

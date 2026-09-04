@@ -27,6 +27,7 @@ import {
 import { confirmRemoveData } from "../../../Common/confirmationModal";
 import { FaRegCircleCheck } from "react-icons/fa6";
 import { MdOutlineDoDisturb } from "react-icons/md";
+import { HiOutlineTrash, HiTrash } from "react-icons/hi2";
 
 const { Text, Title } = Typography;
 const PRIMARY_GREEN = "#22c55e";
@@ -218,7 +219,7 @@ export default function InvestmentSectionsPage() {
     });
   }, [investments, searchText]);
 
-  const deleteInvestment = useCallback(
+  const deleteToggleStatus = useCallback(
     (row) => {
       const rowId = typeof row === "object" ? (row?._id ?? row?.id) : row;
       if (!rowId) return;
@@ -241,6 +242,49 @@ export default function InvestmentSectionsPage() {
                 return id === rowId ? { ...item, softDelete: nextSoftDelete } : item;
               }),
             );
+            message.success(`Investment ${nextSoftDelete ? "disabled" : "activated"} successfully.`);
+          } catch (error) {
+            message.error(
+              error?.response?.data?.error ||
+              error?.response?.data?.message ||
+              error?.message ||
+              "Failed to update investment.",
+            );
+            throw error;
+          }
+        },
+        {
+          title: nextSoftDelete ? "Disable Investment?" : "Activate Investment?",
+          content: `This will ${nextSoftDelete ? "disable" : "activate"} the "${itemName}" from the platform`,
+        },
+      );
+    },
+    [api, message, confirmRemoveData, StatusFlag],
+  );
+
+
+  const deleteInvestment = useCallback(
+    (row) => {
+      const rowId = typeof row === "object" ? (row?._id ?? row?.id) : row;
+      if (!rowId) return;
+
+      const currentSoftDelete = Boolean(typeof row === "object" ? row?.softDelete : false);
+      const nextSoftDelete = !currentSoftDelete;
+      const itemName = typeof row === "object" ? (row?.investmentName || row?.title || "this investment") : "this investment";
+
+      confirmRemoveData(
+        async () => {
+          try {
+            await api.deleteApi("/investmentoffer/Delete", {
+              _id: rowId,
+            });
+
+            setInvestments((prev) =>
+              prev.filter((item) => {
+                const id = item?._id ?? item?.id;
+                return id !== rowId;
+              })
+            )
             message.success(`Investment ${nextSoftDelete ? "disabled" : "activated"} successfully.`);
           } catch (error) {
             message.error(
@@ -379,6 +423,15 @@ export default function InvestmentSectionsPage() {
                     <MdOutlineDoDisturb style={{ fontSize: 14 }} />
                   )
                 }
+                onClick={() => deleteToggleStatus(record)}
+              />
+            </Tooltip>
+            <Tooltip title={"Delete"}>
+              <Button
+                type="text"
+                size="small"
+                danger={true}
+                icon={<HiOutlineTrash style={{ color: '#ef4444', fontSize: 14 }} />}
                 onClick={() => deleteInvestment(record)}
               />
             </Tooltip>

@@ -8,7 +8,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { DeleteOutlined, EditOutlined, FilterFilled } from "@ant-design/icons";
+import { EditOutlined, FilterFilled } from "@ant-design/icons";
 import { useAtom } from "jotai";
 import { useLocation, useNavigate } from "react-router-dom";
 import { catalogChildRouteConfigs } from "../../../Routes/catalogRouteConfig";
@@ -26,7 +26,7 @@ import {
   normalizeCatalogsData,
 } from "./catalogHelpers";
 import AddSectionModal from "./AddSectionModal";
-import { HiMiniXMark } from "react-icons/hi2";
+import { HiOutlineTrash, } from "react-icons/hi2";
 import { FaRegCircleCheck } from "react-icons/fa6";
 
 const { Text } = Typography;
@@ -174,7 +174,7 @@ export default function CatalogSectionPage() {
     [catalogsData, catalogDataKey],
   );
 
-  const removeItem = useCallback(
+  const toggleItemSoftDelete = useCallback(
     (rowId, nextSoftDelete) => {
       if (!catalogDataKey) return;
       setCatalogsData((prev) => {
@@ -196,7 +196,24 @@ export default function CatalogSectionPage() {
     [catalogDataKey, setCatalogsData],
   );
 
-  const deleteItem = useCallback(
+  const removeItem = useCallback(
+    (rowId, nextSoftDelete) => {
+      if (!catalogDataKey) return;
+      setCatalogsData((prev) => {
+        const normalized = normalizeCatalogsData(prev);
+        const currentList = getCatalogSectionList(prev, catalogDataKey);
+        return {
+          ...normalized,
+          [catalogDataKey]: currentList.filter(
+            (item) => (item.id ?? item._id) !== rowId,
+          ),
+        };
+      });
+    },
+    [catalogDataKey, setCatalogsData],
+  );
+
+  const toggleItemStatus = useCallback(
     (row) => {
       const rowId = row?._id ?? row?.id;
       if (!rowId) return;
@@ -207,6 +224,43 @@ export default function CatalogSectionPage() {
         async () => {
           try {
             await api.patch("/platform/Delete", {
+              _id: rowId,
+              softDelete: nextSoftDelete,
+            });
+            toggleItemSoftDelete(rowId, nextSoftDelete);
+            message.success(
+              `${deleteSuccessLabel} ${nextSoftDelete ? "disabled" : "activated"}.`,
+            );
+          } catch (error) {
+            message.error(
+              error?.response?.data?.error ||
+              error?.response?.data?.message ||
+              error?.message ||
+              "Failed to delete item.",
+            );
+            throw error;
+          }
+        },
+        {
+          title: StatusFlag !== true ? `Disable ${deleteSuccessLabel}?` : `Activate ${deleteSuccessLabel}?`,
+          content: `This will ${StatusFlag !== true ? "disable" : "activate"} "${getCatalogItemName(row)}" from the catalog.`,
+        },
+      );
+    },
+    [api, deleteSuccessLabel, message, toggleItemSoftDelete, StatusFlag],
+  );
+
+  const deleteItem = useCallback(
+    (row) => {
+      const rowId = row?._id ?? row?.id;
+      if (!rowId) return;
+
+      const nextSoftDelete = StatusFlag === true ? false : true;
+
+      confirmRemoveData(
+        async () => {
+          try {
+            await api.deleteApi("/platform/Delete", {
               _id: rowId,
               softDelete: nextSoftDelete,
             });
@@ -225,8 +279,8 @@ export default function CatalogSectionPage() {
           }
         },
         {
-          title: StatusFlag !== true ? `Disable ${deleteSuccessLabel}?` : `Activate ${deleteSuccessLabel}?`,
-          content: `This will ${StatusFlag !== true ? "disable" : "activate"} "${getCatalogItemName(row)}" from the catalog.`,
+          title: `Permanently Delete ${deleteSuccessLabel}?`,
+          content: `This Action will permanently delete "${getCatalogItemName(row)}" from the catalog. Are you sure?`,
         },
       );
     },
@@ -429,8 +483,17 @@ export default function CatalogSectionPage() {
                     <MdOutlineDoDisturb style={{ fontSize: 14 }} />
                   )
                 }
-                onClick={() => deleteItem(row)}
+                onClick={() => toggleItemStatus(row)}
 
+              />
+            </Tooltip>
+            <Tooltip title={"Delete"}>
+              <Button
+                type="text"
+                size="small"
+                danger={true}
+                icon={<HiOutlineTrash style={{ color: '#ef4444', fontSize: 14 }} />}
+                onClick={() => deleteItem(row)}
               />
             </Tooltip>
           </Space>
