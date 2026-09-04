@@ -365,15 +365,8 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                     };
                 });
 
-            console.log("Final merged rows:", finalAllRows);
-
             if (onProceed) {
                 let res = await onProceed(finalAllRows);
-
-                console.log("onProceed response:", res);
-                // The API can find duplicates that were not known when the
-                // file was initially analysed. Add those rows to the table so
-                // the existing System Duplicate tag is rendered.
                 if (res?.success === false && Array.isArray(res.errors)) {
                     const duplicateEmails = new Set(
                         res.errors
@@ -398,16 +391,11 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                                     ...row,
                                     key,
                                     _isSystemDuplicate: true,
-                                });
-                            }
+                                }); }
                         });
-
                         return Array.from(rowsByKey.values());
                     });
                 }
-
-
-
             }
         } catch (error) {
             console.error("Validation error:", error);

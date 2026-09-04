@@ -443,8 +443,6 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
             })
         });
 
-        console.log('Sending processed data to API:', payload);
-
         try {
             const response = await post('/clientImport', payload, {
                 headers: {
@@ -452,10 +450,8 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                 },
                 withCredentials: true,
             });
-            console.log('API Response:', response.data);
             return response.data;
         } catch (error) {
-            console.error('Error submitting import data:', error);
             return error.response?.data
         }
     };
