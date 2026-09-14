@@ -39,6 +39,7 @@ export default function MyTeam() {
     return rows.map((row, index) => ({
       ...row,
       key: row?._id || String(index),
+      no: index + 1,
     }));
   }, [team, filterEmail]);
 
@@ -196,7 +197,7 @@ export default function MyTeam() {
   const columns = [
     {
       title: <div style={{ textAlign: "center", width: "100%" }}>#</div>,
-      key: "index",
+      key: "np",
       width: 56,
       onCell: () => ({
         style: {
@@ -206,7 +207,6 @@ export default function MyTeam() {
           fontWeight: 700,
         },
       }),
-      render: (_, __, index) => index + 1,
     },
     {
       title: "Name",

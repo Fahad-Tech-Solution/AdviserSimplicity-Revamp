@@ -1,17 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Form, Table, Input, Button, Space, Typography, Tag, Popconfirm, Alert } from 'antd';
-import { DeleteOutlined, EditOutlined, CheckOutlined, WarningOutlined } from '@ant-design/icons';
+import { Form, Table, Button, Space, Typography, Tag, Popconfirm, Alert } from 'antd';
+import { CheckOutlined, WarningOutlined, DeleteOutlined } from '@ant-design/icons';
+import { RiEdit2Fill, RiArrowTurnBackFill } from 'react-icons/ri';
+import { MdOutlineSync } from 'react-icons/md';
 import { useAtomValue } from 'jotai';
 import { MyClientsData } from '../../../../../store/authState';
-import { RiArrowTurnBackFill } from 'react-icons/ri';
-import { MdOutlineSync } from 'react-icons/md';
+import DynamicFormField from '../../../../Common/DynamicFormField';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 
+dayjs.extend(customParseFormat);
 
 const { Text } = Typography;
 
-// 1. Scalable Configuration: Add target field names and their potential aliases here
+// Configuration matching your target field schemas
 const TARGET_FIELDS_CONFIG = [
-    // --- Main Client Fields ---
     { key: 'Title', aliases: ['title', 'salutation', 'mr', 'mrs', 'ms', 'dr'] },
     { key: 'Preferred Name', aliases: ['preferred name', 'preferred_name', 'preferredname', 'pname', 'nickname'] },
     { key: 'First Name', aliases: ['first name', 'first_name', 'firstname', 'fname', 'given name'] },
@@ -36,43 +39,59 @@ const TARGET_FIELDS_CONFIG = [
     { key: 'Home Phone', aliases: ['home phone', 'home_phone', 'homephone', 'landline'] },
     { key: 'Work Phone', aliases: ['work phone', 'work_phone', 'workphone', 'wphone', 'office phone'] },
     { key: 'Email', aliases: ['email', 'e-mail', 'mail', 'email address'] },
-
-    // --- Partner Fields ---
-    { key: 'Partner Title', aliases: ['partner title', 'partner_title', 'partnertitle', 'partner salutation'] },
-    { key: 'Partner Preferred Name', aliases: ['partner preferred name', 'partner_preferred_name', 'partnerpreferredname', 'partner pname'] },
-    { key: 'Partner First Name', aliases: ['partner first name', 'partner_first_name', 'partnerfirstname', 'partner fname'] },
-    { key: 'Partner Middle Name', aliases: ['partner middle name', 'partner_middle_name', 'partnermiddlename', 'partner mname'] },
-    { key: 'Partner Last Name', aliases: ['partner last name', 'partner_last_name', 'partnerlastname', 'partner lname', 'partner surname'] },
-    { key: 'Partner Gender', aliases: ['partner gender', 'partner_gender', 'partnergender', 'partner sex'] },
-    { key: 'Partner Date of Birth', aliases: ['partner date of birth', 'partner_date_of_birth', 'partnerdateofbirth', 'partner dob', 'partner birth date'] },
-    { key: 'Partner Marital Status', aliases: ['partner marital status', 'partner_marital_status', 'partnermaritalstatus'] },
-    { key: 'Partner Work Status', aliases: ['partner work status', 'partner_work_status', 'partnerworkstatus', 'partner employment status'] },
-    { key: 'Partner Occupation', aliases: ['partner occupation', 'partner_occupation', 'partneroccupation', 'partner job title', 'partner profession'] },
-    { key: 'Partner Retirement Age', aliases: ['partner retirement age', 'partner_retirement_age', 'partnerretirementage'] },
-    { key: 'Partner Tax Resident', aliases: ['partner tax resident', 'partner_tax_resident', 'partnertaxresident'] },
-    { key: 'Partner HELP Debt', aliases: ['partner help debt', 'partner_help_debt', 'partnerhelpdebt', 'partner hecs'] },
-    { key: 'Partner Health', aliases: ['partner health', 'partner_health', 'partnerhealth'] },
-    { key: 'Partner Smoker', aliases: ['partner smoker', 'partner_smoker', 'partnersmoker'] },
-    { key: 'Partner Private Health Cover', aliases: ['partner private health cover', 'partner_private_health_cover', 'partnerprivatehealthcover', 'partner health insurance'] },
-    { key: 'Partner Home Address', aliases: ['partner home address', 'partner_home_address', 'partnerhomeaddress', 'partner residential address'] },
-    { key: 'Partner Postcode', aliases: ['partner postcode', 'partner_postcode', 'partnerpostcode', 'partner home postcode', 'partner zip'] },
-    { key: 'Partner Postal Address', aliases: ['partner postal address', 'partner_postal_address', 'partnerpostaladdress', 'partner mailing address'] },
-    { key: 'Partner Postal Postcode', aliases: ['partner postal postcode', 'partner_postal_postcode', 'partnerpostalpostcode', 'partner mailing postcode'] },
-    { key: 'Partner Mobile', aliases: ['partner mobile', 'partner_mobile', 'partnermobile', 'partner mobile phone', 'partner cell'] },
-    { key: 'Partner Home Phone', aliases: ['partner home phone', 'partner_home_phone', 'partnerhomephone', 'partner landline'] },
-    { key: 'Partner Work Phone', aliases: ['partner work phone', 'partner_work_phone', 'partnerworkphone', 'partner office phone'] },
-    { key: 'Partner Email', aliases: ['partner email', 'partner_email', 'partneremail', 'partner e-mail', 'partner mail'] }
 ];
+
+const AU_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
+
+const TITLE_OPTIONS = ["Dr.", "Miss", "Mr.", "Mrs.", "Ms.", "Prof."];
+const GENDER_OPTIONS = ["Male", "Female", "Other"];
+const MARITAL_OPTIONS = ["De Facto", "Married", "Partnered", "Single", "Widowed"];
+const WORK_STATUS_OPTIONS = [
+    "Centrelink Recipient", "Centrelink Retiree", "Employee", "Homemaker",
+    "Not Working", "Self Employed", "Self-funded Retiree", "Student", "Unemployed"
+];
+const HEALTH_OPTIONS = ["Excellent", "Good", "Fair", "Poor"];
+
+export const FIELD_CONFIGS = {
+    "Title": { type: "select", options: TITLE_OPTIONS, rules: [{ required: true, message: "Title is required" }] },
+    "First Name": { type: "text", rules: [{ required: true, message: "First Name is required" }] },
+    "Middle Name": { type: "text" },
+    "Last Name": { type: "text", rules: [{ required: true, message: "Last Name is required" }] },
+    "Preferred Name": { type: "text" },
+    "Date of Birth": { type: "date", rules: [{ required: true, message: "Date of Birth is required" }] },
+    "Gender": { type: "select", options: GENDER_OPTIONS, rules: [{ required: true, message: "Gender is required" }] },
+    "Email": { type: "text", rules: [{ required: true, message: "Email is required" }, { type: "email", message: "Please enter a valid email address" }] },
+    "Mobile Phone": { type: "text", rules: [{ required: true, message: "Mobile Phone is required" }, { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }] },
+    "Work Phone": { type: "text", rules: [{ pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }] },
+    "Home Phone": { type: "text", rules: [{ pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }] },
+    "Home Address": { type: "text", rules: [{ required: true, message: "Home Address is required" }] },
+    "Home Postcode": { type: "postalcode-search" },
+    "Postal Address": { type: "text" },
+    "Postal Postcode": { type: "postalcode-search", rules: [{ required: true, message: "Postal Postcode is required" }] },
+    "Marital Status": { type: "select", options: MARITAL_OPTIONS },
+    "Work Status": { type: "select", options: WORK_STATUS_OPTIONS },
+    "Occupation": { type: "text" },
+    "Retirement Age": { type: "number", rules: [{ type: "number", min: 40, max: 100, message: "Age must be between 40 and 100" }] },
+    "Tax Resident": { type: "yesNoSwitch" },
+    "HELP Debt": { type: "yesNoSwitch" },
+    "Health": { type: "select", options: HEALTH_OPTIONS },
+    "Smoker": { type: "yesNoSwitch" },
+    "Private Health Cover": { type: "yesNoSwitch" }
+};
 
 export default function IncompleteRowsEditor({ data = [], onProceed, handleReset }) {
     const [form] = Form.useForm();
     const existingClients = useAtomValue(MyClientsData) || [];
-    const [editingRowKeys, setEditingRowKeys] = useState([]);
+
+    // Single global edit toggle state
+    const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const [apiErrorMessage, setApiErrorMessage] = useState("");
 
     const normalize = (val) => String(val || '').trim().toLowerCase();
 
-    // 1. Process and flag rows with missing data or duplicates
+    // Process and flag problematic data rows
     const flaggedData = useMemo(() => {
         const clientsList = Array.isArray(existingClients)
             ? existingClients
@@ -101,7 +120,7 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
             if (phone) phoneCounts[phone] = (phoneCounts[phone] || 0) + 1;
         });
 
-        let flaggedData = data
+        return data
             .map((row, index) => {
                 const rowEmail = normalize(row.email || row.Email || row['EMAIL']);
                 const rowPhone = normalize(row.phone || row.Phone || row['PHONE'] || row['MOBILE PHONE'] || row['CLIENT WORK PHONE']);
@@ -111,28 +130,42 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
 
                 const missingFields = [];
 
-                // Fixed: Check configured TARGET_FIELDS explicitly against row keys & values
-                TARGET_FIELDS_CONFIG.forEach((fieldCfg) => {
-                    // Normalize aliases once
-                    const normalizedAliases = fieldCfg.aliases.map((alias) => alias.toLowerCase().trim());
+                // 1. Normalize and parse dates directly into row keys
+                const normalizedRow = { ...row };
+                Object.keys(normalizedRow).forEach((key) => {
+                    const lowerKey = key.toLowerCase();
+                    const rawVal = normalizedRow[key];
 
-                    // Strict exact match against normalized column names
-                    const matchingKey = Object.keys(row).find((col) => {
+                    if (lowerKey.includes('date') || lowerKey.includes('dob')) {
+                        if (rawVal && typeof rawVal === 'string') {
+                            // Parse string into DayJS object
+                            const parsedDate = dayjs(rawVal, ['DD/MM/YYYY', 'YYYY-MM-DD'], true);
+                            normalizedRow[key] = parsedDate.isValid() ? parsedDate : null;
+                        }
+                    }
+                });
+
+                // 2. Validate missing fields against normalized row values
+                TARGET_FIELDS_CONFIG.forEach((fieldCfg) => {
+                    const normalizedAliases = fieldCfg.aliases.map((alias) => alias.toLowerCase().trim());
+                    const matchingKey = Object.keys(normalizedRow).find((col) => {
                         const normalizedCol = col.toLowerCase().trim();
                         return normalizedAliases.some((alias) => normalizedCol === alias);
                     });
 
                     if (!matchingKey) {
-                        // Key missing entirely from row object
                         missingFields.push(fieldCfg.key);
-                    } else if (!row[matchingKey] || String(row[matchingKey]).trim() === '') {
-                        // Key exists but value is empty
-                        missingFields.push(matchingKey);
+                    } else {
+                        const val = normalizedRow[matchingKey];
+                        // Check for null/empty string/invalid DayJS object
+                        if (val === undefined || val === null || val === '' || (dayjs.isDayjs(val) && !val.isValid())) {
+                            missingFields.push(matchingKey);
+                        }
                     }
                 });
 
                 return {
-                    ...row,
+                    ...normalizedRow,
                     key: row.id || `row_${index}`,
                     _isSystemDuplicate: isSystemDuplicate,
                     _isFileDuplicate: isFileDuplicate,
@@ -140,19 +173,15 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                 };
             })
             .filter((row) => row._isSystemDuplicate || row._isFileDuplicate || row._missingFields.length > 0);
-
-        return flaggedData;
-
     }, [data, existingClients]);
 
     const [tableRows, setTableRows] = useState(flaggedData);
 
-    // Sync flaggedData when props update
     useEffect(() => {
         setTableRows(flaggedData);
     }, [flaggedData]);
 
-    // Sync state data to AntD Form
+    // Populate Ant Design Form initial/current values
     useEffect(() => {
         const formValues = {};
         tableRows.forEach((row) => {
@@ -161,41 +190,56 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
         form.setFieldsValue(formValues);
     }, [tableRows, form]);
 
-    const toggleRowEdit = (rowKey, enable) => {
-        setEditingRowKeys((prev) =>
-            enable ? [...prev, rowKey] : prev.filter((k) => k !== rowKey)
-        );
-        //update table rows accordingly
-        if (!enable) {
-            const updatedRows = tableRows.map((row) => {
-                if (row.key === rowKey) {
-                    const formValues = form.getFieldValue(rowKey);
-                    return { ...row, ...formValues };
-                }
-                return row;
-            });
-            setTableRows(updatedRows);
-        }
-    };
-
     const handleSkipRow = (rowKey) => {
-        setTableRows((prev) =>
-            prev.map((item) =>
-                item.key === rowKey ? { ...item, _isSkipped: true } : item
-            )
-        );
+        const currentRowValues = form.getFieldValue(rowKey) || {};
+        const newSkippedStatus = !currentRowValues._isSkipped;
 
-        // Clear out active edit state for this row if necessary
-        setEditingRowKeys((prev) => prev.filter((k) => k !== rowKey));
+        // 1. If skipping, reset validation errors for this row
+        if (newSkippedStatus) {
+            const fieldsToReset = Object.keys(currentRowValues).map((field) => [rowKey, field]);
+            form.setFields(
+                fieldsToReset.map((namePath) => ({
+                    name: namePath,
+                    errors: [], // Clear red error messages
+                }))
+            );
+        }
+
+        // 2. Update Form values
+        form.setFieldsValue({
+            [rowKey]: {
+                ...currentRowValues,
+                _isSkipped: newSkippedStatus,
+            },
+        });
+
+        // 3. Update Table state
+        setTableRows((prev) =>
+            prev.map((item) => {
+                if (item.key === rowKey) {
+                    return {
+                        ...item,
+                        ...currentRowValues,
+                        _isSkipped: newSkippedStatus,
+                    };
+                }
+                return item;
+            })
+        );
     };
 
-    // 2. Build Ant Design Table Columns
-    const columns = useMemo(() => {
-        if (!data.length) return [];
+    // Columns declaration controlled by single `editing` state
+    // 1. Un-fixed/Problematic Columns list ko initial dataset base par lock karein
+    const initialProblematicKeys = useMemo(() => {
+        if (!flaggedData.length) return [];
 
-        const problematicKeys = new Set();
-        tableRows.forEach((row) => {
-            row._missingFields?.forEach((field) => problematicKeys.add(field));
+        const keysSet = new Set();
+
+        flaggedData.forEach((row) => {
+            // Missing fields add karein
+            row._missingFields?.forEach((field) => keysSet.add(field));
+
+            // Duplicate fields add karein
             Object.keys(row).forEach((k) => {
                 const lower = k.toLowerCase();
                 if (
@@ -208,30 +252,31 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                         lower.includes('work phone') ||
                         lower.includes('marital status'))
                 ) {
-                    problematicKeys.add(k);
+                    keysSet.add(k);
                 }
             });
         });
 
-        const activeColumns = Array.from(problematicKeys).filter((key) => {
-            // Always include 'Email' regardless of completeness
+        // Filtering active columns based strictly on initial dataset state
+        return Array.from(keysSet).filter((key) => {
             if (key === 'Email') return true;
-
-            // Keep the column if AT LEAST ONE row is missing a value (null, undefined, or empty string)
-            const hasMissingData = tableRows.some(
+            return flaggedData.some(
                 (row) => row?.[key] === undefined || row?.[key] === null || row?.[key] === ''
             );
-
-            return hasMissingData;
         });
+    }, [flaggedData]);
 
+    // 2. Updated Columns Memo
+    const columns = useMemo(() => {
+        if (!data.length) return [];
 
         const dynamicCols = [
             {
                 title: '# Index',
-                key: 'rowIndex',
+                dataIndex: 'key',
+                key: 'key',
                 width: 80,
-                render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+                render: (text) => <Text type="secondary">{parseFloat(text?.replace(/[^0-9]/g, "")) + 1}</Text>,
             },
             {
                 title: 'Issue Status',
@@ -241,7 +286,7 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                     <Space direction="vertical" size={2}>
                         {record._isSkipped ? (
                             <Tag color="blue">Skipped</Tag>
-                        ) :
+                        ) : (
                             <>
                                 {record._isSystemDuplicate && (
                                     <Tag color="error" icon={<WarningOutlined />}>System Duplicate</Tag>
@@ -253,32 +298,55 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                                     <Tag color="volcano">Missing Data</Tag>
                                 )}
                             </>
-                        }
+                        )}
                     </Space>
                 ),
             },
         ];
 
-        // Build editable input cells using standard AntD Form.Item
-        activeColumns.forEach((key) => {
+        // Locked active columns iterate hongey (Editing fill hone par hide nahi hongey)
+        initialProblematicKeys.forEach((key) => {
+            const config = FIELD_CONFIGS[key] || { type: "text" };
+            const lowerKey = key.toLowerCase();
+            const isDateField = lowerKey.includes('date') || lowerKey.includes('dob');
+
+
+
             dynamicCols.push({
                 title: key,
                 dataIndex: key,
                 key: key,
                 render: (text, record) => {
-                    const isEditing = editingRowKeys.includes(record.key);
+                    // READ-ONLY MODE (When not editing)
+                    if (!editing) {
+                        if (!text) return <Tag color="red">Empty</Tag>;
 
-                    if (!isEditing) {
-                        return !text ? <Tag color="red">Empty</Tag> : text;
+                        // Format Dayjs or Date object to DD/MM/YYYY for Australian format
+                        if (isDateField) {
+                            const parsed = dayjs(text);
+                            return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(text);
+                        }
+
+                        return String(text);
                     }
 
+                    // 1. If row is skipped, do NOT enforce validation rules
+                    const activeRules = record._isSkipped ? [] : (config.rules || []);
+
+                    // EDIT MODE
                     return (
-                        <Form.Item
+                        <DynamicFormField
+                            form={form}
                             name={[record.key, key]}
-                            style={{ margin: 0 }}
-                        >
-                            <Input placeholder={`Enter ${key}`} />
-                        </Form.Item>
+                            type={config.type}
+                            placeholder={`Enter ${key}`}
+                            options={config.options || []}
+                            rules={activeRules} // <-- Pass empty array if skipped
+                            disabled={!editing}
+                            formItemProps={{
+                                style: { margin: 0 }
+                            }}
+                        />
                     );
                 },
             });
@@ -289,59 +357,38 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
             title: 'Action',
             key: 'action',
             fixed: 'right',
-            width: 140,
-            render: (_, record) => {
-                const isEditing = editingRowKeys.includes(record.key);
-                return (
-                    <Space>
-                        {isEditing ? (
-                            <Button
-                                type="primary"
-                                size="small"
-                                icon={<CheckOutlined />}
-                                onClick={() => toggleRowEdit(record.key, false)}
-                            >
-                                Save
-                            </Button>
-                        ) : (
-                            <Button
-                                type="default"
-                                size="small"
-                                icon={<EditOutlined />}
-                                onClick={() => toggleRowEdit(record.key, true)}
-                            >
-                                Edit
-                            </Button>
-                        )}
-
-                        <Popconfirm
-                            title="Skip this row?"
-                            onConfirm={() => handleSkipRow(record.key)}
-                            okText="Yes"
-                            cancelText="No"
-                        >
-                            <Button type="text" danger size="small" icon={<RiArrowTurnBackFill />}>
-                                Skip
-                            </Button>
-                        </Popconfirm>
-                    </Space>
-                );
-            },
+            width: 120,
+            render: (_, record) => (
+                <Popconfirm
+                    title="Skip this row?"
+                    onConfirm={() => handleSkipRow(record.key)}
+                    okText="Yes"
+                    cancelText="No"
+                    disabled={!editing}
+                >
+                    {record._isSkipped ? (
+                        <Button type="text" size="small" icon={<RiArrowTurnBackFill />} disabled={!editing}>
+                            Undo
+                        </Button>
+                    ) : (
+                        <Button type="text" danger size="small" icon={<RiArrowTurnBackFill />} disabled={!editing}>
+                            Skip
+                        </Button>
+                    )}
+                </Popconfirm>
+            ),
         });
 
         return dynamicCols;
-    }, [data, tableRows, editingRowKeys]);
+    }, [data, editing, initialProblematicKeys, form]);
 
     const handleConfirmAndProceed = async () => {
         setLoading(true);
         try {
-            // Validate all form fields
             const formValues = await form.validateFields();
 
-            // Map over all initial/raw dataset items
             const finalAllRows = data
                 .filter((origRow) => {
-                    // Find if this row exists in tableRows and check skipped status
                     const match = tableRows.find(
                         (r) => (r._key || r.key) === (origRow._key || origRow.key)
                     );
@@ -349,11 +396,7 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                 })
                 .map((origRow) => {
                     const rowKey = origRow._key || origRow.key;
-
-                    // Get edited form fields specific to this row
                     const rowFormEdits = formValues[rowKey] || {};
-
-                    // Find corresponding state from tableRows if modified
                     const tableRowMatch = tableRows.find(
                         (r) => (r._key || r.key) === rowKey
                     );
@@ -361,40 +404,49 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                     return {
                         ...origRow,
                         ...(tableRowMatch || {}),
-                        ...rowFormEdits, // Overwrite with newly validated form values
+                        ...rowFormEdits,
                     };
                 });
 
             if (onProceed) {
                 let res = await onProceed(finalAllRows);
-                if (res?.success === false && Array.isArray(res.errors)) {
-                    const duplicateEmails = new Set(
-                        res.errors
-                            .map((error) => normalize(error.email))
-                            .filter(Boolean)
-                    );
 
-                    setTableRows((previousRows) => {
-                        const rowsByKey = new Map(
-                            previousRows.map((row) => [row.key || row._key, row])
+                if (res?.success === false) {
+                    // Set global message or detailed row messages
+                    setApiErrorMessage(res?.message || "Some rows contain validation errors.");
+
+                    if (Array.isArray(res.errors)) {
+                        const duplicateEmails = new Set(
+                            res.errors.map((err) => normalize(err.email)).filter(Boolean)
+                        );
+                        const errorRowIndices = new Set(
+                            res.errors.map((err) => err.row - 1).filter((idx) => idx >= 0)
                         );
 
+                        const flaggedKeys = new Set();
                         finalAllRows.forEach((row, index) => {
                             const rowEmail = normalize(row.email || row.Email || row.EMAIL);
-                            const hasMatchingError = duplicateEmails.has(rowEmail) ||
-                                res.errors.some((error) => error.row === index + 1);
+                            const key = row.key || row._key;
 
-                            if (hasMatchingError) {
-                                const key = row.key || row._key || `row_${index}`;
-                                rowsByKey.set(key, {
-                                    ...(rowsByKey.get(key) || {}),
-                                    ...row,
-                                    key,
-                                    _isSystemDuplicate: true,
-                                }); }
+                            if (duplicateEmails.has(rowEmail) || errorRowIndices.has(index)) {
+                                if (key) flaggedKeys.add(key);
+                            }
                         });
-                        return Array.from(rowsByKey.values());
-                    });
+
+                        setTableRows((previousRows) =>
+                            previousRows.map((row) => {
+                                const rowKey = row.key || row._key;
+                                if (flaggedKeys.has(rowKey)) {
+                                    return { ...row, _isSystemDuplicate: true };
+                                }
+                                return row;
+                            })
+                        );
+                    }
+                    setEditing(true);
+                } else {
+                    setApiErrorMessage("");
+                    setEditing(false);
                 }
             }
         } catch (error) {
@@ -405,41 +457,38 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
     };
 
     const ErrorStatus = useMemo(() => {
-        const totalRows = tableRows.length;
         const systemDuplicates = tableRows.filter((row) => row._isSystemDuplicate).length;
         const fileDuplicates = tableRows.filter((row) => row._isFileDuplicate).length;
         const missingDataRows = tableRows.filter((row) => row._missingFields?.length > 0).length;
-        // return true false if any of the counts are greater than 0
         return systemDuplicates > 0 || fileDuplicates > 0 || missingDataRows > 0;
     }, [tableRows]);
 
     return (
         <div>
             <Alert
-                message={`File Processed Successfully` + (ErrorStatus ? ` - but have following issues` : '')}
+                message={
+                    ErrorStatus
+                        ? "File Processed - Action Required"
+                        : "File Processed Successfully"
+                }
+                description={
+                    ErrorStatus
+                        ? apiErrorMessage || "Please review and fix the flagged issues below before proceeding."
+                        : null
+                }
                 type={ErrorStatus ? "error" : "success"}
                 showIcon
                 action={
-                    <Space>
-                        <Button
-                            type="primary"
-                            icon={<MdOutlineSync />}
-                            onClick={handleReset}
-                        >
-                            Reset
-                        </Button>
-                        {!ErrorStatus && (
-
-                            <Button
-                                type="primary"
-                                icon={<CheckOutlined />}
-                                loading={loading}
-                                onClick={handleConfirmAndProceed}
-                            >
-                                Save Data
-                            </Button>
-                        )}
-                    </Space>
+                    <Button
+                        type="primary"
+                        icon={<MdOutlineSync />}
+                        onClick={() => {
+                            setApiErrorMessage("");
+                            handleReset();
+                        }}
+                    >
+                        Reset
+                    </Button>
                 }
             />
 
@@ -448,7 +497,7 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                     <div style={{ marginTop: 16 }}>
                         <div style={{ marginBottom: 12 }}>
                             <Text type="secondary">
-                                Displaying only flagged rows and missing/duplicate fields. Click <strong>Edit</strong> to modify or <strong>Skip</strong> to drop.
+                                Displaying flagged records. Click <strong>Edit</strong> to modify all row values at once.
                             </Text>
                         </div>
 
@@ -481,22 +530,35 @@ export default function IncompleteRowsEditor({ data = [], onProceed, handleReset
                             }}
                         />
 
+                        {/* Single Action Bar matching CreditCardModal styling */}
                         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
                             <Space>
-                                <Button
-                                    type="primary"
-                                    icon={<CheckOutlined />}
-                                    loading={loading}
-                                    onClick={handleConfirmAndProceed}
-                                >
-                                    Confirm & Proceed
+                                <Button onClick={handleReset}>
+                                    Cancel
                                 </Button>
+                                {!editing ? (
+                                    <Button
+                                        type="primary"
+                                        htmlType="button"
+                                        onClick={() => setEditing(true)}
+                                    >
+                                        Edit <RiEdit2Fill />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="primary"
+                                        icon={<CheckOutlined />}
+                                        loading={loading}
+                                        onClick={handleConfirmAndProceed}
+                                    >
+                                        Save Data
+                                    </Button>
+                                )}
                             </Space>
                         </div>
                     </div>
                 </Form>
             )}
-
         </div>
     );
 }

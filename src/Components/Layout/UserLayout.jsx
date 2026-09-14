@@ -31,6 +31,7 @@ import {
   allUserRoutes,
   DISCOVERY_ADD_SECTION_KEY,
   discoveryRoutes,
+  reviewRoutes,
   strategyRoutes,
   userRoutes,
   withSpacing,
@@ -53,6 +54,7 @@ const { useBreakpoint } = Grid;
 import { discoverySectionQuestionsAtom } from "../../store/authState.js";
 import { HiDotsVertical } from "react-icons/hi";
 import { capitalizeWords } from "../../hooks/helpers.js";
+import ReviewStepsLayout from "./ReviewStepsLayout.jsx";
 
 export default function UserLayout() {
   const location = useLocation();
@@ -79,6 +81,11 @@ export default function UserLayout() {
         key: "strategy",
         ...withSpacing({ icon: "📋", label: "Strategy", fontSize: "13px" }),
         children: strategyRoutes.filter(passes),
+      },
+      {
+        key: "review",
+        ...withSpacing({ icon: "🔄", label: "Review", fontSize: "13px" }),
+        children: reviewRoutes.filter(passes),
       },
     ];
   }, [discoveryQuestions]);
@@ -350,6 +357,19 @@ export default function UserLayout() {
                     <Route
                       key={r.key}
                       path={r.routePath || r.relativePath}
+                      element={r.component ?? <Navigate to="/user" replace />}
+                    />
+                  ))}
+              </Route>
+              {/* NEW: Nested Review Routes */}
+              <Route path="review-routes" element={<ReviewStepsLayout />}>
+                <Route index element={<Navigate to="scenarios" replace />} />
+                {reviewRoutes
+                  .filter((r) => !r.modalOnly)
+                  .map((r) => (
+                    <Route
+                      key={r.key}
+                      path={r.relativePath}
                       element={r.component ?? <Navigate to="/user" replace />}
                     />
                   ))}

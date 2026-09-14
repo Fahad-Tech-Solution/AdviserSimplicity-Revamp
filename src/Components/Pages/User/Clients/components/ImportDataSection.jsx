@@ -174,6 +174,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
     const [loading, setLoading] = useState(false);
     const [downloadingTemplate, setDownloadingTemplate] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
+    const [ErrorDetails, setErrorDetails] = useState([]);
     const { getBlob, post } = useApi();
 
     // Generic Dynamic Validator Engine
@@ -264,6 +265,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
     const handleParsing = async (file) => {
         setLoading(true);
         setValidationErrors([]);
+        setErrorDetails([]);
 
         const isLt5M = file.size / 1024 / 1024 < 5;
         if (!isLt5M) {
@@ -274,12 +276,25 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
 
         try {
             const parsedInfo = await processExcelFile(file);
-            // console.log(parsedInfo.data)
             setFileInfo(parsedInfo);
-            message.success(`${file.name} uploaded and processed successfully.`);
+
+            // Upload to backend
+            const formData = new FormData();
+            formData.append('file', file);
+            let response = await post('/clientImport', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            console.log('Upload response:', response);
+
+            if (response.success) {
+                // Optional: Handle any response data if needed
+                message.success(`${response?.message || file.name}`);
+            }
+
         } catch (error) {
             if (error.response) {
                 message.error(error.response?.data?.message || 'Failed to upload the file.');
+                setErrorDetails(error.response?.data?.errors || []);
             }
         } finally {
             setLoading(false);
@@ -315,6 +330,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
 
     const handleDownloadTemplate = async () => {
         try {
+            setDownloadingTemplate(true);
             // 1. Fetch file as Blob
             const response = await getBlob("/clientImport/template"); // Update with your actual endpoint
 
@@ -343,6 +359,10 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         } catch (error) {
             console.error("Failed to download template:", error);
         }
+        finally {
+            setDownloadingTemplate(false);
+        }
+
     };
 
     const errorColumns = [
@@ -354,189 +374,131 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
             render: (text) => <Tag color="red" style={{ fontWeight: 'bold' }}>{text}</Tag>,
         },
         {
-            title: 'Required Formatting Rule',
+            title: 'Validation Rule',
             dataIndex: 'rule',
             key: 'rule',
         },
     ];
 
-    // Helper to calculate age from DD/MM/YYYY format
-    const calculateAge = (dobString) => {
-        if (!dobString) return null;
-        const parts = dobString.split('/');
-        if (parts.length !== 3) return null;
+    const apiErrorColumns = [
+        // {
+        //     title: 'Email',
+        //     dataIndex: 'email',
+        //     key: 'email',
+        //     width: '35%',
+        //     render: (text) => <Tag color="red" style={{ fontWeight: 'bold' }}>{text}</Tag>,
+        // },
+        {
+            title: 'Column Name',
+            dataIndex: 'column',
+            key: 'column',
+            width: '35%',
+        },
+        {
+            title: 'Message',
+            dataIndex: 'message',
+            key: 'message',
+            render: (text, record) => {
+                return (
+                    <>
+                        {text}   {record?.email &&
+                            <Tag color="red" style={{ fontWeight: 'bold' }}>{record?.email}</Tag>
+                        }
+                    </>
+                )
+            },
+        },
+    ];
 
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // Months are 0-indexed in JS
-        const year = parseInt(parts[2], 10);
-
-        const dob = new Date(year, month, day);
-        const today = new Date();
-
-        let age = today.getFullYear() - dob.getFullYear();
-        const monthDiff = today.getMonth() - dob.getMonth();
-
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-            age--;
-        }
-
-        return age;
-    };
-
-    const handleImportSubmit = async (finalRows) => {
-        // Transform each row into the required payload structure
-        const payload = finalRows.filter((row) => !row._isSkipped).map((row) => {
-            return ({
-                clientTitle: row["Title"] || "",
-                clientGivenName: row["First Name"] || "",
-                clientMiddleName: row["Middle Name"] || "",
-                clientLastName: row["Last Name"] || "",
-                clientPreferredName: row["Preferred Name"] || "",
-                clientGender: row["Gender"] || "",
-                clientDOB: row["Date of Birth"] || "",
-                clientAge: calculateAge(row["Date of Birth"]),
-                clientMaritalStatus: row["Marital Status"] || "",
-                clientEmploymentStatus: row["Work Status"] || "",
-                clientHealth: row["Health"] || "",
-                clientSmoker: row["Smoker"] || "",
-                clientPlannedRetirementAge: row["Retirement Age"] ? parseInt(row["Retirement Age"], 10) : null,
-                clientHomeAddress: row["Home Address"] || "",
-                clientPostcode: row["Home Postcode"] || "",
-                clientHomePhone: row["Home Phone"] || "",
-                clientWorkPhone: row["Work Phone"] || "",
-                clientMobile: row["Mobile Phone"] || "",
-                Email: row["Email"] || "",
-                clientPostalAddress: row["Postal Address"] || "",
-                clientPostalPostCode: row["Postal Postcode"] || "",
-                clientOccupationID: row["Occupation"] || "",
-                clientTaxResidentRadio: row["Tax Resident"] || "No",
-                clientPrivateHealthCoverRadio: row["Private Health Cover"] || "No",
-                clientHELPSDebtRadio: row["HELP Debt"] || "No",
-                clientSameAsAbove: false,
-
-                partnerTitle: row["Partner Title"] || "",
-                partnerGivenName: row["Partner First Name"] || "",
-                partnerMiddleName: row["Partner Middle Name"] || "",
-                partnerLastName: row["Partner Last Name"] || "",
-                partnerPreferredName: row["Partner Preferred Name"] || "",
-                partnerGender: row["Partner Gender"] || "",
-                partnerDOB: row["Partner Date of Birth"] || "",
-                partnerAge: calculateAge(row["Partner Date of Birth"]),
-                partnerMaritalStatus: row["Partner Marital Status"] || "",
-                partnerEmploymentStatus: row["Partner Work Status"] || "",
-                partnerHealth: row["Partner Health"] || "",
-                partnerSmoker: row["Partner Smoker"] || "",
-                partnerPlannedRetirementAge: row["Partner Retirement Age"] ? parseInt(row["Partner Retirement Age"], 10) : null,
-                partnerHomeAddress: row["Partner Home Address"] || "",
-                partnerPostcode: row["Partner Postcode"] || "",
-                partnerHomePhone: row["Partner Home Phone"] || "",
-                partnerWorkPhone: row["Partner Work Phone"] || "",
-                partnerMobile: row["Partner Mobile"] || "",
-                partnerEmail: row["Partner Email"] || "",
-                partnerPostalAddress: row["Partner Postal Address"] || "",
-                partnerPostalPostCode: row["Partner Postal Postcode"] || "",
-                partnerOccupationID: row["Partner Occupation"] || "",
-                partnerTaxResidentRadio: row["Partner Tax Resident"] || "No",
-                partnerPrivateHealthCoverRadio: row["Partner Private Health Cover"] || "No",
-                partnerHELPSDebtRadio: row["Partner HELP Debt"] || "No",
-                partnerSameAsClient: row["Home Address"] === row["Partner Home Address"] && Boolean(row["Partner Home Address"])
-            })
-        });
-
-        try {
-            const response = await post('/clientImport', payload, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                withCredentials: true,
-            });
-            return response.data;
-        } catch (error) {
-            return error.response?.data
-        }
-    };
-
-    // Inside your component:
-    const enrichedData = useMemo(() => {
-        if (!fileInfo?.data) return [];
-
-        return fileInfo.data.map((row, idx) => ({
-            ...row,
-            _key: row.key || `row_${idx}`,
-            _isSkipped: false,
-            _status: 'pending',
-        }));
-    }, [fileInfo?.data]);
 
     return (
         <AppModal
             open={open}
             onClose={() => {
                 setValidationErrors([]);
+                setErrorDetails([]);
                 setFileInfo("");
                 onClose()
             }}
             title={title}
-            width={validationErrors.length > 0 ? '50vw' : fileInfo ? '80vw' : width}
+            width={validationErrors.length > 0 ? '50vw' : width}
         >
             <div className="mt-3">
-                {!fileInfo ? (
-                    <>
-                        <Dragger {...uploadProps} disabled={loading}>
-                            <p className="ant-upload-drag-icon">
-                                <InboxOutlined />
-                            </p>
-                            <p className="ant-upload-text">Click or drag Excel file to this area to upload</p>
-                            <p className="ant-upload-hint">
-                                Please upload an <strong>.xlsx</strong> or <strong>.xls</strong> file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
-                            </p>
-                        </Dragger>
+                <Dragger {...uploadProps} disabled={loading}>
+                    <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                    </p>
+                    <p className="ant-upload-text">Click or drag Excel file to this area to upload</p>
+                    <p className="ant-upload-hint">
+                        Please upload an <strong>.xlsx</strong> or <strong>.xls</strong> file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
+                        <br />
+                        All red columns in excel sheet are required for the <strong>client</strong>.
+                        <br />
+                        All green columns in excel sheet are required for the <strong>partner</strong>, if a partner exists.
+                    </p>
+                </Dragger>
 
-                        {validationErrors.length > 0 && (
-                            <Card
-                                style={{ marginTop: 16, borderColor: '#ff4d4f' }}
-                                title={
-                                    <Space style={{ color: '#ff4d4f' }}>
-                                        <WarningOutlined />
-                                        <span>File Validation Rules Failed</span>
-                                    </Space>
-                                }
-                            >
-                                <Alert
-                                    message="Please fix the following formatting issues in your Excel file and try uploading again:"
-                                    type="error"
-                                    showIcon
-                                    style={{ marginBottom: 16 }}
-                                />
-                                <Table
-                                    columns={errorColumns}
-                                    dataSource={validationErrors}
-                                    pagination={false}
-                                    size="small"
-                                    bordered
-                                />
-                            </Card>
-                        )}
-
-                        <Button
-                            style={{ margin: '10px 0px 0px 0px', width: '100%' }}
-                            type="primary"
-                            icon={<MdCloudDownload />}
-                            onClick={handleDownloadTemplate}
-                            loading={downloadingTemplate}
-                        >
-                            Download Template
-                        </Button>
-                    </>
-                ) : (
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        <IncompleteRowsEditor
-                            data={enrichedData}
-                            onProceed={handleImportSubmit}
-                            handleReset={handleReset}
+                {validationErrors.length > 0 && (
+                    <Card
+                        style={{ marginTop: 16, borderColor: '#ff4d4f' }}
+                        title={
+                            <Space style={{ color: '#ff4d4f' }}>
+                                <WarningOutlined />
+                                <span>File Validation Rules Failed</span>
+                            </Space>
+                        }
+                    >
+                        <Alert
+                            message="Please fix the following formatting issues in your Excel file and try uploading again:"
+                            type="error"
+                            showIcon
+                            style={{ marginBottom: 16 }}
                         />
-                    </Space>
+                        <Table
+                            columns={errorColumns}
+                            dataSource={validationErrors}
+                            pagination={false}
+                            size="small"
+                            bordered
+                        />
+                    </Card>
                 )}
+
+                {ErrorDetails.length > 0 && (
+                    <Card
+                        style={{ marginTop: 16, borderColor: '#ff4d4f' }}
+                        title={
+                            <Space style={{ color: '#ff4d4f' }}>
+                                <WarningOutlined />
+                                <span>Upload Errors</span>
+                            </Space>
+                        }
+                    >
+                        <Alert
+                            message="The following errors were encountered while processing your file:"
+                            type="error"
+                            showIcon
+                            style={{ marginBottom: 16 }}
+                        />
+                        <Table
+                            columns={apiErrorColumns}
+                            dataSource={ErrorDetails}
+                            pagination={false}
+                            size="small"
+                            bordered
+                        />
+                    </Card>
+                )}
+
+                <Button
+                    style={{ margin: '10px 0px 0px 0px', width: '100%' }}
+                    type="primary"
+                    icon={<MdCloudDownload />}
+                    onClick={handleDownloadTemplate}
+                    loading={downloadingTemplate}
+                >
+                    Download Template
+                </Button>
             </div>
         </AppModal>
     );

@@ -56,6 +56,9 @@ import RiskProfile from "../Pages/User/Discovery/RiskProfile/RiskProfile.jsx";
 import ProfilePage from "../Pages/User/Clients/ProfilePage.jsx";
 import AdviserKnowledgeBase from "../Pages/User/Strategy/AdviserKnowledgeBase.jsx";
 import DenaroDeck from "../Pages/User/Strategy/components/DenaroDeck.jsx";
+import Scenarios from "../Pages/User/Strategy/components/Scenarios/Scenarios.jsx";
+import ReviewClientDetails from "../Pages/User/Strategy/components/Scenarios/components/ReviewClientDetails.jsx";
+import ReviewStepsLayout from "../Layout/ReviewStepsLayout.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1188,5 +1191,206 @@ export const strategyRoutes = [
   },
 ];
 
+
+
+export function getVisibleReviewRoutes(questions = {}) {
+  return reviewRoutes.filter((r) => r.condition?.(questions) !== false);
+}
+
+export function getReviewStepperRoutes(questions = {}) {
+  return getVisibleReviewRoutes(questions).filter(
+    (r) => r.showInStepper !== false
+  );
+}
+
+export function pathMatchesReviewRoute(pathname, route) {
+  if (!route?.relativePath) return false;
+  const p = pathname.replace(/\/$/, "");
+  return (
+    p === route.key ||
+    p.endsWith(`/review-routes/${route.relativePath}`) ||
+    p.endsWith(`/${route.relativePath}`)
+  );
+}
+
+export function matchReviewRoute(pathname, questions) {
+  return getVisibleReviewRoutes(questions).find((r) =>
+    pathMatchesReviewRoute(pathname, r)
+  );
+}
+
+export const reviewRoutes = [
+  {
+    key: "/user/review-routes/scenarios",
+    relativePath: "scenarios",
+    stepTitle: "Scenarios",
+    stepIcon: "📚",
+    path: "/user/review-routes/scenarios",
+    noReviewLayout: true, // 👈 Prevents rendering inside ReviewStepsLayout
+    showInReviewStepper: false,
+    ...withSpacing({
+      icon: "📚",
+      label: "Scenarios",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <Scenarios />,
+    condition: () => true,
+  },
+  {
+    key: "/user/review-routes/client-details",
+    relativePath: "client-details",
+    stepTitle: "Client Details",
+    stepIcon: "👤",
+    path: "/user/review-routes/client-details",
+    ...withSpacing({
+      icon: "👤",
+      label: "Client Details",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <ReviewClientDetails />,
+    condition: (q) => true,
+  },
+  {
+    key: "/user/review-routes/whats-changed",
+    relativePath: "whats-changed",
+    stepTitle: "What's Changed",
+    stepIcon: "📋",
+    path: "/user/review-routes/whats-changed",
+    ...withSpacing({
+      icon: "📋",
+      label: "What's Changed",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <div>Whats Changed Component</div>,
+    condition: (q) => true,
+  },
+  {
+    key: "/user/review-routes/super-projection",
+    relativePath: "super-projection",
+    stepTitle: "Super Projection",
+    stepIcon: "🐷",
+    path: "/user/review-routes/super-projection",
+    ...withSpacing({
+      icon: "🐷",
+      label: "Super Projection",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <div>Super Projection Component</div>,
+    condition: (q) => q.superProjection === true,
+  },
+  {
+    key: "/user/review-routes/retirement-adequacy",
+    relativePath: "retirement-adequacy",
+    stepTitle: "Retirement Adequacy",
+    stepIcon: "💸",
+    path: "/user/review-routes/retirement-adequacy",
+    ...withSpacing({
+      icon: "💸",
+      label: "Retirement Adequacy",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <div>Retirement Adequacy Component</div>,
+    condition: (q) => q.retirementAdequacy === true,
+  },
+  {
+    key: "/user/review-routes/age-pension-assessment",
+    path: "/review-routes/age-pension-assessment/*",
+    relativePath: "age-pension-assessment",
+    stepTitle: "Age Pension Assessment",
+    stepIcon: "🏛️",
+    ...withSpacing({
+      icon: "🏛️",
+      label: "Age Pension Assessment",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: null,
+    condition: (q) => q.agePensionAssessment === true,
+  },
+  {
+    key: "/user/review-routes/loan-simulator",
+    path: "/review-routes/loan-simulator/*",
+    relativePath: "loan-simulator",
+    stepIcon: "🏡",
+    stepTitle: "Loan Simulator",
+    ...withSpacing({
+      icon: "🏡",
+      label: "Loan Simulator",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: null,
+    condition: (q) => q.loanSimulator === true,
+  },
+  {
+    key: "/user/review-routes/insurance-needs",
+    path: "/review-routes/insurance-needs/*",
+    relativePath: "insurance-needs",
+    stepIcon: "🛡️",
+    stepTitle: "Insurance Needs",
+    ...withSpacing({
+      icon: "🛡️",
+      label: "Insurance Needs",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: null,
+    condition: (q) => q.insuranceNeeds === true,
+  },
+  {
+    key: "/user/review-routes/tax-planning",
+    path: "/review-routes/tax-planning/*",
+    relativePath: "tax-planning",
+    stepIcon: "🧾",
+    stepTitle: "Tax Planning",
+    ...withSpacing({
+      icon: "🧾",
+      label: "Tax Planning",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: null,
+    condition: (q) => q.taxPlanning === true,
+  },
+  {
+    key: "/user/review-routes/summary",
+    path: "/review-routes/summary/*",
+    relativePath: "summary",
+    stepIcon: "📝",
+    stepTitle: "Summary",
+    ...withSpacing({
+      icon: "📝",
+      label: "Summary",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: null,
+    condition: (q) => true,
+
+  },
+  {
+    key: "/user/review-routes/add-section",
+    relativePath: "add-section",
+    stepTitle: "Add Section",
+    stepIcon: "＋",
+    path: "/user/review-routes/add-section",
+    modalOnly: true,
+    ...withSpacing({
+      icon: "＋",
+      label: "Add Section",
+      fontSize: "12px",
+      color: "rgb(34, 197, 94)",
+      fontWeight: "700",
+    }),
+    component: null,
+    condition: (q) => true,
+  },
+];
+
 /** Flat routes rendered inside UserLayout (Discovery uses nested routes + DiscoveryFlowLayout). */
-export const allUserRoutes = [...userRoutes, ...strategyRoutes];
+export const allUserRoutes = [...userRoutes, ...strategyRoutes, ...reviewRoutes];

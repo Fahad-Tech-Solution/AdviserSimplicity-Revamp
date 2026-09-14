@@ -1,38 +1,314 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Form, Table, Input, Button, Space, Typography, Tag, Popconfirm } from 'antd';
+import { Form, Table, Input, Button, Space, Typography, Tag, Popconfirm, Alert } from 'antd';
 import { DeleteOutlined, EditOutlined, CheckOutlined, WarningOutlined } from '@ant-design/icons';
 import { useAtomValue } from 'jotai';
 import { MyClientsData } from '../../../../../store/authState';
+import { RiArrowTurnBackFill } from 'react-icons/ri';
+import { MdOutlineSync } from 'react-icons/md';
+import DynamicFormField from '../../../../Common/DynamicFormField';
+
 
 const { Text } = Typography;
 
-const TARGET_FIELDS = ['email', 'phone', 'address', 'firstname', 'lastname'];
+// 1. Scalable Configuration: Add target field names and their potential aliases here
+const TARGET_FIELDS_CONFIG = [
+    // --- Main Client Fields ---
+    { key: 'Title', aliases: ['title', 'salutation', 'mr', 'mrs', 'ms', 'dr'] },
+    { key: 'Preferred Name', aliases: ['preferred name', 'preferred_name', 'preferredname', 'pname', 'nickname'] },
+    { key: 'First Name', aliases: ['first name', 'first_name', 'firstname', 'fname', 'given name'] },
+    { key: 'Middle Name', aliases: ['middle name', 'middle_name', 'middlename', 'mname'] },
+    { key: 'Last Name', aliases: ['last name', 'last_name', 'lastname', 'lname', 'surname'] },
+    { key: 'Gender', aliases: ['gender', 'sex'] },
+    { key: 'Date of Birth', aliases: ['date of birth', 'date_of_birth', 'dateofbirth', 'dob', 'birth date'] },
+    { key: 'Marital Status', aliases: ['marital status', 'marital_status', 'maritalstatus', 'civil status'] },
+    { key: 'Work Status', aliases: ['work status', 'work_status', 'workstatus', 'employment status', 'employment_status'] },
+    { key: 'Occupation', aliases: ['occupation', 'job title', 'job_title', 'profession', 'role'] },
+    { key: 'Retirement Age', aliases: ['retirement age', 'retirement_age', 'retirementage', 'target retirement age'] },
+    { key: 'Tax Resident', aliases: ['tax resident', 'tax_resident', 'taxresident', 'tax residency'] },
+    { key: 'HELP Debt', aliases: ['help debt', 'help_debt', 'helpdebt', 'hecs', 'hecs debt', 'hecs_debt', 'student debt'] },
+    { key: 'Health', aliases: ['health', 'health status', 'health_status'] },
+    { key: 'Smoker', aliases: ['smoker', 'smoker status', 'tobacco'] },
+    { key: 'Private Health Cover', aliases: ['private health cover', 'private_health_cover', 'privatehealthcover', 'health insurance', 'private health'] },
+    { key: 'Home Address', aliases: ['home address', 'home_address', 'homeaddress', 'residential address', 'street address'] },
+    { key: 'Home Postcode', aliases: ['home postcode', 'home_postcode', 'homepostcode', 'postcode', 'zip code', 'zip'] },
+    { key: 'Postal Address', aliases: ['postal address', 'postal_address', 'postaladdress', 'mailing address'] },
+    { key: 'Postal Postcode', aliases: ['postal postcode', 'postal_postcode', 'postalpostcode', 'mailing postcode', 'mailing zip'] },
+    { key: 'Mobile Phone', aliases: ['mobile phone', 'mobile_phone', 'mobilephone', 'mobile', 'cell', 'cell phone'] },
+    { key: 'Home Phone', aliases: ['home phone', 'home_phone', 'homephone', 'landline'] },
+    { key: 'Work Phone', aliases: ['work phone', 'work_phone', 'workphone', 'wphone', 'office phone'] },
+    { key: 'Email', aliases: ['email', 'e-mail', 'mail', 'email address'] },
 
-export default function IncompleteRowsEditor({ data = [], onProceed }) {
+    // --- Partner Fields ---
+    { key: 'Partner Title', aliases: ['partner title', 'partner_title', 'partnertitle', 'partner salutation'] },
+    { key: 'Partner Preferred Name', aliases: ['partner preferred name', 'partner_preferred_name', 'partnerpreferredname', 'partner pname'] },
+    { key: 'Partner First Name', aliases: ['partner first name', 'partner_first_name', 'partnerfirstname', 'partner fname'] },
+    { key: 'Partner Middle Name', aliases: ['partner middle name', 'partner_middle_name', 'partnermiddlename', 'partner mname'] },
+    { key: 'Partner Last Name', aliases: ['partner last name', 'partner_last_name', 'partnerlastname', 'partner lname', 'partner surname'] },
+    { key: 'Partner Gender', aliases: ['partner gender', 'partner_gender', 'partnergender', 'partner sex'] },
+    { key: 'Partner Date of Birth', aliases: ['partner date of birth', 'partner_date_of_birth', 'partnerdateofbirth', 'partner dob', 'partner birth date'] },
+    { key: 'Partner Marital Status', aliases: ['partner marital status', 'partner_marital_status', 'partnermaritalstatus'] },
+    { key: 'Partner Work Status', aliases: ['partner work status', 'partner_work_status', 'partnerworkstatus', 'partner employment status'] },
+    { key: 'Partner Occupation', aliases: ['partner occupation', 'partner_occupation', 'partneroccupation', 'partner job title', 'partner profession'] },
+    { key: 'Partner Retirement Age', aliases: ['partner retirement age', 'partner_retirement_age', 'partnerretirementage'] },
+    { key: 'Partner Tax Resident', aliases: ['partner tax resident', 'partner_tax_resident', 'partnertaxresident'] },
+    { key: 'Partner HELP Debt', aliases: ['partner help debt', 'partner_help_debt', 'partnerhelpdebt', 'partner hecs'] },
+    { key: 'Partner Health', aliases: ['partner health', 'partner_health', 'partnerhealth'] },
+    { key: 'Partner Smoker', aliases: ['partner smoker', 'partner_smoker', 'partnersmoker'] },
+    { key: 'Partner Private Health Cover', aliases: ['partner private health cover', 'partner_private_health_cover', 'partnerprivatehealthcover', 'partner health insurance'] },
+    { key: 'Partner Home Address', aliases: ['partner home address', 'partner_home_address', 'partnerhomeaddress', 'partner residential address'] },
+    { key: 'Partner Postcode', aliases: ['partner postcode', 'partner_postcode', 'partnerpostcode', 'partner home postcode', 'partner zip'] },
+    { key: 'Partner Postal Address', aliases: ['partner postal address', 'partner_postal_address', 'partnerpostaladdress', 'partner mailing address'] },
+    { key: 'Partner Postal Postcode', aliases: ['partner postal postcode', 'partner_postal_postcode', 'partnerpostalpostcode', 'partner mailing postcode'] },
+    { key: 'Partner Mobile', aliases: ['partner mobile', 'partner_mobile', 'partnermobile', 'partner mobile phone', 'partner cell'] },
+    { key: 'Partner Home Phone', aliases: ['partner home phone', 'partner_home_phone', 'partnerhomephone', 'partner landline'] },
+    { key: 'Partner Work Phone', aliases: ['partner work phone', 'partner_work_phone', 'partnerworkphone', 'partner office phone'] },
+    { key: 'Partner Email', aliases: ['partner email', 'partner_email', 'partneremail', 'partner e-mail', 'partner mail'] }
+];
+
+// Regex for Australian Phone Numbers (Mobile: 04XX XXX XXX / Landline: 02, 03, 07, 08 XXXX XXXX)
+const AU_PHONE_REGEX = /^(?:\+61|0)[2-478](?:[ ]?\d){8}$/;
+
+// Common Options Sets
+const TITLE_OPTIONS = ["Dr.", "Miss", "Mr.", "Mrs.", "Ms.", "Prof."];
+const GENDER_OPTIONS = ["Male", "Female", "Other",];
+const MARITAL_OPTIONS = ["De Facto",
+    "Married",
+    "Partnered",
+    "Single",
+    "Widowed",];
+const WORK_STATUS_OPTIONS = ["Centrelink Recipient",
+    "Centrelink Retiree",
+    "Employee",
+    "Homemaker",
+    "Not Working",
+    "Self Employed",
+    "Self-funded Retiree",
+    "Student",
+    "Unemployed",];
+const HEALTH_OPTIONS = ["Excellent", "Good", "Fair", "Poor"];
+
+export const FIELD_CONFIGS = {
+    // --- PRIMARY USER DETAILS ---
+    "Title": {
+        type: "select",
+        options: TITLE_OPTIONS,
+        rules: [{ required: true, message: "Title is required" }]
+    },
+    "First Name": {
+        type: "text",
+        rules: [{ required: true, message: "First Name is required" }]
+    },
+    "Middle Name": {
+        type: "text",
+        rules: [{ required: true, message: "First Name is required" }]
+    },
+    "Last Name": {
+        type: "text",
+        rules: [{ required: true, message: "Last Name is required" }]
+    },
+    "Preferred Name": {
+        type: "text"
+    },
+    "Date of Birth": {
+        type: "date",
+        rules: [{ required: true, message: "Date of Birth is required" }]
+    },
+    "Gender": {
+        type: "select",
+        options: GENDER_OPTIONS,
+        rules: [{ required: true, message: "Gender is required" }]
+    },
+    "Email": {
+        type: "text",
+        rules: [
+            { required: true, message: "Email is required" },
+            { type: "email", message: "Please enter a valid email address" }
+        ]
+    },
+    "Mobile Phone": {
+        type: "text",
+        rules: [
+            { required: true, message: "Mobile Phone is required" },
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Work Phone": {
+        type: "text",
+        rules: [
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Home Phone": {
+        type: "text",
+        rules: [
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Home Address": {
+        type: "text",
+        rules: [{ required: true, message: "Home Address is required" }]
+    },
+    "Home Postcode": {
+        type: "postalcode-search"
+    },
+    "Postal Address": {
+        type: "text"
+    },
+    "Postal Postcode": {
+        type: "postalcode-search",
+        rules: [{ required: true, message: "Postal Postcode is required" }]
+    },
+    "Marital Status": {
+        type: "select",
+        options: MARITAL_OPTIONS
+    },
+    "Work Status": {
+        type: "select",
+        options: WORK_STATUS_OPTIONS
+    },
+    "Occupation": {
+        type: "text"
+    },
+    "Retirement Age": {
+        type: "number",
+        rules: [
+            { type: "number", min: 40, max: 100, message: "Age must be between 40 and 100" }
+        ]
+    },
+    "Tax Resident": {
+        type: "yesNoSwitch"
+    },
+    "HELP Debt": {
+        type: "yesNoSwitch"
+    },
+    "Health": {
+        type: "select",
+        options: HEALTH_OPTIONS
+    },
+    "Smoker": {
+        type: "yesNoSwitch"
+    },
+    "Private Health Cover": {
+        type: "yesNoSwitch"
+    },
+
+    // --- PARTNER DETAILS ---
+    "Partner Title": {
+        type: "select",
+        options: TITLE_OPTIONS
+    },
+    "Partner First Name": {
+        type: "text"
+    },
+    "Partner Middle Name": {
+        type: "text"
+    },
+    "Partner Last Name": {
+        type: "text"
+    },
+    "Partner Preferred Name": {
+        type: "text"
+    },
+    "Partner Date of Birth": {
+        type: "date"
+    },
+    "Partner Gender": {
+        type: "select",
+        options: GENDER_OPTIONS
+    },
+    "Partner Email": {
+        type: "text",
+        rules: [
+            { type: "email", message: "Please enter a valid email address" }
+        ]
+    },
+    "Partner Mobile": {
+        type: "text",
+        rules: [
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Partner Work Phone": {
+        type: "text",
+        rules: [
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Partner Home Phone": {
+        type: "text",
+        rules: [
+            { pattern: AU_PHONE_REGEX, message: "Valid Australian Mobile Phone number Format: 0X XXXX XXXX" }
+        ]
+    },
+    "Partner Home Address": {
+        type: "text"
+    },
+    "Partner Postcode": {
+        type: "postalcode-search"
+    },
+    "Partner Postal Address": {
+        type: "text"
+    },
+    "Partner Postal Postcode": {
+        type: "postalcode-search"
+    },
+    "Partner Marital Status": {
+        type: "select",
+        options: MARITAL_OPTIONS
+    },
+    "Partner Work Status": {
+        type: "select",
+        options: WORK_STATUS_OPTIONS
+    },
+    "Partner Occupation": {
+        type: "text"
+    },
+    "Partner Retirement Age": {
+        type: "number",
+        rules: [
+            { type: "number", min: 40, max: 100, message: "Age must be between 40 and 100" }
+        ]
+    },
+    "Partner Tax Resident": {
+        type: "yesNoSwitch"
+    },
+    "Partner HELP Debt": {
+        type: "yesNoSwitch"
+    },
+    "Partner Health": {
+        type: "select",
+        options: HEALTH_OPTIONS
+    },
+    "Partner Smoker": {
+        type: "yesNoSwitch"
+    },
+    "Partner Private Health Cover": {
+        type: "yesNoSwitch"
+    }
+};
+
+export default function IncompleteRowsEditor({ data = [], onProceed, handleReset }) {
     const [form] = Form.useForm();
     const existingClients = useAtomValue(MyClientsData) || [];
     const [editingRowKeys, setEditingRowKeys] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const normalize = (val) => String(val || '').trim().toLowerCase();
 
     // 1. Process and flag rows with missing data or duplicates
     const flaggedData = useMemo(() => {
-        // 1. Safely extract clients array from the object wrapper
         const clientsList = Array.isArray(existingClients)
             ? existingClients
             : existingClients?.clients || [];
 
-        // 2. Collect all existing emails & phones (handling nested client and partner objects)
         const existingEmails = new Set();
         const existingPhones = new Set();
 
         clientsList.forEach((c) => {
-            // Client details
             if (c?.client?.Email) existingEmails.add(normalize(c.client.Email));
             if (c?.client?.clientWorkPhone) existingPhones.add(normalize(c.client.clientWorkPhone));
             if (c?.client?.clientMobilePhone) existingPhones.add(normalize(c.client.clientMobilePhone));
 
-            // Partner details
             if (c?.partner?.partnerEmail) existingEmails.add(normalize(c.partner.partnerEmail));
             if (c?.partner?.partnerWorkPhone) existingPhones.add(normalize(c.partner.partnerWorkPhone));
             if (c?.partner?.partnerMobilePhone) existingPhones.add(normalize(c.partner.partnerMobilePhone));
@@ -48,7 +324,7 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
             if (phone) phoneCounts[phone] = (phoneCounts[phone] || 0) + 1;
         });
 
-        return data
+        let flaggedData = data
             .map((row, index) => {
                 const rowEmail = normalize(row.email || row.Email || row['EMAIL']);
                 const rowPhone = normalize(row.phone || row.Phone || row['PHONE'] || row['MOBILE PHONE'] || row['CLIENT WORK PHONE']);
@@ -57,11 +333,24 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                 const isFileDuplicate = (rowEmail && emailCounts[rowEmail] > 1) || (rowPhone && phoneCounts[rowPhone] > 1);
 
                 const missingFields = [];
-                Object.keys(row).forEach((col) => {
-                    if (TARGET_FIELDS.some((f) => col.toLowerCase().includes(f))) {
-                        if (!row[col] || String(row[col]).trim() === '') {
-                            missingFields.push(col);
-                        }
+
+                // Fixed: Check configured TARGET_FIELDS explicitly against row keys & values
+                TARGET_FIELDS_CONFIG.forEach((fieldCfg) => {
+                    // Normalize aliases once
+                    const normalizedAliases = fieldCfg.aliases.map((alias) => alias.toLowerCase().trim());
+
+                    // Strict exact match against normalized column names
+                    const matchingKey = Object.keys(row).find((col) => {
+                        const normalizedCol = col.toLowerCase().trim();
+                        return normalizedAliases.some((alias) => normalizedCol === alias);
+                    });
+
+                    if (!matchingKey) {
+                        // Key missing entirely from row object
+                        missingFields.push(fieldCfg.key);
+                    } else if (!row[matchingKey] || String(row[matchingKey]).trim() === '') {
+                        // Key exists but value is empty
+                        missingFields.push(matchingKey);
                     }
                 });
 
@@ -74,9 +363,17 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                 };
             })
             .filter((row) => row._isSystemDuplicate || row._isFileDuplicate || row._missingFields.length > 0);
+
+        return flaggedData;
+
     }, [data, existingClients]);
 
     const [tableRows, setTableRows] = useState(flaggedData);
+
+    // Sync flaggedData when props update
+    useEffect(() => {
+        setTableRows(flaggedData);
+    }, [flaggedData]);
 
     // Sync state data to AntD Form
     useEffect(() => {
@@ -91,10 +388,27 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
         setEditingRowKeys((prev) =>
             enable ? [...prev, rowKey] : prev.filter((k) => k !== rowKey)
         );
+        //update table rows accordingly
+        if (!enable) {
+            const updatedRows = tableRows.map((row) => {
+                if (row.key === rowKey) {
+                    const formValues = form.getFieldValue(rowKey);
+                    return { ...row, ...formValues };
+                }
+                return row;
+            });
+            setTableRows(updatedRows);
+        }
     };
 
     const handleSkipRow = (rowKey) => {
-        setTableRows((prev) => prev.filter((item) => item.key !== rowKey));
+        setTableRows((prev) =>
+            prev.map((item) =>
+                item.key === rowKey ? { ...item, _isSkipped: true } : item
+            )
+        );
+
+        // Clear out active edit state for this row if necessary
         setEditingRowKeys((prev) => prev.filter((k) => k !== rowKey));
     };
 
@@ -109,29 +423,38 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                 const lower = k.toLowerCase();
                 if (
                     (row._isSystemDuplicate || row._isFileDuplicate) &&
-                    (lower.includes('email') || lower.includes('phone') || lower.includes('mobile') || lower.includes('marital status'))
+                    (lower.includes('email') ||
+                        lower.includes('last name') ||
+                        lower.includes('preferred name') ||
+                        lower.includes('date of birth') ||
+                        lower.includes('home address') ||
+                        lower.includes('work phone') ||
+                        lower.includes('marital status'))
                 ) {
                     problematicKeys.add(k);
                 }
             });
         });
 
-        const identifierKeys = Object.keys(data[0])
-            .filter((k) => {
-                const lower = k.toLowerCase();
-                // return lower.includes('name') || lower.includes('client');
-                return lower.includes('email');
-            })
-            .slice(0, 2);
+        const activeColumns = Array.from(problematicKeys).filter((key) => {
+            // Always include 'Email' regardless of completeness
+            if (key === 'Email') return true;
 
-        const activeColumns = Array.from(new Set([...identifierKeys, ...problematicKeys]));
+            // Keep the column if AT LEAST ONE row is missing a value (null, undefined, or empty string)
+            const hasMissingData = tableRows.some(
+                (row) => row?.[key] === undefined || row?.[key] === null || row?.[key] === ''
+            );
+
+            return hasMissingData;
+        });
 
         const dynamicCols = [
             {
                 title: '# Index',
-                key: 'rowIndex',
+                dataIndex: '_key', // <-- Add this
+                key: '_key',
                 width: 80,
-                render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+                render: (text) => <Text type="secondary">{parseFloat(text?.replace(/[^0-9]/g, "")) + 1}</Text>,
             },
             {
                 title: 'Issue Status',
@@ -139,15 +462,21 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                 width: 150,
                 render: (_, record) => (
                     <Space direction="vertical" size={2}>
-                        {record._isSystemDuplicate && (
-                            <Tag color="error" icon={<WarningOutlined />}>System Duplicate</Tag>
-                        )}
-                        {record._isFileDuplicate && (
-                            <Tag color="warning" icon={<WarningOutlined />}>File Duplicate</Tag>
-                        )}
-                        {record._missingFields?.length > 0 && (
-                            <Tag color="volcano">Missing Data</Tag>
-                        )}
+                        {record._isSkipped ? (
+                            <Tag color="blue">Skipped</Tag>
+                        ) :
+                            <>
+                                {record._isSystemDuplicate && (
+                                    <Tag color="error" icon={<WarningOutlined />}>System Duplicate</Tag>
+                                )}
+                                {record._isFileDuplicate && (
+                                    <Tag color="warning" icon={<WarningOutlined />}>File Duplicate</Tag>
+                                )}
+                                {record._missingFields?.length > 0 && (
+                                    <Tag color="volcano">Missing Data</Tag>
+                                )}
+                            </>
+                        }
                     </Space>
                 ),
             },
@@ -155,6 +484,8 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
 
         // Build editable input cells using standard AntD Form.Item
         activeColumns.forEach((key) => {
+            const config = FIELD_CONFIGS[key] || { type: "text" };
+
             dynamicCols.push({
                 title: key,
                 dataIndex: key,
@@ -163,16 +494,21 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                     const isEditing = editingRowKeys.includes(record.key);
 
                     if (!isEditing) {
-                        return !text ? <Tag color="red">Empty</Tag> : text;
+                        return !text ? <Tag color="red">Empty</Tag> : String(text);
                     }
 
                     return (
-                        <Form.Item
+                        <DynamicFormField
+                            form={form} // Pass parent Ant Design form instance
                             name={[record.key, key]}
-                            style={{ margin: 0 }}
-                        >
-                            <Input placeholder={`Enter ${key}`} />
-                        </Form.Item>
+                            type={config.type}
+                            placeholder={`Enter ${key}`}
+                            options={config.options || []}
+                            rules={config.rules || []}
+                            formItemProps={{
+                                style: { margin: 0 }
+                            }}
+                        />
                     );
                 },
             });
@@ -214,9 +550,15 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
                             okText="Yes"
                             cancelText="No"
                         >
-                            <Button type="text" danger size="small" icon={<DeleteOutlined />}>
-                                Skip
-                            </Button>
+                            {record._isSkipped ? (
+                                <Button type="text" size="small" icon={<RiArrowTurnBackFill />}>
+                                    Undo Skip
+                                </Button>
+                            ) : (
+                                <Button type="text" danger size="small" icon={<RiArrowTurnBackFill />}>
+                                    Skip
+                                </Button>
+                            )}
                         </Popconfirm>
                     </Space>
                 );
@@ -224,76 +566,174 @@ export default function IncompleteRowsEditor({ data = [], onProceed }) {
         });
 
         return dynamicCols;
-    }, [data, tableRows, editingRowKeys]);
+    }, [data, editingRowKeys]);
 
     const handleConfirmAndProceed = async () => {
+        setLoading(true);
         try {
+            // Validate all form fields
             const formValues = await form.validateFields();
 
-            // Combine modifications back into complete row structures
-            const sanitizedRows = tableRows.map((row) => ({
-                ...row,
-                ...(formValues[row.key] || {}),
-            }));
+            // Map over all initial/raw dataset items
+            const finalAllRows = data
+                .filter((origRow) => {
+                    // Find if this row exists in tableRows and check skipped status
+                    const match = tableRows.find(
+                        (r) => (r._key || r.key) === (origRow._key || origRow.key)
+                    );
+                    return match ? !match._isSkipped : true;
+                })
+                .map((origRow) => {
+                    const rowKey = origRow._key || origRow.key;
+
+                    // Get edited form fields specific to this row
+                    const rowFormEdits = formValues[rowKey] || {};
+
+                    // Find corresponding state from tableRows if modified
+                    const tableRowMatch = tableRows.find(
+                        (r) => (r._key || r.key) === rowKey
+                    );
+
+                    return {
+                        ...origRow,
+                        ...(tableRowMatch || {}),
+                        ...rowFormEdits, // Overwrite with newly validated form values
+                    };
+                });
 
             if (onProceed) {
-                onProceed(sanitizedRows);
+                let res = await onProceed(finalAllRows);
+                if (res?.success === false && Array.isArray(res.errors)) {
+                    const duplicateEmails = new Set(
+                        res.errors
+                            .map((error) => normalize(error.email))
+                            .filter(Boolean)
+                    );
+
+                    setTableRows((previousRows) => {
+                        const rowsByKey = new Map(
+                            previousRows.map((row) => [row.key || row._key, row])
+                        );
+
+                        finalAllRows.forEach((row, index) => {
+                            const rowEmail = normalize(row.email || row.Email || row.EMAIL);
+                            const hasMatchingError = duplicateEmails.has(rowEmail) ||
+                                res.errors.some((error) => error.row === index + 1);
+
+                            if (hasMatchingError) {
+                                const key = row.key || row._key || `row_${index}`;
+                                rowsByKey.set(key, {
+                                    ...(rowsByKey.get(key) || {}),
+                                    ...row,
+                                    key,
+                                    _isSystemDuplicate: true,
+                                });
+                            }
+                        });
+                        return Array.from(rowsByKey.values());
+                    });
+                }
             }
         } catch (error) {
-            console.error('Validation error:', error);
+            console.error("Validation error:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    const ErrorStatus = useMemo(() => {
+        const totalRows = tableRows.length;
+        const systemDuplicates = tableRows.filter((row) => row._isSystemDuplicate).length;
+        const fileDuplicates = tableRows.filter((row) => row._isFileDuplicate).length;
+        const missingDataRows = tableRows.filter((row) => row._missingFields?.length > 0).length;
+        // return true false if any of the counts are greater than 0
+        return systemDuplicates > 0 || fileDuplicates > 0 || missingDataRows > 0;
+    }, [tableRows]);
+
     return (
-        <Form form={form} component={false}>
-            <div style={{ marginTop: 16 }}>
-                <div style={{ marginBottom: 12 }}>
-                    <Text type="secondary" onClick={() => { console.log(tableRows) }}>
-                        Displaying only flagged rows and their specific missing/duplicate fields. Click <strong>Edit</strong> to modify fields inline or <strong>Skip</strong> to drop a row.
-                    </Text>
-                </div>
-
-                <Table
-                    dataSource={tableRows}
-                    columns={columns}
-                    rowKey="key"
-                    scroll={{ x: 'max-content' }}
-                    bordered
-                    size="small"
-                    pagination={{
-                        pageSize: 10,
-                        hideOnSinglePage: false,
-                        showTotal: (total, range) => `Total ${total} items`,
-                    }}
-                    components={{
-                        header: {
-                            cell: (props) => (
-                                <th
-                                    {...props}
-                                    style={{
-                                        ...props.style,
-                                        backgroundColor: '#22c55e',
-                                        color: '#ffffff',
-                                        fontWeight: 600,
-                                    }}
-                                />
-                            ),
-                        },
-                    }}
-                />
-
-                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <div>
+            <Alert
+                message={`File Processed Successfully` + (ErrorStatus ? ` - but have following issues` : '')}
+                type={ErrorStatus ? "error" : "success"}
+                showIcon
+                action={
                     <Space>
                         <Button
                             type="primary"
-                            icon={<CheckOutlined />}
-                            onClick={handleConfirmAndProceed}
+                            icon={<MdOutlineSync />}
+                            onClick={handleReset}
                         >
-                            Confirm & Proceed
+                            Reset
                         </Button>
+                        {!ErrorStatus && (
+
+                            <Button
+                                type="primary"
+                                icon={<CheckOutlined />}
+                                loading={loading}
+                                onClick={handleConfirmAndProceed}
+                            >
+                                Save Data
+                            </Button>
+                        )}
                     </Space>
-                </div>
-            </div>
-        </Form>
+                }
+            />
+
+            {ErrorStatus && (
+                <Form form={form} component={false}>
+                    <div style={{ marginTop: 16 }}>
+                        <div style={{ marginBottom: 12 }}>
+                            <Text type="secondary">
+                                Displaying only flagged rows and missing/duplicate fields. Click <strong>Edit</strong> to modify or <strong>Skip</strong> to drop.
+                            </Text>
+                        </div>
+
+                        <Table
+                            dataSource={tableRows}
+                            columns={columns}
+                            rowKey="key"
+                            scroll={{ x: 'max-content' }}
+                            bordered
+                            size="small"
+                            pagination={{
+                                pageSize: 10,
+                                hideOnSinglePage: false,
+                                showTotal: (total) => `Total ${total} items`,
+                            }}
+                            components={{
+                                header: {
+                                    cell: (props) => (
+                                        <th
+                                            {...props}
+                                            style={{
+                                                ...props.style,
+                                                backgroundColor: '#22c55e',
+                                                color: '#ffffff',
+                                                fontWeight: 600,
+                                            }}
+                                        />
+                                    ),
+                                },
+                            }}
+                        />
+
+                        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                            <Space>
+                                <Button
+                                    type="primary"
+                                    icon={<CheckOutlined />}
+                                    loading={loading}
+                                    onClick={handleConfirmAndProceed}
+                                >
+                                    Confirm & Proceed
+                                </Button>
+                            </Space>
+                        </div>
+                    </div>
+                </Form>
+            )}
+
+        </div>
     );
 }

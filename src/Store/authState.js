@@ -10,6 +10,17 @@ export const loggedInUser = atom({
 
 export const CDFProspectsData = atomWithStorage("CDFProspectsData", []);
 export const MyClientsData = atomWithStorage("MyClientsData", { clients: [] });
+export const selectedClientsReview = atomWithStorage(
+  "selectedClientsReview",
+  [],
+);
+
+export const clientReviewQuestion = atomWithStorage(
+  "clientReviewQuestion",
+  {
+    
+  },
+);
 
 /** Team / employees list from GET /user/Employees (bootstrap). */
 export const MyTeamData = atomWithStorage("MyTeamData", []);

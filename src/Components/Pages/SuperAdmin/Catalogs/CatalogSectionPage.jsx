@@ -379,36 +379,36 @@ export default function CatalogSectionPage() {
         key: "platformType",
         width: 140,
 
-        filters: platformTypeFilters,
-        filteredValue: filteredInfo.platformType || null,
+        // filters: platformTypeFilters,
+        // filteredValue: filteredInfo.platformType || null,
 
-        // ✅ Match against row.platformType with defaultType fallback
-        onFilter: (value, record) => {
-          const actualType = record.platformType || defaultType;
-          return actualType === value;
-        },
+        // // ✅ Match against row.platformType with defaultType fallback
+        // onFilter: (value, record) => {
+        //   const actualType = record.platformType || defaultType;
+        //   return actualType === value;
+        // },
 
-        sorter: (a, b) => {
-          const typeA = a.platformType || defaultType;
-          const typeB = b.platformType || defaultType;
-          return typeA.localeCompare(typeB);
-        },
-        sortOrder: sortedInfo.columnKey === "platformType" ? sortedInfo.order : null,
-        sortDirections: ["descend", "ascend", "descend"],
+        // sorter: (a, b) => {
+        //   const typeA = a.platformType || defaultType;
+        //   const typeB = b.platformType || defaultType;
+        //   return typeA.localeCompare(typeB);
+        // },
+        // sortOrder: sortedInfo.columnKey === "platformType" ? sortedInfo.order : null,
+        // sortDirections: ["descend", "ascend", "descend"],
         ellipsis: true,
         render: (_, row) => (
-          <TypeBadge type={row.platformType} fallback={defaultType} />
+          <> {row.platformType || defaultType} </>
         ),
 
-        // 🎨 Custom active filter icon styling
-        filterIcon: (filtered) => (
-          <FilterFilled
-            style={{
-              color: filtered ? "#ffffff" : "rgba(255, 255, 255, 0.65)", // Bright white when active, soft white when inactive
-              fontSize: 14,
-            }}
-          />
-        ),
+        // // 🎨 Custom active filter icon styling
+        // filterIcon: (filtered) => (
+        //   <FilterFilled
+        //     style={{
+        //       color: filtered ? "#ffffff" : "rgba(255, 255, 255, 0.65)", // Bright white when active, soft white when inactive
+        //       fontSize: 14,
+        //     }}
+        //   />
+        // ),
       });
     }
 

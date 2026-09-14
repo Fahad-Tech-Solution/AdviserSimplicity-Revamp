@@ -188,7 +188,10 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const setGoalsData = useSetAtom(goalsDataAtom);
   const setGoalsSectionQuestions = useSetAtom(goalsSectionQuestionsAtom);
 
-  const { get, post } = useApi();
+  const [myClientsData, setMyClientsData] = useAtom(MyClientsData);
+  const isDashboardLoading = useAtomValue(userDashboardLoading);
+
+  const { get, post, patch } = useApi();
 
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -524,11 +527,6 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
           action == "View Risk Profile" ||
           action == "viewRiskProfile"
         ) {
-          // flushSync(() => {
-          //   selectLoadingRowIdRef.current = rowId;
-          //   setSelectLoadingRowId(rowId);
-          //   setOpenDropdownRowId(rowId);
-          // });
           void getClientDetails(row, action);
         } else if (action === "Deselect") {
           setDiscoverySectionQuestions({});
@@ -540,16 +538,47 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         ) {
           sendRiskProfileEmail(row);
         }
+        else if (action === "Delete") {
+          DeleteClient(row);
+        }
         onAction?.(action, row);
       },
     };
   };
 
+
+  let DeleteClient = async (row) => {
+    try {
+      setLoading(true);
+      // Call the API to delete the client /personalDetails/softDelete/${row?._id}
+      const response = await patch(`/personalDetails/softDelete/${row?._id}`);
+
+      if (response) {
+        // Optionally, you can refresh the client list or update the state to remove the deleted client from the table.
+        console.log("Client deleted:", response);
+        console.log("All Clients:", myClientsData);
+        // now filter that id from MyClientsData atom
+        setMyClientsData((prevData) => {
+          return ({
+            ...prevData,
+            clients: prevData.clients.filter((client) => client._id !== row?._id),
+          })
+        });
+        message.success(`Client ${response.client.clientPreferredName} (${response.client.Email}) is deleted successfully.`);
+      }
+    } catch (error) {
+      message.error("Failed to delete client. Please try again.");
+      console.error("Error deleting client:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
     {
       title: <div style={{ textAlign: "center", width: "100%" }}>No#</div>,
-      dataIndex: "number",
-      key: "number",
+      dataIndex: "no",
+      key: "no",
       width: 50,
       onCell: (record) => ({
         style: {
@@ -559,7 +588,6 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
           color: "#9ca3af",
         },
       }),
-      render: (_, __, index) => index + 1,
     },
     {
       title: "Household",
@@ -765,8 +793,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     },
   ];
 
-  const myClientsData = useAtomValue(MyClientsData);
-  const isDashboardLoading = useAtomValue(userDashboardLoading);
+
 
   const clients = normalizeMyClientsList(myClientsData);
 
@@ -783,8 +810,12 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
   const filteredTableData = useMemo(() => {
     const q = String(searchText ?? "").trim();
-    if (!q) return tableData;
-    return tableData.filter((row) => rowMatchesSearch(row, q));
+    const baseData = !q ? tableData : tableData.filter((row) => rowMatchesSearch(row, q));
+
+    return baseData.map((row, index) => ({
+      ...row,
+      no: index + 1,
+    }));
   }, [tableData, searchText]);
 
   const titleText =
