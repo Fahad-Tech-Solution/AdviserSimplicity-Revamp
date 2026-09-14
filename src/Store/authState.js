@@ -15,12 +15,14 @@ export const selectedClientsReview = atomWithStorage(
   [],
 );
 
-export const clientReviewQuestion = atomWithStorage(
-  "clientReviewQuestion",
-  {
-    
-  },
-);
+export const clientReviewQuestion = atomWithStorage("clientReviewQuestion", {
+  superProjection: "No",
+  retirementAdequacy: "No",
+  agePensionAssessment: "No",
+  loanSimulator: "No",
+  insuranceNeeds: "No",
+  taxPlanning: "No",
+});
 
 /** Team / employees list from GET /user/Employees (bootstrap). */
 export const MyTeamData = atomWithStorage("MyTeamData", []);
@@ -95,6 +97,7 @@ export const discoveryDataAtom = atomWithStorage("discoveryDataAtom", {
   SMSFTermDeposits: {},
   SMSFOtherInvestment: {},
 });
+
 export const discoverySectionQuestionsAtom = atomWithStorage(
   "discoverySectionQuestionsAtom",
   {},

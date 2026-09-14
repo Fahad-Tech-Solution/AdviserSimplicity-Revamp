@@ -124,9 +124,23 @@ export default function EditableDynamicTable({
           defaultSortOrder: editing ? undefined : column.defaultSortOrder,
           filters: editing ? undefined : column.filters,
           onFilter: editing ? undefined : column.onFilter,
-          onCell: () => ({
-            style: lockedWidthStyle,
-          }),
+          // onCell: () => ({
+          //   style: lockedWidthStyle,
+          // }),
+          // EditableDynamicTable.jsx
+          onCell: (record, rowIndex) => {
+            const userCellProps = typeof column.onCell === 'function'
+              ? column.onCell(record, rowIndex)
+              : (column.onCell || {});
+
+            return {
+              ...userCellProps,
+              style: {
+                ...lockedWidthStyle,
+                ...(userCellProps.style || {}),
+              },
+            };
+          },
           onHeaderCell: () => ({
             style: lockedWidthStyle,
           }),
@@ -140,30 +154,30 @@ export default function EditableDynamicTable({
             );
             const resolvedAction = column.action
               ? {
-                  ...column.action,
-                  onClick: (payload) =>
-                    column.action?.onClick?.({
-                      ...payload,
-                      record,
-                      column,
-                      form,
-                      fieldName,
-                      value: form?.getFieldValue?.(fieldName),
-                    }),
-                }
+                ...column.action,
+                onClick: (payload) =>
+                  column.action?.onClick?.({
+                    ...payload,
+                    record,
+                    column,
+                    form,
+                    fieldName,
+                    value: form?.getFieldValue?.(fieldName),
+                  }),
+              }
               : undefined;
 
             const resolvedDisabled =
               typeof column.disabled === "function"
                 ? Boolean(
-                    column.disabled({
-                      record,
-                      column,
-                      form,
-                      fieldName,
-                      value: form?.getFieldValue?.(fieldName),
-                    }),
-                  )
+                  column.disabled({
+                    record,
+                    column,
+                    form,
+                    fieldName,
+                    value: form?.getFieldValue?.(fieldName),
+                  }),
+                )
                 : Boolean(column.disabled);
 
             if (editing) {

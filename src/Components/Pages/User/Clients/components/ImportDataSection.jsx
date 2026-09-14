@@ -401,7 +401,11 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
             render: (text, record) => {
                 return (
                     <>
-                        {text}   {record?.email &&
+                        {record?.row &&
+                            <Tag color="yellow" style={{ fontWeight: 'bold' }}>row #{record?.row}</Tag>
+                        }
+                        {text}
+                        {record?.email &&
                             <Tag color="red" style={{ fontWeight: 'bold' }}>{record?.email}</Tag>
                         }
                     </>

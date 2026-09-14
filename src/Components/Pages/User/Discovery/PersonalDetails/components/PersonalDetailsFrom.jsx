@@ -241,7 +241,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerEmploymentStatus",
     type: "select",
     options: EMPLOYMENT_OPTIONS,
-    rules: [requiredRule("Work Status is Required")],
   },
   {
     title: "Occupation",
@@ -263,7 +262,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerTaxResidentRadio",
     type: "select",
     options: YES_NO,
-    rules: [requiredRule("Tax Resident is Required")],
 
   },
   {
@@ -273,7 +271,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerHELPSDebtRadio",
     type: "select",
     options: YES_NO,
-    rules: [requiredRule("Help Debt is Required")],
 
   },
   {
@@ -283,7 +280,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerHealth",
     type: "select",
     options: HEALTH_OPTIONS,
-    rules: [requiredRule("Marital Status is Required")],
   },
   {
     title: "Smoker",
@@ -292,7 +288,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerSmoker",
     type: "select",
     options: SMOKER_OPTIONS,
-    rules: [requiredRule("Smoker is Required")],
   },
   {
     title: "Private Health Cover",
@@ -301,7 +296,6 @@ const FINANCIAL_SECTION_CONFIG = [
     partnerField: "partnerPrivateHealthCoverRadio",
     type: "select",
     options: YES_NO,
-    rules: [requiredRule("Private Health Cover is Required")],
   },
 ];
 

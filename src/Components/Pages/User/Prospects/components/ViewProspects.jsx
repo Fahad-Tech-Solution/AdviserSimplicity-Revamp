@@ -1,5 +1,5 @@
 import { Col, Row, Typography } from "antd";
-import { formatAustralianDate } from "../../../../../hooks/helpers";
+import { formatAustralianDate, toCommaAndDollar } from "../../../../../hooks/helpers";
 
 const { Text, Title } = Typography;
 
@@ -171,28 +171,36 @@ function buildEmploymentRows({ person, raw }) {
     {
       left: {
         label: "Employment Income",
-        value:
-          person.employmentIncome ||
-          person.income ||
-          raw.employmentIncome ||
-          "$0",
+        value: toCommaAndDollar(
+          person?.incomeDetails?.employmentIncome ||
+          raw?.client?.incomeDetails?.employmentIncome ||
+          0),
         valueColor: "#22c55e",
       },
       right: {
         label: "Business Income",
-        value: person.businessIncome || raw.businessIncome || "$0",
+        value: toCommaAndDollar(
+          person?.incomeDetails?.businessIncome ||
+          raw?.client?.incomeDetails?.businessIncome ||
+          0),
         valueColor: "#9ca3af",
       },
     },
     {
       left: {
         label: "Centrelink Payments",
-        value: person.centrelinkPayments || raw.centrelinkPayments || "$0",
+        value: toCommaAndDollar(
+          person?.incomeDetails?.centreLinkPayments ||
+          raw?.client?.incomeDetails?.centreLinkPayments ||
+          0),
         valueColor: "#22c55e",
       },
       right: {
         label: "Super Payments",
-        value: person.superPayments || raw.superPayments || "$0",
+        value: toCommaAndDollar(
+          person?.incomeDetails?.superPensionPayments ||
+          raw?.client?.incomeDetails?.superPensionPayments ||
+          0),
         valueColor: "#9ca3af",
       },
     },
@@ -218,10 +226,10 @@ export default function ViewProspects({ record }) {
 
   const partnerPersonalRows = showPartner
     ? buildPersonalRows({
-        person: partner,
-        record,
-        preferredRole: "Partner",
-      })
+      person: partner,
+      record,
+      preferredRole: "Partner",
+    })
     : [];
 
   const partnerEmploymentRows = showPartner

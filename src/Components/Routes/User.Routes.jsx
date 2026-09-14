@@ -58,7 +58,6 @@ import AdviserKnowledgeBase from "../Pages/User/Strategy/AdviserKnowledgeBase.js
 import DenaroDeck from "../Pages/User/Strategy/components/DenaroDeck.jsx";
 import Scenarios from "../Pages/User/Strategy/components/Scenarios/Scenarios.jsx";
 import ReviewClientDetails from "../Pages/User/Strategy/components/Scenarios/components/ReviewClientDetails.jsx";
-import ReviewStepsLayout from "../Layout/ReviewStepsLayout.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
