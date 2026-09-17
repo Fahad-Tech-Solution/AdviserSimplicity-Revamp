@@ -354,15 +354,15 @@ export default function SMSFAccumulationAccount({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "SMSF accumulation account"} saved successfully`,
+        `${modalData?.title || "SMSF accumulation account"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to save ${modalData?.title || "SMSF accumulation account"}`,
+        error?.message ||
+        `Failed to save ${modalData?.title || "SMSF accumulation account"}`,
       );
     } finally {
       setSaving(false);

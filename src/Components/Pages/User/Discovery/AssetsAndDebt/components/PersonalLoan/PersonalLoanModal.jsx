@@ -136,8 +136,8 @@ function buildInitialValues(sectionData) {
       count === 0
         ? []
         : Array.from({ length: count }, (_, idx) =>
-            loans[idx] ? loans[idx] : buildEmptyLoan(),
-          ),
+          loans[idx] ? loans[idx] : buildEmptyLoan(),
+        ),
   };
 }
 
@@ -420,7 +420,7 @@ export default function PersonalLoanModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Personal Loan"} updated successfully`,
+        `${modalData?.title || "Personal Loan"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

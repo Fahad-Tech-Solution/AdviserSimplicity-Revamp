@@ -337,7 +337,7 @@ export default function CentrelinkModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Centrelink"} updated successfully`,
+        `${modalData?.title || "Centrelink"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

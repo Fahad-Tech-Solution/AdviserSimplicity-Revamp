@@ -929,9 +929,8 @@ export default function RiskProfile() {
       setDiscoveryData((prev) => ({
         ...(prev && typeof prev === "object" ? prev : {}),
         riskProfile: saved,
-        riskprofile: saved,
       }));
-      message.success("Risk Profile saved successfully.");
+      message.success(`Risk Profile ${recordId ? "update" : "saved"} successfully.`);
     } catch (error) {
       message.error(
         error?.response?.data?.message ||

@@ -205,8 +205,8 @@ export default function AssetInfoModal({ modalData }) {
 
     return allowPartner
       ? ownerOptions.filter(
-          (item) => item.value === "client" || item.value === "partner",
-        )
+        (item) => item.value === "client" || item.value === "partner",
+      )
       : ownerOptions.filter((item) => item.value === "client");
   }, [allowPartner, config?.type, ownerOptions]);
 
@@ -326,9 +326,9 @@ export default function AssetInfoModal({ modalData }) {
         ...(sectionData?.joint || {}),
         ...(config?.extraField
           ? {
-              [config.extraField.key]:
-                sourceValues?.joint?.[config.extraField.key] || "",
-            }
+            [config.extraField.key]:
+              sourceValues?.joint?.[config.extraField.key] || "",
+          }
           : {}),
         currentValue: formatCurrencyValue(sourceValues?.joint?.currentValue),
       };
@@ -342,32 +342,32 @@ export default function AssetInfoModal({ modalData }) {
 
       payload.client = clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            ...(config?.extraField
-              ? {
-                  [config.extraField.key]:
-                    sourceValues?.client?.[config.extraField.key] || "",
-                }
-              : {}),
-            currentValue: formatCurrencyValue(
-              sourceValues?.client?.currentValue,
-            ),
-          }
+          ...(sectionData?.client || {}),
+          ...(config?.extraField
+            ? {
+              [config.extraField.key]:
+                sourceValues?.client?.[config.extraField.key] || "",
+            }
+            : {}),
+          currentValue: formatCurrencyValue(
+            sourceValues?.client?.currentValue,
+          ),
+        }
         : {};
 
       payload.partner = partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            ...(config?.extraField
-              ? {
-                  [config.extraField.key]:
-                    sourceValues?.partner?.[config.extraField.key] || "",
-                }
-              : {}),
-            currentValue: formatCurrencyValue(
-              sourceValues?.partner?.currentValue,
-            ),
-          }
+          ...(sectionData?.partner || {}),
+          ...(config?.extraField
+            ? {
+              [config.extraField.key]:
+                sourceValues?.partner?.[config.extraField.key] || "",
+            }
+            : {}),
+          currentValue: formatCurrencyValue(
+            sourceValues?.partner?.currentValue,
+          ),
+        }
         : {};
 
       payload.clientTotal = clientSelected
@@ -390,13 +390,13 @@ export default function AssetInfoModal({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Asset"} updated successfully`);
+      message.success(`${modalData?.title || "Asset"} ${sectionData?._id ? "updated" : "saved"} successfully`);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Asset"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Asset"}`,
       );
     } finally {
       setSaving(false);

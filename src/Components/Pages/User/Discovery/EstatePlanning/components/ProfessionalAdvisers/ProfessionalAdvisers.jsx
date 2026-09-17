@@ -349,7 +349,7 @@ export default function ProfessionalAdvisers({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Professional Advisers"} updated successfully`,
+        `${modalData?.title || "Professional Advisers"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

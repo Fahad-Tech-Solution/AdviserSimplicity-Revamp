@@ -290,15 +290,15 @@ export default function PensionAccountModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Pension account"} saved successfully`,
+        `${modalData?.title || "Pension account"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to save ${modalData?.title || "pension account"}`,
+        error?.message ||
+        `Failed to save ${modalData?.title || "pension account"}`,
       );
     } finally {
       setSaving(false);

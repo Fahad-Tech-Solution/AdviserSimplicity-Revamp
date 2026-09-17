@@ -343,7 +343,7 @@ export default function GeneralLiving({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "General Living"} updated successfully`,
+        `${modalData?.title || "General Living"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

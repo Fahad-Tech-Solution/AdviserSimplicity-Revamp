@@ -292,7 +292,7 @@ export default function OverseasPensionModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Overseas Pension"} updated successfully`,
+        `${modalData?.title || "Overseas Pension"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

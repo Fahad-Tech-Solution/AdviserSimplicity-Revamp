@@ -16,9 +16,9 @@ export const selectedClientsReview = atomWithStorage(
 );
 
 export const clientReviewQuestion = atomWithStorage("clientReviewQuestion", {
-  superProjection: "No",
-  retirementAdequacy: "No",
-  agePensionAssessment: "No",
+  superProjection: "Yes",
+  retirementAdequacy: "Yes",
+  agePensionAssessment: "Yes",
   loanSimulator: "No",
   insuranceNeeds: "No",
   taxPlanning: "No",

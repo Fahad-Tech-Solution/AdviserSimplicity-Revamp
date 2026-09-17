@@ -81,15 +81,15 @@ const IncomeExpenses = () => {
             retirementLivingExpenses: response,
           };
         });
-        message.success("Regular living expenses updated successfully");
+        message.success(`Regular living expenses ${isUpdate ? "updated" : "saved"} successfully`);
       } else {
         message.error("Failed to update regular living expenses");
       }
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to submit regular living expenses",
+        error?.message ||
+        "Failed to submit regular living expenses",
       );
       console.error(error);
     }
@@ -124,9 +124,9 @@ const IncomeExpenses = () => {
                   }
                   firstTotal={
                     discoveryData?.[
-                      card.key == "incomeFromRegularLivingExpenses"
-                        ? "generalLivingExpenses"
-                        : card.key
+                    card.key == "incomeFromRegularLivingExpenses"
+                      ? "generalLivingExpenses"
+                      : card.key
                     ]?.[card?.firstTotalKey || "clientTotal"]
                   }
                   secondName={
@@ -135,9 +135,9 @@ const IncomeExpenses = () => {
                   }
                   secondTotal={
                     discoveryData?.[
-                      card.key == "incomeFromRegularLivingExpenses"
-                        ? "retirementLivingExpenses"
-                        : card.key
+                    card.key == "incomeFromRegularLivingExpenses"
+                      ? "retirementLivingExpenses"
+                      : card.key
                     ]?.[card?.secondTotalKey || "partnerTotal"]
                   }
                   showPartner={card?.showSecondTotal || showPartner}

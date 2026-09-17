@@ -136,8 +136,8 @@ function buildInitialValues(sectionData) {
       count === 0
         ? []
         : Array.from({ length: count }, (_, idx) =>
-            cards[idx] ? cards[idx] : buildEmptyCard(),
-          ),
+          cards[idx] ? cards[idx] : buildEmptyCard(),
+        ),
   };
 }
 
@@ -186,10 +186,10 @@ export default function CreditCardModal({ modalData }) {
   const creditCards =
     Form.useWatch("creditCards", form) ?? initialValues.creditCards;
 
-    useEffect(() => {
-      form.setFieldsValue(initialValues);
-      setEditing(!sectionData?._id);
-    }, [form, initialValues, sectionData?._id]);
+  useEffect(() => {
+    form.setFieldsValue(initialValues);
+    setEditing(!sectionData?._id);
+  }, [form, initialValues, sectionData?._id]);
 
   useEffect(() => {
     const count = Number(numberOfCards ?? 0);
@@ -260,7 +260,7 @@ export default function CreditCardModal({ modalData }) {
             formatNumericInput(value, { currency: true }),
           );
         },
-       
+
 
       },
       {
@@ -395,7 +395,7 @@ export default function CreditCardModal({ modalData }) {
           0,
         ),
       ),
-     
+
     };
 
     try {
@@ -410,14 +410,14 @@ export default function CreditCardModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Credit Card"} updated successfully`,
+        `${modalData?.title || "Credit Card"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Credit Card"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Credit Card"}`,
       );
     } finally {
       setSaving(false);

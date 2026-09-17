@@ -196,8 +196,9 @@ export default function MyTeam() {
 
   const columns = [
     {
-      title: <div style={{ textAlign: "center", width: "100%" }}>#</div>,
-      key: "np",
+      title: <div style={{ textAlign: "center", width: "100%" }}>No#</div>,
+      dataIndex: "no",
+      key: "no",
       width: 56,
       onCell: () => ({
         style: {

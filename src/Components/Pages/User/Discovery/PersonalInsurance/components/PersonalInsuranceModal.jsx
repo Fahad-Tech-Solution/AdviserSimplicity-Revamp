@@ -794,7 +794,7 @@ export default function PersonalInsuranceModal({ modalData }) {
             : (saved ?? payload),
       }));
 
-      message.success("Personal insurance saved successfully");
+      message.success(`Personal insurance ${pi?._id ? "updated" : "saved"} successfully`);
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {

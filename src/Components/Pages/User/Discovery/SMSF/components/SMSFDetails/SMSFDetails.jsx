@@ -286,7 +286,7 @@ export default function SMSFDetails({ modalData }) {
         switchToEditMode: () => setEditing(true),
         noCancelButton: true,
       });
-    
+
     },
     [corporateDirectorOptions, editing, form],
   );
@@ -454,7 +454,7 @@ export default function SMSFDetails({ modalData }) {
         [sectionKey]: saved && typeof saved === "object" ? saved : payload,
       }));
 
-      message.success(`${modalData?.title || "SMSF details"} saved successfully`);
+      message.success(`${modalData?.title || "SMSF details"} ${sectionData?._id ? "updated" : "saved"} successfully`);
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {

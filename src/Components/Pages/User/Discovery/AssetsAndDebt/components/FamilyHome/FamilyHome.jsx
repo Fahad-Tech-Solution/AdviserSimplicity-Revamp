@@ -288,14 +288,14 @@ export default function FamilyHome({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Family Home"} updated successfully`,
+        `${modalData?.title || "Family Home"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Family Home"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Family Home"}`,
       );
     } finally {
       setSaving(false);

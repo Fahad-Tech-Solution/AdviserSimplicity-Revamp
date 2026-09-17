@@ -240,10 +240,10 @@ export default function PartnershipModal({ modalData }) {
       PARTNERSHIP_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [],
@@ -314,37 +314,37 @@ export default function PartnershipModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            businessName: sourceValues?.client?.businessName || "",
-            ABN: sourceValues?.client?.ABN || "",
-            businessAddress: sourceValues?.client?.businessAddress || "",
-            postCode: sourceValues?.client?.postCode || "",
-            totalNetPartnershipIncome: formatCurrencyValue(
-              sourceValues?.client?.totalNetPartnershipIncome,
-            ),
-            shareOfPartnership: formatPercentValue(
-              sourceValues?.client?.shareOfPartnership,
-            ),
-            share: formatCurrencyValue(sourceValues?.client?.share),
-            goodWill: formatCurrencyValue(sourceValues?.client?.goodWill),
-          }
+          ...(sectionData?.client || {}),
+          businessName: sourceValues?.client?.businessName || "",
+          ABN: sourceValues?.client?.ABN || "",
+          businessAddress: sourceValues?.client?.businessAddress || "",
+          postCode: sourceValues?.client?.postCode || "",
+          totalNetPartnershipIncome: formatCurrencyValue(
+            sourceValues?.client?.totalNetPartnershipIncome,
+          ),
+          shareOfPartnership: formatPercentValue(
+            sourceValues?.client?.shareOfPartnership,
+          ),
+          share: formatCurrencyValue(sourceValues?.client?.share),
+          goodWill: formatCurrencyValue(sourceValues?.client?.goodWill),
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            businessName: sourceValues?.partner?.businessName || "",
-            ABN: sourceValues?.partner?.ABN || "",
-            businessAddress: sourceValues?.partner?.businessAddress || "",
-            postCode: sourceValues?.partner?.postCode || "",
-            totalNetPartnershipIncome: formatCurrencyValue(
-              sourceValues?.partner?.totalNetPartnershipIncome,
-            ),
-            shareOfPartnership: formatPercentValue(
-              sourceValues?.partner?.shareOfPartnership,
-            ),
-            share: formatCurrencyValue(sourceValues?.partner?.share),
-            goodWill: formatCurrencyValue(sourceValues?.partner?.goodWill),
-          }
+          ...(sectionData?.partner || {}),
+          businessName: sourceValues?.partner?.businessName || "",
+          ABN: sourceValues?.partner?.ABN || "",
+          businessAddress: sourceValues?.partner?.businessAddress || "",
+          postCode: sourceValues?.partner?.postCode || "",
+          totalNetPartnershipIncome: formatCurrencyValue(
+            sourceValues?.partner?.totalNetPartnershipIncome,
+          ),
+          shareOfPartnership: formatPercentValue(
+            sourceValues?.partner?.shareOfPartnership,
+          ),
+          share: formatCurrencyValue(sourceValues?.partner?.share),
+          goodWill: formatCurrencyValue(sourceValues?.partner?.goodWill),
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(sourceValues?.client?.share)
@@ -367,14 +367,14 @@ export default function PartnershipModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Partnership"} updated successfully`,
+        `${modalData?.title || "Partnership"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Partnership"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Partnership"}`,
       );
     } finally {
       setSaving(false);

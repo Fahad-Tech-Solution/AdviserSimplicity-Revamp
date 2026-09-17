@@ -653,7 +653,7 @@ export default function InvestmentPropertiesModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Investment Properties"} updated successfully`,
+        `${modalData?.title || "Investment Properties"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

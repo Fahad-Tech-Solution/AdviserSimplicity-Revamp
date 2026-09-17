@@ -259,6 +259,8 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 })),
             };
 
+         
+
             if (initialData?._id) {
                 await patch('/clientDetails/Update', payload);
             } else {

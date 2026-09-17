@@ -91,7 +91,10 @@ export default function CDFProspects() {
         .toLowerCase();
 
       return haystack.includes(normalizedSearch);
-    });
+    }).map((item, index) => ({
+      ...item,
+      no: index + 1, // Adds the 1-based sequence count
+    }));
   }, [prospects, activeTab, searchText]);
 
   const statusChange = async (status, row) => {
@@ -107,16 +110,16 @@ export default function CDFProspects() {
         prev.map((item) =>
           item.key === row.key
             ? {
-                ...item,
-                status:
-                  status.charAt(0).toUpperCase() +
-                  status.slice(1).toLowerCase(),
-                raw: {
-                  ...(item.raw || {}),
-                  ...(response || {}),
-                  status,
-                },
-              }
+              ...item,
+              status:
+                status.charAt(0).toUpperCase() +
+                status.slice(1).toLowerCase(),
+              raw: {
+                ...(item.raw || {}),
+                ...(response || {}),
+                status,
+              },
+            }
             : item,
         ),
       );
@@ -215,9 +218,9 @@ export default function CDFProspects() {
 
   const columns = [
     {
-      title: <div style={{ textAlign: "center", width: "100%" }}>#</div>,
-      dataIndex: "number",
-      key: "number",
+      title: <div style={{ textAlign: "center", width: "100%" }}>No#</div>,
+      dataIndex: "no",
+      key: "no",
       width: 50,
       onCell: (record) => ({
         style: {
@@ -227,7 +230,7 @@ export default function CDFProspects() {
           color: "#9ca3af",
         },
       }),
-      render: (_, __, index) => index + 1,
+      // render: (_, __, index) => index + 1,
     },
     {
       title: "HouseHold",
@@ -563,7 +566,7 @@ export default function CDFProspects() {
             onClick={() =>
               window.open(
                 "https://cdf.denarowealth.com.au/?referralId=" +
-                  session.user.referralID,
+                session.user.referralID,
                 "_blank",
               )
             }

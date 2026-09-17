@@ -381,7 +381,7 @@ export default function FamilyInvestmentTrust({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Family trust details"} saved successfully`,
+        `${modalData?.title || "Family trust details"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       setEditing(false);
       modalData?.closeModal?.();

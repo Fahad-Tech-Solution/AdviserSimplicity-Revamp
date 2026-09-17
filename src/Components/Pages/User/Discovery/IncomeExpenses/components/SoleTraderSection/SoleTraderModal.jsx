@@ -169,10 +169,10 @@ export default function SoleTraderModal({ modalData }) {
       SOLE_TRADER_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [],
@@ -238,29 +238,29 @@ export default function SoleTraderModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            businessName: sourceValues?.client?.businessName || "",
-            ABN: sourceValues?.client?.ABN || "",
-            businessAddress: sourceValues?.client?.businessAddress || "",
-            postCode: sourceValues?.client?.postCode || "",
-            netBusinessIncome: formatCurrencyValue(
-              sourceValues?.client?.netBusinessIncome,
-            ),
-            goodWill: formatCurrencyValue(sourceValues?.client?.goodWill),
-          }
+          ...(sectionData?.client || {}),
+          businessName: sourceValues?.client?.businessName || "",
+          ABN: sourceValues?.client?.ABN || "",
+          businessAddress: sourceValues?.client?.businessAddress || "",
+          postCode: sourceValues?.client?.postCode || "",
+          netBusinessIncome: formatCurrencyValue(
+            sourceValues?.client?.netBusinessIncome,
+          ),
+          goodWill: formatCurrencyValue(sourceValues?.client?.goodWill),
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            businessName: sourceValues?.partner?.businessName || "",
-            ABN: sourceValues?.partner?.ABN || "",
-            businessAddress: sourceValues?.partner?.businessAddress || "",
-            postCode: sourceValues?.partner?.postCode || "",
-            netBusinessIncome: formatCurrencyValue(
-              sourceValues?.partner?.netBusinessIncome,
-            ),
-            goodWill: formatCurrencyValue(sourceValues?.partner?.goodWill),
-          }
+          ...(sectionData?.partner || {}),
+          businessName: sourceValues?.partner?.businessName || "",
+          ABN: sourceValues?.partner?.ABN || "",
+          businessAddress: sourceValues?.partner?.businessAddress || "",
+          postCode: sourceValues?.partner?.postCode || "",
+          netBusinessIncome: formatCurrencyValue(
+            sourceValues?.partner?.netBusinessIncome,
+          ),
+          goodWill: formatCurrencyValue(sourceValues?.partner?.goodWill),
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(sourceValues?.client?.netBusinessIncome)
@@ -283,14 +283,14 @@ export default function SoleTraderModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Sole Trader"} updated successfully`,
+        `${modalData?.title || "Sole Trader"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Sole Trader"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Sole Trader"}`,
       );
     } finally {
       setSaving(false);

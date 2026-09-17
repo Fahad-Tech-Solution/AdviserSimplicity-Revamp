@@ -333,7 +333,7 @@ export default function LifetimePensionModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Lifetime Pension"} updated successfully`,
+        `${modalData?.title || "Lifetime Pension"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

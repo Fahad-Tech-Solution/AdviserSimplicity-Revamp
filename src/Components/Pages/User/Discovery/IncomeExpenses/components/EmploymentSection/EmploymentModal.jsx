@@ -545,7 +545,7 @@ export default function EmploymentModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Employment"} updated successfully`,
+        `${modalData?.title || "Employment"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

@@ -190,7 +190,7 @@ const ReviewStepsLayout = () => {
     }
 
     return (
-        <div style={{ maxWidth: 1100, margin: "21px auto", padding: "0 0 24px" }}>
+        <div  style={{ maxWidth: 1100, margin: "21px auto", padding: "0 0 24px" }}>
             {!showSteps && (
                 <>
                     <div

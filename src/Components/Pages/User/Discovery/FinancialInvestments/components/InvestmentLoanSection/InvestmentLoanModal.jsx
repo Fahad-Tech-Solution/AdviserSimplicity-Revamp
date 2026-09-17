@@ -229,30 +229,6 @@ export default function InvestmentLoanModal({ modalData }) {
     return options;
   }, [allowPartner, discoveryData]);
 
-  // const lenderOption = useMemo(() => {
-  //   const institutions = investmentOffers?.FinancialInstitutions || [];
-  //   const mapped = institutions
-  //     .map((item) => ({
-  //       value: String(item?._id ?? item?.value ?? ""),
-  //       label:
-  //         item?.platformName || item?.label || item?.name || item?._id || "",
-  //     }))
-  //     .filter((option) => option.value && option.label);
-
-  //   const existingValues = [
-  //     sectionData?.client?.lender,
-  //     sectionData?.partner?.lender,
-  //     sectionData?.joint?.lender,
-  //   ].filter(Boolean);
-
-  //   existingValues.forEach((value) => {
-  //     if (!mapped.some((option) => option.value === value)) {
-  //       mapped.unshift({ value, label: value });
-  //     }
-  //   });
-
-  //   return mapped;
-  // }, [investmentOffers, sectionData]);
 
   const lenderOption = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
@@ -633,90 +609,6 @@ export default function InvestmentLoanModal({ modalData }) {
       joint: jointSelected
         ? buildLoanPayload(sourceValues.joint, sectionData.joint, isMarginLoan)
         : {},
-      //   client: clientSelected
-      //     ? {
-      //         ...(sectionData?.client || {}),
-      //         lender: sourceValues?.client?.lender || "",
-      //         loanBalance: formatCurrencyValue(sourceValues?.client?.loanBalance),
-      //         loanType: isMarginLoan ? undefined : sourceValues?.client?.loanType || "",
-      //         repaymentsAmount: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.client?.repaymentsAmount),
-      //         frequency: isMarginLoan ? "" : sourceValues?.client?.frequency || "",
-      //         annualRepayments: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.client?.annualRepayments),
-      //         monthlyContribution: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.client?.monthlyContribution)
-      //           : "",
-      //         annualLoan: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.client?.annualLoan)
-      //           : "",
-      //         interestRate: formatPercentValue(sourceValues?.client?.interestRate),
-      //         loanTerm: sourceValues?.client?.loanTerm || "",
-      //         loanTermRemaining: sourceValues?.client?.loanTermRemaining || "",
-      //         deductibleLoanAmount: formatPercentValue(
-      //           sourceValues?.client?.deductibleLoanAmount,
-      //           DEFAULT_DEDUCTIBLE,
-      //         ),
-      //       }
-      //     : {},
-      //   partner: partnerSelected
-      //     ? {
-      //         ...(sectionData?.partner || {}),
-      //         lender: sourceValues?.partner?.lender || "",
-      //         loanBalance: formatCurrencyValue(sourceValues?.partner?.loanBalance),
-      //         loanType: isMarginLoan ? "" : sourceValues?.partner?.loanType || "",
-      //         repaymentsAmount: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.partner?.repaymentsAmount),
-      //         frequency: isMarginLoan ? "" : sourceValues?.partner?.frequency || "",
-      //         annualRepayments: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.partner?.annualRepayments),
-      //         monthlyContribution: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.partner?.monthlyContribution)
-      //           : "",
-      //         annualLoan: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.partner?.annualLoan)
-      //           : "",
-      //         interestRate: formatPercentValue(sourceValues?.partner?.interestRate),
-      //         loanTerm: sourceValues?.partner?.loanTerm || "",
-      //         loanTermRemaining: sourceValues?.partner?.loanTermRemaining || "",
-      //         deductibleLoanAmount: formatPercentValue(
-      //           sourceValues?.partner?.deductibleLoanAmount,
-      //           DEFAULT_DEDUCTIBLE,
-      //         ),
-      //       }
-      //     : {},
-      //   joint: jointSelected
-      //     ? {
-      //         ...(sectionData?.joint || {}),
-      //         lender: sourceValues?.joint?.lender || "",
-      //         loanBalance: formatCurrencyValue(sourceValues?.joint?.loanBalance),
-      //         loanType: isMarginLoan ? "" : sourceValues?.joint?.loanType || "",
-      //         repaymentsAmount: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.joint?.repaymentsAmount),
-      //         frequency: isMarginLoan ? "" : sourceValues?.joint?.frequency || "",
-      //         annualRepayments: isMarginLoan
-      //           ? ""
-      //           : formatCurrencyValue(sourceValues?.joint?.annualRepayments),
-      //         monthlyContribution: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.joint?.monthlyContribution)
-      //           : "",
-      //         annualLoan: isMarginLoan
-      //           ? formatCurrencyValue(sourceValues?.joint?.annualLoan)
-      //           : "",
-      //         interestRate: formatPercentValue(sourceValues?.joint?.interestRate),
-      //         loanTerm: sourceValues?.joint?.loanTerm || "",
-      //         loanTermRemaining: sourceValues?.joint?.loanTermRemaining || "",
-      //         deductibleLoanAmount: formatPercentValue(
-      //           sourceValues?.joint?.deductibleLoanAmount,
-      //           DEFAULT_DEDUCTIBLE,
-      //         ),
-      //       }
-      //     : {},
       clientTotal:
         clientSelected || jointSelected
           ? formatCurrencyValue(
@@ -743,7 +635,7 @@ export default function InvestmentLoanModal({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Investment Loan"} updated successfully`,
+        `${modalData?.title || "Investment Loan"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

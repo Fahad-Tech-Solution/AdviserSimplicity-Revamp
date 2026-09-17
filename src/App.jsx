@@ -9,14 +9,13 @@ import Unauthorized from "./Components/Auth/Unauthorized";
 import UserLayout from "./Components/Layout/UserLayout";
 import SuperAdminLayout from "./Components/Layout/SuperAdminLayout";
 import ProtectedRoute from "./Components/Routes/ProtectedRoute";
+import ReviewWhatsNewQuestions from "./Components/Pages/User/Strategy/components/Scenarios/components/ReviewWhatsNewQuestions";
 
 const publicRoutes = [
-  { path: "/user/verify-email", element: <></> },
-  { path: "/change-password", element: <></> },
   { path: "/pricing-table", element: <PricingTable /> },
-  { path: "/buy-adviser-link", element: <></> },
   { path: "/stripe-redirect", element: <StripeRedirect /> },
   { path: "/user/warning", element: <Warning /> },
+  { path: "/whats-change-questions", element: <ReviewWhatsNewQuestions /> },
   { path: "/unauthorized", element: <Unauthorized /> },
 ];
 
@@ -39,6 +38,7 @@ export default function App() {
       <Routes>
         {/* Auth */}
         <Route path="/unauthorized" element={<Unauthorized />} />
+
         <Route path="/auth/*" element={<AuthPage />} />
 
         {/* Public */}

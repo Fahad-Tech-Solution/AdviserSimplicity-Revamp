@@ -395,7 +395,7 @@ export default function EstatePlanningWill({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Wills"} updated successfully`);
+      message.success(`${modalData?.title || "Wills"} ${sectionData?._id ? "updated" : "saved"} successfully`);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(

@@ -317,7 +317,7 @@ export default function PowerOfAttorney({ modalData }) {
       }));
 
       message.success(
-        `${modalData?.title || "Power of Attorneys"} updated successfully`,
+        `${modalData?.title || "Power of Attorneys"} ${sectionData?._id ? "updated" : "saved"} successfully`,
       );
       modalData?.closeModal?.();
     } catch (error) {

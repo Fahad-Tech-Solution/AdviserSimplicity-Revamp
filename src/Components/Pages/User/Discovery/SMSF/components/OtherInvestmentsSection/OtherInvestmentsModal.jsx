@@ -161,14 +161,14 @@ export default function OtherInvestmentsModal({ modalData }) {
         [modalData.key]: saved || payload,
       }));
 
-      message.success(`${modalData?.title || "Other Investments"} updated successfully`);
+      message.success(`${modalData?.title || "Other Investments"} ${sectionData?._id ? "updated" : "saved"} successfully`);
       setEditing(false);
       modalData?.closeModal?.();
     } catch (error) {
       message.error(
         error?.response?.data?.message ||
-          error?.message ||
-          `Failed to update ${modalData?.title || "Other Investments"}`,
+        error?.message ||
+        `Failed to update ${modalData?.title || "Other Investments"}`,
       );
     } finally {
       setSaving(false);

@@ -41,6 +41,7 @@ import AddDiscoverySectionsModal from "../Pages/User/Discovery/AddSection/AddDis
 import { useAtomValue, useSetAtom } from "jotai";
 import {
   addDiscoverySectionsModalOpen,
+  clientReviewQuestion,
   loggedInUser,
   SelectedClient,
 } from "../../store/authState.js";
@@ -64,11 +65,13 @@ export default function UserLayout() {
   const selectedClient = useAtomValue(SelectedClient);
   const navigate = useNavigate();
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
+  const ClientReviewQuestion = useAtomValue(clientReviewQuestion);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
   const { logout } = useAuthSession();
 
   const navItems = useMemo(() => {
     const passes = (route) => route.condition?.(discoveryQuestions) !== false;
+    const passes2 = (route) => route.condition?.(ClientReviewQuestion) !== false;
     // `!== false` keeps routes with no `condition` visible; use `=== true` if you require condition
     return [
       ...userRoutes.filter(passes),
@@ -85,7 +88,7 @@ export default function UserLayout() {
       {
         key: "review",
         ...withSpacing({ icon: "🔄", label: "Review", fontSize: "13px" }),
-        children: reviewRoutes.filter(passes),
+        children: reviewRoutes.filter(passes2),
       },
     ];
   }, [discoveryQuestions]);

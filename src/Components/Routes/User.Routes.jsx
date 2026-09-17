@@ -58,6 +58,10 @@ import AdviserKnowledgeBase from "../Pages/User/Strategy/AdviserKnowledgeBase.js
 import DenaroDeck from "../Pages/User/Strategy/components/DenaroDeck.jsx";
 import Scenarios from "../Pages/User/Strategy/components/Scenarios/Scenarios.jsx";
 import ReviewClientDetails from "../Pages/User/Strategy/components/Scenarios/components/ReviewClientDetails.jsx";
+import WhatsChanged from "../Pages/User/Strategy/components/Scenarios/components/WhatsChanged.jsx";
+import ScenariosSuperProjection from "../Pages/User/Strategy/components/Scenarios/components/ScenariosSuperProjection.jsx";
+import RetirementAdequacy from "../Pages/User/Strategy/components/Scenarios/components/RetirementAdequacy/RetirementAdequacy.jsx";
+import ReviewAgePensionAssessment from "../Pages/User/Strategy/components/Scenarios/components/ReviewAgePensionAssessment/ReviewAgePensionAssessment.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1263,7 +1267,7 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: <div>Whats Changed Component</div>,
+    component: <WhatsChanged />,
     condition: (q) => true,
   },
   {
@@ -1278,8 +1282,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: <div>Super Projection Component</div>,
-    condition: (q) => q.superProjection === true,
+    component: <ScenariosSuperProjection />,
+    condition: (q) => q?.superProjection === "Yes",
   },
   {
     key: "/user/review-routes/retirement-adequacy",
@@ -1293,8 +1297,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: <div>Retirement Adequacy Component</div>,
-    condition: (q) => q.retirementAdequacy === true,
+    component: <RetirementAdequacy />,
+    condition: (q) => q?.retirementAdequacy === "Yes",
   },
   {
     key: "/user/review-routes/age-pension-assessment",
@@ -1308,8 +1312,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
-    condition: (q) => q.agePensionAssessment === true,
+    component: <ReviewAgePensionAssessment />,
+    condition: (q) => q?.agePensionAssessment === "Yes",
   },
   {
     key: "/user/review-routes/loan-simulator",
@@ -1324,7 +1328,7 @@ export const reviewRoutes = [
       color: "#6b7280",
     }),
     component: null,
-    condition: (q) => q.loanSimulator === true,
+    condition: (q) => q?.loanSimulator === true,
   },
   {
     key: "/user/review-routes/insurance-needs",
@@ -1339,7 +1343,7 @@ export const reviewRoutes = [
       color: "#6b7280",
     }),
     component: null,
-    condition: (q) => q.insuranceNeeds === true,
+    condition: (q) => q?.insuranceNeeds === true,
   },
   {
     key: "/user/review-routes/tax-planning",
@@ -1354,7 +1358,7 @@ export const reviewRoutes = [
       color: "#6b7280",
     }),
     component: null,
-    condition: (q) => q.taxPlanning === true,
+    condition: (q) => q?.taxPlanning === true,
   },
   {
     key: "/user/review-routes/summary",
