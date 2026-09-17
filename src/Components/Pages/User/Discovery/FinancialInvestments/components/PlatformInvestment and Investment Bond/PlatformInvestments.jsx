@@ -434,7 +434,7 @@ export default function PlatformInvestments({ modalData }) {
         initialValues: rowValues,
         closeModal: () => {
           setDetailModalOpen(false);
-          setEditing(true);
+          // setEditing(true);
           setDetailModalData({});
         },
         switchToEditMode: () => setEditing(true),
