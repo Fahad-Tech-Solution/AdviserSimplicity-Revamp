@@ -62,6 +62,8 @@ import WhatsChanged from "../Pages/User/Strategy/components/Scenarios/components
 import ScenariosSuperProjection from "../Pages/User/Strategy/components/Scenarios/components/ScenariosSuperProjection.jsx";
 import RetirementAdequacy from "../Pages/User/Strategy/components/Scenarios/components/RetirementAdequacy/RetirementAdequacy.jsx";
 import ReviewAgePensionAssessment from "../Pages/User/Strategy/components/Scenarios/components/ReviewAgePensionAssessment/ReviewAgePensionAssessment.jsx";
+import LoanSimulator from "../Pages/User/Strategy/components/Scenarios/components/LoanSimulator/LoanSimulator.jsx";
+import InsuranceNeeds from "../Pages/User/Strategy/components/Scenarios/components/InsuranceNeeds/InsuranceNeeds.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1327,8 +1329,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
-    condition: (q) => q?.loanSimulator === true,
+    component: <LoanSimulator />,
+    condition: (q) => q?.loanSimulator === "Yes",
   },
   {
     key: "/user/review-routes/insurance-needs",
@@ -1342,8 +1344,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
-    condition: (q) => q?.insuranceNeeds === true,
+    component: <InsuranceNeeds />,
+    condition: (q) => q?.insuranceNeeds === "Yes",
   },
   {
     key: "/user/review-routes/tax-planning",
