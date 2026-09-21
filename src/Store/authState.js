@@ -21,7 +21,7 @@ export const clientReviewQuestion = atomWithStorage("clientReviewQuestion", {
   agePensionAssessment: "Yes",
   loanSimulator: "Yes",
   insuranceNeeds: "Yes",
-  taxPlanning: "No",
+  taxPlanning: "Yes",
 });
 
 /** Team / employees list from GET /user/Employees (bootstrap). */

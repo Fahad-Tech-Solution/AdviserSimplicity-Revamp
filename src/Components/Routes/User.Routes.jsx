@@ -64,6 +64,8 @@ import RetirementAdequacy from "../Pages/User/Strategy/components/Scenarios/comp
 import ReviewAgePensionAssessment from "../Pages/User/Strategy/components/Scenarios/components/ReviewAgePensionAssessment/ReviewAgePensionAssessment.jsx";
 import LoanSimulator from "../Pages/User/Strategy/components/Scenarios/components/LoanSimulator/LoanSimulator.jsx";
 import InsuranceNeeds from "../Pages/User/Strategy/components/Scenarios/components/InsuranceNeeds/InsuranceNeeds.jsx";
+import ReviewsTaxPlanning from "../Pages/User/Strategy/components/Scenarios/components/ReviewsTaxPlanning/ReviewsTaxPlanning.jsx";
+import ReviewNattyAiSummary from "../Pages/User/Strategy/components/Scenarios/components/ReviewSummary/ReviewNattyAiSummary.jsx";
 // import ClientSummary from "../Pages/User/Discovery/ClientSummary/ClientSummary.jsx";
 
 /** Lazy so `PersonalDetails` can import route helpers from this file without a circular dependency. */
@@ -1359,8 +1361,8 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
-    condition: (q) => q?.taxPlanning === true,
+    component: <ReviewsTaxPlanning />,
+    condition: (q) => q?.taxPlanning === "Yes",
   },
   {
     key: "/user/review-routes/summary",
@@ -1374,7 +1376,7 @@ export const reviewRoutes = [
       fontSize: "12px",
       color: "#6b7280",
     }),
-    component: null,
+    component: <ReviewNattyAiSummary />,
     condition: (q) => true,
 
   },

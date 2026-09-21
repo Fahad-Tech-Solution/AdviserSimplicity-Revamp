@@ -5,6 +5,7 @@ import InvestmentSectionsPage from "../Pages/SuperAdmin/Catalogs/InvestmentSecti
 import SuperAdminDashboardPage from "../Pages/SuperAdmin/Dashboard/SuperAdminDashboardPage";
 import KnowledgeBasePage from "../Pages/SuperAdmin/KnowledgeBasePage/KnowledgeBasePage";
 import SuperAdminPricingTablePage from "../Pages/SuperAdmin/PricingTable/SuperAdminPricingTablePage";
+import RateReference from "../Pages/SuperAdmin/RateReference/RateReference";
 import SettingsPage from "../Pages/SuperAdmin/SettingsPage";
 import ProfilePage from "../Pages/User/Clients/ProfilePage";
 import { catalogChildRouteConfigs } from "./catalogRouteConfig";
@@ -76,6 +77,13 @@ export const superAdminNavRoutes = [
     path: "/subscriptions",
     ...withSpacing({ icon: "💳", label: "Subscriptions", fontSize: "13px" }),
     component: <SuperAdminPricingTablePage />,
+    condition: () => true,
+  },
+  {
+    key: "/super-admin/rate-reference",
+    path: "/rate-reference",
+    ...withSpacing({ icon: "📊", label: "Rate Reference", fontSize: "13px" }),
+    component: <RateReference />,
     condition: () => true,
   },
   {
