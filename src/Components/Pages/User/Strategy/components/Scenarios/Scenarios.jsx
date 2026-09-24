@@ -1,20 +1,48 @@
-import { Button, Dropdown, Flex, Form, Input, Space, Tooltip, Typography } from 'antd'
-import React, { useMemo, useState } from 'react'
-import { FaUpload } from 'react-icons/fa'
+import { Button, Dropdown, Flex, Form, Input, message, Space, Tooltip, Typography } from 'antd'
+import React, { useEffect, useMemo, useState } from 'react'
 import DynamicDataTable from '../../../../../Common/DynamicDataTable'
-import { useAtom } from 'jotai'
-import { selectedClientsReview } from '../../../../../../store/authState'
-import { DeleteFilled, FileTextOutlined, } from "@ant-design/icons";
+import { useAtom, useAtomValue } from 'jotai'
+import { SelectedClient, selectedClientsReview, SelectedReview, SelectedReviewAllData } from '../../../../../../store/authState'
 import AppModal from '../../../../../Common/AppModal'
+import useApi from '../../../../../../hooks/useApi'
+import { formatAustralianDate } from '../../../../../../hooks/helpers'
+import { useNavigate } from 'react-router-dom'
 
 const Scenarios = () => {
     let { Text, Title, } = Typography
     let [searchText, setSearchText] = useState("")
+    let [editScenario, setEditScenario] = useState({})
     const [Loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [openDropdownRowId, setOpenDropdownRowId] = useState(false);
     const [reviews, setReviews] = useAtom(selectedClientsReview);
+    const [selectedReview, setSelectedReview] = useAtom(SelectedReview);
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const selectedClient = useAtomValue(SelectedClient);
 
+    const Nav = useNavigate()
+
+    let { post, patch, get } = useApi();
+
+    useEffect(() => {
+        fetchAllScenarios()
+    }, [])
+
+    const fetchAllScenarios = async () => {
+        try {
+            let res = get("reviewScenario/" + selectedClient?._id)
+            if (res.data) {
+                setReviews(res.data);
+            }
+        } catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                `Failed to get data`
+            );
+        }
+    }
 
     function rowMatchesSearch(row, queryRaw) {
         const q = String(queryRaw ?? "").trim().toLowerCase();
@@ -54,18 +82,73 @@ const Scenarios = () => {
 
         return {
             items,
-            onClick: ({ key }) => { }
+            onClick: ({ key }) => {
+                switch (key) {
+                    case "rename":
+                        setEditScenario(row)
+                        break;
+                    case "Load this scenario":
+                        loadingScenarios(row)
+                        break;
+                    case "delete":
+                        deleteScenario(row)
+                        break;
+                    default:
+                        message.error(`Not configured yet`);
+                        break;
+                }
+            }
         }
     }
 
+    let deleteScenario = async (row) => {
+        setLoading(true);
+        try {
+            // 1. Await the HTTP call
+            await patch("reviewScenario/Delete", row);
 
+            // 2. Filter out the deleted item from state
+            setReviews((prevReviews) =>
+                prevReviews.filter((item) => item._id !== row._id)
+            );
+
+            message.success("Scenario deleted successfully");
+        } catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                `Failed to delete ${modalData?.title || "scenario"}`
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    let loadingScenarios = async (row) => {
+        try {
+            let res = await get('reviewScenario/fullDetails/' + row._id);
+            console.log(res);
+            if (res?.data) {
+                setSelectedReviewAllData(res.data)
+                setSelectedReview(row);
+                Nav("/user/review-routes/client-details")
+            }
+
+        } catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                `Failed to delete ${modalData?.title || "scenario"}`
+            );
+        }
+    }
 
     let columns = [
         {
             title: "No#",
             dataIndex: "no",
             key: "no",
-            width: 10,
+            width: 50,
             onCell: (record) => ({
                 style: {
                     textAlign: "center",
@@ -79,25 +162,29 @@ const Scenarios = () => {
             title: "Scenario",
             dataIndex: "scenarioName",
             key: "scenarioName",
-            // width: 50,
         },
         {
             title: "Last Module Edited",
             dataIndex: "updatedAt",
             key: "updatedAt",
-            // width: 50,
+            render: (value, row) => {
+                let data = formatAustralianDate(value);
+                return (data);
+            }
         },
         {
             title: "Date of Creation",
             dataIndex: "createdAt",
             key: "createdAt",
-            // width: 50,
+            render: (value, row) => {
+                let data = formatAustralianDate(value);
+                return (data);
+            }
         },
         {
             title: "Operation",
             dataIndex: "operation",
             key: "operation",
-            // width: 50,
             onCell: (record) => ({
                 style: {
                     textAlign: "center",
@@ -106,7 +193,6 @@ const Scenarios = () => {
                     color: "#9ca3af",
                 },
             }),
-
             render: (_, row) => {
                 const rowId = row?._id ?? row?.key;
                 return (
@@ -141,7 +227,6 @@ const Scenarios = () => {
         // 	Last Module Edited	Date of Creation	Last Syncronized At	Operation
     ];
 
-
     const tableData = useMemo(
         () =>
             reviews.map((item, index) => ({
@@ -175,11 +260,52 @@ const Scenarios = () => {
         setOpenModal(false);
     };
 
-    const handleFinish = (values) => {
-        if (onSubmit) {
-            onSubmit(values);
+    const handleFinish = async (values) => {
+        setSubmitting(true)
+        try {
+
+            let Payload = {
+                clientFK: selectedClient?._id || "",
+                scenarioName: values.scenarioName,
+                // Include ID when updating an existing scenario
+                ...(editScenario?._id && { _id: editScenario._id })
+            };
+
+            // 1. Await the async API request
+            const res = editScenario?._id
+                ? await patch("reviewScenario/update", Payload)
+                : await post("reviewScenario/Add", Payload);
+
+            console.log("response:", res);
+
+            // Extract created or updated scenario object from response
+            const responseData = res?.data?.scenario || res;
+
+            if (editScenario?._id) {
+                // 2. Update mode: Replace existing scenario in the array
+                setReviews((prevReviews) =>
+                    prevReviews.map((item) =>
+                        item._id === editScenario._id ? { ...item, ...responseData } : item
+                    )
+                );
+                message.success("Scenario updated successfully");
+            } else {
+                // 3. Add mode: Append new scenario to the array
+                setReviews((prevReviews) => [responseData, ...prevReviews]);
+                message.success("Scenario added successfully");
+            }
+
+            handleClose();
+        } catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                `Failed to save ${modalData?.title || "scenario details"}`
+            );
         }
-        handleClose();
+        finally {
+            setSubmitting(false)
+        }
     };
 
     return (
@@ -247,6 +373,7 @@ const Scenarios = () => {
                     </Space>
                 </div>
             </div>
+
             <div>
                 <DynamicDataTable
                     columns={columns}
@@ -254,15 +381,19 @@ const Scenarios = () => {
                     title={titleText}
                     total={filteredTableData.length}
                     pageSize={10}
-                    className="household-table"
                     bordered
                     size="small"
                     tableStyle={{ borderRadius: 12 }}
+                    horizontalScroll={filteredTableData.length > 0}
                     tableProps={{
                         childrenColumnName: "__antdNestedRows__",
                         loading: {
                             spinning: Loading,
                             tip: "Loading Reviews...",
+                        },
+                        scroll: filteredTableData.length > 0 ? "" : { x: "max-content" },
+                        locale: {
+                            emptyText: "No scenarios yet. Click “Add New +” to create one.",
                         },
                     }}
                 />
@@ -334,6 +465,7 @@ const Scenarios = () => {
                                         fontWeight: 600,
                                         fontSize: 13,
                                     }}
+                                    loading={submitting}
                                 >
                                     Add Scenario
                                 </Button>

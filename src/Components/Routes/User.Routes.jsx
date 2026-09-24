@@ -1037,6 +1037,7 @@ export const discoveryRoutes = [
 
 /** Menu / stepper key for Add Section (opens modal instead of navigating). */
 export const DISCOVERY_ADD_SECTION_KEY = "/user/discovery/add-section";
+export const REVIEWS_ADD_SECTION_KEY = "/user/review-routes/add-section";
 
 /** Routes shown in nav + stepper for the current discovery questionnaire state. */
 export function getVisibleDiscoveryRoutes(questions = {}) {

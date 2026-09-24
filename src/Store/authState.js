@@ -16,12 +16,12 @@ export const selectedClientsReview = atomWithStorage(
 );
 
 export const clientReviewQuestion = atomWithStorage("clientReviewQuestion", {
-  superProjection: "Yes",
-  retirementAdequacy: "Yes",
-  agePensionAssessment: "Yes",
-  loanSimulator: "Yes",
-  insuranceNeeds: "Yes",
-  taxPlanning: "Yes",
+  superProjection: "No",
+  retirementAdequacy: "No",
+  agePensionAssessment: "No",
+  loanSimulator: "No",
+  insuranceNeeds: "No",
+  taxPlanning: "No",
 });
 
 /** Team / employees list from GET /user/Employees (bootstrap). */
@@ -30,7 +30,9 @@ export const MyTeamData = atomWithStorage("MyTeamData", []);
 export const InvestmentOffersData = atomWithStorage("InvestmentOffersData", []);
 
 /** Currently selected household row from My Clients (set when user chooses Select). */
-export const SelectedClient = atomWithStorage(null);
+export const SelectedClient = atomWithStorage("SelectedClient", null);
+export const SelectedReview = atomWithStorage("SelectedReview", null);
+export const SelectedReviewAllData = atomWithStorage("SelectedReviewAllData", null);
 
 export const userDashboardLoading = atom(false);
 export const userDashboardError = atom(null);
@@ -116,6 +118,7 @@ export const creatingNewClientAtom = atom(false);
 
 /** Opens Add Discovery Sections modal (no route change; sidebar + stepper only). */
 export const addDiscoverySectionsModalOpen = atom(false);
+export const addReviewSectionsModalOpen = atom(false);
 
 /** Goals and Objectives Questions and Details */
 export const advisersDataAtom = atomWithStorage("advisersDataAtom", []);

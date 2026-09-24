@@ -8,6 +8,7 @@ import {
   userDashboardError,
   userDashboardLoading,
   discoveryDataAtom,
+  SelectedReviewAllData,
   InvestmentOffersData,
 } from "../store/authState";
 import { normalizeMyClientsList, wrapMyClientsState } from "./helpers";
@@ -35,7 +36,7 @@ export function useOwnerOptions() {
 export function getOwnerDisplayName(owner) {
   const discoveryData = useAtomValue(discoveryDataAtom);
   console.log(owner, "owner");
-  
+
   return owner.trim === "Joint" || owner === "joint"
     ? (discoveryData.personalDetails?.client?.clientPreferredName || "Client") +
         " & " +
@@ -198,7 +199,7 @@ export default function useUserDashboardData({ enabled = true } = {}) {
         }
       } finally {
         // if (mounted) {
-          setDashboardLoading(false);
+        setDashboardLoading(false);
         // }
         inFlightRef.current = false;
       }
@@ -228,4 +229,22 @@ export default function useUserDashboardData({ enabled = true } = {}) {
   };
 
   return { refetch };
+}
+
+export function useReviewOptions() {
+  const fullData = useAtomValue(SelectedReviewAllData);
+  console.log(fullData);
+  return useMemo(
+    () => [
+      {
+        label: fullData?.personalDetails?.client?.preferredName || "Client",
+        value: "client",
+      },
+      {
+        label: fullData?.personalDetails?.partner?.preferredName || "Partner",
+        value: "partner",
+      },
+    ],
+    [fullData],
+  );
 }

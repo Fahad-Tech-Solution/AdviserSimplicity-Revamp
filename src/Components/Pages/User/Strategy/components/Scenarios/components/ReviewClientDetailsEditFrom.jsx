@@ -3,19 +3,13 @@ import { Form, Select, DatePicker, Row, Col, Typography, Button, Space, message,
 import { RiEdit2Fill } from 'react-icons/ri';
 import dayjs from 'dayjs';
 import EditableDynamicTable from '../../../../../../Common/EditableDynamicTable';
-import {
-    formatNumber,
-    toCommaAndDollar,
-} from '../../../../../../../hooks/helpers';
+import { formatNumber, toCommaAndDollar } from '../../../../../../../hooks/helpers';
 import useApi from '../../../../../../../hooks/useApi';
+import { useReviewOptions } from '../../../../../../../hooks/useUserDashboardData';
 
 const { Text } = Typography;
 const PRIMARY_GREEN = '#22c55e';
 
-const OWNER_OPTIONS = [
-    { value: 'Client', label: 'Client' },
-    { value: 'Partner', label: 'Partner' },
-];
 
 const RISK_PROFILE_OPTIONS = [
     { value: 'Cash', label: 'Cash' },
@@ -26,20 +20,10 @@ const RISK_PROFILE_OPTIONS = [
     { value: 'High Growth', label: 'High Growth' },
 ];
 
-const YRS_TO_RETIRE_OPTIONS = Array.from({ length: 51 }, (_, i) => {
-    if (i == 0) {
-        return (
-            {
-                value: String(i),
-                label: `Now`,
-            }
-        )
-    }
-    return ({
-        value: String(i),
-        label: `${i} Yrs`,
-    })
-});
+const YRS_TO_RETIRE_OPTIONS = Array.from({ length: 51 }, (_, i) => ({
+    value: String(i),
+    label: i === 0 ? 'Now' : `${i} Yrs`,
+}));
 
 function parseDigitsValue(value) {
     return String(value ?? '').replace(/[^0-9]/g, '');
@@ -63,7 +47,14 @@ function parseCurrencyValue(value) {
 
 function formatCurrencyValue(value) {
     const numeric = parseCurrencyValue(value);
-    return numeric ? toCommaAndDollar(numeric) : '';
+    return numeric !== undefined ? toCommaAndDollar(numeric) : '';
+}
+
+function calculateYrsToRetire(dob, plannedRetirementAge) {
+    if (!dob || !plannedRetirementAge) return undefined;
+    const currentAge = dayjs().diff(dayjs(dob), 'year');
+    const remaining = Number(plannedRetirementAge) - currentAge;
+    return remaining > 0 ? String(remaining) : '0';
 }
 
 const TABLE_PROPS = {
@@ -80,39 +71,66 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const { post, patch } = useApi();
+    const OWNER_OPTIONS = useReviewOptions();
+
 
     const selectedOwners = Form.useWatch('selectedOwners', form) || ['Client', 'Partner'];
 
+    // Map raw initialData structure to component state rows
     const rows = useMemo(() => {
         return selectedOwners.map((ownerKey, index) => {
-            const isClient = ownerKey === 'Client';
-            const rolePrefix = isClient ? 'client' : 'partner';
+            const isClient = ownerKey.toLowerCase() === 'client';
+            const personData = isClient ? initialData?.client : initialData?.partner;
 
             return {
                 key: `owner-row-${index}`,
                 rowIndex: index,
                 formPath: ['ownersData', index],
-                ownerRole: ownerKey,
-                name: isClient ? initialData?.clientName : initialData?.partnerName,
-                dob: isClient && initialData?.clientDOB ? dayjs(initialData.clientDOB) : undefined,
-                salary: formatCurrencyValue(initialData?.[`${rolePrefix}Salary`]),
-                yrsToRetire: initialData?.[`${rolePrefix}YrsToRetire`],
-                superBalance: formatCurrencyValue(initialData?.[`${rolePrefix}SuperBalance`]),
-                abpBalance: formatCurrencyValue(initialData?.[`${rolePrefix}ABPBalance`]),
-                riskProfile: initialData?.[`${rolePrefix}RiskProfile`] || 'Balanced',
-                homeLoan: formatCurrencyValue(initialData?.[`${rolePrefix}HomeLoan`]),
+                ownerRole: isClient ? 'Client' : 'Partner',
+                name: personData?.preferredName || '',
+                dob: personData?.DOB ? dayjs(personData.DOB) : undefined,
+                salary: formatCurrencyValue(personData?.incomeFromBusinessTotal),
+                yrsToRetire: calculateYrsToRetire(personData?.DOB, personData?.plannedRetirementAge),
+                superBalance: formatCurrencyValue(personData?.superAnnuationTotal),
+                abpBalance: formatCurrencyValue(personData?.accountBasedPensionTotal),
+                riskProfile: personData?.riskGoal || 'Balanced',
             };
         });
     }, [selectedOwners, initialData]);
 
+    // Reset Form when initialData changes
     useEffect(() => {
-        form.setFieldsValue({
-            selectedOwners: [],
-            ownersData: rows,
-            sharedHomeLoan: formatCurrencyValue(initialData?.homeLoan || initialData?.clientHomeLoan),
+        if (!initialData) return;
+
+        // Extract normalized owner selections ('client' -> 'Client')
+        const initialOwnerList = (initialData.owner && initialData.owner.length > 0)
+            ? initialData.owner.map((o) => o.charAt(0).toUpperCase() + o.slice(1))
+            : ['Client', 'Partner'];
+
+        // Construct initial values array for nested form structure
+        const ownersFormValues = initialOwnerList.map((ownerKey) => {
+            const isClient = ownerKey.toLowerCase() === 'client';
+            const personData = isClient ? initialData?.client : initialData?.partner;
+
+            return {
+                name: personData?.preferredName || '',
+                dob: personData?.DOB ? dayjs(personData.DOB) : undefined,
+                salary: formatCurrencyValue(personData?.incomeFromBusinessTotal),
+                yrsToRetire: calculateYrsToRetire(personData?.DOB, personData?.plannedRetirementAge),
+                superBalance: formatCurrencyValue(personData?.superAnnuationTotal),
+                abpBalance: formatCurrencyValue(personData?.accountBasedPensionTotal),
+                riskProfile: personData?.riskGoal || 'Balanced',
+            };
         });
+
+        form.setFieldsValue({
+            selectedOwners: initialOwnerList,
+            ownersData: ownersFormValues,
+            sharedHomeLoan: formatCurrencyValue(initialData?.homeLoanTotal),
+        });
+
         setEditing(!initialData?._id);
-    }, [initialData]);
+    }, [initialData, form]);
 
     const columns = useMemo(
         () => [
@@ -215,9 +233,9 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     const totalRows = rows.length;
                     if (totalRows > 1) {
                         if (rowIndex === 0) {
-                            return { rowSpan: totalRows }; // Span both rows
+                            return { rowSpan: totalRows };
                         }
-                        return { rowSpan: 0 }; // Hide second cell
+                        return { rowSpan: 0 };
                     }
                     return { rowSpan: 1 };
                 },
@@ -234,32 +252,62 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     </Form.Item>
                 ),
                 renderView: () => {
-                    const value = form.getFieldValue('sharedHomeLoan') || initialData?.homeLoan || '--';
+                    const value = form.getFieldValue('sharedHomeLoan') || formatCurrencyValue(initialData?.homeLoanTotal) || '--';
                     return <span>{value}</span>;
                 },
-            }
+            },
         ],
-        []
+        [rows.length, initialData, form]
     );
 
     const handleFinish = async (values) => {
         try {
             setSaving(true);
 
-            const sharedHomeLoan = parseCurrencyValue(values?.sharedHomeLoan);
+            const activeOwners = values?.selectedOwners || [];
+            const ownersData = values?.ownersData || [];
+
+            let clientData = {};
+            let partnerData = {};
+
+            activeOwners.forEach((ownerKey, index) => {
+                const isClient = ownerKey.toLowerCase() === 'client';
+                const ownerInput = ownersData[index] || {};
+
+                // Calculate planned retirement age based on DOB and selected Yrs to Retire
+                let plannedRetirementAge = isClient
+                    ? initialData?.client?.plannedRetirementAge
+                    : initialData?.partner?.plannedRetirementAge;
+
+                if (ownerInput?.dob && ownerInput?.yrsToRetire) {
+                    const currentAge = dayjs().diff(dayjs(ownerInput.dob), 'year');
+                    plannedRetirementAge = currentAge + Number(ownerInput.yrsToRetire);
+                }
+
+                const mappedPayload = {
+                    preferredName: ownerInput.name || '',
+                    DOB: ownerInput.dob ? dayjs(ownerInput.dob).toISOString() : null,
+                    plannedRetirementAge: plannedRetirementAge || 65,
+                    incomeFromBusinessTotal: parseCurrencyValue(ownerInput.salary) ?? '',
+                    superAnnuationTotal: parseCurrencyValue(ownerInput.superBalance) ?? '',
+                    accountBasedPensionTotal: parseCurrencyValue(ownerInput.abpBalance) ?? '',
+                    riskGoal: ownerInput.riskProfile || '',
+                };
+
+                if (isClient) {
+                    clientData = mappedPayload;
+                } else {
+                    partnerData = mappedPayload;
+                }
+            });
 
             const payload = {
                 ...initialData,
-                homeLoan: sharedHomeLoan, // Single combined home loan value
-                owners: values?.ownersData?.map((item) => ({
-                    ...item,
-                    salary: parseCurrencyValue(item.salary),
-                    superBalance: parseCurrencyValue(item.superBalance),
-                    abpBalance: parseCurrencyValue(item.abpBalance),
-                })),
+                homeLoanTotal: parseCurrencyValue(values?.sharedHomeLoan) ?? '',
+                owner: activeOwners.map((o) => o.toLowerCase()),
+                client: Object.keys(clientData).length ? clientData : initialData?.client,
+                partner: Object.keys(partnerData).length ? partnerData : initialData?.partner,
             };
-
-         
 
             if (initialData?._id) {
                 await patch('/clientDetails/Update', payload);
@@ -318,12 +366,12 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     }}
                 >
                     <style>{`
-            .custom-table-container .ant-table-thead > tr > th {
-              background-color: ${PRIMARY_GREEN} !important;
-              color: #ffffff !important;
-              font-weight: 600 !important;
-            }
-          `}</style>
+                        .custom-table-container .ant-table-thead > tr > th {
+                            background-color: ${PRIMARY_GREEN} !important;
+                            color: #ffffff !important;
+                            font-weight: 600 !important;
+                        }
+                    `}</style>
                     <EditableDynamicTable
                         form={form}
                         editing={editing}
@@ -333,7 +381,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     />
                 </div>
 
-                {/* Action Button Controls */}
+                {/* Action Controls */}
                 <Row justify="end" style={{ marginTop: 20 }}>
                     <Space>
                         <Button onClick={() => modalData?.closeModal?.()}>Cancel</Button>

@@ -324,7 +324,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       // If an unexpected error occurs, assign default values
       setDiscoverySectionQuestions([]);
       setDiscoveryData({});
-      setSelectedClient(row);
+      setSelectedClient(null);
       // Do not show error to the client, but log for debugging
       console.error("Error getting client details", error);
     } finally {

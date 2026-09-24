@@ -30,6 +30,7 @@ import logo from "../../assets/image/Adviser-Simpilicity1.png";
 import {
   allUserRoutes,
   DISCOVERY_ADD_SECTION_KEY,
+  REVIEWS_ADD_SECTION_KEY,
   discoveryRoutes,
   reviewRoutes,
   strategyRoutes,
@@ -38,12 +39,14 @@ import {
 } from "../Routes/User.Routes.jsx";
 import DiscoveryFlowLayout from "./DiscoveryFlowLayout.jsx";
 import AddDiscoverySectionsModal from "../Pages/User/Discovery/AddSection/AddDiscoverySections.jsx";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   addDiscoverySectionsModalOpen,
+  addReviewSectionsModalOpen,
   clientReviewQuestion,
   loggedInUser,
   SelectedClient,
+  SelectedReview,
 } from "../../store/authState.js";
 import useUserDashboardData from "../../hooks/useUserDashboardData";
 import useAuthSession from "../../hooks/useAuthSession";
@@ -56,6 +59,7 @@ import { discoverySectionQuestionsAtom } from "../../store/authState.js";
 import { HiDotsVertical } from "react-icons/hi";
 import { capitalizeWords } from "../../hooks/helpers.js";
 import ReviewStepsLayout from "./ReviewStepsLayout.jsx";
+import ReviewAddQuestions from "../Pages/User/Strategy/components/Scenarios/components/ReviewAddQuestions/ReviewAddQuestions.jsx";
 
 export default function UserLayout() {
   const location = useLocation();
@@ -67,6 +71,9 @@ export default function UserLayout() {
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const ClientReviewQuestion = useAtomValue(clientReviewQuestion);
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
+  const setAddReviewSectionsModalOpen = useSetAtom(addReviewSectionsModalOpen);
+  const selectedReview = useAtomValue(SelectedReview);
+
   const { logout } = useAuthSession();
 
   const navItems = useMemo(() => {
@@ -114,19 +121,37 @@ export default function UserLayout() {
   }, []);
 
   const handleMenuClick = (info) => {
-    if (info.key === DISCOVERY_ADD_SECTION_KEY) {
+    const selectedClientId = selectedClient?._id ?? selectedClient?.id;
+    console.log("selectedClient:", selectedClient)
+    if (info.key === DISCOVERY_ADD_SECTION_KEY && selectedClientId) {
       setAddDiscoveryModalOpen(true);
       return;
     }
+    const isReviewSelected = selectedReview?._id ?? selectedReview?.id;
+
+    if (info.key === "/user/review-routes/add-section" && selectedClientId && isReviewSelected) {
+      setAddReviewSectionsModalOpen(true);
+      return;
+    }
+
     if (info.key.startsWith("/")) {
       const requiresSelectedClient =
         info.key.startsWith("/user/discovery") ||
-        info.key.startsWith("/strategy");
-      const selectedClientId = selectedClient?._id ?? selectedClient?.id;
+        info.key.startsWith("/strategy") ||
+        info.key.startsWith("/user/review-routes");
+
 
       if (requiresSelectedClient && !selectedClientId) {
         message.warning(
           "Please select a client from My Clients before proceeding.",
+        );
+        return;
+      }
+      console.log(info.key, info.key !== "/user/review-routes/scenarios" && !isReviewSelected)
+
+      if (info.key.startsWith("/user/review-routes") && info.key !== "/user/review-routes/scenarios" && !isReviewSelected) {
+        message.warning(
+          "Please select the first review for the selected client",
         );
         return;
       }
@@ -382,6 +407,7 @@ export default function UserLayout() {
         </Content>
       </Layout>
       <AddDiscoverySectionsModal />
+      <ReviewAddQuestions />
     </Layout>
   );
 }

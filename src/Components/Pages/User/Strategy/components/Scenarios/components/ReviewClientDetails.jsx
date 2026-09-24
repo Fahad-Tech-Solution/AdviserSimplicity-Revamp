@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { Row, Col, Card, Avatar, Button, Typography } from 'antd';
-import { discoveryDataAtom, SelectedClient } from '../../../../../../../store/authState';
+import { discoveryDataAtom, SelectedClient, SelectedReviewAllData } from '../../../../../../../store/authState';
 import { capitalizeFirst } from '../../../../../../../hooks/helpers';
 import AppModal from '../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../hooks/useTitleBlock';
@@ -33,39 +33,18 @@ function calcAge(dob) {
 
 function buildFormalName(person = {}, role = 'client') {
   const isClient = role === 'client';
-  const given = isClient
-    ? person.clientGivenName || person.firstName || ''
-    : person.partnerGivenName || person.firstName || '';
-  const middle = isClient
-    ? person.clientMiddleName || person.middleName || ''
-    : person.partnerMiddleName || person.middleName || '';
-  const last = isClient
-    ? person.clientLastName || person.lastName || ''
-    : person.partnerLastName || person.lastName || '';
 
-  const parts = [
-    given && capitalizeFirst(String(given)),
-    middle && capitalizeFirst(String(middle)),
-    last && capitalizeFirst(String(last)),
-  ].filter(Boolean);
 
   const fallback = isClient ? 'Client name not set' : 'Partner name (optional)';
-  return parts.join(' ').trim() || fallback;
+  return person?.[role]?.preferredName || fallback;
 }
 
 function dobAgeLine(person = {}, role = 'client') {
-  const raw =
-    role === 'client'
-      ? person?.client?.clientDOB || person?.client?.dateOfBirth || person?.client?.dob
-      : person?.partner?.partnerDOB || person?.partner?.dateOfBirth || person?.partner?.dob;
+  const raw = person?.[role]?.DOB
 
-  const ageStr = role === 'client' ? person.clientAge : person.partnerAge;
   const dateStr = formatAuDate(raw);
 
-  const ageNum =
-    ageStr != null && ageStr !== ''
-      ? parseInt(String(ageStr), 10)
-      : calcAge(raw);
+  const ageNum = calcAge(person?.[role]?.DOB);
 
   if (!dateStr && ageNum == null) return '—';
   if (dateStr && ageNum != null && !Number.isNaN(ageNum))
@@ -81,14 +60,14 @@ const ClientProfileCard = ({ discovery, person = {}, role = 'client' }) => {
   const isDefaultName =
     formalName === 'Client name not set' || formalName === 'Partner name (optional)';
 
-  const avatarSrc = role === 'client' ? person.clientAvatar : person.partnerAvatar;
+  const avatarSrc = role === 'client' ? person?.clientAvatar : person?.partnerAvatar;
 
   // Custom data fields matching your image
-  const salaryText = discovery?.[role]?.[`${role}Salary`] || 'Salary not set';
-  const retirementText = discovery?.[role]?.[`${role}Retirement`] || 'Retirement not set';
-  const profileType = discovery?.[role]?.[`${role}RiskProfile`] || 'Balanced';
-  const superText = discovery?.[role]?.[`${role}Super`] || 'Super not set';
-  const abpText = discovery?.[role]?.[`${role}ABP`] || 'ABP not set';
+  const salaryText = person?.[role]?.[`incomeFromBusinessTotal`] || 'Salary not set';
+  const retirementText = person?.[role]?.[`plannedRetirementAge`] || 'Retirement not set';
+  const profileType = person?.[role]?.[`riskGoal`] || 'Balanced';
+  const superText = person?.[role]?.[`superAnnuationTotal`] || 'Super not set';
+  const abpText = person?.[role]?.[`accountBasedPensionTotal`] || 'ABP not set';
 
   return (
     <Card
@@ -188,8 +167,15 @@ const ClientProfileCard = ({ discovery, person = {}, role = 'client' }) => {
 
 const ReviewClientDetails = () => {
   const headingStyle = { fontFamily: "Georgia,serif" };
+
   const [selectedClient] = useAtom(SelectedClient);
   const [DiscoveryDataAtom] = useAtom(discoveryDataAtom);
+  const selectedReviewAllData = useAtomValue(SelectedReviewAllData);
+
+  const personalDetails = useMemo(() => {
+    return selectedReviewAllData?.personalDetails || null;
+  }, [selectedReviewAllData]);
+
   const [openModal, setOpenModal] = useState();
   const showPartner = selectedClient?.partner && Object.keys(selectedClient.partner).length > 0
 
@@ -209,11 +195,11 @@ const ReviewClientDetails = () => {
       {/* Cards Row */}
       <Row gutter={[24, 24]}>
         <Col xs={24} md={12}>
-          <ClientProfileCard discovery={DiscoveryDataAtom} person={selectedClient} role="client" />
+          <ClientProfileCard discovery={DiscoveryDataAtom} person={personalDetails} role="client" />
         </Col>
         {showPartner && (
           <Col xs={24} md={12}>
-            <ClientProfileCard discovery={DiscoveryDataAtom} person={selectedClient} role="partner" />
+            <ClientProfileCard discovery={DiscoveryDataAtom} person={personalDetails} role="partner" />
           </Col>)}
       </Row>
 
@@ -246,7 +232,7 @@ const ReviewClientDetails = () => {
         })}
         width={"90%"}
       >
-        <ReviewClientDetailsEditFrom />
+        <ReviewClientDetailsEditFrom initialData={personalDetails} />
       </AppModal>
 
 
