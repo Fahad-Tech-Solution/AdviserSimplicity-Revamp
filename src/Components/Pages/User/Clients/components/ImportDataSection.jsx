@@ -15,7 +15,6 @@ const { Text } = Typography;
 const isValidAustralianDate = (dateStr) => {
     if (!dateStr) return false;
     const dateString = String(dateStr).trim();
-    console.log("dateString", dateString)
     const dateRegex = /^([0-2]?[0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/;
     if (!dateRegex.test(dateString)) return false;
 
