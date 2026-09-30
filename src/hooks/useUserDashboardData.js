@@ -161,8 +161,6 @@ export default function useUserDashboardData({ enabled = true } = {}) {
 
         const errors = [];
 
-        console.log(results, "results");
-
         results.forEach((result, index) => {
           const api = userApis[index];
 
@@ -233,7 +231,6 @@ export default function useUserDashboardData({ enabled = true } = {}) {
 
 export function useReviewOptions() {
   const fullData = useAtomValue(SelectedReviewAllData);
-  console.log(fullData);
   return useMemo(
     () => [
       {
@@ -247,4 +244,15 @@ export function useReviewOptions() {
     ],
     [fullData],
   );
+}
+
+export function useGetReviewName() {
+  const fullData = useAtomValue(SelectedReviewAllData);
+
+  // Returns a standalone, pure function that has fullData in its closure
+  return (ownerKey) => {
+    if (!ownerKey) return "";
+    const key = ownerKey.toLowerCase().trim();
+    return fullData?.personalDetails?.[key]?.preferredName || ownerKey;
+  };
 }

@@ -1,18 +1,30 @@
-import React from 'react'
+import React, { useEffect, useMemo } from 'react'
 import AppModal from '../../../../../../../Common/AppModal'
-import { Button, Col, Divider, Flex, Form, Input, Row, Space, Typography } from 'antd'
-import { addReviewSectionsModalOpen, clientReviewQuestion } from '../../../../../../../../store/authState'
+import { Button, Col, Divider, Form, message, Row, Typography } from 'antd'
+import { addReviewSectionsModalOpen, clientReviewQuestion, SelectedReviewAllData } from '../../../../../../../../store/authState'
 import { useAtom } from 'jotai'
 import useApi from '../../../../../../../../hooks/useApi'
 import AdviceGoalCard from '../../../../../../../Common/AdviceGoalCard'
 
 const ReviewAddQuestions = () => {
-    let { Text, Title, } = Typography
+    let { Text, Title } = Typography
     const [AddReviewSectionsModalOpen, setAddReviewSectionsModalOpen] = useAtom(addReviewSectionsModalOpen);
     const [reviewQuestion, setReviewQuestion] = useAtom(clientReviewQuestion);
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
 
     let { post, patch } = useApi();
     const [form] = Form.useForm();
+
+    const initialValues = useMemo(() => {
+        return selectedReviewAllData?.reviewGoalQuestions || reviewQuestion || {};
+    }, [selectedReviewAllData, reviewQuestion]);
+
+    // FIX 1: Sync form values whenever modal opens or initialValues change
+    useEffect(() => {
+        if (AddReviewSectionsModalOpen && initialValues) {
+            form.setFieldsValue(initialValues);
+        }
+    }, [AddReviewSectionsModalOpen, initialValues, form]);
 
     const handleClose = () => {
         form.resetFields();
@@ -21,68 +33,53 @@ const ReviewAddQuestions = () => {
 
     const onFinish = async (values) => {
         try {
-            console.log("selectedClient:", selectedClient)
-            let Payload = {
-                clientFK: selectedClient?._id || "",
-                scenarioName: values.scenarioName
-            }
 
-            let res = editScenario?._id ? patch("api/reviewScenario/update", Payload)
-                : post("api/reviewScenario/Add", Payload);
+            let payload = {
+                scenarioFK: selectedReviewAllData?.scenario?._id || "",
+                superProjection: values?.superProjection || "No",
+                retirementAdequacy: values?.retirementAdequacy || "No",
+                agePensionAssessment: values?.agePensionAssessment || "No",
+                loanSimulator: values?.loanSimulator || "No",
+                insuranceNeeds: values?.insuranceNeeds || "No",
+                taxPlanning: values?.taxPlanning || "No",
+                _id: selectedReviewAllData?.reviewGoalQuestions?._id || undefined
+            };
 
+            let res = selectedReviewAllData?.reviewGoalQuestions?._id
+                ? await patch("reviewQuestions/update", payload)
+                : await post("reviewQuestions/Add", payload);
 
-            console.log("response:", res)
+            // Ensure response data extracted correctly (check if backend wraps result inside res.data.data)
+            const updatedData = res?.data?.data || res?.data || payload;
 
+            // FIX 2: Keep state synchronized with the same updated object
+            setSelectedReviewAllData(prev => ({
+                ...prev,
+                reviewGoalQuestions: updatedData
+            }));
 
+            setReviewQuestion(updatedData);
 
             handleClose();
         } catch (error) {
             message.error(
                 error?.response?.data?.message ||
                 error?.message ||
-                `Some error accrued Please try later`,
+                `Some error occurred. Please try later.`
             );
         }
-
-
     };
 
-
     const selectedSections = [
-        {
-            icon: "🐷",
-            title: "Super Projection",
-            key: 'superProjection'
-        },
-        {
-            icon: "💸",
-            title: "Retirement Adequacy",
-            key: 'retirementAdequacy'
-        },
-        {
-            icon: "🏛️",
-            title: "Age Pension Assessment",
-            key: 'agePensionAssessment'
-        },
-        {
-            icon: "🏡",
-            title: "Loan Simulator",
-            key: 'loanSimulator'
-        },
-        {
-            icon: "🛡️",
-            title: "Insurance Needs",
-            key: 'insuranceNeeds'
-        },
-        {
-            icon: "🧾",
-            title: "Tax Planning",
-            key: 'taxPlanning'
-        },
-    ]
+        { icon: "🐷", title: "Super Projection", key: 'superProjection' },
+        { icon: "💸", title: "Retirement Adequacy", key: 'retirementAdequacy' },
+        { icon: "🏛️", title: "Age Pension Assessment", key: 'agePensionAssessment' },
+        { icon: "🏡", title: "Loan Simulator", key: 'loanSimulator' },
+        { icon: "🛡️", title: "Insurance Needs", key: 'insuranceNeeds' },
+        { icon: "🧾", title: "Tax Planning", key: 'taxPlanning' },
+    ];
 
     return (
-
         <AppModal
             open={AddReviewSectionsModalOpen}
             onClose={handleClose}
@@ -90,15 +87,10 @@ const ReviewAddQuestions = () => {
         >
             <Form
                 form={form}
-                initialValues={reviewQuestion}
                 onFinish={onFinish}
             >
                 <div className="mb-3">
-                    <Title style={{
-                        fontSize: "22px",
-                        margin: "0px",
-                        padding: "0px"
-                    }}>
+                    <Title style={{ fontSize: "22px", margin: "0px", padding: "0px" }}>
                         Add Section
                     </Title>
                     <Text>
@@ -117,18 +109,20 @@ const ReviewAddQuestions = () => {
 
                                 return (
                                     <Col md={8} key={section.key}>
-                                        <AdviceGoalCard
-                                            label={section.title}
-                                            Icon={section.icon}
-                                            status={currentStatus}
-                                            info={section.info}
-                                            onClick={() => {
-                                                form.setFieldValue(
-                                                    section.key,
-                                                    currentStatus === "Yes" ? "No" : "Yes"
-                                                );
-                                            }}
-                                        />
+                                        <Form.Item name={section.key} noStyle>
+                                            <AdviceGoalCard
+                                                label={section.title}
+                                                Icon={section.icon}
+                                                status={currentStatus}
+                                                info={section.info}
+                                                onClick={() => {
+                                                    form.setFieldValue(
+                                                        section.key,
+                                                        currentStatus === "Yes" ? "No" : "Yes"
+                                                    );
+                                                }}
+                                            />
+                                        </Form.Item>
                                     </Col>
                                 );
                             })
@@ -138,16 +132,19 @@ const ReviewAddQuestions = () => {
 
                 <Divider />
 
-                {/* Dynamic Footer with Live Reactive Counts */}
                 <Form.Item
                     noStyle
                     shouldUpdate={(prevValues, currentValues) => prevValues !== currentValues}
                 >
                     {() => {
-                        // Pass true to get all store values (including initialValues)
                         const formValues = form.getFieldsValue(true);
-                        const enabledCount = Object.values(formValues).filter((val) => val === "Yes").length;
-                        const totalCount = Object.keys(formValues).length;
+                        const enabledCount = selectedSections.filter(
+                            (s) => formValues[s.key] === "Yes"
+                        ).length;
+
+                        const isAllSelected = selectedSections.every(
+                            (s) => formValues[s.key] === "Yes"
+                        );
 
                         return (
                             <div
@@ -158,25 +155,22 @@ const ReviewAddQuestions = () => {
                                     width: "100%",
                                 }}
                             >
-                                <Text onClick={() => { console.log(formValues) }}>
-                                    {enabledCount} of {totalCount} sections enabled
+                                <Text>
+                                    {enabledCount} of {selectedSections.length} sections enabled
                                 </Text>
 
                                 <div style={{ marginLeft: "auto", display: "flex", gap: "10px" }}>
                                     <Button
                                         onClick={() => {
-                                            const isAllSelected = Object.values(formValues).every((val) => val === "Yes");
                                             const targetValue = isAllSelected ? "No" : "Yes";
-
                                             const updatedValues = {};
-                                            Object.keys(formValues).forEach((key) => {
-                                                updatedValues[key] = targetValue;
+                                            selectedSections.forEach((s) => {
+                                                updatedValues[s.key] = targetValue;
                                             });
-
                                             form.setFieldsValue(updatedValues);
                                         }}
                                     >
-                                        {Object.values(formValues).every((val) => val === "Yes") ? "Unselect all" : "Select all"}
+                                        {isAllSelected ? "Unselect all" : "Select all"}
                                     </Button>
                                     <Button type="primary" onClick={() => form.submit()}>
                                         Save and Exit
@@ -188,7 +182,7 @@ const ReviewAddQuestions = () => {
                 </Form.Item>
             </Form>
         </AppModal>
-    )
-}
+    );
+};
 
-export default ReviewAddQuestions
+export default ReviewAddQuestions;

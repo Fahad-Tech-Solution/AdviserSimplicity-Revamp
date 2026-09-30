@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, Radio, Input, Button, Alert, Space, Typography, Form, message } from 'antd';
-import { MailOutlined, CopyOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import parse from "html-react-parser";
+import { CheckCircleOutlined } from '@ant-design/icons';
 import { FaCheck } from 'react-icons/fa';
+import { useLocation } from 'react-router-dom';
+import useApi from '../../../../../../../hooks/useApi'; // Adjust path as needed
+import Ok from '../../../../../../../assets/svg/Ok-pana.svg';
+import Advantages from '../../../../../../../assets/svg/Advantages-pana.svg';
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
-// Merged configuration matching the HTML structure and detailed descriptions
 const reviewQuestions = [
     {
         id: 'q-income',
@@ -34,25 +36,7 @@ const reviewQuestions = [
         label: 'Has your health changed?',
         detail: 'Have there been any changes to your health or the health of your immediate family?',
         options: ['Yes', 'No'],
-        notes: { placeholder: 'Notes (optional)…', rows: 2 },
-        alert: {
-            title: "Health Change Noted — Critical Strategy Review Required",
-            icon: "🏥",
-            showOnOption: "Yes",
-            type: "warning",
-            description: `
-    <div class="rq-alert rq-alert-warn" style="margin-bottom:.65rem">
-      <div>
-        A change in health can trigger a number of important financial planning actions. Please work through each of the following considerations with the client before proceeding.<br><br>
-        <strong style="color:#92400e">⚠️ Terminal Illness — Early Super Access</strong><br>
-        If the client has received a medical diagnosis with a life expectancy of <strong>less than 24 months</strong>, they may be eligible to access their entire superannuation balance as a <strong>tax-free lump sum</strong>.<br><br>
-        <strong style="color:#92400e">🛡️ Trauma & TPD Claims</strong><br>
-        Review the client's trauma policy for listed events, and check Total and Permanent Disability (TPD) cover held both inside and outside super.<br><br>
-        <strong style="color:#92400e">📋 Estate Planning</strong><br>
-        Review Wills, Enduring Powers of Attorney, and Advance Care Directives.
-      </div>
-    </div>`
-        }
+        notes: { placeholder: 'Notes (optional)…', rows: 2 }
     },
     {
         id: 'q-dependants',
@@ -87,7 +71,7 @@ const reviewQuestions = [
         icon: '✅',
         label: 'Are you happy with your current investments?',
         detail: 'Are you satisfied with your current investment strategy and portfolio performance?',
-        options: ['Yes — retain strategy', 'No — review required'],
+        options: ['Yes', 'No'],
         notes: { placeholder: 'Notes (optional)…', rows: 2 }
     },
     {
@@ -96,7 +80,7 @@ const reviewQuestions = [
         icon: '🛡️',
         label: 'Are you happy with your current insurance?',
         detail: 'Are you satisfied with your current levels of insurance coverage and premiums?',
-        options: ['Yes — retain cover', 'No — review required', 'N/A'],
+        options: ['Yes', 'No'],
         notes: { placeholder: 'Notes on cover type, sum insured, beneficiaries or any recommended changes…', rows: 2 }
     },
     {
@@ -142,68 +126,133 @@ const reviewQuestions = [
         label: 'Are you putting extra money into super?',
         detail: 'Are you currently making any additional contributions into superannuation beyond your employer\'s Superannuation Guarantee (SG) payments?',
         options: ['Yes', 'No'],
-        notes: { placeholder: 'Amount and contribution type…', rows: 2 },
-        alert: {
-            title: "Opportunity — Additional Super Contributions",
-            icon: "💡",
-            type: "success",
-            showOnOption: "No",
-            description: `
-    <div class="rq-alert rq-alert-green">
-      <div>
-        Making extra contributions into superannuation is one of the most effective ways to build long-term retirement wealth.<br><br>
-        • <strong>Salary Sacrifice</strong> — Redirect pre-tax salary (contributions taxed at 15%).<br>
-        • <strong>Personal Concessional Contributions</strong> — Claim a tax deduction on personal payments.<br><br>
-        Review current limits and carry-forward rules for maximum impact.
-      </div>
-    </div>`
-        }
+        notes: { placeholder: 'Amount and contribution type…', rows: 2 }
     }
 ];
 
-const ReviewWhatsNewQuestions = () => {
+const ReviewAddQuestions = () => {
     const [form] = Form.useForm();
-    const [generatedCode, setGeneratedCode] = useState('');
-    const [copied, setCopied] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [alreadyFilled, setAlreadyFilled] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const { post } = useApi();
+    const location = useLocation();
 
-    // Converts form results to Base64 Reply Code matching the HTML logic[cite: 2]
-    const handleSubmit = (values) => {
-        // Collect answers into key-value map
-        const answersPayload = {};
+    // Extract search query parameters from URL
+    const clientDetails = useMemo(() => {
+        if (!location?.search) return {};
+        const params = new URLSearchParams(location.search);
+        // form.reset()
+        return Object.fromEntries(params.entries());
+    }, [location?.search]);
 
-        reviewQuestions.forEach((q) => {
-            const val = values[q.key];
-            if (val) {
-                answersPayload[q.id] = val;
-            }
-            const noteVal = values[`${q.key}_notes`];
-            if (noteVal && noteVal.trim()) {
-                answersPayload[`${q.id}_notes`] = noteVal.trim();
-            }
-        });
-
+    const handleSubmit = async (values) => {
         try {
-            const jsonString = JSON.stringify(answersPayload);
-            const encodedCode = "RQ:" + btoa(unescape(encodeURIComponent(jsonString)));
-            setGeneratedCode(encodedCode);
-            message.success("Reply Code generated successfully!");
-        } catch (err) {
-            message.error("Failed to generate code.");
+            setLoading(true);
+
+            // Construct payload matching required schema
+            const payload = {
+                token: clientDetails?.ref || "",
+
+                // Radio Answers
+                income: values?.income || "No",
+                employment: values?.employment || "No",
+                health: values?.health || "No",
+                dependants: values?.dependants || "No",
+                goals: values?.goals || "No",
+                incomeNeed: values?.incomeNeed || "No",
+                happyWithInvestments: values?.happyWithInvestments || "No",
+                insurance: values?.insurance || "No",
+                address: values?.address || "No",
+                inheritance: values?.inheritance || "No",
+                lifestyleSpending: values?.lifestyleSpending || "No",
+                homeLoan: values?.homeLoan || "No",
+                extraSuper: values?.extraSuper || "No",
+
+                // Text Notes
+                income_notes: values?.income_notes || "",
+                employment_notes: values?.employment_notes || "",
+                health_notes: values?.health_notes || "",
+                dependants_notes: values?.dependants_notes || "",
+                goals_notes: values?.goals_notes || "",
+                incomeNeed_notes: values?.incomeNeed_notes || "",
+                happyWithInvestments_notes: values?.happyWithInvestments_notes || "",
+                insurance_notes: values?.insurance_notes || "",
+                address_notes: values?.address_notes || "",
+                inheritance_notes: values?.inheritance_notes || "",
+                lifestyleSpending_notes: values?.lifestyleSpending_notes || "",
+                homeLoan_notes: values?.homeLoan_notes || "",
+                extraSuper_notes: values?.extraSuper_notes || "",
+            };
+
+            const response = await post("whatChange/external/Add", payload);
+            const resData = response?.data || response;
+            console.log(resData)
+            // Check if already filled
+            if (resData?.alreadyFilled) {
+                setAlreadyFilled(true);
+                message.warning("You have already submitted responses for this review.");
+                return;
+            }
+
+            setIsSubmitted(true);
+            message.success("Response submitted successfully!");
+        } catch (error) {
+            // Check response errors if server returns alreadyfilled inside response data
+            if (error?.response?.data?.alreadyFilled) {
+                setAlreadyFilled(true);
+                message.warning("You have already submitted responses for this review.");
+            } else {
+                message.error(
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Failed to submit answers. Please try again."
+                );
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleCopyCode = () => {
-        if (!generatedCode) return;
-        navigator.clipboard.writeText(generatedCode);
-        setCopied(true);
-        message.success("Copied to clipboard!");
-        setTimeout(() => setCopied(false), 2000);
-    };
+    if (alreadyFilled) {
+        return (
+            <div style={{ maxWidth: 720, margin: '150px auto', padding: '0' }}>
+                <div className='d-flex justify-content-center align-items-center'>
+                    <img src={Advantages} style={{ maxWidth: 720, maxHeight: 500, }} />
+                </div>
+                <Alert
+                    message="Already Filled"
+                    description="You have already completed and submitted your responses for this review. Thank you!"
+                    type="info"
+                    showIcon
+                    style={{ borderRadius: 10, padding: 24 }}
+                />
+            </div>
+        );
+    }
+
+    if (isSubmitted) {
+        return (
+            <div style={{ maxWidth: 720, margin: '150px auto', padding: '0' }}>
+                <div className='d-flex justify-content-center align-items-center'>
+                    <img src={Ok} style={{ maxWidth: 720, maxHeight: 500, }} />
+                </div>
+                <Alert
+                    message="Thank You!"
+                    description="Your responses have been successfully submitted."
+                    type="success"
+                    showIcon
+                    icon={<CheckCircleOutlined />}
+                    style={{ borderRadius: 10, padding: 24 }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px', fontFamily: 'sans-serif' }}>
 
-            {/* Header Box[cite: 2] */}
+            {/* Header Box */}
             <div style={{
                 background: 'linear-gradient(135deg, #1a3a1a, #3db549)',
                 color: '#fff',
@@ -215,14 +264,14 @@ const ReviewWhatsNewQuestions = () => {
                     Annual Review Questionnaire
                 </Text>
                 <Title level={2} style={{ color: '#fff', margin: '4px 0 6px 0', fontSize: 24 }}>
-                    Client Review
+                    {clientDetails?.name || "Client"} Review
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>
                     Denaro Wealth &nbsp;·&nbsp; Annual Review
                 </Text>
             </div>
 
-            {/* Intro Box[cite: 2] */}
+            {/* Intro Box */}
             <div style={{
                 background: '#fff',
                 border: '1px solid #e0e8e0',
@@ -233,8 +282,8 @@ const ReviewWhatsNewQuestions = () => {
                 color: '#555',
                 lineHeight: 1.6
             }}>
-                Dear Client,<br />
-                Please answer the questions below before your annual review with <strong>Denaro Wealth</strong>. Once complete, click <strong>Submit Answers</strong> and email the Reply Code back to your adviser.
+                Dear {clientDetails?.name || "Client"},<br />
+                Please answer the questions below regarding any changes to your circumstances. Once completed, click <strong>Submit Answers</strong>.
             </div>
 
             {/* Ant Design Form Wrapper */}
@@ -255,7 +304,7 @@ const ReviewWhatsNewQuestions = () => {
                                                 boxShadow: 'none'
                                             }}
                                         >
-                                            {/* Label Header with Badge Index[cite: 2] */}
+                                            {/* Label Header with Badge Index */}
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                                                 <span style={{
                                                     display: 'inline-flex',
@@ -276,7 +325,7 @@ const ReviewWhatsNewQuestions = () => {
                                                 </Text>
                                             </div>
 
-                                            {/* Detailed Context[cite: 2] */}
+                                            {/* Detailed Context */}
                                             <Paragraph style={{ fontSize: 12, color: '#666', marginBottom: 12, paddingLeft: 32 }}>
                                                 {q.detail}
                                             </Paragraph>
@@ -285,7 +334,7 @@ const ReviewWhatsNewQuestions = () => {
                                             <div style={{ paddingLeft: 32 }}>
                                                 <Form.Item
                                                     name={q.key}
-                                                    rules={[{ required: true, message: 'Please select an answer' }]}
+                                                    initialValue="No"
                                                     style={{ marginBottom: 0 }}
                                                 >
                                                     <Radio.Group style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -316,8 +365,8 @@ const ReviewWhatsNewQuestions = () => {
                                                     </Radio.Group>
                                                 </Form.Item>
 
-                                                {/* Notes Field (Appears on affirmative/review selections)[cite: 2] */}
-                                                {(selectedValue?.includes("Yes") || selectedValue?.includes("No — review")) && (
+                                                {/* Notes Field (Appears when "Yes" is selected) */}
+                                                {selectedValue === "Yes" && (
                                                     <Form.Item name={`${q.key}_notes`} style={{ marginTop: 12, marginBottom: 0 }}>
                                                         <TextArea
                                                             rows={q.notes.rows}
@@ -326,8 +375,6 @@ const ReviewWhatsNewQuestions = () => {
                                                         />
                                                     </Form.Item>
                                                 )}
-
-                                                
                                             </div>
                                         </Card>
                                     );
@@ -349,11 +396,11 @@ const ReviewWhatsNewQuestions = () => {
                     <Text style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 12 }}>
                         Please answer all questions before submitting.
                     </Text>
-
                     <Button
                         type="primary"
                         htmlType="submit"
                         size="large"
+                        loading={loading}
                         style={{
                             backgroundColor: '#3db549',
                             borderColor: '#3db549',
@@ -361,51 +408,12 @@ const ReviewWhatsNewQuestions = () => {
                             fontWeight: 700,
                             padding: '0 36px'
                         }}
+                        icon={"✓"}
                     >
-                        ✓ Submit Answers
+                        Submit Answers
                     </Button>
-
-                    {/* Generated Reply Code Area[cite: 2] */}
-                    {generatedCode && (
-                        <div style={{ marginTop: 20, textAlign: 'left', background: '#f0fdf0', padding: 16, borderRadius: 8, border: '1.5px solid #3db549' }}>
-                            <Text strong style={{ fontSize: 12, color: '#1a3a1a', display: 'block', marginBottom: 6 }}>
-                                Your Reply Code — send this to your adviser:
-                            </Text>
-
-                            <TextArea
-                                value={generatedCode}
-                                readOnly
-                                rows={3}
-                                style={{
-                                    fontFamily: 'monospace',
-                                    fontSize: 11,
-                                    backgroundColor: '#fff',
-                                    marginBottom: 8
-                                }}
-                            />
-
-                            <Button
-                                icon={copied ? <CheckCircleOutlined /> : <CopyOutlined />}
-                                onClick={handleCopyCode}
-                                style={{
-                                    backgroundColor: '#e8f5e9',
-                                    color: '#2d6a2d',
-                                    borderColor: '#3db549',
-                                    fontWeight: 700,
-                                    borderRadius: 6
-                                }}
-                            >
-                                {copied ? 'Copied!' : 'Copy Code'}
-                            </Button>
-
-                            <Text style={{ fontSize: 11, color: '#666', display: 'block', marginTop: 8 }}>
-                                Email or text this code to your adviser.
-                            </Text>
-                        </div>
-                    )}
                 </div>
             </Form>
-
             <div style={{ fontSize: 10, color: '#aaa', textAlign: 'center', marginTop: 20 }}>
                 Prepared by Denaro Wealth — Confidential
             </div>
@@ -413,4 +421,4 @@ const ReviewWhatsNewQuestions = () => {
     );
 };
 
-export default ReviewWhatsNewQuestions;
+export default ReviewAddQuestions;

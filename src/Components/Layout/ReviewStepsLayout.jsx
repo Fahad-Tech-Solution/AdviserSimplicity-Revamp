@@ -1,17 +1,16 @@
 import { CheckOutlined } from "@ant-design/icons";
-import { Button, Col, Divider, Form, Row, Space, Typography } from "antd";
+import { Button, Col, Divider, Form, message, Row, Space, Spin, Typography } from "antd";
 import { useAtom, useAtomValue } from "jotai";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { addReviewSectionsModalOpen, clientReviewQuestion } from "../../store/authState";
+import { addReviewSectionsModalOpen, clientReviewQuestion, SelectedReview, SelectedReviewAllData } from "../../store/authState";
 import {
     getReviewStepperRoutes,
     matchReviewRoute,
     pathMatchesReviewRoute,
 } from "../Routes/User.Routes.jsx";
-import AppModal from "../Common/AppModal.jsx";
-import FormItem from "antd/es/form/FormItem/index.js";
-import AdviceGoalCard from "../Common/AdviceGoalCard.jsx";
+import { verifyPersonalDetailsFilled } from "../../hooks/helpers.js";
+import useApi from "../../hooks/useApi.js";
 
 const { Text, Title } = Typography;
 
@@ -120,19 +119,21 @@ function ReviewStepper({ pathname, visibleRoutes, onNavigate }) {
     );
 }
 
+
+
 const ReviewStepsLayout = () => {
     const [form] = Form.useForm();
     const location = useLocation();
     const navigate = useNavigate();
     const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useAtom(addReviewSectionsModalOpen);
-    const reviewQuestion = useAtomValue(clientReviewQuestion);
+    const [reviewQuestion, setReviewQuestion] = useAtom(clientReviewQuestion);
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData)
 
+
+    const [loading, setLoading] = useState(false)
+    const selectedReview = useAtomValue(SelectedReview);
     const formValues = form.getFieldsValue();
-    const enabledCount = Object.values(formValues).filter(
-        (val) => val === "Yes"
-    ).length;
-    const totalCount = Object.keys(formValues).length;
-
+    let { get } = useApi();
 
     // 1. Get dynamically filtered stepper routes based on condition functions
     const stepperRoutes = useMemo(
@@ -147,11 +148,47 @@ const ReviewStepsLayout = () => {
     const handleStepNavigate = (key) => {
         // Intercept "Add Section" click to open modal instead of routing
         if (key === "/user/review-routes/add-section") {
-            setIsAddSectionModalOpen(true);
-            return;
+
+            if (verifyPersonalDetailsFilled(selectedReviewAllData)) {
+                setIsAddSectionModalOpen(true);
+                return;
+            }
+            else {
+                message.error(`Please complete client details first.`);
+                return;
+            }
         }
         navigate(key);
     };
+
+    useEffect(() => {
+        if (selectedReview?._id) {
+            fetchFullData();
+        }
+    }, [selectedReview])
+
+    const fetchFullData = async () => {
+        try {
+            setLoading(true);
+            let res = await get('reviewScenario/fullDetails/' + selectedReview?._id);
+            if (res?.data) {
+                setSelectedReviewAllData(res.data);
+                setReviewQuestion(res?.data?.reviewGoalQuestions || {});
+            }
+        }
+        catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                `Some error accrued Please try later`,
+            );
+        }
+        finally {
+            setLoading(false);
+        }
+
+
+    }
 
 
     return (
@@ -211,9 +248,21 @@ const ReviewStepsLayout = () => {
                 </>
 
             )}
-
-            {/* Renders the current step page component dynamically */}
-            <Outlet />
+            {loading ?
+                <div style={{
+                    minHeight: "70vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}>
+                    <Spin size="large" />
+                </div>
+                :
+                <>
+                    {/* Renders the current step page component dynamically */}
+                    <Outlet />
+                </>
+            }
 
         </div>
     );

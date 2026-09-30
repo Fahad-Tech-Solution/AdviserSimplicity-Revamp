@@ -60,7 +60,7 @@ const ClientProfileCard = ({ discovery, person = {}, role = 'client' }) => {
   const isDefaultName =
     formalName === 'Client name not set' || formalName === 'Partner name (optional)';
 
-  const avatarSrc = role === 'client' ? person?.clientAvatar : person?.partnerAvatar;
+  const avatarSrc = person?.[role]?.image?.url || null;
 
   // Custom data fields matching your image
   const salaryText = person?.[role]?.[`incomeFromBusinessTotal`] || 'Salary not set';
@@ -232,7 +232,7 @@ const ReviewClientDetails = () => {
         })}
         width={"90%"}
       >
-        <ReviewClientDetailsEditFrom initialData={personalDetails} />
+        <ReviewClientDetailsEditFrom modalData={{ closeModal: () => setOpenModal(false) }} initialData={personalDetails} />
       </AppModal>
 
 

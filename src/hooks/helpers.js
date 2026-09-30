@@ -257,7 +257,6 @@ export function convertDateAUWithDayJS(date = "") {
   return dayjs.utc(date).format("DD/MM/YYYY");
 }
 
-
 export function getInitials(name = "") {
   return name
     .split(/\s+/)
@@ -266,4 +265,53 @@ export function getInitials(name = "") {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+export function notEmptyValue(value) {
+  return value !== "" && value !== null && value !== undefined;
+}
+
+const REQUIRED_PERSON_FIELDS = [
+  "DOB",
+  "accountBasedPensionTotal",
+  "incomeFromBusinessTotal",
+  "plannedRetirementAge",
+  "superAnnuationTotal",
+  "riskGoal",
+  "preferredName",
+];
+
+export function verifyPersonalDetailsFilled(reviewAllData) {
+  const personalDetail = reviewAllData?.personalDetails;
+
+  // 1. Verify primary data and homeLoanTotal exist
+  if (!personalDetail || !notEmptyValue(personalDetail.homeLoanTotal)) {
+    return false;
+  }
+
+  const owners = personalDetail.owner || [];
+
+  // 2. Validate a person object against required fields
+  const validatePerson = (personData) =>
+    Boolean(personData) &&
+    REQUIRED_PERSON_FIELDS.every((field) => notEmptyValue(personData[field]));
+
+  // 3. Determine required roles based on owner field (array or string)
+  const isPartnerRequired = owners.includes("partner");
+  const isClientRequired = owners.includes("client");
+
+  // Must match at least one owner type
+  if (!isPartnerRequired && !isClientRequired) {
+    return false;
+  }
+  // Check each required role
+  if (isPartnerRequired && !validatePerson(personalDetail.partner)) {
+    return false;
+  }
+
+  if (isClientRequired && !validatePerson(personalDetail.client)) {
+    return false;
+  }
+
+  return true;
 }

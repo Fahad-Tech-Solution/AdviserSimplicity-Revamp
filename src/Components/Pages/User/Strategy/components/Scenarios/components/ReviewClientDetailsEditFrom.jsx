@@ -3,13 +3,14 @@ import { Form, Select, DatePicker, Row, Col, Typography, Button, Space, message,
 import { RiEdit2Fill } from 'react-icons/ri';
 import dayjs from 'dayjs';
 import EditableDynamicTable from '../../../../../../Common/EditableDynamicTable';
-import { formatNumber, toCommaAndDollar } from '../../../../../../../hooks/helpers';
+import { formatAustralianDate, formatNumber, toCommaAndDollar } from '../../../../../../../hooks/helpers';
 import useApi from '../../../../../../../hooks/useApi';
-import { useReviewOptions } from '../../../../../../../hooks/useUserDashboardData';
+import { useOwnerOptions } from '../../../../../../../hooks/useUserDashboardData';
+import { SelectedReviewAllData } from '../../../../../../../store/authState';
+import { useAtom, useAtomValue } from 'jotai';
 
 const { Text } = Typography;
 const PRIMARY_GREEN = '#22c55e';
-
 
 const RISK_PROFILE_OPTIONS = [
     { value: 'Cash', label: 'Cash' },
@@ -24,6 +25,21 @@ const YRS_TO_RETIRE_OPTIONS = Array.from({ length: 51 }, (_, i) => ({
     value: String(i),
     label: i === 0 ? 'Now' : `${i} Yrs`,
 }));
+
+const TABLE_PROPS = {
+    showCount: false,
+    noPagination: true,
+    horizontalScroll: true,
+    tableStyle: { borderRadius: '0 0 12px 12px', overflow: 'hidden' },
+    headerFontSize: 12,
+    bodyFontSize: 13,
+};
+
+function toDayjsValue(value) {
+    if (!value) return undefined;
+    const date = dayjs(value);
+    return date.isValid() ? date : undefined;
+}
 
 function parseDigitsValue(value) {
     return String(value ?? '').replace(/[^0-9]/g, '');
@@ -57,80 +73,67 @@ function calculateYrsToRetire(dob, plannedRetirementAge) {
     return remaining > 0 ? String(remaining) : '0';
 }
 
-const TABLE_PROPS = {
-    showCount: false,
-    noPagination: true,
-    horizontalScroll: true,
-    tableStyle: { borderRadius: '0 0 12px 12px', overflow: 'hidden' },
-    headerFontSize: 12,
-    bodyFontSize: 13,
-};
+function buildInitialPerson(person = {}) {
+    return {
+        name: person?.preferredName || '',
+        dob: toDayjsValue(person?.DOB),
+        salary: formatCurrencyValue(person?.incomeFromBusinessTotal),
+        yrsToRetire: calculateYrsToRetire(person?.DOB, person?.plannedRetirementAge),
+        superBalance: formatCurrencyValue(person?.superAnnuationTotal),
+        abpBalance: formatCurrencyValue(person?.accountBasedPensionTotal),
+        riskProfile: person?.riskGoal || 'Balanced',
+    };
+}
 
 export default function ReviewClientDetailsEditFrom({ modalData, initialData }) {
     const [form] = Form.useForm();
-    const [editing, setEditing] = useState(false);
+    const [editing, setEditing] = useState(() => !initialData?._id);
     const [saving, setSaving] = useState(false);
     const { post, patch } = useApi();
-    const OWNER_OPTIONS = useReviewOptions();
+    const ownerOptions = useOwnerOptions();
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
 
 
-    const selectedOwners = Form.useWatch('selectedOwners', form) || ['Client', 'Partner'];
+    const initialValues = useMemo(() => {
+        const rawOwner = Array.isArray(initialData?.owner) && initialData.owner.length > 0
+            ? initialData.owner
+            : ['client', 'partner'];
 
-    // Map raw initialData structure to component state rows
-    const rows = useMemo(() => {
-        return selectedOwners.map((ownerKey, index) => {
-            const isClient = ownerKey.toLowerCase() === 'client';
-            const personData = isClient ? initialData?.client : initialData?.partner;
-
-            return {
-                key: `owner-row-${index}`,
-                rowIndex: index,
-                formPath: ['ownersData', index],
-                ownerRole: isClient ? 'Client' : 'Partner',
-                name: personData?.preferredName || '',
-                dob: personData?.DOB ? dayjs(personData.DOB) : undefined,
-                salary: formatCurrencyValue(personData?.incomeFromBusinessTotal),
-                yrsToRetire: calculateYrsToRetire(personData?.DOB, personData?.plannedRetirementAge),
-                superBalance: formatCurrencyValue(personData?.superAnnuationTotal),
-                abpBalance: formatCurrencyValue(personData?.accountBasedPensionTotal),
-                riskProfile: personData?.riskGoal || 'Balanced',
-            };
-        });
-    }, [selectedOwners, initialData]);
-
-    // Reset Form when initialData changes
-    useEffect(() => {
-        if (!initialData) return;
-
-        // Extract normalized owner selections ('client' -> 'Client')
-        const initialOwnerList = (initialData.owner && initialData.owner.length > 0)
-            ? initialData.owner.map((o) => o.charAt(0).toUpperCase() + o.slice(1))
-            : ['Client', 'Partner'];
-
-        // Construct initial values array for nested form structure
-        const ownersFormValues = initialOwnerList.map((ownerKey) => {
-            const isClient = ownerKey.toLowerCase() === 'client';
-            const personData = isClient ? initialData?.client : initialData?.partner;
-
-            return {
-                name: personData?.preferredName || '',
-                dob: personData?.DOB ? dayjs(personData.DOB) : undefined,
-                salary: formatCurrencyValue(personData?.incomeFromBusinessTotal),
-                yrsToRetire: calculateYrsToRetire(personData?.DOB, personData?.plannedRetirementAge),
-                superBalance: formatCurrencyValue(personData?.superAnnuationTotal),
-                abpBalance: formatCurrencyValue(personData?.accountBasedPensionTotal),
-                riskProfile: personData?.riskGoal || 'Balanced',
-            };
-        });
-
-        form.setFieldsValue({
-            selectedOwners: initialOwnerList,
-            ownersData: ownersFormValues,
+        return {
+            owner: rawOwner,
+            client: buildInitialPerson(initialData?.client),
+            partner: buildInitialPerson(initialData?.partner),
             sharedHomeLoan: formatCurrencyValue(initialData?.homeLoanTotal),
-        });
+        };
+    }, [initialData]);
 
+    const selectedOwners = Form.useWatch('owner', form) || initialValues.owner;
+
+    useEffect(() => {
+        form.setFieldsValue(initialValues);
         setEditing(!initialData?._id);
-    }, [initialData, form]);
+    }, [form, initialValues, initialData]);
+
+    const rows = useMemo(() => {
+        return (selectedOwners || []).map((ownerKey) => {
+            const isClient = ownerKey.toLowerCase() === 'client';
+            const personData = isClient ? initialData?.client : initialData?.partner;
+
+            return {
+                key: ownerKey,
+                formPath: ownerKey,
+                ownerRole: isClient ? 'Client' : 'Partner',
+                ownerLabel: ownerOptions.find((opt) => opt.value === ownerKey)?.label || (isClient ? 'Client' : 'Partner'),
+                name: form.getFieldValue([ownerKey, 'name']) ?? personData?.preferredName ?? '',
+                dob: form.getFieldValue([ownerKey, 'dob']) ?? (personData?.DOB ? formatAustralianDate(personData.DOB) : undefined),
+                salary: form.getFieldValue([ownerKey, 'salary']) ?? formatCurrencyValue(personData?.incomeFromBusinessTotal),
+                yrsToRetire: form.getFieldValue([ownerKey, 'yrsToRetire']) ?? calculateYrsToRetire(personData?.DOB, personData?.plannedRetirementAge),
+                superBalance: form.getFieldValue([ownerKey, 'superBalance']) ?? formatCurrencyValue(personData?.superAnnuationTotal),
+                abpBalance: form.getFieldValue([ownerKey, 'abpBalance']) ?? formatCurrencyValue(personData?.accountBasedPensionTotal),
+                riskProfile: form.getFieldValue([ownerKey, 'riskProfile']) ?? personData?.riskGoal ?? 'Balanced',
+            };
+        });
+    }, [selectedOwners, initialData, form, ownerOptions]);
 
     const columns = useMemo(
         () => [
@@ -141,7 +144,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 width: 90,
                 editable: false,
                 renderView: ({ record }) => (
-                    <span style={{ fontWeight: 600 }}>{record.ownerRole}</span>
+                    <span style={{ fontWeight: 600 }}>{record?.ownerRole}</span>
                 ),
             },
             {
@@ -150,20 +153,18 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 key: 'name',
                 field: 'name',
                 type: 'text',
-                placeholder: ({ record }) =>
-                    record?.ownerRole === 'Client' ? 'e.g. Peter Smith' : 'e.g. Rhonda Smith',
+                placeholder: 'e.g. Name',
             },
             {
                 title: 'Date of Birth',
                 dataIndex: 'dob',
                 key: 'dob',
                 field: 'dob',
-                type: 'custom',
-                renderEdit: ({ record }) => (
-                    <Form.Item name={[...record.formPath, 'dob']} style={{ margin: 0 }}>
-                        <DatePicker format="MM/DD/YYYY" placeholder="mm/dd/yyyy" style={{ width: '100%' }} />
-                    </Form.Item>
-                ),
+                type: 'date',
+                renderView: ({ value, record }) => {
+                    const rawDob = form.getFieldValue([record.formPath, 'dob']) || (record.ownerRole === 'Client' ? initialData?.client?.DOB : initialData?.partner?.DOB);
+                    return rawDob ? formatAustralianDate(rawDob) : '--';
+                }
             },
             {
                 title: 'Salary ($ p.a.)',
@@ -174,7 +175,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 placeholder: 'Salary ($ p.a.)',
                 onChange: (value, record, column, currentForm) => {
                     currentForm.setFieldValue(
-                        [...record.formPath, column.field],
+                        [record.formPath, column.field],
                         formatNumericInput(value, { currency: true })
                     );
                 },
@@ -197,7 +198,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 placeholder: 'Super Balance',
                 onChange: (value, record, column, currentForm) => {
                     currentForm.setFieldValue(
-                        [...record.formPath, column.field],
+                        [record.formPath, column.field],
                         formatNumericInput(value, { currency: true })
                     );
                 },
@@ -211,7 +212,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                 placeholder: 'ABP Balance',
                 onChange: (value, record, column, currentForm) => {
                     currentForm.setFieldValue(
-                        [...record.formPath, column.field],
+                        [record.formPath, column.field],
                         formatNumericInput(value, { currency: true })
                     );
                 },
@@ -264,17 +265,12 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
         try {
             setSaving(true);
 
-            const activeOwners = values?.selectedOwners || [];
-            const ownersData = values?.ownersData || [];
+            const activeOwners = values?.owner || [];
 
-            let clientData = {};
-            let partnerData = {};
-
-            activeOwners.forEach((ownerKey, index) => {
+            const buildPayloadForOwner = (ownerKey) => {
                 const isClient = ownerKey.toLowerCase() === 'client';
-                const ownerInput = ownersData[index] || {};
+                const ownerInput = values?.[ownerKey] || {};
 
-                // Calculate planned retirement age based on DOB and selected Yrs to Retire
                 let plannedRetirementAge = isClient
                     ? initialData?.client?.plannedRetirementAge
                     : initialData?.partner?.plannedRetirementAge;
@@ -284,36 +280,45 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     plannedRetirementAge = currentAge + Number(ownerInput.yrsToRetire);
                 }
 
-                const mappedPayload = {
+                return {
                     preferredName: ownerInput.name || '',
                     DOB: ownerInput.dob ? dayjs(ownerInput.dob).toISOString() : null,
                     plannedRetirementAge: plannedRetirementAge || 65,
-                    incomeFromBusinessTotal: parseCurrencyValue(ownerInput.salary) ?? '',
-                    superAnnuationTotal: parseCurrencyValue(ownerInput.superBalance) ?? '',
-                    accountBasedPensionTotal: parseCurrencyValue(ownerInput.abpBalance) ?? '',
+                    incomeFromBusinessTotal: (ownerInput.salary) ?? '',
+                    superAnnuationTotal: (ownerInput.superBalance) ?? '',
+                    accountBasedPensionTotal: (ownerInput.abpBalance) ?? '',
                     riskGoal: ownerInput.riskProfile || '',
                 };
+            };
 
-                if (isClient) {
-                    clientData = mappedPayload;
-                } else {
-                    partnerData = mappedPayload;
-                }
-            });
+            const clientSelected = activeOwners.includes('client');
+            const partnerSelected = activeOwners.includes('partner');
 
             const payload = {
                 ...initialData,
-                homeLoanTotal: parseCurrencyValue(values?.sharedHomeLoan) ?? '',
-                owner: activeOwners.map((o) => o.toLowerCase()),
-                client: Object.keys(clientData).length ? clientData : initialData?.client,
-                partner: Object.keys(partnerData).length ? partnerData : initialData?.partner,
+                homeLoanTotal: (values?.sharedHomeLoan) ?? '',
+                owner: activeOwners,
+                client: clientSelected ? buildPayloadForOwner('client') : initialData?.client,
+                partner: partnerSelected ? buildPayloadForOwner('partner') : initialData?.partner,
             };
+            payload.client.image = undefined
+            payload.partner.image =
+                undefined
 
+
+            let res;
             if (initialData?._id) {
-                await patch('/clientDetails/Update', payload);
+                res = await patch('/reviewPersonalDetails/Update', payload);
             } else {
-                await post('/clientDetails/Add', payload);
+                res = await post('/reviewPersonalDetails/Add', payload);
             }
+
+            setSelectedReviewAllData(prev => {
+                return {
+                    ...prev,
+                    ...res.data
+                }
+            })
 
             message.success('Client details updated successfully');
             setEditing(false);
@@ -327,15 +332,15 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
 
     return (
         <div style={{ padding: '8px 0' }}>
-            <Form form={form} onFinish={handleFinish} layout="vertical">
+            <Form form={form} initialValues={initialValues} onFinish={handleFinish} layout="vertical">
                 <Row style={{ marginBottom: 24 }}>
                     <Col xs={6}>
-                        <Form.Item label="Owner" name="selectedOwners" style={{ marginBottom: 0 }}>
+                        <Form.Item label="Owner" name="owner" style={{ marginBottom: 0 }}>
                             <Select
                                 mode="multiple"
                                 allowClear
-                                placeholder="Select owners"
-                                options={OWNER_OPTIONS}
+                                placeholder="Select owner"
+                                options={ownerOptions}
                                 style={{ width: '100%' }}
                                 disabled={!editing}
                             />

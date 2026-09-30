@@ -1,8 +1,11 @@
-import React from 'react';
-import { Card, Radio, Input, Button, Alert, Space, Typography, Form } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Card, Radio, Input, Button, Alert, Space, Typography, Form, message } from 'antd';
 import { MailOutlined, InfoCircleFilled } from '@ant-design/icons';
 import parse from "html-react-parser";
 import { FaCheck } from 'react-icons/fa';
+import { useAtom, useAtomValue } from 'jotai';
+import { SelectedClient, SelectedReviewAllData } from '../../../../../../../store/authState';
+import useApi from '../../../../../../../hooks/useApi';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -249,11 +252,102 @@ const reviewQuestions = [
 ];
 
 const WhatsChanged = () => {
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const selectedClient = useAtomValue(SelectedClient);
+    const [loading, setLoading] = useState(false);
+    const [EmailSending, setEmailSending] = useState(false);
+    const { post, patch } = useApi();
     const [form] = Form.useForm();
 
-    const handleSubmit = (values) => {
-        console.log("Form Submitted Values:", values);
+    // Populate existing data when state is loaded or updated
+    useEffect(() => {
+        if (selectedReviewAllData?.whatChanges) {
+            form.setFieldsValue(selectedReviewAllData.whatChanges);
+        }
+    }, [selectedReviewAllData?.whatChanges, form]);
+
+    const handleSubmit = async (values) => {
+        try {
+            setLoading(true)
+            console.log(selectedReviewAllData)
+            const existingId = selectedReviewAllData?.whatChanges?._id;
+
+            const payload = {
+                scenarioFK: selectedReviewAllData?.scenario?._id || "",
+                _id: existingId || undefined,
+
+                // Radio Answers
+                income: values?.income || "No",
+                employment: values?.employment || "No",
+                health: values?.health || "No",
+                dependants: values?.dependants || "No",
+                goals: values?.goals || "No",
+                incomeNeed: values?.incomeNeed || "No",
+                happyWithInvestments: values?.happyWithInvestments || "No",
+                insurance: values?.insurance || "N/A",
+                address: values?.address || "No",
+                inheritance: values?.inheritance || "No",
+                lifestyleSpending: values?.lifestyleSpending || "No",
+                homeLoan: values?.homeLoan || "No",
+                extraSuper: values?.extraSuper || "No",
+
+                // Text Notes
+                income_notes: values?.income_notes || "",
+                employment_notes: values?.employment_notes || "",
+                health_notes: values?.health_notes || "",
+                dependants_notes: values?.dependants_notes || "",
+                goals_notes: values?.goals_notes || "",
+                incomeNeed_notes: values?.incomeNeed_notes || "",
+                happyWithInvestments_notes: values?.happyWithInvestments_notes || "",
+                insurance_notes: values?.insurance_notes || "",
+                address_notes: values?.address_notes || "",
+                inheritance_notes: values?.inheritance_notes || "",
+                lifestyleSpending_notes: values?.lifestyleSpending_notes || "",
+                homeLoan_notes: values?.homeLoan_notes || "",
+                extraSuper_notes: values?.extraSuper_notes || "",
+            };
+
+            const res = existingId
+                ? await patch("reviewWhatChange/Update", payload)
+                : await post("reviewWhatChange/Add", payload);
+
+            const updatedData = res?.data?.data || res?.data || payload;
+
+            setSelectedReviewAllData((prev) => ({
+                ...prev,
+                whatChanges: updatedData,
+            }));
+
+            message.success("Review updated successfully!");
+        } catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Some error occurred. Please try later."
+            );
+        }
+        finally {
+            setLoading(false)
+        }
     };
+
+    async function SendWhatsChangeEmail(obj) {
+        try {
+            setEmailSending(true);
+            const res = await post("reviewChange/email", obj);
+            message.success("Email Sent to \"" + obj.name + "\" Successfully");
+        }
+        catch (error) {
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Some error occurred. Please try later."
+            );
+        }
+        finally {
+            setEmailSending(false)
+        }
+    }
 
     return (
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '16px', fontFamily: 'sans-serif' }}>
@@ -287,7 +381,6 @@ const WhatsChanged = () => {
                 <Space direction="vertical" size={12} style={{ width: '100%' }}>
                     {reviewQuestions.map((q) => (
                         <Form.Item key={q.id} style={{ marginBottom: 0 }}>
-                            {/* Form.Item DependOn for dynamic UI updates without manual useState */}
                             <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues[q.key] !== currentValues[q.key]}>
                                 {() => {
                                     const selectedValue = form.getFieldValue(q.key);
@@ -394,6 +487,15 @@ const WhatsChanged = () => {
                             borderColor: '#d9d9d9',
                             color: '#434343'
                         }}
+                        onClick={() => SendWhatsChangeEmail(
+                            {
+                                "scenarioFK": selectedReviewAllData?.scenario?._id || "",
+                                "name": selectedClient?.client?.clientPreferredName || "",
+                                "email": selectedClient?.client?.Email,
+                                "url": window.location.origin + "/#/whats-change-questions"
+                            }
+                        )}
+                        loading={EmailSending}
                     >
                         Email Questions to Client
                     </Button>
@@ -403,6 +505,7 @@ const WhatsChanged = () => {
                         htmlType='submit'
                         size="large"
                         style={{ borderRadius: 8 }}
+                        loading={loading}
                     >
                         Submit
                     </Button>

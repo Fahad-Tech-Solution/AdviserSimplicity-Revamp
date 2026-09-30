@@ -6,6 +6,9 @@ import DynamicDataTable from '../../../../../../Common/DynamicDataTable';
 import AppModal from '../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../hooks/useTitleBlock';
 import ScenariosSuperProjectionForm from './ScenariosSuperProjectionForm';
+import { useGetReviewName } from '../../../../../../../hooks/useUserDashboardData';
+import { SelectedReviewAllData } from '../../../../../../../store/authState';
+import { useAtom } from 'jotai';
 
 const { Text, Title } = Typography;
 
@@ -96,6 +99,9 @@ const ScenariosSuperProjection = () => {
     const [selectedProfile, setSelectedProfile] = useState('client');
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+
+    const getReviewName = useGetReviewName();
 
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({
@@ -128,8 +134,10 @@ const ScenariosSuperProjection = () => {
                     value={selectedProfile === 'client' ? 'Client' : 'Partner'}
                     onChange={(val) => setSelectedProfile(val.toLowerCase())}
                     options={[
-                        { label: 'Client', value: 'Client', icon: "👤" },
-                        { label: 'Partner', value: 'Partner', icon: "👥" },
+                        { label: getReviewName("client"), value: 'Client', icon: "👤" },
+                        ...(selectedReviewAllData?.personalDetails?.owner?.includes("partner")
+                            ? [{ label: getReviewName("partner"), value: 'Partner', icon: "👥" }]
+                            : []),
                     ]}
                     style={{ padding: 2 }}
                 />

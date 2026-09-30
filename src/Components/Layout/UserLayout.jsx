@@ -47,6 +47,7 @@ import {
   loggedInUser,
   SelectedClient,
   SelectedReview,
+  SelectedReviewAllData,
 } from "../../store/authState.js";
 import useUserDashboardData from "../../hooks/useUserDashboardData";
 import useAuthSession from "../../hooks/useAuthSession";
@@ -57,7 +58,7 @@ const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 import { discoverySectionQuestionsAtom } from "../../store/authState.js";
 import { HiDotsVertical } from "react-icons/hi";
-import { capitalizeWords } from "../../hooks/helpers.js";
+import { capitalizeWords, verifyPersonalDetailsFilled } from "../../hooks/helpers.js";
 import ReviewStepsLayout from "./ReviewStepsLayout.jsx";
 import ReviewAddQuestions from "../Pages/User/Strategy/components/Scenarios/components/ReviewAddQuestions/ReviewAddQuestions.jsx";
 
@@ -73,6 +74,7 @@ export default function UserLayout() {
   const setAddDiscoveryModalOpen = useSetAtom(addDiscoverySectionsModalOpen);
   const setAddReviewSectionsModalOpen = useSetAtom(addReviewSectionsModalOpen);
   const selectedReview = useAtomValue(SelectedReview);
+  const selectedReviewAllData = useAtomValue(SelectedReviewAllData)
 
   const { logout } = useAuthSession();
 
@@ -122,7 +124,7 @@ export default function UserLayout() {
 
   const handleMenuClick = (info) => {
     const selectedClientId = selectedClient?._id ?? selectedClient?.id;
-    console.log("selectedClient:", selectedClient)
+
     if (info.key === DISCOVERY_ADD_SECTION_KEY && selectedClientId) {
       setAddDiscoveryModalOpen(true);
       return;
@@ -130,8 +132,15 @@ export default function UserLayout() {
     const isReviewSelected = selectedReview?._id ?? selectedReview?.id;
 
     if (info.key === "/user/review-routes/add-section" && selectedClientId && isReviewSelected) {
-      setAddReviewSectionsModalOpen(true);
-      return;
+      if (verifyPersonalDetailsFilled(selectedReviewAllData)) {
+
+        setAddReviewSectionsModalOpen(true);
+        return;
+      }
+      else {
+        message.error(`Please complete client details first.`);
+        return;
+      }
     }
 
     if (info.key.startsWith("/")) {
@@ -147,7 +156,7 @@ export default function UserLayout() {
         );
         return;
       }
-      console.log(info.key, info.key !== "/user/review-routes/scenarios" && !isReviewSelected)
+
 
       if (info.key.startsWith("/user/review-routes") && info.key !== "/user/review-routes/scenarios" && !isReviewSelected) {
         message.warning(

@@ -23,6 +23,9 @@ import {
   goalsSectionQuestionsAtom,
   riskProfileDataAtom,
   InvestmentOffersData,
+  SelectedReview,
+  SelectedReviewAllData,
+  selectedClientsReview,
 } from "../../../../store/authState";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
@@ -196,6 +199,9 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
   const setInvestmentsData = useSetAtom(InvestmentOffersData);
+  const setSelectedReview = useSetAtom(SelectedReview);
+  const setSelectedReviewAllData = useSetAtom(SelectedReviewAllData);
+  const setSelectedClientsReview = useSetAtom(selectedClientsReview);
 
   const [openDropdownRowId, setOpenDropdownRowId] = useState(null);
   const [selectLoadingRowId, setSelectLoadingRowId] = useState(null);
@@ -532,6 +538,9 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
           setDiscoverySectionQuestions({});
           setDiscoveryData({});
           setSelectedClient(null);
+          setSelectedReview(null);
+          setSelectedReviewAllData(null);
+          setSelectedClientsReview([]);
         } else if (
           action == "Send Risk Profile" ||
           action == "sendRiskProfile"

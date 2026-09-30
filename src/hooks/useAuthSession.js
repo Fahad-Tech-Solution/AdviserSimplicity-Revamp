@@ -19,6 +19,9 @@ import {
   MyTeamData,
   riskProfileDataAtom,
   SelectedClient,
+  selectedClientsReview,
+  SelectedReview,
+  SelectedReviewAllData,
   userDashboardError,
   userDashboardLoading,
 } from "../store/authState";
@@ -57,6 +60,9 @@ export default function useAuthSession() {
   const resetDashboardLoading = useSetAtom(userDashboardLoading);
   const resetDashboardError = useSetAtom(userDashboardError);
   const LoggedInUser = useAtomValue(loggedInUser);
+  const resetSelectedReview = useSetAtom(SelectedReview);
+  const resetSelectedReviewAllData = useSetAtom(SelectedReviewAllData);
+  const resetSelectedClientsReview = useSetAtom(selectedClientsReview);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -89,6 +95,9 @@ export default function useAuthSession() {
     resetCatalogsData();
     resetDashboardLoading();
     resetDashboardError();
+    resetSelectedReview("");
+    resetSelectedReviewAllData({});
+    resetSelectedClientsReview([]);
   }, [
     resetAdvisersData,
     resetCatalogsData,

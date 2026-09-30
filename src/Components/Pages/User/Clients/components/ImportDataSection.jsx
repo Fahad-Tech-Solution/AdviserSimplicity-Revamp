@@ -15,6 +15,7 @@ const { Text } = Typography;
 const isValidAustralianDate = (dateStr) => {
     if (!dateStr) return false;
     const dateString = String(dateStr).trim();
+    console.log("dateString", dateString)
     const dateRegex = /^([0-2]?[0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/;
     if (!dateRegex.test(dateString)) return false;
 
@@ -169,10 +170,17 @@ const validationRules = [
     },
 ];
 
+const REQUIRED_COLUMNS = ['Email', 'Preferred Name', 'Last Name', 'Date of Birth', 'Home Address', 'Mobile Phone', 'Marital Status']; // Define your required column names here
+const PARTNER_REQUIRED_COLUMNS = ['Partner Email', 'Partner Preferred Name', 'Partner Last Name', 'Partner Date of Birth', 'Partner Home Address', 'Partner Mobile', 'Marital Status']; // Define your required column names here
+
+// Helper to check for missing/empty values
+const isValueEmpty = (value) => value === undefined || value === null || String(value).trim() === '';
+
 const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
     const [fileInfo, setFileInfo] = useState(null);
     const [loading, setLoading] = useState(false);
     const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+    const [downloadingCSVTemplate, setDownloadingCSVTemplate] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
     const [ErrorDetails, setErrorDetails] = useState([]);
     const { getBlob, post } = useApi();
@@ -182,28 +190,67 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         const errors = [];
         const seenErrors = new Set();
 
-        jsonData.forEach((row) => {
+        jsonData.forEach((row, rowIndex) => {
+            const rowNumber = rowIndex + 1;
+
+            // 1. Validate Standard Required Columns
+            REQUIRED_COLUMNS.forEach((colName) => {
+                if (isValueEmpty(row[colName])) {
+                    const errorKey = `${colName}-required-row-${rowNumber}`;
+                    if (!seenErrors.has(errorKey)) {
+                        seenErrors.add(errorKey);
+                        errors.push({
+                            key: errorKey,
+                            columnName: colName,
+                            rule: `Column "${colName}" is required and cannot be empty (Row ${rowNumber + 1}).`,
+                        });
+                    }
+                }
+            });
+
+            // 2. Conditional Check for Partner Required Columns
+            const maritalStatus = String(row['Marital Status'] || '').trim();
+            const partnerNotRequired = ['', 'Single', 'Widowed'];
+
+            // If marital status is filled and is NOT in partnerNotRequired list
+            if (maritalStatus && !partnerNotRequired.includes(maritalStatus)) {
+                PARTNER_REQUIRED_COLUMNS.forEach((colName) => {
+                    if (isValueEmpty(row[colName])) {
+                        const errorKey = `${colName}-required-row-${rowNumber}`;
+                        if (!seenErrors.has(errorKey)) {
+                            seenErrors.add(errorKey);
+                            errors.push({
+                                key: errorKey,
+                                columnName: colName,
+                                rule: `Column "${colName}" is required when Marital Status is "${maritalStatus}" (Row ${rowNumber}).`,
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 3. Dynamic Rule Validation for Available Columns
             Object.keys(row).forEach((colName) => {
                 const value = row[colName];
 
-                // Run each rule against the current column
                 validationRules.forEach((rule) => {
                     if (rule.matchColumn(colName)) {
                         const isValid = rule.validate(value);
 
                         if (!isValid) {
-                            const errorKey = `${colName}-${rule.id}`;
+                            const errorKey = `${colName}-${rule.id}-row-${rowNumber}`;
                             if (!seenErrors.has(errorKey)) {
                                 seenErrors.add(errorKey);
                                 errors.push({
                                     key: errorKey,
                                     columnName: colName,
-                                    rule: rule.ruleMessage,
+                                    rule: `${rule.ruleMessage} (Row ${rowNumber})`,
                                 });
                             }
                         }
                     }
                 });
+
             });
         });
 
@@ -225,7 +272,11 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
 
                     // Check max 40 entries
                     if (jsonData.length > 40) {
-                        message.error(`File contains ${jsonData.length} entries. Maximum allowed is 40 entries.`);
+                        message.error({
+                            content: `File contains ${jsonData.length} entries. Maximum allowed is 40 entries.`,
+                            key: "data_extraction_status",
+                            duration: 5,
+                        });
                         return reject(new Error('Exceeds entry limit'));
                     }
 
@@ -233,6 +284,11 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     const errors = validateExcelData(jsonData);
                     if (errors.length > 0) {
                         setValidationErrors(errors);
+                        message.error({
+                            content: 'Validation errors found in the file.',
+                            key: "data_extraction_status",
+                            duration: 5,
+                        });
                         return reject(new Error('Validation errors found'));
                     }
 
@@ -247,14 +303,22 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     resolve(parsedInfo);
                 } catch (error) {
                     if (error.message !== 'Validation errors found' && error.message !== 'Exceeds entry limit') {
-                        message.error('Failed to parse the Excel file.');
+                        message.error({
+                            content: 'Failed to parse the Excel file.',
+                            key: "data_extraction_status",
+                            duration: 5,
+                        });
                     }
                     reject(error);
                 }
             };
 
             reader.onerror = () => {
-                message.error('Error reading file.');
+                message.error({
+                    content: 'Error reading file.',
+                    key: "data_extraction_status",
+                    duration: 5,
+                });
                 reject(new Error('Read error'));
             };
 
@@ -269,10 +333,20 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
 
         const isLt5M = file.size / 1024 / 1024 < 5;
         if (!isLt5M) {
-            message.error('File size must be smaller than 5 MB!');
+            message.error({
+                content: 'File size must be smaller than 5 MB!',
+                key: "data_extraction_status",
+                duration: 5,
+            });
             setLoading(false);
             return;
         }
+
+        message.loading({
+            content: `Extracting data from uploaded file...`,
+            key: "data_extraction_status",
+            duration: 0,
+        });
 
         try {
             const parsedInfo = await processExcelFile(file);
@@ -284,17 +358,41 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
             let response = await post('/clientImport', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            console.log('Upload response:', response);
 
-            if (response.success) {
-                // Optional: Handle any response data if needed
-                message.success(`${response?.message || file.name}`);
+            if (response?.success) {
+                message.success({
+                    content: `${response?.message || file.name + ' uploaded successfully!'}`,
+                    key: "data_extraction_status",
+                    duration: 5,
+                });
+            } else {
+                message.error({
+                    content: response?.message || 'Upload failed.',
+                    key: "data_extraction_status",
+                    duration: 5,
+                });
             }
 
         } catch (error) {
+            // If it's a backend API response error
             if (error.response) {
-                message.error(error.response?.data?.message || 'Failed to upload the file.');
+                message.error({
+                    content: error.response?.data?.message || 'Failed to upload the file.',
+                    key: "data_extraction_status",
+                    duration: 5,
+                });
                 setErrorDetails(error.response?.data?.errors || []);
+            } else if (
+                error.message !== 'Validation errors found' &&
+                error.message !== 'Exceeds entry limit' &&
+                error.message !== 'Read error'
+            ) {
+                // Fallback clear for any unhandled client-side runtime errors
+                message.error({
+                    content: error.message || 'An unexpected error occurred.',
+                    key: "data_extraction_status",
+                    duration: 5,
+                });
             }
         } finally {
             setLoading(false);
@@ -323,14 +421,14 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
         },
     };
 
-    const handleReset = () => {
-        setFileInfo(null);
-        setValidationErrors([]);
-    };
-
-    const handleDownloadTemplate = async () => {
+    const handleDownloadTemplate = async (fileType) => {
         try {
-            setDownloadingTemplate(true);
+            if (fileType === "xlsx") {
+                setDownloadingTemplate(true);
+            }
+            else {
+                setDownloadingCSVTemplate(true);
+            }
             // 1. Fetch file as Blob
             const response = await getBlob("/clientImport/template"); // Update with your actual endpoint
 
@@ -434,7 +532,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     </p>
                     <p className="ant-upload-text">Click or drag Excel file to this area to upload</p>
                     <p className="ant-upload-hint">
-                        Please upload an <strong>.xlsx</strong> or <strong>.xls</strong> file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
+                        Please upload an <strong>.xlsx</strong>,<strong>.xls</strong> or <strong>.csv</strong> file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
                         <br />
                         All red columns in excel sheet are required for the <strong>client</strong>.
                         <br />
@@ -493,16 +591,26 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                         />
                     </Card>
                 )}
-
+                {/* <div className='d-flex justify-content-center align-items-center gap-4'> */}
                 <Button
                     style={{ margin: '10px 0px 0px 0px', width: '100%' }}
                     type="primary"
                     icon={<MdCloudDownload />}
-                    onClick={handleDownloadTemplate}
+                    onClick={() => handleDownloadTemplate("xlsx")}
                     loading={downloadingTemplate}
                 >
-                    Download Template
+                    Download .xlsx Template
                 </Button>
+                {/* <Button
+                        style={{ margin: '10px 0px 0px 0px', width: '50%' }}
+                        type="primary"
+                        icon={<MdCloudDownload />}
+                        onClick={() => handleDownloadTemplate("csv")}
+                        loading={downloadingCSVTemplate}
+                    >
+                        Download .csv Template
+                    </Button>
+                </div> */}
             </div>
         </AppModal>
     );

@@ -32,7 +32,10 @@ export const InvestmentOffersData = atomWithStorage("InvestmentOffersData", []);
 /** Currently selected household row from My Clients (set when user chooses Select). */
 export const SelectedClient = atomWithStorage("SelectedClient", null);
 export const SelectedReview = atomWithStorage("SelectedReview", null);
-export const SelectedReviewAllData = atomWithStorage("SelectedReviewAllData", null);
+export const SelectedReviewAllData = atomWithStorage(
+  "SelectedReviewAllData",
+  null,
+);
 
 export const userDashboardLoading = atom(false);
 export const userDashboardError = atom(null);

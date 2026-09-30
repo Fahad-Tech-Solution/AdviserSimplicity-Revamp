@@ -1,38 +1,58 @@
-import { Button, Dropdown, Flex, Form, Input, message, Space, Tooltip, Typography } from 'antd'
+import { Button, Dropdown, Flex, Form, Input, message, Segmented, Space, Tag, Tooltip, Typography } from 'antd'
 import React, { useEffect, useMemo, useState } from 'react'
 import DynamicDataTable from '../../../../../Common/DynamicDataTable'
 import { useAtom, useAtomValue } from 'jotai'
-import { SelectedClient, selectedClientsReview, SelectedReview, SelectedReviewAllData } from '../../../../../../store/authState'
+import { clientReviewQuestion, SelectedClient, selectedClientsReview, SelectedReview, SelectedReviewAllData } from '../../../../../../store/authState'
 import AppModal from '../../../../../Common/AppModal'
 import useApi from '../../../../../../hooks/useApi'
 import { formatAustralianDate } from '../../../../../../hooks/helpers'
 import { useNavigate } from 'react-router-dom'
+import { FaArrowRotateLeft } from 'react-icons/fa6'
+import { HiArrowPath } from 'react-icons/hi2'
 
 const Scenarios = () => {
-    let { Text, Title, } = Typography
+    let { Text, Title } = Typography
     let [searchText, setSearchText] = useState("")
-    let [editScenario, setEditScenario] = useState({})
+    let [editScenario, setEditScenario] = useState(null)
+    const [viewMode, setViewMode] = useState('Active') // 'Active' or 'Disabled'
     const [Loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
-    const [openDropdownRowId, setOpenDropdownRowId] = useState(false);
+    const [openDropdownRowId, setOpenDropdownRowId] = useState(null);
     const [reviews, setReviews] = useAtom(selectedClientsReview);
     const [selectedReview, setSelectedReview] = useAtom(SelectedReview);
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const [reviewQuestion, setReviewQuestion] = useAtom(clientReviewQuestion);
     const selectedClient = useAtomValue(SelectedClient);
 
     const Nav = useNavigate()
-
+    const [form] = Form.useForm();
     let { post, patch, get } = useApi();
 
     useEffect(() => {
-        fetchAllScenarios()
-    }, [])
+        if (selectedClient?._id) {
+            fetchAllScenarios()
+        }
+    }, [selectedClient])
+
+    // Synchronize form fields when opening modal in edit mode
+    useEffect(() => {
+        if (openModal) {
+            if (editScenario?._id) {
+                form.setFieldsValue({
+                    scenarioName: editScenario.scenarioName
+                });
+            } else {
+                form.resetFields();
+            }
+        }
+    }, [openModal, editScenario, form]);
 
     const fetchAllScenarios = async () => {
+        setLoading(true);
         try {
-            let res = get("reviewScenario/" + selectedClient?._id)
-            if (res.data) {
+            let res = await get("reviewScenario/" + selectedClient?._id)
+            if (res?.data) {
                 setReviews(res.data);
             }
         } catch (error) {
@@ -41,6 +61,8 @@ const Scenarios = () => {
                 error?.message ||
                 `Failed to get data`
             );
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -54,15 +76,13 @@ const Scenarios = () => {
         });
     }
 
-    let menuGenerator = (row, selectedClient) => {
-
-
+    let menuGenerator = (row) => {
         const items = [
             {
                 key: "Load this scenario",
                 label: "📂 Load this scenario",
+                disabled: row?.softDelete
             },
-
             { type: "divider" },
             {
                 key: "rename",
@@ -70,13 +90,14 @@ const Scenarios = () => {
             },
             { type: "divider" },
             {
-                key: "duplicate",
-                label: "📑 Duplicate",
+                key: "email",
+                label: row?.isWhatChangeCompleted ? "✉️ What's changed already filled" : "✉️ Send What's changed",
+                disabled: row?.isWhatChangeCompleted
             },
             { type: "divider" },
             {
                 key: "delete",
-                label: "🗑️ Delete",
+                label: row?.softDelete ? "✅ Active" : "❎ Disabled",
             },
         ]
 
@@ -85,13 +106,24 @@ const Scenarios = () => {
             onClick: ({ key }) => {
                 switch (key) {
                     case "rename":
-                        setEditScenario(row)
+                        setEditScenario(row);
+                        setOpenModal(true);
                         break;
                     case "Load this scenario":
-                        loadingScenarios(row)
+                        loadingScenarios(row);
                         break;
                     case "delete":
-                        deleteScenario(row)
+                        deleteScenario(row);
+                        break;
+                    case "email":
+                        SendWhatsChangeEmail(
+                            {
+                                "scenarioFK": row?._id || "",
+                                "name": selectedClient?.client?.clientPreferredName || "",
+                                "email": selectedClient?.client?.Email,
+                                "url": window.location.origin + "/#/whats-change-questions"
+                            }
+                        );
                         break;
                     default:
                         message.error(`Not configured yet`);
@@ -101,23 +133,56 @@ const Scenarios = () => {
         }
     }
 
+    async function SendWhatsChangeEmail(obj) {
+        // 1. Display immediate loading message with a unique key
+        const hideLoading = message.loading({
+            content: `Sending email to "${obj.name}"...`,
+            key: "email_status",
+            duration: 0, // Prevents automatic dismissal before the API completes
+        });
+
+        try {
+            const res = await post("reviewChange/email", obj);
+
+            // 2. Replace loading message with success indicator
+            message.success({
+                content: `Email sent to "${obj.name}" successfully!`,
+                key: "email_status",
+                duration: 5,
+            });
+        } catch (error) {
+            // 3. Replace loading message with error indicator
+            message.error({
+                content:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Some error occurred. Please try later.",
+                key: "email_status",
+                duration: 5,
+            });
+        }
+    }
+
+
+
     let deleteScenario = async (row) => {
         setLoading(true);
         try {
-            // 1. Await the HTTP call
-            await patch("reviewScenario/Delete", row);
+            let res = await patch("reviewScenario/Delete", row);
 
-            // 2. Filter out the deleted item from state
+            // Update local state by setting softDelete to true instead of filtering out
             setReviews((prevReviews) =>
-                prevReviews.filter((item) => item._id !== row._id)
+                prevReviews.map((item) =>
+                    item._id === row._id ? { ...item, softDelete: true } : item
+                )
             );
 
-            message.success("Scenario deleted successfully");
+            message.success(res?.message || "Scenario deleted successfully");
         } catch (error) {
             message.error(
                 error?.response?.data?.message ||
                 error?.message ||
-                `Failed to delete ${modalData?.title || "scenario"}`
+                `Failed to delete scenario`
             );
         } finally {
             setLoading(false);
@@ -127,18 +192,17 @@ const Scenarios = () => {
     let loadingScenarios = async (row) => {
         try {
             let res = await get('reviewScenario/fullDetails/' + row._id);
-            console.log(res);
             if (res?.data) {
-                setSelectedReviewAllData(res.data)
+                setSelectedReviewAllData(res.data);
                 setSelectedReview(row);
-                Nav("/user/review-routes/client-details")
+                setReviewQuestion(res?.data?.reviewGoalQuestions || {});
+                Nav("/user/review-routes/client-details");
             }
-
         } catch (error) {
             message.error(
                 error?.response?.data?.message ||
                 error?.message ||
-                `Failed to delete ${modalData?.title || "scenario"}`
+                `Failed to load scenario details`
             );
         }
     }
@@ -149,7 +213,7 @@ const Scenarios = () => {
             dataIndex: "no",
             key: "no",
             width: 50,
-            onCell: (record) => ({
+            onCell: () => ({
                 style: {
                     textAlign: "center",
                     fontSize: 12,
@@ -162,30 +226,31 @@ const Scenarios = () => {
             title: "Scenario",
             dataIndex: "scenarioName",
             key: "scenarioName",
+            render: (value, row) => {
+                return (
+                    <>
+                        {value} {row?._id === selectedReview?._id && <Tag color={"green"}>Selected</Tag>}
+                    </>
+                )
+            }
         },
         {
             title: "Last Module Edited",
             dataIndex: "updatedAt",
             key: "updatedAt",
-            render: (value, row) => {
-                let data = formatAustralianDate(value);
-                return (data);
-            }
+            render: (value) => formatAustralianDate(value)
         },
         {
             title: "Date of Creation",
             dataIndex: "createdAt",
             key: "createdAt",
-            render: (value, row) => {
-                let data = formatAustralianDate(value);
-                return (data);
-            }
+            render: (value) => formatAustralianDate(value)
         },
         {
             title: "Operation",
             dataIndex: "operation",
             key: "operation",
-            onCell: (record) => ({
+            onCell: () => ({
                 style: {
                     textAlign: "center",
                     fontSize: 12,
@@ -200,11 +265,7 @@ const Scenarios = () => {
                         trigger={["click"]}
                         open={openDropdownRowId === rowId}
                         onOpenChange={(visible) => {
-                            if (!visible) {
-                                setOpenDropdownRowId(null);
-                            } else {
-                                setOpenDropdownRowId(rowId);
-                            }
+                            setOpenDropdownRowId(visible ? rowId : null);
                         }}
                         menu={menuGenerator(row)}
                     >
@@ -212,30 +273,28 @@ const Scenarios = () => {
                             <Button
                                 type="text"
                                 shape="circle"
-                                icon={
-                                    // <SettingOutlined style={{ color: "#374151", fontSize: 18 }} />
-                                    "⚙️"
-                                }
+                                icon="⚙️"
                                 style={{ fontSize: 18 }}
                             />
                         </Tooltip>
                     </Dropdown>
                 );
             },
-
         },
-        // 	Last Module Edited	Date of Creation	Last Syncronized At	Operation
     ];
 
-    const tableData = useMemo(
-        () =>
-            reviews.map((item, index) => ({
+    const tableData = useMemo(() => {
+        // Filter based on active Segmented selection
+        const isDisabledMode = viewMode === 'Disabled';
+
+        return reviews
+            .filter((item) => Boolean(item.softDelete) === isDisabledMode)
+            .map((item, index) => ({
                 ...item,
                 key: item?._id || String(index + 1),
                 no: index + 1,
-            })),
-        [reviews],
-    );
+            }));
+    }, [reviews, viewMode]);
 
     const filteredTableData = useMemo(() => {
         const q = String(searchText ?? "").trim();
@@ -252,45 +311,35 @@ const Scenarios = () => {
             ? `Showing ${filteredTableData.length} of ${tableData.length} reviews`
             : `Showing ${filteredTableData.length} reviews`;
 
-
-    const [form] = Form.useForm();
-
     const handleClose = () => {
         form.resetFields();
+        setEditScenario(null);
         setOpenModal(false);
     };
 
     const handleFinish = async (values) => {
-        setSubmitting(true)
+        setSubmitting(true);
         try {
-
             let Payload = {
                 clientFK: selectedClient?._id || "",
                 scenarioName: values.scenarioName,
-                // Include ID when updating an existing scenario
                 ...(editScenario?._id && { _id: editScenario._id })
             };
 
-            // 1. Await the async API request
             const res = editScenario?._id
                 ? await patch("reviewScenario/update", Payload)
                 : await post("reviewScenario/Add", Payload);
 
-            console.log("response:", res);
-
-            // Extract created or updated scenario object from response
-            const responseData = res?.data?.scenario || res;
+            const responseData = res?.data?.scenario || res?.data || res;
 
             if (editScenario?._id) {
-                // 2. Update mode: Replace existing scenario in the array
                 setReviews((prevReviews) =>
                     prevReviews.map((item) =>
                         item._id === editScenario._id ? { ...item, ...responseData } : item
                     )
                 );
-                message.success("Scenario updated successfully");
+                message.success("Scenario renamed successfully");
             } else {
-                // 3. Add mode: Append new scenario to the array
                 setReviews((prevReviews) => [responseData, ...prevReviews]);
                 message.success("Scenario added successfully");
             }
@@ -300,11 +349,10 @@ const Scenarios = () => {
             message.error(
                 error?.response?.data?.message ||
                 error?.message ||
-                `Failed to save ${modalData?.title || "scenario details"}`
+                `Failed to save scenario details`
             );
-        }
-        finally {
-            setSubmitting(false)
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -342,12 +390,13 @@ const Scenarios = () => {
                             fontWeight: 500,
                             fontSize: 28,
                         }}
+                        onClick={() => { console.log(selectedClient) }}
                     >
                         Review
                     </Title>
                 </div>
-                <div className="">
-                    <Space size={10}>
+                <div>
+                    <Space size={10} wrap>
                         <Input
                             allowClear
                             value={searchText}
@@ -365,7 +414,8 @@ const Scenarios = () => {
                                 fontSize: 13,
                             }}
                             onClick={() => {
-                                setOpenModal(true)
+                                setEditScenario(null);
+                                setOpenModal(true);
                             }}
                         >
                             Add New +
@@ -373,7 +423,29 @@ const Scenarios = () => {
                     </Space>
                 </div>
             </div>
+            <div style={{ width: "100%", display: 'flex', justifyContent: "space-between", alignItems: 'center', gap: 16 }}>
+                <Segmented
+                    value={viewMode}
+                    onChange={setViewMode}
+                    options={[
+                        { label: 'Active', value: 'Active', icon: '✅' },
+                        { label: 'Disabled', value: 'Disabled', icon: '❎' },
+                    ]}
+                    style={{ backgroundColor: '#f0f0f0', borderRadius: 8 }}
+                />
 
+                <Button
+                    style={{
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        fontSize: 13,
+                    }}
+                    onClick={() => {
+                        fetchAllScenarios()
+                    }}
+                    icon={<HiArrowPath />}
+                />
+            </div>
             <div>
                 <DynamicDataTable
                     columns={columns}
@@ -393,7 +465,7 @@ const Scenarios = () => {
                         },
                         scroll: filteredTableData.length > 0 ? "" : { x: "max-content" },
                         locale: {
-                            emptyText: "No scenarios yet. Click “Add New +” to create one.",
+                            emptyText: `No ${viewMode.toLowerCase()} scenarios found.`,
                         },
                     }}
                 />
@@ -421,10 +493,13 @@ const Scenarios = () => {
                                     fontSize: 28,
                                 }}
                             >
-                                Add New Scenario
+                                {editScenario?._id ? "Edit Scenario" : "Add New Scenario"}
                             </Title>
                             <Text type="secondary">
-                                Creates a new scenario from the current working data. You can then open any calculator to modify it.
+                                {editScenario?._id
+                                    ? "Update the scenario name below."
+                                    : "Creates a new scenario from the current working data. You can then open any calculator to modify it."
+                                }
                             </Text>
                         </div>
 
@@ -467,7 +542,7 @@ const Scenarios = () => {
                                     }}
                                     loading={submitting}
                                 >
-                                    Add Scenario
+                                    {editScenario?._id ? "Update Scenario" : "Add Scenario"}
                                 </Button>
                             </Space>
                         </Flex>

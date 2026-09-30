@@ -52,7 +52,7 @@ const MyClients = () => {
       setMyClientsData(response);
     };
     fetchData();
-  });
+  }, []);
 
   const handleAddNewClient = () => {
     setSelectedClient(null);
