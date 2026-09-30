@@ -1,157 +1,51 @@
 {
-    "old": {
-        "platformName": "689d748279b70c3f1161e47d",
-        "memberNumber": "0100 0909 3186",
-        "balanceBenefit": "$2,132",
-        "balanceBenefitDetails": {
-            "fundType": "Accumulation",
-            "portfolioArray": [
-                {
-                    "investmentOption": "68cbf09c5186b5dcc7d8c916",
-                    "investmentCode": "INV002",
-                    "investmentValue": "$2,132"
-                }
-            ],
-            "portfolioValueArray": [
-                {
-                    "investmentOption": "68cbf09c5186b5dcc7d8c916",
-                    "investmentCode": "INV002",
-                    "investmentValue": "$2,132"
-                }
-            ],
-            "portfolioValue": "$2,132",
-            "commencementDate": "2026-08-05T07:00:00.000Z",
-            "eligibleServiceDate": "2022-08-01T07:00:00.000Z",
-            "taxFreeComponent": "$223",
-            "taxableComponent": "$1,909",
-            "preservedAmount": "$2,076",
-            "restrictedNonPreserved": "$23",
-            "unrestrictedNonPreserved": "$33"
-        },
-        "groupInsurance": "Yes",
-        "groupInsuranceDetails": {
-            "lifeCover": "$232",
-            "TPDCover": "$232",
-            "coverType": "Unitised",
-            "cost": "$123",
-            "monthlyIncome": "$23",
-            "waitingPeriod": 60,
-            "BenefitPeriod": "5 Years",
-            "coverType2": "Unitised",
-            "cost2": "$23"
-        },
-        "contributions": "Yes",
-        "contributionsArray": [
-            {
-                "financialYear": "2026/2027",
-                "employerContributions": "$222",
-                "concessional": "$333",
-                "totalConcessional": "$555",
-                "nonConcessionalContributions": "$232"
-            }
-        ],
-        "contributionsStartYear": 2026,
-        "nominatedBeneficiaries": "Yes",
-        "nominatedBeneficiariesDetails": {
-            "nominatedBeneficiariesArray": [
-                {
-                    "relationshipStatus": "Child",
-                    "beneficiaryName": "1322",
-                    "DOB": "2022-08-01T07:00:00.000Z",
-                    "shareBenefit": "100%"
-                }
-            ],
-            "nominationType": "Non Binding",
-            "NumberOfMap": 1
-        },
-        "annualAdvice": "$11",
-        "annualAdviceArray": {
-            "serviceFee": "$11",
-            "frequency": "Annualy",
-            "annualAdviserServiceFee": "$11"
-        }
+    "_id": "6ab3b9e43cef4de6ec9d5670",
+    "scenarioFK": "6ab3b9e33cef4de6ec9d562f",
+    "client": {
+        "preferredName": "Zack",
+        "incomeFromBusinessTotal": "$10,000",
+        "superAnnuationTotal": "$30,000",
+        "riskGoal": "Balanced",
+        "contributionType": "",
+        "sgcPercent": "",
+        "sgcAmount": "",
+        "maxConcessional": "",
+        "ssPersonalConcessional": "",
+        "nonConcessional": "",
+        "lumpSumNcc": "",
+        "investmentReturn": "",
+        "salaryGrowth": "",
+        "projectionPeriod": "",
+        "insurancePremium": "",
+        "premiumIndexation": "",
+        "premiumYears": "",
+        "projectedBalance": ""
     },
-    "new": {
-        "platformName": "FirstChoice Personal Super",
-        "memberNumber": "0100 0909 3186 Mobil",
-        "balanceBenefit": "$2,823,184.34",
-        "balanceBenefitDetails": {
-            "fundType": "Pension",
-            "portfolioArray": [
-                {
-                    "key": "FSI Global Credit Income-1,001,501.8000",
-                    "investmentOption": "FSI Global Credit Income",
-                    "investmentCode": "078 FSF0308AU",
-                    "units": "1,001,501.8000",
-                    "investmentValue": "$1.1161",
-                    "value": "$1,117,776.16",
-                    "allocation": "39.6%"
-                },
-                {
-                    "key": "ING Tax Effective Income-1,045,557.0963",
-                    "investmentOption": "ING Tax Effective Income",
-                    "investmentCode": "099 FSF0308AU",
-                    "units": "1,045,557.0963",
-                    "investmentValue": "$1.6311",
-                    "value": "$1,705,408.18",
-                    "allocation": "60.4%"
-                }
-            ],
-            "portfolioValueArray": [
-                {
-                    "key": "FSI Global Credit Income-1,001,501.8000",
-                    "investmentOption": "FSI Global Credit Income",
-                    "investmentCode": "078 FSF0308AU",
-                    "units": "1,001,501.8000",
-                    "investmentValue": "$1.1161",
-                    "value": "$1,117,776.16",
-                    "allocation": "39.6%"
-                },
-                {
-                    "key": "ING Tax Effective Income-1,045,557.0963",
-                    "investmentOption": "ING Tax Effective Income",
-                    "investmentCode": "099 FSF0308AU",
-                    "units": "1,045,557.0963",
-                    "investmentValue": "$1.6311",
-                    "value": "$1,705,408.18",
-                    "allocation": "60.4%"
-                }
-            ],
-            "portfolioValue": "$2,823,184.34",
-            "commencementDate": "",
-            "eligibleServiceDate": "1999-12-12T07:00:00.000Z",
-            "taxFreeComponent": "$2,823,184.34",
-            "taxableComponent": "$0.00",
-            "preservedAmount": "$2,623,077.34",
-            "restrictedNonPreserved": "$0.00",
-            "unrestrictedNonPreserved": "$200,107.00"
-        },
-        "groupInsurance": "No",
-        "groupInsuranceDetails": {
-            "lifeCover": "",
-            "TPDCover": "",
-            "coverType": "Unitised",
-            "cost": "",
-            "monthlyIncome": "",
-            "waitingPeriod": null,
-            "BenefitPeriod": "",
-            "coverType2": "",
-            "cost2": ""
-        },
-        "contributions": "No",
-        "contributionsArray": [],
-        "contributionsStartYear": null,
-        "nominatedBeneficiaries": "No",
-        "nominatedBeneficiariesDetails": {
-            "nominatedBeneficiariesArray": [],
-            "nominationType": "",
-            "NumberOfMap": 0
-        },
-        "annualAdvice": "",
-        "annualAdviceArray": {
-            "serviceFee": "",
-            "frequency": "",
-            "annualAdviserServiceFee": ""
-        }
-    }
+    "partner": {
+        "preferredName": "",
+        "incomeFromBusinessTotal": "",
+        "superAnnuationTotal": "",
+        "riskGoal": "",
+        "contributionType": "",
+        "sgcPercent": "",
+        "sgcAmount": "",
+        "maxConcessional": "",
+        "ssPersonalConcessional": "",
+        "nonConcessional": "",
+        "lumpSumNcc": "",
+        "investmentReturn": "",
+        "salaryGrowth": "",
+        "projectionPeriod": "",
+        "insurancePremium": "",
+        "premiumIndexation": "",
+        "premiumYears": "",
+        "projectedBalance": ""
+    },
+    "owner": [
+        "client",
+        "partner"
+    ],
+    "createdAt": "2026-09-23T11:37:08.079Z",
+    "updatedAt": "2026-09-30T11:46:35.927Z",
+    "__v": 0
 }

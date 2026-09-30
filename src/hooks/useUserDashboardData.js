@@ -237,10 +237,15 @@ export function useReviewOptions() {
         label: fullData?.personalDetails?.client?.preferredName || "Client",
         value: "client",
       },
-      {
-        label: fullData?.personalDetails?.partner?.preferredName || "Partner",
-        value: "partner",
-      },
+      ...(fullData?.personalDetails?.owner?.includes("partner")
+        ? [
+            {
+              label:
+                fullData?.personalDetails?.partner?.preferredName || "Partner",
+              value: "partner",
+            },
+          ]
+        : []),
     ],
     [fullData],
   );

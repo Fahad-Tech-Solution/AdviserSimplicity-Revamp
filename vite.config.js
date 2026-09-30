@@ -17,9 +17,9 @@ export default defineConfig({
     proxy: {
       "/api": {
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
-        // target:
-        //   process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        target: "http://192.168.18.120:7000",
+        target:
+          process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
+        // target: "http://192.168.18.120:7000",
         changeOrigin: true,
         secure: false,
         ws: true,
@@ -27,9 +27,9 @@ export default defineConfig({
       },
       "/dev_api": {
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
-        // target:
-        //   process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        target: "http://192.168.18.120:7000",
+        target:
+          process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
+        // target: "http://192.168.18.120:7000",
         changeOrigin: true,
         secure: false,
         ws: true,

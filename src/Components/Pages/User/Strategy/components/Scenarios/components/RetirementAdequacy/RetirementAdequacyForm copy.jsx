@@ -4,10 +4,10 @@ import { useAtom } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
 import dayjs from "dayjs";
-import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
+import { discoveryDataAtom } from "../../../../../../../../store/authState.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
-import { useReviewOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
+import { useOwnerOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
 
 const { Text } = Typography;
 
@@ -21,9 +21,7 @@ const TABLE_PROPS = {
 };
 
 const RISK_PROFILE_OPTIONS = [
-    { label: "Cash", value: "Cash" },
     { label: "Conservative", value: "Conservative" },
-    { label: "Moderately Conservative", value: "Moderately Conservative" },
     { label: "Balanced", value: "Balanced" },
     { label: "Growth", value: "Growth" },
     { label: "High Growth", value: "High Growth" },
@@ -86,59 +84,66 @@ function SectionTitle({ children, extra }) {
     );
 }
 
-function buildInitialPerson(person = {}) {
+function buildInitialPerson(person = {}, defaultName = "") {
     return {
-        preferredName: person?.preferredName || "",
-        DOB: person?.DOB ? dayjs(person.DOB) : null,
-        accountBasedPensionTotal: formatCurrencyValue(person?.accountBasedPensionTotal),
-        nccTopUp: formatCurrencyValue(person?.nccTopUp),
+        name: person?.name || defaultName,
+        dob: person?.dob ? dayjs(person.dob) : null,
+        balance: formatCurrencyValue(person?.balance ?? 0),
+        nccTopUp: formatCurrencyValue(person?.nccTopUp ?? 0),
         nccTopUpYear: person?.nccTopUpYear || "Year 1",
-        withdrawalAmount: formatCurrencyValue(person?.withdrawalAmount),
-        riskGoal: person?.riskGoal || "Balanced",
-        investmentReturn: person?.investmentReturn ?? "",
+        withdrawalAmount: formatCurrencyValue(person?.withdrawalAmount ?? 0),
+        riskProfile: person?.riskProfile || "Balanced",
+        investmentReturn: person?.investmentReturn ?? "5",
     };
 }
 
-function buildInitialValues(sectionData) {
-    const rawOwner = Array.isArray(sectionData?.owner) && sectionData.owner.length > 0
-        ? sectionData.owner
-        : ["client", "partner"];
-
-    const agePension = sectionData?.agePensionProjection || {};
+function buildInitialValues(sectionData, allowPartner) {
+    const rawOwner = Array.isArray(sectionData?.owner) ? sectionData.owner : ["client"];
+    const owner = allowPartner ? rawOwner : rawOwner.filter((v) => v === "client");
 
     return {
-        owner: rawOwner,
-        pensionStartDate: sectionData?.pensionStartDate ? dayjs(sectionData.pensionStartDate) : null,
-        includeAgePension: sectionData?.includeAgePension ? "Yes" : "No",
-        client: buildInitialPerson(sectionData?.client),
-        partner: buildInitialPerson(sectionData?.partner),
-        agePensionProjection: {
-            relationshipStatus: agePension?.relationshipStatus || "Auto (from owners)",
-            homeOwnership: agePension?.homeOwnership || "Non-Homeowner",
-            personalAssets: agePension?.personalAssets || "$0",
-            otherFinancialInvestments: (agePension?.otherFinancialInvestments || "$0"),
-            thresholdIndexation: agePension?.thresholdIndexation ?? "2.5%",
-            annualLivingExpenses: (agePension?.annualLivingExpenses || "$0"),
-            expensesIndexation: agePension?.expensesIndexation ?? "2.5%",
-            extraWithdrawal: (agePension?.extraWithdrawal || "$0"),
-            withdrawalFrequency: agePension?.withdrawalFrequency || "None",
-        },
+        owner,
+        pensionStartDate: sectionData?.pensionStartDate ? dayjs(sectionData.pensionStartDate) : dayjs("2026-07-01"),
+        includeAgePension: sectionData?.includeAgePension ?? "Yes",
+        relationshipStatus: sectionData?.relationshipStatus || "Auto (from own",
+        homeOwnership: sectionData?.homeOwnership || "Homeowner",
+        personalAssets: formatCurrencyValue(sectionData?.personalAssets ?? 0),
+        otherInvestments: formatCurrencyValue(sectionData?.otherInvestments ?? 0),
+        thresholdIndexation: sectionData?.thresholdIndexation ?? "2",
+        annualLivingExpenses: formatCurrencyValue(sectionData?.annualLivingExpenses ?? 0),
+        expensesIndexation: sectionData?.expensesIndexation ?? "2.5",
+        extraWithdrawal: formatCurrencyValue(sectionData?.extraWithdrawal ?? 0),
+        withdrawalFrequency: sectionData?.withdrawalFrequency || "None",
+        client: buildInitialPerson(sectionData?.client, "Client name"),
+        partner: buildInitialPerson(sectionData?.partner, "Partner name"),
     };
 }
 
 export default function RetirementAdequacyForm({ modalData }) {
     const [form] = Form.useForm();
-    const ownerOptions = useReviewOptions();
+    const ownerOptions = useOwnerOptions();
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
-    const { patch } = useApi();
+    const { post, patch } = useApi();
 
-    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
-    const initialData = selectedReviewAllData?.retirementAdequacyDetails || {};
+    const [discoveryData, setDiscoveryData] = useAtom(discoveryDataAtom);
+
+    const sectionData = discoveryData?.[modalData?.key || "retirementAdequacy"] || {};
+    const allowPartner = !["Single", "Widowed"].includes(
+        discoveryData?.personalDetails?.client?.clientMaritalStatus,
+    );
+
+    const availableOwnerOptions = useMemo(
+        () =>
+            allowPartner
+                ? ownerOptions
+                : ownerOptions.filter((option) => option.value === "client"),
+        [allowPartner, ownerOptions],
+    );
 
     const initialValues = useMemo(
-        () => buildInitialValues(initialData),
-        [initialData]
+        () => buildInitialValues(sectionData, allowPartner),
+        [allowPartner, sectionData],
     );
 
     const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
@@ -146,34 +151,48 @@ export default function RetirementAdequacyForm({ modalData }) {
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
-        setEditing(!initialData?._id);
-    }, [form, initialValues, initialData?._id]);
+        setEditing(!sectionData?._id);
+    }, [form, initialValues, sectionData?._id]);
+
+    useEffect(() => {
+        if (!allowPartner && selectedOwners?.includes("partner")) {
+            form.setFieldValue(
+                "owner",
+                selectedOwners.filter((owner) => owner === "client"),
+            );
+        }
+    }, [allowPartner, form, selectedOwners]);
 
     // Account Details Table Columns
     const ACCOUNT_DETAILS_COLUMNS = [
         {
             title: "Owner",
-            key: "ownerRole",
-            dataIndex: "ownerRole",
+            key: "ownerLabel",
+            dataIndex: "ownerLabel",
             editable: false,
             width: 80,
-            renderView: ({ record }) => (
-                <span style={{ fontWeight: 600 }}>{record?.preferredName}</span>
-            ),
+        },
+        {
+            title: "Name",
+            dataIndex: "name",
+            key: "name",
+            field: "name",
+            type: "text",
+            placeholder: "Client name",
         },
         {
             title: "Date of Birth",
-            dataIndex: "DOB",
-            key: "DOB",
-            field: "DOB",
+            dataIndex: "dob",
+            key: "dob",
+            field: "dob",
             type: "date",
             placeholder: "mm/dd/yyyy",
         },
         {
-            title: "Account Based Pension Total",
-            dataIndex: "accountBasedPensionTotal",
-            key: "accountBasedPensionTotal",
-            field: "accountBasedPensionTotal",
+            title: "Balance ($)",
+            dataIndex: "balance",
+            key: "balance",
+            field: "balance",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
@@ -184,7 +203,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             },
         },
         {
-            title: "NCC Top Up ($)",
+            title: "NCC Top Up ($) (one-off)",
             dataIndex: "nccTopUp",
             key: "nccTopUp",
             field: "nccTopUp",
@@ -198,7 +217,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             },
         },
         {
-            title: "Withdrawal Amount ($)",
+            title: "Withdrawal Amount ($) (one-off)",
             dataIndex: "withdrawalAmount",
             key: "withdrawalAmount",
             field: "withdrawalAmount",
@@ -212,10 +231,10 @@ export default function RetirementAdequacyForm({ modalData }) {
             },
         },
         {
-            title: "Risk Goal",
-            dataIndex: "riskGoal",
-            key: "riskGoal",
-            field: "riskGoal",
+            title: "Risk Profile",
+            dataIndex: "riskProfile",
+            key: "riskProfile",
+            field: "riskProfile",
             type: "select",
             options: RISK_PROFILE_OPTIONS,
             width: 140,
@@ -238,7 +257,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             key: "relationshipStatus",
             field: "relationshipStatus",
             type: "text",
-            placeholder: "Auto (from owners)",
+            placeholder: "Auto (from own",
         },
         {
             title: "Home Ownership",
@@ -257,21 +276,21 @@ export default function RetirementAdequacyForm({ modalData }) {
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
                 currentForm.setFieldValue(
-                    [record.formPath, column.field],
+                    column.field,
                     formatNumericInput(value, { currency: true }),
                 );
             },
         },
         {
             title: "Other Financial Investments ($)",
-            dataIndex: "otherFinancialInvestments",
-            key: "otherFinancialInvestments",
-            field: "otherFinancialInvestments",
+            dataIndex: "otherInvestments",
+            key: "otherInvestments",
+            field: "otherInvestments",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
                 currentForm.setFieldValue(
-                    [record.formPath, column.field],
+                    column.field,
                     formatNumericInput(value, { currency: true }),
                 );
             },
@@ -282,7 +301,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             key: "thresholdIndexation",
             field: "thresholdIndexation",
             type: "text",
-            placeholder: "2.5%",
+            placeholder: "2",
         },
         {
             title: "Annual Living Expenses ($)",
@@ -293,7 +312,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
                 currentForm.setFieldValue(
-                    [record.formPath, column.field],
+                    column.field,
                     formatNumericInput(value, { currency: true }),
                 );
             },
@@ -304,7 +323,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             key: "expensesIndexation",
             field: "expensesIndexation",
             type: "text",
-            placeholder: "2.5%",
+            placeholder: "2.5",
         },
         {
             title: "Extra Withdrawal ($)",
@@ -315,7 +334,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
                 currentForm.setFieldValue(
-                    [record.formPath, column.field],
+                    column.field,
                     formatNumericInput(value, { currency: true }),
                 );
             },
@@ -333,130 +352,77 @@ export default function RetirementAdequacyForm({ modalData }) {
     // Rows mapping for Account Details
     const accountRows = useMemo(
         () =>
-            (selectedOwners || []).map((ownerKey) => {
-                const isClient = ownerKey.toLowerCase() === "client";
-                const personData = isClient ? initialData?.client : initialData?.partner;
-
-                return {
-                    key: ownerKey,
-                    formPath: ownerKey,
-                    ownerRole: isClient ? "Client" : "Partner",
+            (selectedOwners || [])
+                .filter((owner) => allowPartner || owner === "client")
+                .map((owner) => ({
+                    key: owner,
+                    formPath: owner,
                     ownerLabel:
-                        ownerOptions.find((option) => option.value === ownerKey)?.label ||
-                        (isClient ? "Client" : "Partner"),
-                    preferredName:
-                        form.getFieldValue([ownerKey, "preferredName"]) ??
-                        personData?.preferredName ??
-                        "",
-                    DOB:
-                        form.getFieldValue([ownerKey, "DOB"]) ??
-                        (personData?.DOB ? dayjs(personData.DOB) : null),
-                    accountBasedPensionTotal:
-                        form.getFieldValue([ownerKey, "accountBasedPensionTotal"]) ??
-                        formatCurrencyValue(personData?.accountBasedPensionTotal),
-                    nccTopUp:
-                        form.getFieldValue([ownerKey, "nccTopUp"]) ??
-                        formatCurrencyValue(personData?.nccTopUp),
-                    nccTopUpYear:
-                        form.getFieldValue([ownerKey, "nccTopUpYear"]) ??
-                        personData?.nccTopUpYear ??
-                        "Year 1",
-                    withdrawalAmount:
-                        form.getFieldValue([ownerKey, "withdrawalAmount"]) ??
-                        formatCurrencyValue(personData?.withdrawalAmount),
-                    riskGoal:
-                        form.getFieldValue([ownerKey, "riskGoal"]) ??
-                        personData?.riskGoal ??
-                        "Balanced",
-                    investmentReturn:
-                        form.getFieldValue([ownerKey, "investmentReturn"]) ??
-                        personData?.investmentReturn ??
-                        "",
-                };
-            }),
-        [form, initialData, ownerOptions, selectedOwners]
+                        availableOwnerOptions.find((option) => option.value === owner)
+                            ?.label || owner,
+                    name: form.getFieldValue([owner, "name"]),
+                    dob: form.getFieldValue([owner, "dob"]),
+                    balance: form.getFieldValue([owner, "balance"]),
+                    nccTopUp: form.getFieldValue([owner, "nccTopUp"]),
+                    withdrawalAmount: form.getFieldValue([owner, "withdrawalAmount"]),
+                    riskProfile: form.getFieldValue([owner, "riskProfile"]),
+                    investmentReturn: form.getFieldValue([owner, "investmentReturn"]),
+                })),
+        [allowPartner, availableOwnerOptions, form, selectedOwners],
     );
 
     // Single row mapping for Centrelink table
     const centrelinkRow = useMemo(
         () => [
             {
-                key: "agePensionProjection",
-                formPath: "agePensionProjection",
-                relationshipStatus: form.getFieldValue(["agePensionProjection", "relationshipStatus"]),
-                homeOwnership: form.getFieldValue(["agePensionProjection", "homeOwnership"]),
-                personalAssets: form.getFieldValue(["agePensionProjection", "personalAssets"]),
-                otherFinancialInvestments: form.getFieldValue(["agePensionProjection", "otherFinancialInvestments"]),
-                thresholdIndexation: form.getFieldValue(["agePensionProjection", "thresholdIndexation"]),
-                annualLivingExpenses: form.getFieldValue(["agePensionProjection", "annualLivingExpenses"]),
-                expensesIndexation: form.getFieldValue(["agePensionProjection", "expensesIndexation"]),
-                extraWithdrawal: form.getFieldValue(["agePensionProjection", "extraWithdrawal"]),
-                withdrawalFrequency: form.getFieldValue(["agePensionProjection", "withdrawalFrequency"]),
+                key: "centrelink",
+                relationshipStatus: form.getFieldValue("relationshipStatus"),
+                homeOwnership: form.getFieldValue("homeOwnership"),
+                personalAssets: form.getFieldValue("personalAssets"),
+                otherInvestments: form.getFieldValue("otherInvestments"),
+                thresholdIndexation: form.getFieldValue("thresholdIndexation"),
+                annualLivingExpenses: form.getFieldValue("annualLivingExpenses"),
+                expensesIndexation: form.getFieldValue("expensesIndexation"),
+                extraWithdrawal: form.getFieldValue("extraWithdrawal"),
+                withdrawalFrequency: form.getFieldValue("withdrawalFrequency"),
             },
         ],
-        [form]
+        [form],
     );
 
     const handleFinish = async (values) => {
+        const formValues = form.getFieldsValue(true);
+        const payload = {
+            ...sectionData,
+            ...formValues,
+            pensionStartDate: formValues.pensionStartDate ? formValues.pensionStartDate.format("YYYY-MM-DD") : null,
+            client: {
+                ...formValues.client,
+                dob: formValues.client?.dob ? formValues.client.dob.format("YYYY-MM-DD") : null,
+            },
+            partner: allowPartner
+                ? {
+                    ...formValues.partner,
+                    dob: formValues.partner?.dob ? formValues.partner.dob.format("YYYY-MM-DD") : null,
+                }
+                : {},
+        };
+
         try {
             setSaving(true);
-            const activeOwners = values?.owner || [];
+            const saved = sectionData?._id
+                ? await patch("/retirementAdequacy/Update", payload)
+                : await post("/retirementAdequacy/Add", payload);
 
-            const buildPayloadForOwner = (ownerKey) => {
-                const ownerInput = values?.[ownerKey] || {};
-                const ownerOldInput = initialData?.[ownerKey] || {};
-                return {
-                    preferredName: ownerInput.preferredName || ownerOldInput.preferredName || "",
-                    DOB: ownerInput.DOB ? dayjs(ownerInput.DOB).toISOString() : ownerOldInput.DOB || "",
-                    accountBasedPensionTotal: ownerInput.accountBasedPensionTotal || ownerOldInput.accountBasedPensionTotal || "",
-                    nccTopUp: ownerInput.nccTopUp || ownerOldInput.nccTopUp || "",
-                    nccTopUpYear: ownerInput.nccTopUpYear || ownerOldInput.nccTopUpYear || "Year 1",
-                    withdrawalAmount: ownerInput.withdrawalAmount || ownerOldInput.withdrawalAmount || "",
-                    riskGoal: ownerInput.riskGoal || ownerOldInput.riskGoal || "",
-                    investmentReturn: ownerInput.investmentReturn || ownerOldInput.investmentReturn || "",
-                };
-            };
-
-            const clientSelected = activeOwners.includes("client");
-            const partnerSelected = activeOwners.includes("partner");
-            const isAgePensionIncluded = values?.includeAgePension === "Yes";
-
-            const agePensionInput = values?.agePensionProjection || {};
-            const agePensionOldInput = initialData?.agePensionProjection || {};
-
-            const payload = {
-                ...initialData,
-                pensionStartDate: values?.pensionStartDate ? dayjs(values.pensionStartDate).toISOString() : initialData?.pensionStartDate || "",
-                includeAgePension: isAgePensionIncluded,
-                owner: activeOwners,
-                client: clientSelected ? buildPayloadForOwner("client") : initialData?.client,
-                partner: partnerSelected ? buildPayloadForOwner("partner") : initialData?.partner,
-                agePensionProjection: {
-                    includeAgePension: isAgePensionIncluded,
-                    relationshipStatus: agePensionInput.relationshipStatus || agePensionOldInput.relationshipStatus || "Auto (from owners)",
-                    homeOwnership: agePensionInput.homeOwnership || agePensionOldInput.homeOwnership || "Non-Homeowner",
-                    personalAssets: agePensionInput.personalAssets || agePensionOldInput.personalAssets || "$0",
-                    otherFinancialInvestments: agePensionInput.otherFinancialInvestments || agePensionOldInput.otherFinancialInvestments || "$0",
-                    thresholdIndexation: agePensionInput.thresholdIndexation || agePensionOldInput.thresholdIndexation || "2.5%",
-                    annualLivingExpenses: agePensionInput.annualLivingExpenses || agePensionOldInput.annualLivingExpenses || "",
-                    expensesIndexation: agePensionInput.expensesIndexation || agePensionOldInput.expensesIndexation || "2.5%",
-                    extraWithdrawal: agePensionInput.extraWithdrawal || agePensionOldInput.extraWithdrawal || "",
-                    withdrawalFrequency: agePensionInput.withdrawalFrequency || agePensionOldInput.withdrawalFrequency || "None",
-                },
-            };
-
-            const res = await patch("/review/retirementAdequacy/Update", payload);
-
-            setSelectedReviewAllData((prev) => ({
-                ...prev,
-                retirementAdequacyDetails: res?.data || payload,
+            setDiscoveryData((prev) => ({
+                ...(prev && typeof prev === "object" ? prev : {}),
+                [modalData?.key || "retirementAdequacy"]: saved || payload,
             }));
 
-            message.success("Retirement adequacy details updated successfully");
-            setEditing(false);
+            message.success(`Retirement adequacy inputs ${sectionData?._id ? "updated" : "saved"} successfully`);
             modalData?.closeModal?.();
         } catch (error) {
-            message.error(error?.response?.data?.message || "Failed to update retirement adequacy details");
+            message.error(error?.response?.data?.message || "Failed to save retirement adequacy settings");
         } finally {
             setSaving(false);
         }
@@ -488,7 +454,7 @@ export default function RetirementAdequacyForm({ modalData }) {
                             rules={[{ required: true, message: "Owner is required" }]}
                         >
                             <Select
-                                options={ownerOptions}
+                                options={availableOwnerOptions}
                                 mode="multiple"
                                 placeholder="Select owner"
                                 style={{ width: "100%" }}
@@ -575,16 +541,14 @@ export default function RetirementAdequacyForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="button"
-                                        key="edit"
                                         style={{ backgroundColor: "#22c55e" }}
                                         onClick={() => setEditing(true)}
                                     >
-                                        Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
+                                        Edit <RiEdit2Fill />
                                     </Button>
                                 ) : (
                                     <Button
                                         type="primary"
-                                        key="submit"
                                         htmlType="submit"
                                         style={{ backgroundColor: "#22c55e" }}
                                         loading={saving}

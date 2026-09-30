@@ -169,8 +169,8 @@ const validationRules = [
     },
 ];
 
-const REQUIRED_COLUMNS = ['Email', 'Preferred Name', 'Last Name', 'Date of Birth', 'Home Address', 'Mobile Phone', 'Marital Status']; // Define your required column names here
-const PARTNER_REQUIRED_COLUMNS = ['Partner Email', 'Partner Preferred Name', 'Partner Last Name', 'Partner Date of Birth', 'Partner Home Address', 'Partner Mobile', 'Marital Status']; // Define your required column names here
+const REQUIRED_COLUMNS = ['Email', 'Preferred Name', 'Last Name', 'Date of Birth', 'Home Address', , 'Home Postcode', 'Mobile Phone', 'Marital Status', "Gender"]; // Define your required column names here
+const PARTNER_REQUIRED_COLUMNS = ['Partner Email', 'Partner Preferred Name', 'Partner Last Name', 'Partner Date of Birth', 'Partner Home Address', 'Partner Postcode', 'Partner Mobile', 'Marital Status', 'Partner Gender']; // Define your required column names here
 
 // Helper to check for missing/empty values
 const isValueEmpty = (value) => value === undefined || value === null || String(value).trim() === '';

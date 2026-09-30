@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button, Col, Form, message, Row, Select, Space, Typography } from "antd";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import DynamicDataTable from "../../../../../../Common/DynamicDataTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
-import { discoveryDataAtom } from "../../../../../../../store/authState.js";
+import { SelectedReviewAllData } from "../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
-import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
+import { useReviewOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 
 const { Text } = Typography;
@@ -21,7 +20,9 @@ const TABLE_PROPS = {
 };
 
 const RISK_PROFILE_OPTIONS = [
+    { label: "Cash", value: "Cash" },
     { label: "Conservative", value: "Conservative" },
+    { label: "Moderately Conservative", value: "Moderately Conservative" },
     { label: "Balanced", value: "Balanced" },
     { label: "Growth", value: "Growth" },
     { label: "High Growth", value: "High Growth" },
@@ -79,37 +80,36 @@ function SectionTitle({ children }) {
 
 function buildInitialPerson(person = {}) {
     return {
-        name: person?.name || "",
-        salary: formatCurrencyValue(person?.salary ?? 1000),
-        superBalance: formatCurrencyValue(person?.superBalance ?? 1000),
-        riskProfile: person?.riskProfile || "Balanced",
+        preferredName: person?.preferredName || "",
+        incomeFromBusinessTotal: formatCurrencyValue(person?.incomeFromBusinessTotal),
+        superAnnuationTotal: formatCurrencyValue(person?.superAnnuationTotal),
+        riskGoal: person?.riskGoal || "Balanced",
 
-        contributionType: person?.contributionType || "Salary Sacrifice",
-        sgcPercent: person?.sgcPercent ?? "12",
-        sgcAmount: formatCurrencyValue(person?.sgcAmount ?? 120),
-        maxConcessional: formatCurrencyValue(person?.maxConcessional ?? 32380),
-        ssPersonalConcessional: formatCurrencyValue(person?.ssPersonalConcessional ?? 100),
-        nonConcessional: formatCurrencyValue(person?.nonConcessional ?? 100),
-        lumpSumNcc: formatCurrencyValue(person?.lumpSumNcc ?? 100),
+        contributionType: person?.contributionType || "",
+        sgcPercent: person?.sgcPercent ?? "",
+        sgcAmount: formatCurrencyValue(person?.sgcAmount),
+        maxConcessional: formatCurrencyValue(person?.maxConcessional),
+        ssPersonalConcessional: formatCurrencyValue(person?.ssPersonalConcessional),
+        nonConcessional: formatCurrencyValue(person?.nonConcessional),
+        lumpSumNcc: formatCurrencyValue(person?.lumpSumNcc),
 
-        investmentReturn: person?.investmentReturn ?? "100",
-        salaryGrowth: person?.salaryGrowth ?? "100",
-        projectionPeriod: person?.projectionPeriod ?? "14",
-        insurancePremium: formatCurrencyValue(person?.insurancePremium ?? 100),
-        premiumIndexation: person?.premiumIndexation ?? "3%",
-        premiumYears: person?.premiumYears ?? "10",
-        projectedBalance: formatCurrencyValue(person?.projectedBalance ?? 45074429),
+        investmentReturn: person?.investmentReturn ?? "",
+        salaryGrowth: person?.salaryGrowth ?? "",
+        projectionPeriod: person?.projectionPeriod ?? "",
+        insurancePremium: formatCurrencyValue(person?.insurancePremium),
+        premiumIndexation: person?.premiumIndexation ?? "",
+        premiumYears: person?.premiumYears ?? "",
+        projectedBalance: formatCurrencyValue(person?.projectedBalance),
     };
 }
 
-function buildInitialValues(sectionData, allowPartner) {
-    const rawOwner = Array.isArray(sectionData?.owner) ? sectionData.owner : ["client", "partner"];
-    const owner = allowPartner
-        ? rawOwner
-        : rawOwner.filter((value) => value === "client");
+function buildInitialValues(sectionData) {
+    const rawOwner = Array.isArray(sectionData?.owner) && sectionData.owner.length > 0
+        ? sectionData.owner
+        : ["client", "partner"];
 
     return {
-        owner,
+        owner: rawOwner,
         client: buildInitialPerson(sectionData?.client),
         partner: buildInitialPerson(sectionData?.partner),
     };
@@ -117,61 +117,43 @@ function buildInitialValues(sectionData, allowPartner) {
 
 export default function ScenariosSuperProjectionForm({ modalData }) {
     const [form] = Form.useForm();
-    const ownerOptions = useOwnerOptions();
+    const ownerOptions = useReviewOptions();
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
-    const { post, patch } = useApi();
+    const { patch } = useApi();
 
-    const discoveryData = useAtomValue(discoveryDataAtom);
-    const setDiscoveryData = useSetAtom(discoveryDataAtom);
-
-    const sectionData = discoveryData?.[modalData?.key || "scenariosSuperProjection"] || {};
-    const allowPartner = !["Single", "Widowed"].includes(
-        discoveryData?.personalDetails?.client?.clientMaritalStatus,
-    );
-
-    const availableOwnerOptions = useMemo(
-        () =>
-            allowPartner
-                ? ownerOptions
-                : ownerOptions.filter((option) => option.value === "client"),
-        [allowPartner, ownerOptions],
-    );
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const initialData = selectedReviewAllData?.superannuationDetails || {};
 
     const initialValues = useMemo(
-        () => buildInitialValues(sectionData, allowPartner),
-        [allowPartner, sectionData],
+        () => buildInitialValues(initialData),
+        [initialData]
     );
 
     const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
-        setEditing(!sectionData?._id);
-    }, [form, initialValues, sectionData?._id]);
-
-    useEffect(() => {
-        if (!allowPartner && selectedOwners?.includes("partner")) {
-            form.setFieldValue(
-                "owner",
-                selectedOwners.filter((owner) => owner === "client"),
-            );
-        }
-    }, [allowPartner, form, selectedOwners]);
+        setEditing(!initialData?._id);
+    }, [form, initialValues, initialData?._id]);
 
     // Column definitions for Table 1: Balances & Income
     const BALANCES_COLUMNS = [
         {
-            title: "Owner", key: "ownerLabel",
-            dataIndex: "ownerLabel",
+            title: "Owner",
+            key: "ownerRole",
+            dataIndex: "ownerRole",
             editable: false,
-            width: 90
+            width: 90,
+            renderView: ({ record }) => (
+                <span style={{ fontWeight: 600 }}>{record?.preferredName}</span>
+            ),
         },
         {
             title: "Salary (p.a.)",
-            dataIndex: "salary",
-            key: "salary",
-            field: "salary",
+            dataIndex: "incomeFromBusinessTotal",
+            key: "incomeFromBusinessTotal",
+            field: "incomeFromBusinessTotal",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
@@ -183,9 +165,9 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
         },
         {
             title: "Super Balance",
-            dataIndex: "superBalance",
-            key: "superBalance",
-            field: "superBalance",
+            dataIndex: "superAnnuationTotal",
+            key: "superAnnuationTotal",
+            field: "superAnnuationTotal",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
@@ -197,22 +179,26 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
         },
         {
             title: "Risk Profile",
-            dataIndex: "riskProfile",
-            key: "riskProfile",
-            field: "riskProfile",
+            dataIndex: "riskGoal",
+            key: "riskGoal",
+            field: "riskGoal",
             type: "select",
             options: RISK_PROFILE_OPTIONS,
-            width: 160
+            width: 160,
         },
     ];
 
     // Column definitions for Table 2: Contributions
     const CONTRIBUTIONS_COLUMNS = [
         {
-            title: "Owner", key: "ownerLabel",
-            dataIndex: "ownerLabel",
+            title: "Owner",
+            key: "ownerRole",
+            dataIndex: "ownerRole",
             editable: false,
-            width: 90
+            width: 90,
+            renderView: ({ record }) => (
+                <span style={{ fontWeight: 600 }}>{record?.preferredName}</span>
+            ),
         },
         {
             title: "Contribution Type",
@@ -311,10 +297,14 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     // Column definitions for Table 3: Assumptions
     const ASSUMPTIONS_COLUMNS = [
         {
-            title: "Owner", key: "ownerLabel",
-            dataIndex: "ownerLabel",
+            title: "Owner",
+            key: "ownerRole",
+            dataIndex: "ownerRole",
             editable: false,
-            width: 90
+            width: 90,
+            renderView: ({ record }) => (
+                <span style={{ fontWeight: 600 }}>{record?.preferredName}</span>
+            ),
         },
         {
             title: "Investment Return (%)",
@@ -377,70 +367,151 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "projectedBalance",
             type: "text",
             placeholder: "$0",
-            disabled: true,
-            editable: true,
+            onChange: (value, record, column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, column.field],
+                    formatNumericInput(value, { currency: true }),
+                );
+            },
         },
     ];
 
     // Prepare table row data mapping
     const rows = useMemo(
         () =>
-            (selectedOwners || [])
-                .filter((owner) => allowPartner || owner === "client")
-                .map((owner) => ({
-                    key: owner,
-                    formPath: owner,
+            (selectedOwners || []).map((ownerKey) => {
+                const isClient = ownerKey.toLowerCase() === "client";
+                const personData = isClient ? initialData?.client : initialData?.partner;
+
+                return {
+                    key: ownerKey,
+                    formPath: ownerKey,
+                    ownerRole: isClient ? "Client" : "Partner",
                     ownerLabel:
-                        availableOwnerOptions.find((option) => option.value === owner)
-                            ?.label || owner,
-                    name: form.getFieldValue([owner, "name"]),
-                    salary: form.getFieldValue([owner, "salary"]),
-                    superBalance: form.getFieldValue([owner, "superBalance"]),
-                    riskProfile: form.getFieldValue([owner, "riskProfile"]),
+                        ownerOptions.find((option) => option.value === ownerKey)?.label ||
+                        (isClient ? "Client" : "Partner"),
+                    preferredName:
+                        form.getFieldValue([ownerKey, "preferredName"]) ??
+                        personData?.preferredName ??
+                        "",
+                    incomeFromBusinessTotal:
+                        form.getFieldValue([ownerKey, "incomeFromBusinessTotal"]) ??
+                        formatCurrencyValue(personData?.incomeFromBusinessTotal),
+                    superAnnuationTotal:
+                        form.getFieldValue([ownerKey, "superAnnuationTotal"]) ??
+                        formatCurrencyValue(personData?.superAnnuationTotal),
+                    riskGoal:
+                        form.getFieldValue([ownerKey, "riskGoal"]) ??
+                        personData?.riskGoal ??
+                        "Balanced",
 
-                    contributionType: form.getFieldValue([owner, "contributionType"]),
-                    sgcPercent: form.getFieldValue([owner, "sgcPercent"]),
-                    sgcAmount: form.getFieldValue([owner, "sgcAmount"]),
-                    maxConcessional: form.getFieldValue([owner, "maxConcessional"]),
-                    ssPersonalConcessional: form.getFieldValue([owner, "ssPersonalConcessional"]),
-                    nonConcessional: form.getFieldValue([owner, "nonConcessional"]),
-                    lumpSumNcc: form.getFieldValue([owner, "lumpSumNcc"]),
+                    contributionType:
+                        form.getFieldValue([ownerKey, "contributionType"]) ??
+                        personData?.contributionType ??
+                        "",
+                    sgcPercent:
+                        form.getFieldValue([ownerKey, "sgcPercent"]) ??
+                        personData?.sgcPercent ??
+                        "",
+                    sgcAmount:
+                        form.getFieldValue([ownerKey, "sgcAmount"]) ??
+                        formatCurrencyValue(personData?.sgcAmount),
+                    maxConcessional:
+                        form.getFieldValue([ownerKey, "maxConcessional"]) ??
+                        formatCurrencyValue(personData?.maxConcessional),
+                    ssPersonalConcessional:
+                        form.getFieldValue([ownerKey, "ssPersonalConcessional"]) ??
+                        formatCurrencyValue(personData?.ssPersonalConcessional),
+                    nonConcessional:
+                        form.getFieldValue([ownerKey, "nonConcessional"]) ??
+                        formatCurrencyValue(personData?.nonConcessional),
+                    lumpSumNcc:
+                        form.getFieldValue([ownerKey, "lumpSumNcc"]) ??
+                        formatCurrencyValue(personData?.lumpSumNcc),
 
-                    investmentReturn: form.getFieldValue([owner, "investmentReturn"]),
-                    salaryGrowth: form.getFieldValue([owner, "salaryGrowth"]),
-                    projectionPeriod: form.getFieldValue([owner, "projectionPeriod"]),
-                    insurancePremium: form.getFieldValue([owner, "insurancePremium"]),
-                    premiumIndexation: form.getFieldValue([owner, "premiumIndexation"]),
-                    premiumYears: form.getFieldValue([owner, "premiumYears"]),
-                    projectedBalance: form.getFieldValue([owner, "projectedBalance"]),
-                })),
-        [allowPartner, availableOwnerOptions, form, selectedOwners],
+                    investmentReturn:
+                        form.getFieldValue([ownerKey, "investmentReturn"]) ??
+                        personData?.investmentReturn ??
+                        "",
+                    salaryGrowth:
+                        form.getFieldValue([ownerKey, "salaryGrowth"]) ??
+                        personData?.salaryGrowth ??
+                        "",
+                    projectionPeriod:
+                        form.getFieldValue([ownerKey, "projectionPeriod"]) ??
+                        personData?.projectionPeriod ??
+                        "",
+                    insurancePremium:
+                        form.getFieldValue([ownerKey, "insurancePremium"]) ??
+                        formatCurrencyValue(personData?.insurancePremium),
+                    premiumIndexation:
+                        form.getFieldValue([ownerKey, "premiumIndexation"]) ??
+                        personData?.premiumIndexation ??
+                        "",
+                    premiumYears:
+                        form.getFieldValue([ownerKey, "premiumYears"]) ??
+                        personData?.premiumYears ??
+                        "",
+                    projectedBalance:
+                        form.getFieldValue([ownerKey, "projectedBalance"]) ??
+                        formatCurrencyValue(personData?.projectedBalance),
+                };
+            }),
+        [form, initialData, ownerOptions, selectedOwners]
     );
 
     const handleFinish = async (values) => {
-        const formValues = form.getFieldsValue(true);
-        const payload = {
-            ...sectionData,
-            owner: formValues.owner,
-            client: formValues.client,
-            partner: allowPartner ? formValues.partner : {},
-        };
-
         try {
             setSaving(true);
-            const saved = sectionData?._id
-                ? await patch("/scenariosSuperProjection/Update", payload)
-                : await post("/scenariosSuperProjection/Add", payload);
+            const activeOwners = values?.owner || [];
 
-            setDiscoveryData((prev) => ({
-                ...(prev && typeof prev === "object" ? prev : {}),
-                [modalData?.key || "scenariosSuperProjection"]: saved || payload,
+            const buildPayloadForOwner = (ownerKey) => {
+                const ownerInput = values?.[ownerKey] || {};
+                const ownerOldInput = initialData?.[ownerKey] || {};
+                return {
+                    preferredName: ownerInput.preferredName || ownerOldInput.preferredName || "",
+                    incomeFromBusinessTotal: ownerInput.incomeFromBusinessTotal || ownerOldInput.incomeFromBusinessTotal || "",
+                    superAnnuationTotal: ownerInput.superAnnuationTotal || ownerOldInput.superAnnuationTotal || "",
+                    riskGoal: ownerInput.riskGoal || ownerOldInput.riskGoal || "",
+                    contributionType: ownerInput.contributionType || ownerOldInput.contributionType || "",
+                    sgcPercent: ownerInput.sgcPercent || ownerOldInput.sgcPercent || "",
+                    sgcAmount: ownerInput.sgcAmount || ownerOldInput.sgcAmount || "",
+                    maxConcessional: ownerInput.maxConcessional || ownerOldInput.maxConcessional || "",
+                    ssPersonalConcessional: ownerInput.ssPersonalConcessional || ownerOldInput.ssPersonalConcessional || "",
+                    nonConcessional: ownerInput.nonConcessional || ownerOldInput.nonConcessional || "",
+                    lumpSumNcc: ownerInput.lumpSumNcc || ownerOldInput.lumpSumNcc || "",
+                    investmentReturn: ownerInput.investmentReturn || ownerOldInput.investmentReturn || "",
+                    salaryGrowth: ownerInput.salaryGrowth || ownerOldInput.salaryGrowth || "",
+                    projectionPeriod: ownerInput.projectionPeriod || ownerOldInput.projectionPeriod || "",
+                    insurancePremium: ownerInput.insurancePremium || ownerOldInput.insurancePremium || "",
+                    premiumIndexation: ownerInput.premiumIndexation || ownerOldInput.premiumIndexation || "",
+                    premiumYears: ownerInput.premiumYears || ownerOldInput.premiumYears || "",
+                    projectedBalance: ownerInput.projectedBalance || ownerOldInput.projectedBalance || "",
+                };
+            };
+
+            const clientSelected = activeOwners.includes("client");
+            const partnerSelected = activeOwners.includes("partner");
+
+            const payload = {
+                ...initialData,
+                owner: activeOwners,
+                client: clientSelected ? buildPayloadForOwner("client") : initialData?.client,
+                partner: partnerSelected ? buildPayloadForOwner("partner") : initialData?.partner,
+            };
+
+            const res = await patch("/review/superannuation/Update", payload);
+
+            setSelectedReviewAllData((prev) => ({
+                ...prev,
+                superannuationDetails: res?.data || payload,
             }));
 
-            message.success(`Super projections  ${sectionData?._id ? "updated" : "saved"}  successfully`);
+            message.success("Superannuation details updated successfully");
+            setEditing(false);
             modalData?.closeModal?.();
         } catch (error) {
-            message.error(error?.response?.data?.message || "Failed to save super projection settings");
+            message.error(error?.response?.data?.message || "Failed to update superannuation details");
         } finally {
             setSaving(false);
         }
@@ -472,7 +543,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                             rules={[{ required: true, message: "Owner is required" }]}
                         >
                             <Select
-                                options={availableOwnerOptions}
+                                options={ownerOptions}
                                 mode="multiple"
                                 placeholder="Select owner"
                                 style={{ width: "100%" }}
@@ -484,7 +555,6 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                     {/* Section 1: Balances & Income */}
                     <Col xs={24}>
                         <SectionTitle>BALANCES & INCOME</SectionTitle>
-
                         <EditableDynamicTable
                             form={form}
                             editing={editing}
@@ -492,13 +562,11 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                             data={rows}
                             tableProps={TABLE_PROPS}
                         />
-
                     </Col>
 
                     {/* Section 2: Contributions */}
                     <Col xs={24}>
                         <SectionTitle>CONTRIBUTIONS</SectionTitle>
-
                         <EditableDynamicTable
                             form={form}
                             editing={editing}
@@ -506,13 +574,11 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                             data={rows}
                             tableProps={TABLE_PROPS}
                         />
-
                     </Col>
 
                     {/* Section 3: Assumptions */}
                     <Col xs={24}>
                         <SectionTitle>ASSUMPTIONS</SectionTitle>
-
                         <EditableDynamicTable
                             form={form}
                             editing={editing}
@@ -520,7 +586,6 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                             data={rows}
                             tableProps={TABLE_PROPS}
                         />
-
                     </Col>
 
                     {/* Action Buttons */}
@@ -541,14 +606,16 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="button"
+                                        key={"edit"}
                                         style={{ backgroundColor: "#22c55e" }}
                                         onClick={() => setEditing(true)}
                                     >
-                                        Edit <RiEdit2Fill />
+                                        Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
                                     </Button>
                                 ) : (
                                     <Button
                                         type="primary"
+                                        key={"submit"}
                                         htmlType="submit"
                                         style={{ backgroundColor: "#22c55e" }}
                                         loading={saving}
