@@ -100,7 +100,7 @@ export default function UserLayout() {
         children: reviewRoutes.filter(passes2),
       },
     ];
-  }, [discoveryQuestions]);
+  }, [discoveryQuestions, ClientReviewQuestion]);
 
   useUserDashboardData({
     enabled: isAuthenticatedSession(session),

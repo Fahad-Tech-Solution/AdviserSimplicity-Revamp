@@ -54,10 +54,10 @@ function buildOptions(options = []) {
     typeof option === "string"
       ? { label: option, value: option }
       : {
-          label: option.label ?? option.value,
-          value: option.value,
-          disabled: option.disabled,
-        },
+        label: option.label ?? option.value,
+        value: option.value,
+        disabled: option.disabled,
+      },
   );
 }
 
@@ -277,12 +277,13 @@ function SelectActionField({
       <Select
         placeholder={placeholder}
         size="small"
+        popupMatchSelectWidth={false} // <--- Added here
         style={{
           height: "26px",
           borderRadius: "7px",
           maxWidth: "180px",
           minWidth: "120px",
-          width: "100%",
+          // width: "100%",
         }}
         value={value}
         onChange={onChange}
@@ -373,6 +374,7 @@ function PostcodeSearchSelect({
       options={optionsData}
       style={{ width: "100%" }}
       disabled={disabled}
+      popupMatchSelectWidth={false} // <--- Added here
       getPopupContainer={() => document.body}
       dropdownStyle={{ minWidth: 200 }} // Increase only popup width
       {...fieldProps}
@@ -473,6 +475,7 @@ function getInputNode({
           }}
           allowClear
           showSearch
+          popupMatchSelectWidth={false} // <--- Added here
           optionFilterProp="label"
           {...fieldProps}
         />
@@ -489,6 +492,7 @@ function getInputNode({
             minWidth: "100px",
             borderRadius: "7px",
           }}
+          popupMatchSelectWidth={false}
           styles={{
             item: {
               fontSize: "12px",
@@ -540,7 +544,7 @@ function getInputNode({
         />
       );
 
-     case "input-action":
+    case "input-action":
       return (
         <InputActionField
           placeholder={placeholder}
@@ -552,7 +556,7 @@ function getInputNode({
         />
       );
 
-      case "text":
+    case "text":
     default:
       return (
         <Input

@@ -319,7 +319,7 @@ const ScenariosSuperProjection = () => {
             <AppModal
                 open={openModal}
                 onClose={() => { setOpenModal(false) }}
-                width={"70vw"}
+                width={"95vw"}
                 title={renderTitleBlock({
                     title: "Superannuation Inputs",
                     icon: "🐷",

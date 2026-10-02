@@ -32,7 +32,7 @@ export default function AdviceGoalCard({
   status,
   key = "",
   info = "",
-  onClick = () => {},
+  onClick = () => { },
 }) {
   const normalizedStatus =
     status === null || status === undefined ? "—" : status;
@@ -61,11 +61,13 @@ export default function AdviceGoalCard({
         style={{
           width: 52,
           height: 52,
-          borderRadius: 12,
-          background: isYes ? "rgba(34, 197, 94, 0.12)" : "#f3f4f6",
+          // borderRadius: 12,
+          // background: isYes ? "rgba(34, 197, 94, 0.12)" : "#f3f4f6",
           display: "grid",
           placeItems: "center",
           marginBottom: 12,
+          fontSize: 50,
+          lineHeight: 0,
         }}
       >
         {/* {renderCardIcon(Icon, isYes)} */}

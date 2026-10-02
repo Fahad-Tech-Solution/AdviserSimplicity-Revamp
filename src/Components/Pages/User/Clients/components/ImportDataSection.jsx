@@ -33,17 +33,17 @@ const isValidAustralianDate = (dateStr) => {
 // Add, remove, or modify any validation rules directly here!
 // -------------------------------------------------------------
 const validationRules = [
-    {
-        id: 'australian-date-format',
-        ruleMessage: 'Must follow Australian date format (DD/MM/YYYY), e.g., 25/12/1990.',
-        // Dynamic key matcher: matches fields containing "date" or "dob"
-        matchColumn: (colName) => {
-            const lower = colName.toLowerCase();
-            return lower.includes('date') || lower.includes('dob');
-        },
-        // Validation function: returns true if VALID, false if INVALID
-        validate: (value) => isValidAustralianDate(value),
-    },
+    // {
+    //     id: 'australian-date-format',
+    //     ruleMessage: 'Must follow Australian date format (DD/MM/YYYY), e.g., 25/12/1990.',
+    //     // Dynamic key matcher: matches fields containing "date" or "dob"
+    //     matchColumn: (colName) => {
+    //         const lower = colName.toLowerCase();
+    //         return lower.includes('date') || lower.includes('dob');
+    //     },
+    //     // Validation function: returns true if VALID, false if INVALID
+    //     validate: (value) => isValidAustralianDate(value),
+    // },
     {
         id: 'valid-email-format',
         ruleMessage: 'Must contain a valid email address (e.g., user@example.com).',
@@ -169,8 +169,8 @@ const validationRules = [
     },
 ];
 
-const REQUIRED_COLUMNS = ['Email', 'Preferred Name', 'Last Name', 'Date of Birth', 'Home Address', , 'Home Postcode', 'Mobile Phone', 'Marital Status', "Gender"]; // Define your required column names here
-const PARTNER_REQUIRED_COLUMNS = ['Partner Email', 'Partner Preferred Name', 'Partner Last Name', 'Partner Date of Birth', 'Partner Home Address', 'Partner Postcode', 'Partner Mobile', 'Marital Status', 'Partner Gender']; // Define your required column names here
+const REQUIRED_COLUMNS = ['Last Name', 'Preferred Name', 'Date of Birth', "Gender", 'Marital Status', 'Home Address', 'Home Postcode', 'Email', 'Mobile Phone', 'Postal Address', 'Postal Postcode',]; // Define your required column names here
+const PARTNER_REQUIRED_COLUMNS = ['Partner Last Name', 'Partner Preferred Name', 'Partner Date of Birth', 'Partner Gender', 'Marital Status', 'Partner Home Address', 'Partner Postcode', 'Partner Email', 'Partner Mobile', 'Partner Postal Address', 'Partner Postal Postcode',]; // Define your required column names here
 
 // Helper to check for missing/empty values
 const isValueEmpty = (value) => value === undefined || value === null || String(value).trim() === '';
@@ -207,26 +207,6 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                 }
             });
 
-            // 2. Conditional Check for Partner Required Columns
-            const maritalStatus = String(row['Marital Status'] || '').trim();
-            const partnerNotRequired = ['', 'Single', 'Widowed'];
-
-            // If marital status is filled and is NOT in partnerNotRequired list
-            if (maritalStatus && !partnerNotRequired.includes(maritalStatus)) {
-                PARTNER_REQUIRED_COLUMNS.forEach((colName) => {
-                    if (isValueEmpty(row[colName])) {
-                        const errorKey = `${colName}-required-row-${rowNumber}`;
-                        if (!seenErrors.has(errorKey)) {
-                            seenErrors.add(errorKey);
-                            errors.push({
-                                key: errorKey,
-                                columnName: colName,
-                                rule: `Column "${colName}" is required when Marital Status is "${maritalStatus}" (Row ${rowNumber}).`,
-                            });
-                        }
-                    }
-                });
-            }
 
             // 3. Dynamic Rule Validation for Available Columns
             Object.keys(row).forEach((colName) => {
@@ -251,6 +231,29 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                 });
 
             });
+
+            // 2. Conditional Check for Partner Required Columns
+            const maritalStatus = String(row['Marital Status'] || '').trim();
+            const partnerNotRequired = ['', 'Single', 'Widowed'];
+            const AllowedValues = ["De Facto", "Married", "Partnered", "Single", "Widowed"];
+
+            // If marital status is filled and is NOT in partnerNotRequired list
+            if (maritalStatus && AllowedValues.includes(maritalStatus) && !partnerNotRequired.includes(maritalStatus)) {
+                PARTNER_REQUIRED_COLUMNS.forEach((colName) => {
+                    if (isValueEmpty(row[colName])) {
+                        const errorKey = `${colName}-required-row-${rowNumber}`;
+                        if (!seenErrors.has(errorKey)) {
+                            seenErrors.add(errorKey);
+                            errors.push({
+                                key: errorKey,
+                                columnName: colName,
+                                rule: `Column "${colName}" is required when Marital Status is "${maritalStatus}" (Row ${rowNumber}).`,
+                            });
+                        }
+                    }
+                });
+            }
+
         });
 
         return errors;
@@ -270,14 +273,14 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
                     // Check max 40 entries
-                    if (jsonData.length > 40) {
-                        message.error({
-                            content: `File contains ${jsonData.length} entries. Maximum allowed is 40 entries.`,
-                            key: "data_extraction_status",
-                            duration: 5,
-                        });
-                        return reject(new Error('Exceeds entry limit'));
-                    }
+                    // if (jsonData.length > 40) {
+                    //     message.error({
+                    //         content: `File contains ${jsonData.length} entries. Maximum allowed is 40 entries.`,
+                    //         key: "data_extraction_status",
+                    //         duration: 5,
+                    //     });
+                    //     return reject(new Error('Exceeds entry limit'));
+                    // }
 
                     // Dynamic Validation Check
                     const errors = validateExcelData(jsonData);
@@ -531,7 +534,11 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                     </p>
                     <p className="ant-upload-text">Click or drag Excel file to this area to upload</p>
                     <p className="ant-upload-hint">
-                        Please upload an <strong>.xlsx</strong>,<strong>.xls</strong> or <strong>.csv</strong> file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
+                        Please upload an <strong>.xlsx</strong>,
+                        or <strong>.xls </strong>
+                        {/* <strong>.xls</strong> or <strong>.csv</strong> */}
+
+                        file. Up to <strong>40 entries</strong> and maximum file size of <strong>5 MB</strong> allowed.
                         <br />
                         All red columns in excel sheet are required for the <strong>client</strong>.
                         <br />
@@ -592,7 +599,10 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                 )}
                 {/* <div className='d-flex justify-content-center align-items-center gap-4'> */}
                 <Button
-                    style={{ margin: '10px 0px 0px 0px', width: '100%' }}
+                    style={{
+                        margin: '10px 0px 0px 0px', width: '100%',
+                        height: '40px'
+                    }}
                     type="primary"
                     icon={<MdCloudDownload />}
                     onClick={() => handleDownloadTemplate("xlsx")}

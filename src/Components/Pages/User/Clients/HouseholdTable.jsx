@@ -6,6 +6,7 @@ import {
   ConfigProvider,
   Dropdown,
   message,
+  Modal,
   notification,
   Spin,
   Tooltip,
@@ -83,7 +84,7 @@ const getPartnerEmail = (partner = {}) =>
   partner.partnerEmail || partner.email || "";
 
 const getClientPhone = (client = {}) =>
-  client.clientWorkPhone || client.clientPhone || client.phone || "";
+  client.clientMobile || client.clientPhone || client.phone || "";
 
 const getPartnerPhone = (partner = {}) =>
   partner.partnerWorkPhone || partner.partnerPhone || partner.phone || "";
@@ -556,31 +557,52 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   };
 
 
-  let DeleteClient = async (row) => {
-    try {
-      setLoading(true);
-      // Call the API to delete the client /personalDetails/softDelete/${row?._id}
-      const response = await patch(`/personalDetails/softDelete/${row?._id}`);
+  let DeleteClient = (row) => {
+    const loadingKey = `delete-client-${row?._id}`;
 
-      if (response) {
-        // Optionally, you can refresh the client list or update the state to remove the deleted client from the table.
-        console.log("Client deleted:", response);
-        console.log("All Clients:", myClientsData);
-        // now filter that id from MyClientsData atom
-        setMyClientsData((prevData) => {
-          return ({
-            ...prevData,
-            clients: prevData.clients.filter((client) => client._id !== row?._id),
-          })
+    Modal.confirm({
+      centered: true,
+      title: `Delete ${getClientLastName(row?.client) || "Unknown"}?`,
+      content: `Are you sure you want to delete this ${getClientLastName(row?.client) || "Unknown"}?`,
+      okText: "Delete",
+      cancelText: "Cancel",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        message.loading({
+          content: "Deleting ...",
+          key: loadingKey,
+          duration: 0,
         });
-        message.success(`Client ${response.client.clientPreferredName} (${response.client.Email}) is deleted successfully.`);
-      }
-    } catch (error) {
-      message.error("Failed to delete client. Please try again.");
-      console.error("Error deleting client:", error);
-    } finally {
-      setLoading(false);
-    }
+
+        try {
+          setLoading(true);
+          // Call the API to delete the client /personalDetails/softDelete/${row?._id}
+          const response = await patch(`/personalDetails/softDelete/${row?._id}`);
+
+          if (response) {
+            // now filter that id from MyClientsData atom
+            setMyClientsData((prevData) => ({
+              ...prevData,
+              clients: prevData.clients.filter((client) => client._id !== row?._id),
+            }));
+            message.success({
+              content: `Client ${response.client.clientPreferredName} (${response.client.Email}) is deleted successfully.`,
+              key: loadingKey,
+            });
+          } else {
+            message.destroy(loadingKey);
+          }
+        } catch (error) {
+          message.error({
+            content: "Failed to delete. Please try again.",
+            key: loadingKey,
+          });
+          console.error("Error deleting client:", error);
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const columns = [

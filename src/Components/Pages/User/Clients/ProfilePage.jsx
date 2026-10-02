@@ -148,10 +148,12 @@ export default function ProfilePage() {
   const fullName = getFullName(user);
   const roleLabel = getRoleLabel(user);
   const email = session?.email || user?.email || "No email available";
-  const profileLink =
-    // "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=Prod1" ||
-    "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=dev1" ||
-    "No profile link available";
+  let baseRoute = window.location.origin;
+
+  const profileLink = baseRoute === "https://as.denarowealth.com.au" ?
+    "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=Prod1" :
+    "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=dev1"
+  // "No profile link available";
 
   const [open, setOpen] = useState(false);
 

@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import EditableDynamicTable from '../../../../../../Common/EditableDynamicTable';
 import { formatAustralianDate, formatNumber, toCommaAndDollar } from '../../../../../../../hooks/helpers';
 import useApi from '../../../../../../../hooks/useApi';
-import { useOwnerOptions } from '../../../../../../../hooks/useUserDashboardData';
+import { useOwnerOptions, useReviewOptions } from '../../../../../../../hooks/useUserDashboardData';
 import { SelectedReviewAllData } from '../../../../../../../store/authState';
 import { useAtom, useAtomValue } from 'jotai';
 
@@ -90,7 +90,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
     const [editing, setEditing] = useState(() => !initialData?._id);
     const [saving, setSaving] = useState(false);
     const { post, patch } = useApi();
-    const ownerOptions = useOwnerOptions();
+    const ownerOptions = useReviewOptions();
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
 
 
