@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Col, Form, message, Row, Select, Space, Tooltip, Typography } from "antd";
 import { useAtom } from "jotai";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
@@ -64,9 +64,11 @@ function formatCurrencyValue(value) {
 }
 
 function formatPercentValue(value) {
-    const digits = parseDigitsValue(getChangedValue(value));
-    if (!digits) return "";
-    const limited = Math.min(Number(digits), 100);
+    const rawValue = String(getChangedValue(value) ?? "").replace(/[^0-9.-]/g, "");
+    if (!rawValue || rawValue === "." || rawValue === "-") return "";
+    const numeric = Number(rawValue);
+    if (!Number.isFinite(numeric)) return "";
+    const limited = Math.min(Math.max(numeric, 0), 100);
     return `${limited}%`;
 }
 
@@ -150,6 +152,46 @@ const RISK_PROFILE_RETURNS = {
     "High Growth": 6.5,
 };
 
+const CONCESSIONAL_CAP = 32500;
+const CONTRIBUTION_TAX_RATE = 0.15;
+const INSURANCE_TAX_REBATE_NET = 0.85;
+
+function getAgeFromDob(dob) {
+    if (!dob) return undefined;
+    const birthDate = new Date(dob);
+    if (Number.isNaN(birthDate.getTime())) return undefined;
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    if (
+        today.getMonth() < birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
+    ) {
+        age -= 1;
+    }
+    return age;
+}
+
+function getInsuranceIndexRateByAge(age) {
+    if (!Number.isFinite(age) || age <= 0) return 8;
+    if (age < 40) return 8;
+    if (age < 60) return 12;
+    return 18;
+}
+
+function getPremiumIndexationRate(value, age) {
+    const selectedValue = Number(value);
+    if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        !Number.isFinite(selectedValue) ||
+        selectedValue === 0
+    ) {
+        return getInsuranceIndexRateByAge(age);
+    }
+    return Math.max(0, selectedValue - 1);
+}
 
 /**
  * Calculates the final projected balance matching the exact guide HTML calculation model
@@ -169,6 +211,7 @@ const calculateProjectedBalanceEnd = (data) => {
         insurancePremium = 0,
         premiumIndexationPercent = 0,
         premiumYears = 0,
+        currentAge,
     } = data;
 
     // Get return rate based on Risk Profile or custom input override
@@ -181,37 +224,42 @@ const calculateProjectedBalanceEnd = (data) => {
     const premiumIndexRate = premiumIndexationPercent / 100;
 
     let currentSalary = salary;
-    let currentPremium = insurancePremium;
+    let currentPremium = insurancePremium * INSURANCE_TAX_REBATE_NET;
     let currentBalance = superBalance;
+    const nccAnnual = currentAge >= 75 ? 0 : nonConcessional;
+    const lumpSumNcc = currentAge + projectionPeriodYears >= 75
+        ? 0
+        : lumpSumNCCFinal;
+    const activePremiumYears = premiumYears > 0
+        ? Math.min(premiumYears, projectionPeriodYears)
+        : projectionPeriodYears;
 
     for (let yr = 1; yr <= projectionPeriodYears; yr++) {
-        // 1. Calculate Employer SGC + Salary Sacrifice
-        const sgcAmount = (sgcPercent / 100) * currentSalary;
-        const totalConcessional = sgcAmount + ssPersonalConcessional;
+        const sg = currentSalary * (sgcPercent / 100);
+        const concessionalContributions = Math.min(
+            sg + ssPersonalConcessional,
+            CONCESSIONAL_CAP,
+        );
+        const actualSalarySacrifice = Math.max(0, concessionalContributions - sg);
+        const nccLumpThisYear = yr === projectionPeriodYears ? lumpSumNcc : 0;
+        const premiumThisYear = yr <= activePremiumYears ? currentPremium : 0;
+        const earnings =
+            (currentBalance + sg + actualSalarySacrifice) * returnRate;
+        const contributionTax =
+            (sg + actualSalarySacrifice) * CONTRIBUTION_TAX_RATE;
 
-        // 2. Active Insurance Premium for current year
-        const activePremium = (yr <= premiumYears) ? currentPremium : 0;
+        currentBalance =
+            currentBalance +
+            sg +
+            actualSalarySacrifice +
+            earnings -
+            contributionTax +
+            nccAnnual +
+            nccLumpThisYear -
+            premiumThisYear;
 
-        // 3. Taxable Concessional (Insurance is deducted before 15% contribution tax)
-        const taxableConcessional = Math.max(0, totalConcessional - activePremium);
-        const netConcessional = taxableConcessional * (1 - 0.15);
-
-        // 4. Non-Concessional contributions (with Lump Sum added in final year)
-        let yearNCC = nonConcessional;
-        if (yr === projectionPeriodYears) {
-            yearNCC += lumpSumNCCFinal;
-        }
-
-        // 5. Net Annual Cash Additions
-        const netAnnualContributions = netConcessional + yearNCC;
-
-        // 6. Mid-year compounding timing:
-        // Opening balance receives full-year return; contributions receive half-year return
-        currentBalance = (currentBalance * (1 + returnRate)) + (netAnnualContributions * (1 + (returnRate / 2)));
-
-        // Advance annual salary & insurance indexations for the next iteration
         currentSalary *= (1 + salaryGrowthRate);
-        if (yr < premiumYears) {
+        if (yr < activePremiumYears) {
             currentPremium *= (1 + premiumIndexRate);
         }
     }
@@ -227,7 +275,10 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     const { patch } = useApi();
 
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
-    const initialData = selectedReviewAllData?.superannuationDetails || {};
+    const initialData = useMemo(
+        () => selectedReviewAllData?.superannuationDetails || {},
+        [selectedReviewAllData?.superannuationDetails],
+    );
 
     const initialValues = useMemo(
         () => buildInitialValues(initialData),
@@ -244,7 +295,6 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     // Calculate SGC Amount and Max Concessional based on SGC % and Salary (P.a)
     const calculateSgcAndMaxConcessional = ({ sgcPercent, salary }) => {
         const sgcAmount = (sgcPercent / 100) * salary;
-        const CONCESSIONAL_CAP = 32500; // FY 2026-27 concessional contributions cap (Note: This value will come from the Admin section in the future)
         const maxConcessional = Math.max(0, CONCESSIONAL_CAP - sgcAmount);
         return { sgcAmount, maxConcessional };
     };
@@ -283,7 +333,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
 
     };
 
-    const calculateProjectedBalance = (value, name, formPath, currentForm) => {
+    const calculateProjectedBalance = useCallback((value, name, formPath, currentForm) => {
         let values = currentForm.getFieldsValue();
         const pathValues = values?.[formPath] || {};
 
@@ -299,7 +349,13 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
         let salaryGrowthPercent = parseFloat(pathValues?.salaryGrowth); // Fix: salaryGrowth
         let projectionPeriodYears = parseInt(pathValues?.projectionPeriod, 10); // Fix: projectionPeriod
         let insurancePremium = parseCurrencyValue(pathValues?.insurancePremium);
-        let premiumIndexationPercent = parseFloat(pathValues?.premiumIndexation); // Fix: premiumIndexation
+        const currentAge = getAgeFromDob(
+            selectedReviewAllData?.personalDetails?.[formPath]?.DOB,
+        );
+        let premiumIndexationPercent = getPremiumIndexationRate(
+            pathValues?.premiumIndexation,
+            currentAge,
+        );
         let premiumYears = parseInt(pathValues?.premiumYears, 10);
 
         // Update current changed field value dynamically
@@ -307,7 +363,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             case "riskGoal":
                 riskProfile = value;
                 if (RISK_PROFILE_RETURNS[value] !== undefined) {
-                    investmentReturn = RISK_PROFILE_RETURNS[value];
+                    investmentReturn = RISK_PROFILE_RETURNS[value] + "%";
                 }
                 break;
             case "investmentReturn":
@@ -341,7 +397,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                 insurancePremium = parseCurrencyValue(formatNumericInput(value, { currency: true }));
                 break;
             case "premiumIndexation":
-                premiumIndexationPercent = parseFloat(formatPercentValue(value).replace("%", ""));
+                premiumIndexationPercent = getPremiumIndexationRate(value, currentAge);
                 break;
             case "premiumYears":
                 premiumYears = parseInt(value, 10);
@@ -354,15 +410,16 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             riskProfile,
             investmentReturn: isNaN(investmentReturn) ? undefined : investmentReturn,
             salary: isNaN(salary) ? 0 : salary,
-            sgcPercent: isNaN(sgcPercent) ? 0 : sgcPercent,
+            sgcPercent: isNaN(sgcPercent) ? 12 : sgcPercent,
             ssPersonalConcessional: isNaN(ssPersonalConcessional) ? 0 : ssPersonalConcessional,
             nonConcessional: isNaN(nonConcessional) ? 0 : nonConcessional,
             lumpSumNCCFinal: isNaN(lumpSumNCCFinal) ? 0 : lumpSumNCCFinal,
-            salaryGrowthPercent: isNaN(salaryGrowthPercent) ? 0 : salaryGrowthPercent,
-            projectionPeriodYears: isNaN(projectionPeriodYears) ? 1 : projectionPeriodYears,
+            salaryGrowthPercent: isNaN(salaryGrowthPercent) ? 2 : salaryGrowthPercent,
+            projectionPeriodYears: isNaN(projectionPeriodYears) ? 10 : projectionPeriodYears,
             insurancePremium: isNaN(insurancePremium) ? 0 : insurancePremium,
             premiumIndexationPercent: isNaN(premiumIndexationPercent) ? 0 : premiumIndexationPercent,
             premiumYears: isNaN(premiumYears) ? 0 : premiumYears,
+            currentAge: currentAge ?? 0,
         });
 
         // Update form fields with correct column keys
@@ -373,7 +430,19 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                 projectedBalance: formatCurrencyValue(projectedBalanceEnd) || "", // Fix: key is projectedBalance
             },
         });
-    };
+    }, [selectedReviewAllData]);
+
+    useEffect(() => {
+        (initialValues.owner || []).forEach((ownerKey) => {
+            calculateProjectedBalance(undefined, undefined, ownerKey, form);
+        });
+    }, [
+        form,
+        initialValues,
+        calculateProjectedBalance,
+        selectedReviewAllData?.personalDetails?.client?.DOB,
+        selectedReviewAllData?.personalDetails?.partner?.DOB,
+    ]);
 
     // Column definitions for Table 1: Balances & Income
     const BALANCES_COLUMNS = [
@@ -632,7 +701,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "premiumIndexation",
             placeholder: "0%",
             type: "select",
-            options: Array.from({ length: 17 }, (_, i) => ({ label: `${i == 0 ? '(Auto Based on age)' : ((i - 1) + "%")}`, value: i })),
+            options: Array.from({ length: 17 }, (_, i) => ({ label: `${i === 0 ? '(Auto Based on age)' : `${i - 1}%`}`, value: i })),
             onChange: (value, record, column, currentForm) => {
                 calculateProjectedBalance(value, column.field, record.formPath, currentForm);
                 currentForm.setFieldValue(
@@ -650,7 +719,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "premiumYears",
             placeholder: "0",
             type: "select",
-            options: Array.from({ length: 30 }, (_, i) => ({ label: i + 1, value: i })),
+            options: Array.from({ length: 30 }, (_, i) => ({ label: i + 1, value: i + 1 })),
             onChange: (value, record, column, currentForm) => {
                 calculateProjectedBalance(value, column.field, record.formPath, currentForm);
                 currentForm.setFieldValue(
@@ -774,12 +843,12 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                     ssPersonalConcessional: ownerInput.ssPersonalConcessional || ownerOldInput.ssPersonalConcessional || "",
                     nonConcessional: ownerInput.nonConcessional || ownerOldInput.nonConcessional || "",
                     lumpSumNcc: ownerInput.lumpSumNcc || ownerOldInput.lumpSumNcc || "",
-                    investmentReturn: ownerInput.investmentReturn || ownerOldInput.investmentReturn || "",
+                    investmentReturn: ownerInput.investmentReturn?.toString() || ownerOldInput.investmentReturn?.toString() || "",
                     salaryGrowth: ownerInput.salaryGrowth || ownerOldInput.salaryGrowth || "",
-                    projectionPeriod: ownerInput.projectionPeriod || ownerOldInput.projectionPeriod || "",
+                    projectionPeriod: (ownerInput.projectionPeriod)?.toString() || ownerOldInput.projectionPeriod?.toString() || "",
                     insurancePremium: ownerInput.insurancePremium || ownerOldInput.insurancePremium || "",
-                    premiumIndexation: ownerInput.premiumIndexation || ownerOldInput.premiumIndexation || "",
-                    premiumYears: ownerInput.premiumYears || ownerOldInput.premiumYears || "",
+                    premiumIndexation: ownerInput.premiumIndexation ?? ownerOldInput.premiumIndexation ?? "",
+                    premiumYears: ownerInput.premiumYears?.toString() ?? ownerOldInput.premiumYears?.toString() ?? "",
                     projectedBalance: ownerInput.projectedBalance || ownerOldInput.projectedBalance || "",
                 };
             };

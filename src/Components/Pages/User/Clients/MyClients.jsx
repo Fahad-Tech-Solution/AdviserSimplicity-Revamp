@@ -1,4 +1,4 @@
-import { Button, Input, Space } from "antd";
+import { Button, Input, Segmented, Space } from "antd";
 import Text from "antd/es/typography/Text";
 import Title from "antd/es/typography/Title";
 import React, { useEffect, useState } from "react";
@@ -16,14 +16,18 @@ import {
 } from "../../../../store/authState";
 import HouseholdTable from "./HouseholdTable";
 import useApi from "../../../../hooks/useApi";
-import { FaDownload, FaUpload } from "react-icons/fa";
+import { FaCheckCircle, FaDownload, FaUpload } from "react-icons/fa";
 import AppModal from "../../../Common/AppModal";
 import useTitleBlock from "../../../../hooks/useTitleBlock";
 import ImportDataSection from "./components/ImportDataSection";
+import { FaCircleCheck, FaRegCircleCheck, FaXmark } from "react-icons/fa6";
+import { MdOutlineDoDisturb } from "react-icons/md";
+import { HiArrowPath } from "react-icons/hi2";
 
 const MyClients = () => {
   const [searchText, setSearchText] = useState("");
   const [openModal, setOpenModal] = useState(false);
+  const [viewMode, setViewMode] = useState(false) // 'Active' or 'Disabled'
   const navigate = useNavigate();
   const setMyClientsData = useSetAtom(MyClientsData);
   const setCreatingNewClient = useSetAtom(creatingNewClientAtom);
@@ -47,12 +51,17 @@ const MyClients = () => {
   }, [setCreatingNewClient]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await api.get("/user/Clients");
-      setMyClientsData(response);
-    };
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await api.get("/user/Clients");
+      setMyClientsData(response);
+    } catch (error) {
+      console.log("error", error)
+    }
+  };
 
   const handleAddNewClient = () => {
     setSelectedClient(null);
@@ -204,9 +213,38 @@ const MyClients = () => {
             </Button>
           </Space>
         </div>
+        <div style={{ width: "100%", display: 'flex', justifyContent: "space-between", alignItems: 'center', gap: 16 }}>
+          <Segmented
+            value={viewMode}
+            onChange={setViewMode}
+            options={[
+              {
+                label: <span style={{ color: viewMode === false ? '#52c41a' : 'inherit' }}>All Clients</span>,
+                value: false,
+                icon: <FaRegCircleCheck style={{ color: '#52c41a' }} />
+              },
+              {
+                label: <span style={{ color: viewMode === true ? '#ff4d4f' : 'inherit' }}>Archived</span>,
+                value: true,
+                icon: <MdOutlineDoDisturb style={{ color: '#ff4d4f' }} />
+              },
+            ]}
+          />
+          <Button
+            style={{
+              borderRadius: 8,
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+            onClick={() => {
+              fetchData()
+            }}
+            icon={<HiArrowPath />}
+          />
+        </div>
       </div>
 
-      <HouseholdTable searchText={searchText} />
+      <HouseholdTable searchText={searchText} viewMode={viewMode} />
 
 
       <ImportDataSection

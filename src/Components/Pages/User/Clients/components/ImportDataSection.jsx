@@ -247,7 +247,7 @@ const ImportDataSection = ({ open, onClose, title, width = '40vw' }) => {
                             errors.push({
                                 key: errorKey,
                                 columnName: colName,
-                                rule: `Column "${colName}" is required when Marital Status is "${maritalStatus}" (Row ${rowNumber}).`,
+                                rule: `Column "${colName}" is required when Marital Status is "${maritalStatus}" (Row ${rowNumber+1}).`,
                             });
                         }
                     }

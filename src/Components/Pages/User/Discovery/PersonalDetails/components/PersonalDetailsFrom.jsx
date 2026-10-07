@@ -140,6 +140,7 @@ const PERSONAL_SECTION_CONFIG = [
     viewKey: "preferred",
     clientField: "clientPreferredName",
     partnerField: "partnerPreferredName",
+    rules: [requiredRule("Preferred Name is Required")],
   },
   {
     title: "Title",

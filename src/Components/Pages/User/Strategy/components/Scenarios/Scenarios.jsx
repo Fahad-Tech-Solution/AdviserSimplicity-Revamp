@@ -7,8 +7,9 @@ import AppModal from '../../../../../Common/AppModal'
 import useApi from '../../../../../../hooks/useApi'
 import { formatAustralianDate } from '../../../../../../hooks/helpers'
 import { useNavigate } from 'react-router-dom'
-import { FaArrowRotateLeft } from 'react-icons/fa6'
+import { FaArrowRotateLeft, FaRegCircleCheck } from 'react-icons/fa6'
 import { HiArrowPath } from 'react-icons/hi2'
+import { MdOutlineDoDisturb } from 'react-icons/md'
 
 const Scenarios = () => {
     let { Text, Title } = Typography
@@ -428,8 +429,8 @@ const Scenarios = () => {
                     value={viewMode}
                     onChange={setViewMode}
                     options={[
-                        { label: 'Active', value: 'Active', icon: '✅' },
-                        { label: 'Disabled', value: 'Disabled', icon: '❎' },
+                        { label: 'Active', value: 'Active', icon: <FaRegCircleCheck style={{ color: '#52c41a' }} /> },
+                        { label: 'Disabled', value: 'Disabled', icon: <MdOutlineDoDisturb style={{ color: '#ff4d4f' }} /> },
                     ]}
                     style={{ backgroundColor: '#f0f0f0', borderRadius: 8 }}
                 />

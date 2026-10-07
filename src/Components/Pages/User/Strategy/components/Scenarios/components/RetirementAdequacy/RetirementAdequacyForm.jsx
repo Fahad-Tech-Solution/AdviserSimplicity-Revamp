@@ -34,12 +34,22 @@ const HOME_OWNERSHIP_OPTIONS = [
     { label: "Non-Homeowner", value: "Non-Homeowner" },
 ];
 
+const RELATIONSHIP_STATUS_OPTIONS = [
+    { label: "Auto (from owners)", value: "Auto" },
+    { label: "Single", value: "Single" },
+    { label: "Couple", value: "Couple" },
+];
+
 const WITHDRAWAL_FREQUENCY_OPTIONS = [
     { label: "None", value: "None" },
-    { label: "Monthly", value: "Monthly" },
-    { label: "Quarterly", value: "Quarterly" },
-    { label: "Annually", value: "Annually" },
+    { label: "Year 1 only", value: "Year 1 only" },
+    { label: "Every year", value: "Every year" },
+    { label: "Every 2 years", value: "Every 2 years" },
+    { label: "Every 3 years", value: "Every 3 years" },
+    { label: "Every 5 years", value: "Every 5 years" },
+    { label: "Random (occasional)", value: "Random (occasional)" },
 ];
+
 
 function parseCurrencyValue(value) {
     if (value === null || value === undefined || value === "") return undefined;
@@ -54,6 +64,15 @@ function formatCurrencyValue(value) {
 
 function parseDigitsValue(value) {
     return String(value ?? "").replace(/[^0-9]/g, "");
+}
+
+function formatPercentValue(value) {
+    const rawValue = String(getChangedValue(value) ?? "").replace(/[^0-9.-]/g, "");
+    if (!rawValue || rawValue === "." || rawValue === "-") return "";
+    const numeric = Number(rawValue);
+    if (!Number.isFinite(numeric)) return "";
+    const limited = Math.min(Math.max(numeric, 0), 100);
+    return `${limited}%`;
 }
 
 function getChangedValue(value) {
@@ -143,6 +162,8 @@ export default function RetirementAdequacyForm({ modalData }) {
 
     const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
     const includeAgePension = Form.useWatch("includeAgePension", form) || initialValues.includeAgePension;
+    const agePensionProjection =
+        Form.useWatch("agePensionProjection", form) || initialValues.agePensionProjection;
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
@@ -162,15 +183,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             ),
         },
         {
-            title: "Date of Birth",
-            dataIndex: "DOB",
-            key: "DOB",
-            field: "DOB",
-            type: "date",
-            placeholder: "mm/dd/yyyy",
-        },
-        {
-            title: "Account Based Pension Total",
+            title: "Balance ($)",
             dataIndex: "accountBasedPensionTotal",
             key: "accountBasedPensionTotal",
             field: "accountBasedPensionTotal",
@@ -196,6 +209,14 @@ export default function RetirementAdequacyForm({ modalData }) {
                     formatNumericInput(value, { currency: true }),
                 );
             },
+        },
+        {
+            title: "NCC Top Up Year",
+            dataIndex: "nccTopUpYear",
+            key: "nccTopUpYear",
+            field: "nccTopUpYear",
+            type: "select",
+            options: Array.from({ length: 30 }, (_, i) => ({ label: `Year ${i + 1}`, value: `Year ${i + 1}` })),
         },
         {
             title: "Withdrawal Amount ($)",
@@ -227,6 +248,12 @@ export default function RetirementAdequacyForm({ modalData }) {
             field: "investmentReturn",
             type: "text",
             placeholder: "0",
+            onChange: (value, record, column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, column.field],
+                    formatPercentValue(value, { currency: false }),
+                );
+            }
         },
     ];
 
@@ -237,8 +264,9 @@ export default function RetirementAdequacyForm({ modalData }) {
             dataIndex: "relationshipStatus",
             key: "relationshipStatus",
             field: "relationshipStatus",
-            type: "text",
             placeholder: "Auto (from owners)",
+            type: "select",
+            options: RELATIONSHIP_STATUS_OPTIONS,
         },
         {
             title: "Home Ownership",
@@ -283,6 +311,12 @@ export default function RetirementAdequacyForm({ modalData }) {
             field: "thresholdIndexation",
             type: "text",
             placeholder: "2.5%",
+            onChange: (value, record, column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, column.field],
+                    formatPercentValue(value, { currency: false }),
+                );
+            }
         },
         {
             title: "Annual Living Expenses ($)",
@@ -305,6 +339,12 @@ export default function RetirementAdequacyForm({ modalData }) {
             field: "expensesIndexation",
             type: "text",
             placeholder: "2.5%",
+            onChange: (value, record, column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, column.field],
+                    formatPercentValue(value, { currency: false }),
+                );
+            },
         },
         {
             title: "Extra Withdrawal ($)",
@@ -383,18 +423,10 @@ export default function RetirementAdequacyForm({ modalData }) {
             {
                 key: "agePensionProjection",
                 formPath: "agePensionProjection",
-                relationshipStatus: form.getFieldValue(["agePensionProjection", "relationshipStatus"]),
-                homeOwnership: form.getFieldValue(["agePensionProjection", "homeOwnership"]),
-                personalAssets: form.getFieldValue(["agePensionProjection", "personalAssets"]),
-                otherFinancialInvestments: form.getFieldValue(["agePensionProjection", "otherFinancialInvestments"]),
-                thresholdIndexation: form.getFieldValue(["agePensionProjection", "thresholdIndexation"]),
-                annualLivingExpenses: form.getFieldValue(["agePensionProjection", "annualLivingExpenses"]),
-                expensesIndexation: form.getFieldValue(["agePensionProjection", "expensesIndexation"]),
-                extraWithdrawal: form.getFieldValue(["agePensionProjection", "extraWithdrawal"]),
-                withdrawalFrequency: form.getFieldValue(["agePensionProjection", "withdrawalFrequency"]),
+                ...agePensionProjection,
             },
         ],
-        [form]
+        [agePensionProjection]
     );
 
     const handleFinish = async (values) => {

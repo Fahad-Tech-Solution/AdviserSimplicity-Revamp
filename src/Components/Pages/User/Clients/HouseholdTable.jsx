@@ -45,6 +45,7 @@ import {
 import useApi from "../../../../hooks/useApi";
 import { useNavigate } from "react-router-dom";
 import { generatePersonalDetailsDocument } from "../../../Common/docx/generatePersonalDetailsDocument";
+import { MdOutlineArchive } from "react-icons/md";
 
 const getInitials = (name = "") => {
   const parts = name.trim().split(/\s+/);
@@ -87,7 +88,7 @@ const getClientPhone = (client = {}) =>
   client.clientMobile || client.clientPhone || client.phone || "";
 
 const getPartnerPhone = (partner = {}) =>
-  partner.partnerWorkPhone || partner.partnerPhone || partner.phone || "";
+  partner.partnerMobile || partner.partnerPhone || partner.phone || "";
 
 const getClientAddress = (client = {}) =>
   client.clientHomeAddress || client.clientAddress || client.address || "";
@@ -181,7 +182,7 @@ function rowMatchesSearch(row, queryRaw) {
   return false;
 }
 
-const HouseholdTable = ({ onAction, searchText = "" }) => {
+const HouseholdTable = ({ onAction, searchText = "", viewMode = false }) => {
   const session = useAtomValue(loggedInUser);
   const navigate = useNavigate();
 
@@ -195,7 +196,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
   const [myClientsData, setMyClientsData] = useAtom(MyClientsData);
   const isDashboardLoading = useAtomValue(userDashboardLoading);
 
-  const { get, post, patch } = useApi();
+  const { get, post, patch, remove } = useApi();
 
   const [selectedClient, setSelectedClient] = useAtom(SelectedClient);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
@@ -459,6 +460,13 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       },
       { type: "divider" },
       {
+        key: "archive",
+        label: viewMode === true ? "Restore" : "Archive",
+        icon: <MdOutlineArchive />,
+        danger: true,
+      },
+      { type: "divider" },
+      {
         key: "delete",
         label: "Delete",
         icon: <DeleteOutlined />,
@@ -519,6 +527,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
       select: "Select",
       deselect: "Deselect",
       delete: "Delete",
+      archive: "Archive",
       sendRiskProfile: "sendRiskProfile",
       viewRiskProfile: "viewRiskProfile",
     };
@@ -548,12 +557,68 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
         ) {
           sendRiskProfileEmail(row);
         }
+        else if (action === "Archive") {
+          SoftDeleteClient(row);
+        }
         else if (action === "Delete") {
           DeleteClient(row);
         }
         onAction?.(action, row);
       },
     };
+  };
+
+
+  let SoftDeleteClient = (row) => {
+    const loadingKey = `archive-client-${row?._id}`;
+
+    Modal.confirm({
+      centered: true,
+      title: `${row.softDelete ? 'Restore' : 'Archive'} ${getClientLastName(row?.client) || "Unknown"}?`,
+      content: `Are you sure you want to ${row.softDelete ? 'restore' : 'archive'} this ${getClientLastName(row?.client) || "Unknown"}?`,
+      okText: `${row.softDelete ? 'Restore' : 'Archive'}`,
+      cancelText: "Cancel",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        message.loading({
+          content: `${row.softDelete ? 'Restoring' : 'Archiving'} ...`,
+          key: loadingKey,
+          duration: 0,
+        });
+
+        try {
+          setLoading(true);
+          // Call the API to archive the client /personalDetails/softDelete/${row?._id}
+          const response = await patch(`/personalDetails/softDelete/${row?._id}`);
+
+          if (response) {
+            // now filter that id from MyClientsData atom
+            setMyClientsData((prevData) => ({
+              ...prevData,
+              clients: prevData.clients.map((client) =>
+                client._id === row?._id
+                  ? { ...client, softDelete: !client.softDelete }
+                  : client
+              ),
+            }));
+            message.success({
+              content: `Client ${row.client.clientPreferredName} (${row.client.Email}) is ${row.softDelete ? 'restored' : 'archived'} successfully.`,
+              key: loadingKey,
+            });
+          } else {
+            message.destroy(loadingKey);
+          }
+        } catch (error) {
+          message.error({
+            content: `Failed to ${row.softDelete ? 'restore' : 'archive'} client. Please try again.`,
+            key: loadingKey,
+          });
+          console.error(`Error ${row.softDelete ? 'restoring' : 'archiving'} client:`, error);
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
 
@@ -576,8 +641,8 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
 
         try {
           setLoading(true);
-          // Call the API to delete the client /personalDetails/softDelete/${row?._id}
-          const response = await patch(`/personalDetails/softDelete/${row?._id}`);
+          // Call the API to delete the client /personalDetails/delete/${row?._id}
+          const response = await remove(`/personalDetails/Delete/${row?._id}`);
 
           if (response) {
             // now filter that id from MyClientsData atom
@@ -586,7 +651,7 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
               clients: prevData.clients.filter((client) => client._id !== row?._id),
             }));
             message.success({
-              content: `Client ${response.client.clientPreferredName} (${response.client.Email}) is deleted successfully.`,
+              content: `Client ${row.client.clientPreferredName} (${row.client.Email}) is deleted successfully.`,
               key: loadingKey,
             });
           } else {
@@ -843,11 +908,16 @@ const HouseholdTable = ({ onAction, searchText = "" }) => {
     const q = String(searchText ?? "").trim();
     const baseData = !q ? tableData : tableData.filter((row) => rowMatchesSearch(row, q));
 
-    return baseData.map((row, index) => ({
+    return baseData.filter((row) => {
+      if (viewMode === true) {
+        return row.softDelete === true;
+      }
+      return row.softDelete !== true;
+    }).map((row, index) => ({
       ...row,
       no: index + 1,
     }));
-  }, [tableData, searchText]);
+  }, [tableData, searchText, viewMode]);
 
   const titleText =
     searchText.trim() && filteredTableData.length !== tableData.length

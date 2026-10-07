@@ -143,7 +143,9 @@ export default function CDFProspects() {
       message.success(`${head}. ${note}`);
     } catch (error) {
       console.error("CDF status update error", error);
-      message.error("Something went wrong. Please try later.");
+      message.error(error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message || "Something went wrong. Please try later.");
     }
   };
 
