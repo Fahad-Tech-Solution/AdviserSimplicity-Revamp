@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Checkbox, Col, Form, message, Row, Select, Space, Typography } from "antd";
-import { useAtomValue, useSetAtom } from "jotai";
+import { Button, Checkbox, Col, Form, message, Row, Space, Typography } from "antd";
+import { useAtom } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
-import { discoveryDataAtom } from "../../../../../../../../store/authState.js";
+import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
 import { useOwnerOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
 
 const { Text } = Typography;
+const EMPTY_SECTION_DATA = {};
 
 const TABLE_PROPS = {
     showCount: false,
@@ -20,14 +21,14 @@ const TABLE_PROPS = {
 };
 
 const SITUATION_OPTIONS = [
-    { label: "Single", value: "Single" },
-    { label: "Couple", value: "Couple" },
-    { label: "Illness Separated", value: "Illness Separated" },
+    { label: "Single", value: "single" },
+    { label: "Couple", value: "couple" },
+    { label: "Couple - Separated by Illness", value: "couple - separated by illness" },
 ];
 
 const HOME_OWNERSHIP_OPTIONS = [
-    { label: "Homeowner", value: "Homeowner" },
-    { label: "Non-Homeowner", value: "Non-Homeowner" },
+    { label: "Homeowner", value: "homeowner" },
+    { label: "Non-Homeowner", value: "non-homeowner" },
 ];
 
 function parseCurrencyValue(value) {
@@ -55,6 +56,27 @@ function formatNumericInput(value, { currency = false } = {}) {
     return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
 }
 
+function resolveFieldPath(record, column) {
+    const rowPath = Array.isArray(record?.formPath)
+        ? record.formPath
+        : record?.formPath
+            ? [record.formPath]
+            : [];
+    return [...rowPath, column.field || column.dataIndex || column.key];
+}
+
+function setFormattedField(value, record, column, currentForm, options = {}) {
+    currentForm.setFieldValue(
+        resolveFieldPath(record, column),
+        formatNumericInput(value, options),
+    );
+}
+
+function toAge(value) {
+    const digits = String(value ?? "").replace(/[^0-9]/g, "");
+    return digits ? Number(digits) : "";
+}
+
 function SectionTitle({ children }) {
     return (
         <Text
@@ -74,47 +96,87 @@ function SectionTitle({ children }) {
     );
 }
 
-function buildInitialPerson(person = {}) {
+function buildInitialFinancialPerson(financialAssets = {}, legacyPerson = {}) {
     return {
-        // Financial Assets
-        savingsCash: formatCurrencyValue(person?.savingsCash ?? 100),
-        termDeposits: formatCurrencyValue(person?.termDeposits ?? 100),
-        sharesManagedFunds: formatCurrencyValue(person?.sharesManagedFunds ?? 100),
-        superBalance: formatCurrencyValue(person?.superBalance ?? 100),
-        abpBalance: formatCurrencyValue(person?.abpBalance ?? 100),
-        // Income
-        employmentSalary: formatCurrencyValue(person?.employmentSalary ?? 100),
-        otherIncome: formatCurrencyValue(person?.otherIncome ?? 0),
-        abpPensionPayment: formatCurrencyValue(person?.abpPensionPayment ?? 0),
-        abpDeductibleAmount: formatCurrencyValue(person?.abpDeductibleAmount ?? 0),
+        savingsAndCash: formatCurrencyValue(
+            financialAssets?.savingsAndCash ??
+            legacyPerson?.savingsAndCash ??
+            legacyPerson?.savingsCash,
+        ),
+        termDeposits: formatCurrencyValue(
+            financialAssets?.termDeposits ?? legacyPerson?.termDeposits,
+        ),
+        sharesAndManagedFunds: formatCurrencyValue(
+            financialAssets?.sharesAndManagedFunds ??
+            legacyPerson?.sharesAndManagedFunds ??
+            legacyPerson?.sharesManagedFunds,
+        ),
+        superAnnuationTotal: formatCurrencyValue(
+            financialAssets?.superAnnuationTotal ??
+            legacyPerson?.superAnnuationTotal ??
+            legacyPerson?.superBalance,
+        ),
+        accountBasedPensionTotal: formatCurrencyValue(
+            financialAssets?.accountBasedPensionTotal ??
+            legacyPerson?.accountBasedPensionTotal ??
+            legacyPerson?.abpBalance,
+        ),
+    };
+}
+
+function buildInitialIncomePerson(income = {}, legacyPerson = {}) {
+    return {
+        employmentSalary: formatCurrencyValue(income?.employmentSalary ?? legacyPerson?.employmentSalary),
+        otherIncome: formatCurrencyValue(income?.otherIncome ?? legacyPerson?.otherIncome),
+        abpPensionPayment: formatCurrencyValue(income?.abpPensionPayment ?? legacyPerson?.abpPensionPayment),
+        abpDeductibleAmount: formatCurrencyValue(income?.abpDeductibleAmount ?? legacyPerson?.abpDeductibleAmount),
     };
 }
 
 function buildInitialValues(sectionData) {
+    const personalDetails = sectionData?.personalDetails || sectionData || {};
+    const lifestyleAssets = sectionData?.lifestyleAssets || sectionData?.lifestyle || {};
+    const propertyAssets =
+        sectionData?.investmentPropertyAndOtherAssets || sectionData?.investmentProperty || {};
+
     return {
-        situation: sectionData?.situation || "Single",
-        homeOwnership: sectionData?.homeOwnership || "Homeowner",
-        clientAge: sectionData?.clientAge ?? "67",
-        partnerAge: sectionData?.partnerAge ?? "67",
-        lihccHolder: sectionData?.lihccHolder ?? true,
-
-        // Lifestyle Assets
-        vehiclesClient: formatCurrencyValue(sectionData?.lifestyle?.vehiclesClient ?? 2500),
-        vehiclesPartner: formatCurrencyValue(sectionData?.lifestyle?.vehiclesPartner ?? 2500),
-        homeContents: formatCurrencyValue(sectionData?.lifestyle?.homeContents ?? 10000),
-        otherLifestyle: formatCurrencyValue(sectionData?.lifestyle?.otherLifestyle ?? 2500),
-
-        // Investment Property & Other Assets
-        propertyValue: formatCurrencyValue(sectionData?.investmentProperty?.propertyValue ?? 100),
-        propertyLoan: formatCurrencyValue(sectionData?.investmentProperty?.propertyLoan ?? 100),
-        rentalIncome: formatCurrencyValue(sectionData?.investmentProperty?.rentalIncome ?? 100),
-        rentalExpenses: formatCurrencyValue(sectionData?.investmentProperty?.rentalExpenses ?? 100),
-        otherAssets: formatCurrencyValue(sectionData?.investmentProperty?.otherAssets ?? 100),
-        investmentLoans: formatCurrencyValue(sectionData?.investmentProperty?.investmentLoans ?? 100),
-        otherInvestments: formatCurrencyValue(sectionData?.investmentProperty?.otherInvestments ?? 100),
-
-        client: buildInitialPerson(sectionData?.client),
-        partner: buildInitialPerson(sectionData?.partner),
+        personalDetails: {
+            situation: String(personalDetails?.situation || "single").toLowerCase(),
+            homeOwnership: String(personalDetails?.homeOwnership || "homeowner").toLowerCase(),
+            clientAge: personalDetails?.clientAge ?? "",
+            partnerAge: personalDetails?.partnerAge ?? "",
+            lihccExistingHolder:
+                personalDetails?.lihccExistingHolder ?? sectionData?.lihccHolder ?? false,
+        },
+        lifestyleAssets: {
+            vehiclesClient: formatCurrencyValue(lifestyleAssets?.vehiclesClient),
+            vehiclesPartner: formatCurrencyValue(lifestyleAssets?.vehiclesPartner),
+            homeContents: formatCurrencyValue(lifestyleAssets?.homeContents),
+            otherLifestyle: formatCurrencyValue(lifestyleAssets?.otherLifestyle),
+        },
+        financialAssets: {
+            client: buildInitialFinancialPerson(
+                sectionData?.financialAssets?.client,
+                sectionData?.client,
+            ),
+            partner: buildInitialFinancialPerson(
+                sectionData?.financialAssets?.partner,
+                sectionData?.partner,
+            ),
+        },
+        investmentPropertyAndOtherAssets: {
+            propertyValue: formatCurrencyValue(propertyAssets?.propertyValue),
+            propertyLoan: formatCurrencyValue(propertyAssets?.propertyLoan),
+            rentalIncome: formatCurrencyValue(propertyAssets?.rentalIncome),
+            rentalExpenses: formatCurrencyValue(propertyAssets?.rentalExpenses),
+            otherAssets: formatCurrencyValue(propertyAssets?.otherAssets),
+            investmentLoans: formatCurrencyValue(propertyAssets?.investmentLoans),
+            otherInvestments: formatCurrencyValue(propertyAssets?.otherInvestments),
+        },
+        income: {
+            client: buildInitialIncomePerson(sectionData?.income?.client, sectionData?.client),
+            partner: buildInitialIncomePerson(sectionData?.income?.partner, sectionData?.partner),
+        },
     };
 }
 
@@ -123,22 +185,27 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
     const ownerOptions = useOwnerOptions();
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
-    const { post, patch } = useApi();
-
-    const discoveryData = useAtomValue(discoveryDataAtom);
-    const setDiscoveryData = useSetAtom(discoveryDataAtom);
-
-    const sectionData = discoveryData?.[modalData?.key || "agePensionAssessment"] || {};
-
+    const { patch } = useApi();
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const sectionData =
+        selectedReviewAllData?.agePensionAssessmentDetails ||
+        selectedReviewAllData?.agePensionAssessment ||
+        EMPTY_SECTION_DATA;
     const initialValues = useMemo(
         () => buildInitialValues(sectionData),
         [sectionData],
     );
+    const personalDetails = Form.useWatch("personalDetails", form) || initialValues.personalDetails;
+    const lifestyleAssets = Form.useWatch("lifestyleAssets", form) || initialValues.lifestyleAssets;
+    const financialAssets = Form.useWatch("financialAssets", form) || initialValues.financialAssets;
+    const investmentPropertyAndOtherAssets =
+        Form.useWatch("investmentPropertyAndOtherAssets", form) ||
+        initialValues.investmentPropertyAndOtherAssets;
+    const income = Form.useWatch("income", form) || initialValues.income;
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
-        setEditing(!sectionData?._id);
-    }, [form, initialValues, sectionData?._id]);
+    }, [form, initialValues]);
 
     // Table 1: Personal Details Columns
     const PERSONAL_DETAILS_COLUMNS = [
@@ -166,10 +233,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: false }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: false });
             },
         },
         {
@@ -180,22 +244,19 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: false }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: false });
             },
         },
         {
             title: "LIHCC existing holder?",
-            dataIndex: "lihccHolder",
-            key: "lihccHolder",
-            render: () => (
-                <Form.Item name="lihccHolder" valuePropName="checked" noStyle>
-                    <Checkbox disabled={!editing} />
-                </Form.Item>
-            ),
+            dataIndex: "lihccExistingHolder",
+            key: "lihccExistingHolder",
+            field: "lihccExistingHolder",
+            type: "checkbox",
+            valuePropName: "checked",
+            renderView: ({ value }) => <Checkbox checked={Boolean(value)} disabled />,
         },
+
     ];
 
     // Table 2: Lifestyle & Personal Assets Columns
@@ -208,10 +269,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -222,10 +280,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -236,10 +291,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -250,10 +302,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
     ];
@@ -269,16 +318,13 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
         },
         {
             title: "Savings & Cash",
-            dataIndex: "savingsCash",
-            key: "savingsCash",
-            field: "savingsCash",
+            dataIndex: "savingsAndCash",
+            key: "savingsAndCash",
+            field: "savingsAndCash",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -289,52 +335,40 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
             title: "Shares & Managed Funds",
-            dataIndex: "sharesManagedFunds",
-            key: "sharesManagedFunds",
-            field: "sharesManagedFunds",
+            dataIndex: "sharesAndManagedFunds",
+            key: "sharesAndManagedFunds",
+            field: "sharesAndManagedFunds",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
             title: "Super Balance",
-            dataIndex: "superBalance",
-            key: "superBalance",
-            field: "superBalance",
+            dataIndex: "superAnnuationTotal",
+            key: "superAnnuationTotal",
+            field: "superAnnuationTotal",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
             title: "ABP Balance",
-            dataIndex: "abpBalance",
-            key: "abpBalance",
-            field: "abpBalance",
+            dataIndex: "accountBasedPensionTotal",
+            key: "accountBasedPensionTotal",
+            field: "accountBasedPensionTotal",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
     ];
@@ -349,10 +383,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -363,10 +394,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -377,10 +405,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -391,10 +416,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -405,10 +427,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -419,10 +438,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -433,10 +449,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    column.field,
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
     ];
@@ -458,10 +471,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -472,10 +482,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -486,10 +493,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
         {
@@ -500,10 +504,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
-                currentForm.setFieldValue(
-                    [record.formPath, column.field],
-                    formatNumericInput(value, { currency: true }),
-                );
+                setFormattedField(value, record, column, currentForm, { currency: true });
             },
         },
     ];
@@ -511,95 +512,106 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
     // Rows Data Definitions
     const personalDetailsRows = useMemo(() => [{
         key: "personalDetails",
-        situation: form.getFieldValue("situation"),
-        homeOwnership: form.getFieldValue("homeOwnership"),
-        clientAge: form.getFieldValue("clientAge"),
-        partnerAge: form.getFieldValue("partnerAge"),
-    }], [form]);
+        formPath: ["personalDetails"],
+        ...personalDetails,
+    }], [personalDetails]);
 
     const lifestyleRows = useMemo(() => [{
-        key: "lifestyle",
-        vehiclesClient: form.getFieldValue("vehiclesClient"),
-        vehiclesPartner: form.getFieldValue("vehiclesPartner"),
-        homeContents: form.getFieldValue("homeContents"),
-        otherLifestyle: form.getFieldValue("otherLifestyle"),
-    }], [form]);
+        key: "lifestyleAssets",
+        formPath: ["lifestyleAssets"],
+        ...lifestyleAssets,
+    }], [lifestyleAssets]);
 
     const propertyRows = useMemo(() => [{
-        key: "investmentProperty",
-        propertyValue: form.getFieldValue("propertyValue"),
-        propertyLoan: form.getFieldValue("propertyLoan"),
-        rentalIncome: form.getFieldValue("rentalIncome"),
-        rentalExpenses: form.getFieldValue("rentalExpenses"),
-        otherAssets: form.getFieldValue("otherAssets"),
-        investmentLoans: form.getFieldValue("investmentLoans"),
-        otherInvestments: form.getFieldValue("otherInvestments"),
-    }], [form]);
+        key: "investmentPropertyAndOtherAssets",
+        formPath: ["investmentPropertyAndOtherAssets"],
+        ...investmentPropertyAndOtherAssets,
+    }], [investmentPropertyAndOtherAssets]);
 
-    const ownerRows = useMemo(() => {
-        const owners = ["client", "partner"];
-        return owners.map((owner) => ({
+    const financialAssetRows = useMemo(
+        () => ["client", "partner"].map((owner) => ({
             key: owner,
-            formPath: owner,
-            ownerLabel: ownerOptions.find((opt) => opt.value === owner)?.label || (owner === "client" ? "Client" : "Partner"),
-            savingsCash: form.getFieldValue([owner, "savingsCash"]),
-            termDeposits: form.getFieldValue([owner, "termDeposits"]),
-            sharesManagedFunds: form.getFieldValue([owner, "sharesManagedFunds"]),
-            superBalance: form.getFieldValue([owner, "superBalance"]),
-            abpBalance: form.getFieldValue([owner, "abpBalance"]),
-            employmentSalary: form.getFieldValue([owner, "employmentSalary"]),
-            otherIncome: form.getFieldValue([owner, "otherIncome"]),
-            abpPensionPayment: form.getFieldValue([owner, "abpPensionPayment"]),
-            abpDeductibleAmount: form.getFieldValue([owner, "abpDeductibleAmount"]),
-        }));
-    }, [form, ownerOptions]);
+            formPath: ["financialAssets", owner],
+            ownerLabel:
+                ownerOptions.find((option) => option.value === owner)?.label ||
+                (owner === "client" ? "Client" : "Partner"),
+            ...financialAssets[owner],
+        })),
+        [financialAssets, ownerOptions],
+    );
 
-    const handleFinish = async () => {
-        const formValues = form.getFieldsValue(true);
-        const payload = {
-            ...sectionData,
-            situation: formValues.situation,
-            homeOwnership: formValues.homeOwnership,
-            clientAge: formValues.clientAge,
-            partnerAge: formValues.partnerAge,
-            lihccHolder: formValues.lihccHolder,
-            lifestyle: {
-                vehiclesClient: formValues.vehiclesClient,
-                vehiclesPartner: formValues.vehiclesPartner,
-                homeContents: formValues.homeContents,
-                otherLifestyle: formValues.otherLifestyle,
-            },
-            investmentProperty: {
-                propertyValue: formValues.propertyValue,
-                propertyLoan: formValues.propertyLoan,
-                rentalIncome: formValues.rentalIncome,
-                rentalExpenses: formValues.rentalExpenses,
-                otherAssets: formValues.otherAssets,
-                investmentLoans: formValues.investmentLoans,
-                otherInvestments: formValues.otherInvestments,
-            },
-            client: formValues.client,
-            partner: formValues.partner,
-        };
+    const incomeRows = useMemo(
+        () => ["client", "partner"].map((owner) => ({
+            key: `income-${owner}`,
+            formPath: ["income", owner],
+            ownerLabel:
+                ownerOptions.find((option) => option.value === owner)?.label ||
+                (owner === "client" ? "Client" : "Partner"),
+            ...income[owner],
+        })),
+        [income, ownerOptions],
+    );
 
+    const handleFinish = async (values) => {
         try {
             setSaving(true);
-            const saved = sectionData?._id
-                ? await patch("/agePensionAssessment/Update", payload)
-                : await post("/agePensionAssessment/Add", payload);
+            const payload = {
+                ...(sectionData?._id ? { _id: sectionData._id } : {}),
+                scenarioFK:
+                    selectedReviewAllData?.scenario?._id ||
+                    sectionData?.scenarioFK ||
+                    "",
+                personalDetails: {
+                    situation: values.personalDetails.situation,
+                    homeOwnership: values.personalDetails.homeOwnership,
+                    clientAge: toAge(values.personalDetails.clientAge),
+                    partnerAge: toAge(values.personalDetails.partnerAge),
+                    lihccExistingHolder: Boolean(values.personalDetails.lihccExistingHolder),
+                },
+                lifestyleAssets: {
+                    vehiclesClient: values.lifestyleAssets.vehiclesClient,
+                    vehiclesPartner: values.lifestyleAssets.vehiclesPartner,
+                    homeContents: values.lifestyleAssets.homeContents,
+                    otherLifestyle: values.lifestyleAssets.otherLifestyle,
+                },
+                financialAssets: {
+                    client: values.financialAssets.client,
+                    partner: values.financialAssets.partner,
+                },
+                investmentPropertyAndOtherAssets: {
+                    ...values.investmentPropertyAndOtherAssets,
+                },
+                income: {
+                    client: values.income.client,
+                    partner: values.income.partner,
+                },
+            };
 
-            setDiscoveryData((prev) => ({
-                ...(prev && typeof prev === "object" ? prev : {}),
-                [modalData?.key || "agePensionAssessment"]: saved || payload,
+            const res = await patch("/review/AgePension/Update", payload);
+            const savedData = res?.data?.data || res?.data || payload;
+
+            setSelectedReviewAllData((previous) => ({
+                ...previous,
+                agePensionAssessmentDetails: savedData,
             }));
 
-            message.success(`Age pension assessment inputs ${sectionData?._id ? "updated" : "saved"} successfully`);
+            message.success("Age pension assessment details updated successfully");
+            setEditing(false);
             modalData?.closeModal?.();
         } catch (error) {
-            message.error(error?.response?.data?.message || "Failed to save age pension assessment inputs");
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to update age pension assessment details",
+            );
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleCancelEdit = () => {
+        form.setFieldsValue(initialValues);
+        setEditing(false);
     };
 
     return (
@@ -650,7 +662,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={FINANCIAL_ASSETS_COLUMNS}
-                            data={ownerRows}
+                            data={financialAssetRows}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -674,7 +686,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={INCOME_COLUMNS}
-                            data={ownerRows}
+                            data={incomeRows}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -693,7 +705,26 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                                 <Button onClick={() => modalData?.closeModal?.()}>
                                     Close
                                 </Button>
-                                {!editing ? (
+                                {editing ? (
+                                    <>
+                                        <Button
+                                            htmlType="button"
+                                            onClick={handleCancelEdit}
+                                            disabled={saving}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="primary"
+                                            htmlType="submit"
+                                            style={{ backgroundColor: "#22c55e" }}
+                                            loading={saving}
+                                            disabled={saving}
+                                        >
+                                            Save
+                                        </Button>
+                                    </>
+                                ) : (
                                     <Button
                                         type="primary"
                                         htmlType="button"
@@ -701,16 +732,6 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                                         onClick={() => setEditing(true)}
                                     >
                                         Edit <RiEdit2Fill />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        type="primary"
-                                        htmlType="submit"
-                                        style={{ backgroundColor: "#22c55e" }}
-                                        loading={saving}
-                                        disabled={saving}
-                                    >
-                                        Save
                                     </Button>
                                 )}
                             </Space>

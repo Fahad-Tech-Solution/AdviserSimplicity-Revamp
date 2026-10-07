@@ -366,7 +366,9 @@ const ReviewAgePensionAssessment = () => {
                     icon: '🏛️',
                 })}
             >
-                <ReviewAgePensionAssessmentForm />
+                <ReviewAgePensionAssessmentForm
+                    modalData={{ closeModal: () => setOpenModal(false) }}
+                />
             </AppModal>
         </div>
     );
