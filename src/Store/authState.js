@@ -36,6 +36,7 @@ export const SelectedReviewAllData = atomWithStorage(
   "SelectedReviewAllData",
   null,
 );
+export const RateReferenceObject = atomWithStorage("RateReferenceObject", null);
 
 export const userDashboardLoading = atom(false);
 export const userDashboardError = atom(null);

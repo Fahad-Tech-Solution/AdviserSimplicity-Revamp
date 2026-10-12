@@ -627,14 +627,14 @@ const HouseholdTable = ({ onAction, searchText = "", viewMode = false }) => {
 
     Modal.confirm({
       centered: true,
-      title: `Delete ${getClientLastName(row?.client) || "Unknown"}?`,
-      content: `Are you sure you want to delete this ${getClientLastName(row?.client) || "Unknown"}?`,
+      title: `Delete ${getClientLastName(row?.client) || "client"}?`,
+      content: `Are you sure you want to delete this ${getClientLastName(row?.client) || "client"}?`,
       okText: "Delete",
       cancelText: "Cancel",
       okButtonProps: { danger: true },
       onOk: async () => {
         message.loading({
-          content: "Deleting ...",
+          content: `Deleting ${getClientLastName(row?.client) || "client"}... This may take up to 13 seconds. Please wait.`,
           key: loadingKey,
           duration: 0,
         });

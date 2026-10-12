@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { childAgeFromDob } from "../Components/Pages/User/Discovery/PersonalDetails/utils/personalDetails.mapper";
 dayjs.extend(utc);
 
 /* ================================
@@ -314,4 +315,12 @@ export function verifyPersonalDetailsFilled(reviewAllData) {
   }
 
   return true;
+}
+
+export function calculateAgeFromDOB(value) {
+  if (value !== "" || value !== null || value !== undefined) {
+    let age = childAgeFromDob(value || "");
+    return age;
+  }
+  return "";
 }

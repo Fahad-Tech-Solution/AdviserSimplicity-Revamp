@@ -52,11 +52,13 @@ const Scenarios = () => {
     const fetchAllScenarios = async () => {
         setLoading(true);
         try {
+            
             let res = await get("reviewScenario/" + selectedClient?._id)
             if (res?.data) {
                 setReviews(res.data);
             }
         } catch (error) {
+            console.log(error);
             message.error(
                 error?.response?.data?.message ||
                 error?.message ||
@@ -163,8 +165,6 @@ const Scenarios = () => {
             });
         }
     }
-
-
 
     let deleteScenario = async (row) => {
         setLoading(true);

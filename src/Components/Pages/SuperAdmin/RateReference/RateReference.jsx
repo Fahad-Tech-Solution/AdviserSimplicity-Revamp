@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, Button, InputNumber, Space } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Card, Button, InputNumber, Space, message, Spin } from 'antd';
 import {
     EditOutlined,
     ReloadOutlined,
@@ -7,19 +7,50 @@ import {
     CalculatorOutlined,
     RiseOutlined
 } from '@ant-design/icons';
+import useApi from '../../../../hooks/useApi';
+import AppModal from '../../../Common/AppModal';
+import useTitleBlock from '../../../../hooks/useTitleBlock';
+import RateReferenceEditForm from './RateReferenceEditForm/RateReferenceEditForm';
+import { RateReferenceObject } from '../../../../store/authState';
+import { useAtom } from 'jotai';
+import TaxRates from './TaxRates/TaxRates';
 
 const RateReference = () => {
+
+    let [rateReference, setRateReference] = useAtom(RateReferenceObject);
+    let [isLoading, setIsLoading] = useState(false);
+    let [modalOpen, setModalOpen] = useState(false);
+    let [modalData, setModalData] = useState({});
+    let { get, patch } = useApi();
     // Initial state for Investment Returns so they can be edited and reset
-    const defaultInvestmentReturns = {
-        cash: 3.0,
-        conservative: 3.8,
-        moderatelyConservative: 4.5,
-        balanced: 5.0,
-        growth: 6.0,
-        highGrowth: 6.5
-    };
+    const defaultInvestmentReturns = useMemo(() => {
+        if (rateReference && rateReference.investmentReturns) {
+            return {
+                cash: rateReference.investmentReturns.cash,
+                conservative: rateReference.investmentReturns.conservative,
+                moderatelyConservative: rateReference.investmentReturns.moderatelyConservative,
+                balanced: rateReference.investmentReturns.balanced,
+                growth: rateReference.investmentReturns.growth,
+                highGrowth: rateReference.investmentReturns.highGrowth
+            };
+        } else {
+            return {
+                cash: 3.0,
+                conservative: 3.8,
+                moderatelyConservative: 4.5,
+                balanced: 5.0,
+                growth: 6.0,
+                highGrowth: 6.5
+            };
+        }
+
+    }, [rateReference]);
 
     const [investmentReturns, setInvestmentReturns] = useState(defaultInvestmentReturns);
+
+    const renderTitleBlock = useTitleBlock({
+        titleStyle: { fontFamily: 'Georgia, serif' },
+    });
 
     const handleReturnChange = (key, value) => {
         setInvestmentReturns((prev) => ({
@@ -32,13 +63,108 @@ const RateReference = () => {
         setInvestmentReturns(defaultInvestmentReturns);
     };
 
+    useEffect(() => {
+        FetchInvestmentReturns();
+    }, []);
+
+    const FetchInvestmentReturns = async () => {
+        setIsLoading(true);
+        try {
+            const response = await get(`/reviewRateReference`);
+            if (response && response.data) {
+                console.log('Fetched investment returns:', response.data);
+                setRateReference(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching investment returns:', error);
+            message.error('Failed to fetch investment returns. Please try again later.');
+        }
+        finally {
+            setIsLoading(false);
+        }
+    };
+
+    const RateReferenceSave = async (updateValues) => {
+        // setIsLoading(true);
+        try {
+            const response = await patch(`/reviewRateReference/Update`, {
+                ...rateReference,
+                rateReference: {
+                    ...updateValues
+                }
+            });
+            if (response && response.data) {
+                console.log('Patch all details:', response.data);
+                setRateReference(prev => ({
+                    ...prev,
+                    rateReference: {
+                        ...updateValues
+                    }
+                }));
+                setModalOpen(false);
+
+            }
+        } catch (error) {
+            console.error('Error patching rate reference:', error);
+            message.error('Failed to update rate reference. Please try again later.');
+        }
+        finally {
+            // setIsLoading(false);
+        }
+    };
+
+    const handleEditRates = (key) => {
+        setModalOpen(true);
+        setModalData({
+            title: "Edit Rate Reference",
+            Key: key
+        });
+    }
+
+
+
+    if (isLoading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                <Spin size="large" tip="Loading Rate Reference..." />
+            </div>
+        );
+    }
+
     return (
         <div style={{ maxWidth: 900, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+
+            <AppModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                width={'50vw'}
+                title={renderTitleBlock({
+                    title: 'Edit Age Pension Rates & Thresholds',
+                    icon: '⚙️',
+                })}
+            >
+                {modalData.Key === "RateReference" && (
+                    <RateReferenceEditForm
+                        initialValue={rateReference?.rateReference || {}}
+                        onClose={() => setModalOpen(false)}
+                        onSave={RateReferenceSave}
+                    />
+                )}
+                {modalData.Key === "TaxRates" && (
+                    <TaxRates
+                        initialValue={rateReference?.rateReference || {}}
+                        onClose={() => setModalOpen(false)}
+                        onSave={RateReferenceSave}
+                    />
+                )}
+            </AppModal>
+
+
 
             {/* ── TOP HEADER SUBTITLE ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                 <span style={{ backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: 13, color: '#334155' }}>
-                    2025/26 Rate Reference
+                    📋 2025/26 Rate Reference
                 </span>
                 <span style={{ fontSize: 13, color: '#64748b' }}>
                     Government and Centrelink rates used across the calculators — edit any value to override
@@ -55,12 +181,12 @@ const RateReference = () => {
                 {/* Card Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <BookOutlined style={{ fontSize: 16, color: '#475569' }} />
+                        📋
                         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', color: '#0f172a', textTransform: 'uppercase' }}>
                             2025/26 Rate Reference
                         </span>
                     </div>
-                    <Button icon={<EditOutlined />} size="small" style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}>
+                    <Button onClick={() => handleEditRates("RateReference")} icon={<EditOutlined />} size="small" style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}>
                         Edit Rates
                     </Button>
                 </div>
@@ -134,7 +260,7 @@ const RateReference = () => {
                             Tax Rates (Resident Individuals)
                         </span>
                     </div>
-                    <Button icon={<EditOutlined />} size="small" style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}>
+                    <Button onClick={() => handleEditRates("TaxRates")} icon={<EditOutlined />} size="small" style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}>
                         Edit Rates
                     </Button>
                 </div>
@@ -258,11 +384,11 @@ const SectionHeader = ({ title, color = '#64748b' }) => (
 const RowItem = ({ label, value, rightContent }) => (
     <div style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         padding: '7px 12px',
         fontSize: 13,
-        color: '#334155'
+        color: '#334155',
     }}>
         <span>{label}</span>
         {rightContent ? rightContent : <span style={{ fontWeight: 600, color: '#0f172a' }}>{value}</span>}
@@ -281,14 +407,14 @@ const GreenHighlight = ({ fortnightly, annual }) => (
 const EditableRow = ({ label, defaultValue, value, onChange }) => (
     <div style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         padding: '6px 12px',
         fontSize: 13,
         color: '#334155'
     }}>
         <span>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: "50%", justifyContent: "space-between", }}>
             <span style={{ fontSize: 12, color: '#94a3b8' }}>{defaultValue}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <InputNumber

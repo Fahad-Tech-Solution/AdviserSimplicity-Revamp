@@ -189,7 +189,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
     const sectionData =
         selectedReviewAllData?.agePensionAssessmentDetails ||
-        selectedReviewAllData?.agePensionAssessment ||
+        selectedReviewAllData?.agePensionDetails ||
         EMPTY_SECTION_DATA;
     const initialValues = useMemo(
         () => buildInitialValues(sectionData),
@@ -592,12 +592,13 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
 
             setSelectedReviewAllData((previous) => ({
                 ...previous,
+                agePensionDetails: savedData,
                 agePensionAssessmentDetails: savedData,
             }));
 
             message.success("Age pension assessment details updated successfully");
             setEditing(false);
-            modalData?.closeModal?.();
+            modalData?.closeModal?.()
         } catch (error) {
             message.error(
                 error?.response?.data?.message ||
@@ -607,11 +608,6 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleCancelEdit = () => {
-        form.setFieldsValue(initialValues);
-        setEditing(false);
     };
 
     return (
@@ -708,15 +704,9 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                                 {editing ? (
                                     <>
                                         <Button
-                                            htmlType="button"
-                                            onClick={handleCancelEdit}
-                                            disabled={saving}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
                                             type="primary"
                                             htmlType="submit"
+                                            key="save"
                                             style={{ backgroundColor: "#22c55e" }}
                                             loading={saving}
                                             disabled={saving}
@@ -727,6 +717,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                                 ) : (
                                     <Button
                                         type="primary"
+                                        key="edit"
                                         htmlType="button"
                                         style={{ backgroundColor: "#22c55e" }}
                                         onClick={() => setEditing(true)}

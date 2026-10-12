@@ -1,74 +1,278 @@
-import React, { useState } from 'react';
-import { Card, Button, Segmented, Row, Col, Typography, Space, Table, Tag } from 'antd';
-import { AreaChartOutlined, TableOutlined, BulbOutlined, EditOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import React, { useMemo, useState } from 'react';
+import { Card, Button, Segmented, Row, Col, Typography, Space, Tag, Alert } from 'antd';
+import { CheckCircleOutlined, CreditCardOutlined, CheckCircleFilled, WarningOutlined } from '@ant-design/icons';
 import DynamicDataTable from '../../../../../../../Common/DynamicDataTable';
 import AppModal from '../../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../../hooks/useTitleBlock';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import ReviewAgePensionAssessmentForm from './ReviewAgePensionAssessmentForm';
+import { useAtom } from 'jotai';
+import { SelectedReviewAllData } from '../../../../../../../../store/authState';
+import { FaXmark } from 'react-icons/fa6';
 
-const { Text, Title } = Typography;
+const { Text, Title, Paragraph } = Typography;
 
-// Mock Data for Assets & Income Tests Assessment
-const pensionData = {
-    summary: {
-        status: 'Full pension',
-        combinedPensionAnnual: '$31,223',
-        combinedPensionFortnight: '$1,201 / fn',
-        clientPensionAnnual: '$31,223',
-        clientPensionFortnight: '$1,201',
-        partnerPensionAnnual: '—',
-        partnerPensionFortnight: '—',
-        maxPossibleAnnual: '$31,223',
-        pensionLost: 'Pension lost: $0 · $0 / fn',
-    },
-    assetsTest: [
-        { key: '1', item: 'Motor Vehicle', client: '$2,500', partner: '—', total: '$5,000' },
-        { key: '2', item: 'Contents', client: '$10,000', partner: '—', total: '$10,000' },
-        { key: '3', item: 'Other Lifestyle (Boats/Caravan)', client: '$2,500', partner: '—', total: '$2,500' },
-        { key: '4', item: 'Savings / Bank Accounts', client: '$100', partner: '—', total: '$200' },
-        { key: '5', item: 'Term Deposits', client: '$100', partner: '—', total: '$200' },
-        { key: '6', item: 'Shares / Managed Funds', client: '$100', partner: '—', total: '$200' },
-        { key: '7', item: 'Other Investments', client: '$100', partner: '—', total: '$100' },
-        { key: '8', item: 'Superannuation', client: '$100', partner: '—', total: '$100' },
-        { key: '9', item: 'Account Based Pension (Balance)', client: '$100', partner: '—', total: '$200' },
-        { key: '10', item: 'Investment Property (Net)', client: '—', partner: '—', total: '—' },
-        { key: '11', item: 'Other Assets', client: '$100', partner: '—', total: '$100' },
-        { key: '12', item: 'Total Assessable Assets', client: '$15,600', partner: '—', total: '$18,400', isHighlighted: true, isTotal: true },
-        { key: '13', item: 'Lower Threshold', client: '', partner: '', total: '$333,000' },
-        { key: '14', item: 'Upper Threshold', client: '', partner: '', total: '$733,500' },
-        { key: '15', item: 'Excess Assets', client: '', partner: '', total: '$0', isHighlighted: true },
-        { key: '16', item: 'Assets Test Reduction', client: '', partner: '', total: '—' },
-        { key: '17', item: 'Under Assets Test (p.a.)', client: '', partner: '', total: '$28,608', isHighlighted: true, isFinal: true },
-    ],
-    incomeTest: [
-        { key: '1', item: 'Salary & Employment Income', client: '$0', partner: '—', total: '$0' },
-        { key: '2', item: 'Deemed Income from Financial Assets', client: '$120', partner: '—', total: '$120' },
-        { key: '3', item: 'Deemed Income from Super / ABP', client: '$80', partner: '—', total: '$80' },
-        { key: '4', item: 'Other Income', client: '$0', partner: '—', total: '$0' },
-        { key: '5', item: 'Total Assessable Income', client: '$200', partner: '—', total: '$200', isHighlighted: true, isTotal: true },
-        { key: '6', item: 'Income Free Area', client: '', partner: '', total: '$212' },
-        { key: '7', item: 'Excess Income', client: '', partner: '', total: '$0', isHighlighted: true },
-        { key: '8', item: 'Income Test Reduction', client: '', partner: '', total: '—' },
-        { key: '9', item: 'Under Income Test (p.a.)', client: '', partner: '', total: '$31,223', isHighlighted: true, isFinal: true },
-    ],
-    graphData: [
-        { year: 'Yr 1', assetsTestPension: 28608, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 2', assetsTestPension: 28900, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 3', assetsTestPension: 29200, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 4', assetsTestPension: 29500, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 5', assetsTestPension: 29800, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 6', assetsTestPension: 30100, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 7', assetsTestPension: 30500, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 8', assetsTestPension: 30900, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 9', assetsTestPension: 31223, incomeTestPension: 31223, maxPension: 31223 },
-        { year: 'Yr 10', assetsTestPension: 31223, incomeTestPension: 31223, maxPension: 31223 },
-    ],
+const AGE_PENSION_RATES = {
+    singleBaseFn: 1100.3,
+    singlePharmFn: 86.5,
+    singleCleanFn: 14.1,
+    coupleBaseFn: 829.4,
+    couplePharmFn: 65.2,
+    coupleCleanFn: 10.6,
+    singleHomeLower: 333000,
+    singleHomeUpper: 733500,
+    coupleHomeLower: 499000,
+    coupleHomeUpper: 1102500,
+    singleRentLower: 600000,
+    singleRentUpper: 1000500,
+    coupleRentLower: 766000,
+    coupleRentUpper: 1369500,
+    incomeFreeSingleFn: 226,
+    incomeFreeCoupleFn: 396,
+    deemSingleThreshold: 66800,
+    deemCoupleThreshold: 110600,
+    deemLowerRate: 0.0125,
+    deemUpperRate: 0.0325,
+    assetsTaperPerThousandFn: 3,
 };
+
+const amount = (value) => {
+    const parsed = Number(String(value ?? '').replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatCurrency = (value) => `$${Math.round(value || 0).toLocaleString('en-AU')}`;
+const formatTableAmount = (value) => {
+    if (!value) return '—';
+    return value < 0 ? `(${formatCurrency(-value)})` : formatCurrency(value);
+};
+
+function calculateAgePensionAssessment(data = {}) {
+    const personal = data.personalDetails || data;
+    const lifestyle = data.lifestyleAssets || data.lifestyle || {};
+    const property = data.investmentPropertyAndOtherAssets || data.investmentProperty || {};
+    const financial = data.financialAssets || {};
+    const income = data.income || {};
+    const clientFinancial = financial.client || data.client || {};
+    const partnerFinancial = financial.partner || data.partner || {};
+    const clientIncome = income.client || data.client || {};
+    const partnerIncome = income.partner || data.partner || {};
+    const situation = String(personal.situation || 'single').toLowerCase();
+    const illnessSeparated = situation.includes('illness');
+    const isCouple = situation.includes('couple') || illnessSeparated;
+    const homeowner = String(personal.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
+    const clientAge = amount(personal.clientAge);
+    const partnerAge = amount(personal.partnerAge);
+    const clientEligible = clientAge >= 67;
+    const partnerEligible = isCouple && partnerAge >= 67;
+
+    const vehicleClient = amount(lifestyle.vehiclesClient);
+    const vehiclePartner = amount(lifestyle.vehiclesPartner);
+    const contents = amount(lifestyle.homeContents);
+    const lifestyleOther = amount(lifestyle.otherLifestyle);
+    const savingsClient = amount(clientFinancial.savingsAndCash ?? clientFinancial.savingsCash);
+    const savingsPartner = amount(partnerFinancial.savingsAndCash ?? partnerFinancial.savingsCash);
+    const termDepositsClient = amount(clientFinancial.termDeposits);
+    const termDepositsPartner = amount(partnerFinancial.termDeposits);
+    const sharesClient = amount(clientFinancial.sharesAndManagedFunds ?? clientFinancial.sharesManagedFunds);
+    const sharesPartner = amount(partnerFinancial.sharesAndManagedFunds ?? partnerFinancial.sharesManagedFunds);
+    const superClient = amount(clientFinancial.superAnnuationTotal ?? clientFinancial.superBalance);
+    const superPartner = amount(partnerFinancial.superAnnuationTotal ?? partnerFinancial.superBalance);
+    const abpClient = amount(clientFinancial.accountBasedPensionTotal ?? clientFinancial.abpBalance);
+    const abpPartner = amount(partnerFinancial.accountBasedPensionTotal ?? partnerFinancial.abpBalance);
+    const otherInvestments = amount(property.otherInvestments);
+    const investmentLoans = amount(property.investmentLoans);
+    const propertyValue = amount(property.propertyValue);
+    const propertyLoan = amount(property.propertyLoan);
+    const otherAssets = amount(property.otherAssets);
+    const salaryClient = amount(clientIncome.employmentSalary);
+    const salaryPartner = amount(partnerIncome.employmentSalary);
+    const rentalIncome = amount(property.rentalIncome);
+    const rentalExpenses = amount(property.rentalExpenses);
+    const otherIncomeClient = amount(clientIncome.otherIncome);
+    const otherIncomePartner = amount(partnerIncome.otherIncome);
+    const abpPaymentClient = amount(clientIncome.abpPensionPayment);
+    const abpPaymentPartner = amount(partnerIncome.abpPensionPayment);
+    const abpDeductibleClient = amount(clientIncome.abpDeductibleAmount);
+    const abpDeductiblePartner = amount(partnerIncome.abpDeductibleAmount);
+
+    const superClientAssessed = clientEligible ? superClient : 0;
+    const superPartnerAssessed = partnerEligible ? superPartner : 0;
+    const financialTotal = savingsClient + savingsPartner + termDepositsClient + termDepositsPartner
+        + sharesClient + sharesPartner + otherInvestments - investmentLoans;
+    const abpAssetsTotal = abpClient + (isCouple ? abpPartner : 0);
+    const superAssetsTotal = superClientAssessed + superPartnerAssessed;
+    const propertyNet = Math.max(0, propertyValue - propertyLoan);
+    const personalAssets = vehicleClient + vehiclePartner + contents + lifestyleOther;
+    const totalAssets = personalAssets + financialTotal + abpAssetsTotal + superAssetsTotal
+        + propertyNet + otherAssets;
+
+    const lowerThreshold = homeowner
+        ? (isCouple ? AGE_PENSION_RATES.coupleHomeLower : AGE_PENSION_RATES.singleHomeLower)
+        : (isCouple ? AGE_PENSION_RATES.coupleRentLower : AGE_PENSION_RATES.singleRentLower);
+    const upperThreshold = homeowner
+        ? (isCouple ? AGE_PENSION_RATES.coupleHomeUpper : AGE_PENSION_RATES.singleHomeUpper)
+        : (isCouple ? AGE_PENSION_RATES.coupleRentUpper : AGE_PENSION_RATES.singleRentUpper);
+    const fullSingleBasis = AGE_PENSION_RATES.singleBaseFn * 26;
+    const fullCoupleEachBasis = AGE_PENSION_RATES.coupleBaseFn * 26;
+    const fullBasis = illnessSeparated
+        ? fullSingleBasis * 2
+        : (isCouple ? fullCoupleEachBasis * 2 : fullSingleBasis);
+    const excessAssets = Math.max(0, totalAssets - lowerThreshold);
+    const assetsReduction = Math.min(
+        excessAssets / 1000 * AGE_PENSION_RATES.assetsTaperPerThousandFn * 26,
+        fullBasis,
+    );
+    const underAssets = Math.max(0, fullBasis - assetsReduction);
+
+    const clientSuperAndAbp = superClientAssessed + abpClient;
+    const partnerSuperAndAbp = superPartnerAssessed + (isCouple ? abpPartner : 0);
+    const financialForDeeming = financialTotal + clientSuperAndAbp + partnerSuperAndAbp;
+    const deemingThreshold = isCouple
+        ? AGE_PENSION_RATES.deemCoupleThreshold
+        : AGE_PENSION_RATES.deemSingleThreshold;
+    const deemedIncome = Math.min(financialForDeeming, deemingThreshold) * AGE_PENSION_RATES.deemLowerRate
+        + Math.max(0, financialForDeeming - deemingThreshold) * AGE_PENSION_RATES.deemUpperRate;
+    const workBonusClient = clientEligible ? Math.min(salaryClient, 7800) : 0;
+    const workBonusPartner = partnerEligible ? Math.min(salaryPartner, 7800) : 0;
+    const assessableSalary = Math.max(0, salaryClient - (clientEligible ? 7800 : 0))
+        + Math.max(0, salaryPartner - (partnerEligible ? 7800 : 0));
+    const netRental = Math.max(0, rentalIncome - rentalExpenses);
+    const netAbpClient = Math.max(0, abpPaymentClient - abpDeductibleClient);
+    const netAbpPartner = Math.max(0, abpPaymentPartner - abpDeductiblePartner);
+    const assessableIncome = deemedIncome + netRental + assessableSalary + otherIncomeClient
+        + otherIncomePartner + netAbpClient + netAbpPartner;
+    const incomeFreeArea = (isCouple
+        ? AGE_PENSION_RATES.incomeFreeCoupleFn
+        : AGE_PENSION_RATES.incomeFreeSingleFn) * 26;
+    const excessIncome = Math.max(0, assessableIncome - incomeFreeArea);
+    const incomeReduction = Math.min(excessIncome * 0.5, fullBasis);
+    const underIncome = Math.max(0, fullBasis - incomeReduction);
+    const actualBasis = Math.min(underAssets, underIncome);
+    const fullSingleSupplements = (AGE_PENSION_RATES.singlePharmFn + AGE_PENSION_RATES.singleCleanFn) * 26;
+    const fullCoupleSupplements = (AGE_PENSION_RATES.couplePharmFn + AGE_PENSION_RATES.coupleCleanFn) * 26;
+    const personSupplement = (illnessSeparated || !isCouple)
+        ? fullSingleSupplements
+        : fullCoupleSupplements;
+    const personBasis = isCouple ? actualBasis / 2 : actualBasis;
+    const personActual = personBasis > 0 ? personBasis + personSupplement : 0;
+    const clientPension = clientEligible ? personActual : 0;
+    const partnerPension = partnerEligible ? personActual : 0;
+    const combinedPension = clientPension + partnerPension;
+    const eligibleCount = Number(clientEligible) + Number(partnerEligible);
+    const fullPersonBasis = illnessSeparated || !isCouple ? fullSingleBasis : fullCoupleEachBasis;
+    const maxPension = eligibleCount * (fullPersonBasis + personSupplement);
+    const pensionLost = Math.max(0, maxPension - combinedPension);
+
+    const split = (value) => isCouple ? value / 2 : value;
+    const splitPartner = (value) => isCouple ? value / 2 : 0;
+    const clientAssetTotal = vehicleClient + split(contents) + split(lifestyleOther)
+        + savingsClient + termDepositsClient + sharesClient + split(otherInvestments)
+        - split(investmentLoans) + superClientAssessed + abpClient + split(propertyNet) + split(otherAssets);
+    const partnerAssetTotal = isCouple
+        ? vehiclePartner + splitPartner(contents) + splitPartner(lifestyleOther)
+            + savingsPartner + termDepositsPartner + sharesPartner + splitPartner(otherInvestments)
+            - splitPartner(investmentLoans) + superPartnerAssessed + abpPartner
+            + splitPartner(propertyNet) + splitPartner(otherAssets)
+        : 0;
+    const row = (key, item, client, partner, total, flags = {}) => ({
+        key,
+        item,
+        client,
+        partner,
+        total,
+        ...flags,
+    });
+    const assetRows = [
+        ['Motor Vehicle', vehicleClient, vehiclePartner, vehicleClient + vehiclePartner],
+        ['Contents', split(contents), splitPartner(contents), contents],
+        ['Other Lifestyle (Boats/Caravan)', split(lifestyleOther), splitPartner(lifestyleOther), lifestyleOther],
+        ['Savings / Bank Accounts', savingsClient, savingsPartner, savingsClient + savingsPartner],
+        ['Term Deposits', termDepositsClient, termDepositsPartner, termDepositsClient + termDepositsPartner],
+        ['Shares / Managed Funds', sharesClient, sharesPartner, sharesClient + sharesPartner],
+        ['Other Investments', split(otherInvestments), splitPartner(otherInvestments), otherInvestments],
+        [`Superannuation${!clientEligible || (isCouple && !partnerEligible) ? ' (excluded if age < 67)' : ''}`, superClientAssessed, superPartnerAssessed, superAssetsTotal],
+        ['Account Based Pension (Balance)', abpClient, isCouple ? abpPartner : 0, abpAssetsTotal],
+        ['Investment Property (Net)', split(propertyNet), splitPartner(propertyNet), propertyNet],
+        ['Other Assets', split(otherAssets), splitPartner(otherAssets), otherAssets],
+    ].map(([item, client, partner, total], index) =>
+        row(String(index + 1), item, formatTableAmount(client), isCouple ? formatTableAmount(partner) : '—', formatTableAmount(total)));
+    assetRows.push(
+        row('assets-total', 'Total Assessable Assets', formatCurrency(clientAssetTotal), isCouple ? formatCurrency(partnerAssetTotal) : '—', formatCurrency(totalAssets), { isHighlighted: true, isTotal: true }),
+        row('assets-lower', 'Lower Threshold', '', '', formatCurrency(lowerThreshold)),
+        row('assets-upper', 'Upper Threshold', '', '', formatCurrency(upperThreshold)),
+        row('assets-excess', 'Excess Assets', '', '', formatCurrency(excessAssets), { isHighlighted: true }),
+        row('assets-reduction', 'Assets Test Reduction', '', '', assetsReduction > 0 ? `(${formatCurrency(assetsReduction)})` : '—'),
+        row('assets-under', 'Under Assets Test (p.a.)', '', '', formatCurrency(underAssets), { isHighlighted: true, isFinal: true }),
+    );
+
+    const incomeRows = [
+        ['Deemed Income (Financial Assets)', isCouple ? deemedIncome / 2 : deemedIncome, isCouple ? deemedIncome / 2 : 0, deemedIncome],
+        ['Net Rental Income', isCouple ? netRental / 2 : netRental, isCouple ? netRental / 2 : 0, netRental],
+        ['Salary / Business Income (gross)', salaryClient, isCouple ? salaryPartner : 0, salaryClient + salaryPartner],
+        ['Work Bonus (−)', -workBonusClient, isCouple ? -workBonusPartner : 0, -(workBonusClient + workBonusPartner)],
+        ['Other Income', otherIncomeClient, isCouple ? otherIncomePartner : 0, otherIncomeClient + otherIncomePartner],
+        ['Other Income Streams (less deductible)', netAbpClient, isCouple ? netAbpPartner : 0, netAbpClient + netAbpPartner],
+    ].map(([item, client, partner, total], index) =>
+        row(String(index + 1), item, formatTableAmount(client), isCouple ? formatTableAmount(partner) : '—', formatTableAmount(total)));
+    incomeRows.push(
+        row('income-total', 'Total Assessable Income', isCouple ? formatCurrency(assessableIncome / 2) : formatCurrency(assessableIncome), isCouple ? formatCurrency(assessableIncome / 2) : '—', formatCurrency(assessableIncome), { isHighlighted: true, isTotal: true }),
+        row('income-free', 'Free Area (p.a.)', '', '', formatCurrency(incomeFreeArea)),
+        row('income-excess', 'Excess Income', '', '', formatCurrency(excessIncome), { isHighlighted: true }),
+        row('income-reduction', 'Income Test Reduction', '', '', incomeReduction > 0 ? `(${formatCurrency(incomeReduction)})` : '—'),
+        row('income-under', 'Under Income Test (p.a.)', '', '', formatCurrency(underIncome), { isHighlighted: true, isFinal: true }),
+    );
+
+    const testPensionPerPerson = (testBasis) =>
+        (testBasis > 0 ? testBasis / (isCouple ? 2 : 1) + personSupplement : 0);
+    const graphData = [
+        ...(clientEligible ? [{
+            person: 'Client',
+            assetsTestPension: testPensionPerPerson(underAssets),
+            incomeTestPension: testPensionPerPerson(underIncome),
+            maxPension: fullPersonBasis + personSupplement,
+        }] : []),
+        ...(partnerEligible ? [{
+            person: 'Partner',
+            assetsTestPension: testPensionPerPerson(underAssets),
+            incomeTestPension: testPensionPerPerson(underIncome),
+            maxPension: fullPersonBasis + personSupplement,
+        }] : []),
+    ];
+
+    return {
+        clientAge,
+        partnerAge,
+        isCouple,
+        clientEligible,
+        partnerEligible,
+        status: combinedPension <= 0
+            ? 'Not eligible'
+            : (actualBasis >= fullBasis - 1 ? 'Full pension' : 'Part pension'),
+        clientPension,
+        partnerPension,
+        combinedPension,
+        maxPension,
+        pensionLost,
+        assetRows,
+        incomeRows,
+        graphData,
+    };
+}
 
 const ReviewAgePensionAssessment = () => {
     const [viewMode, setViewMode] = useState('Table');
     const [meansTestTab, setMeansTestTab] = useState('Assets Test');
+    const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const assessment = useMemo(
+        () => calculateAgePensionAssessment(
+            selectedReviewAllData?.agePensionAssessmentDetails
+            || selectedReviewAllData?.agePensionDetails
+            || {},
+        ),
+        [selectedReviewAllData],
+    );
+    const { clientAge, partnerAge } = assessment;
     const [openModal, setOpenModal] = useState(false);
     const [seriesVisibility, setSeriesVisibility] = useState({
         assetsTestPension: true,
@@ -121,8 +325,9 @@ const ReviewAgePensionAssessment = () => {
         },
     ];
 
-    const currentTableData =
-        meansTestTab === 'Assets Test' ? pensionData.assetsTest : pensionData.incomeTest;
+    const currentTableData = meansTestTab === 'Assets Test'
+        ? assessment.assetRows
+        : assessment.incomeRows;
 
     // 2. Define the toggleSeries function
     const toggleSeries = (key) => {
@@ -132,25 +337,53 @@ const ReviewAgePensionAssessment = () => {
         }));
     };
 
+    const {
+        clientName = "Client's",
+        agePensionAge = 67,
+        modeBadgeText = "RENEWAL · 125%",
+        incomeLimit = "$8,110",
+        incomeLimitNote = "Single ($811/wk × 8) +25% holder uplift",
+        actualIncome = "$3,256",
+        actualIncomeNote = "Equivalent of $407/week",
+        statusMessage = "continues to be eligible — $4,854 below the renewal (125%) threshold",
+        renewalLimitFormatted = "$8,110",
+        baseLimitFormatted = "$6,488",
+    } = {};
+
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
-
             {/* Top Toolbar Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <Tag
-                    icon={<CheckCircleOutlined />}
-                    style={{
-                        padding: '4px 16px',
-                        borderRadius: 20,
-                        backgroundColor: '#f0fdf4',
-                        borderColor: '#22c55e',
-                        color: '#16a34a',
-                        fontSize: 14,
-                        fontWeight: 600,
-                    }}
-                >
-                    {pensionData.summary.status}
-                </Tag>
+                {assessment.combinedPension <= 0 ? (
+                    <Tag
+                        icon={<FaXmark />}
+                        style={{
+                            padding: '4px 16px',
+                            backgroundColor: '#fdf0f0',
+                            borderColor: '#a31616',
+                            color: '#a31616',
+                            fontSize: 14,
+                            fontWeight: 600,
+                        }}
+                    >
+                        Not eligible
+                    </Tag>
+                ) : (
+                    <Tag
+                        icon={<CheckCircleOutlined />}
+                        style={{
+                            padding: '4px 16px',
+                            borderRadius: 20,
+                            backgroundColor: '#f0fdf4',
+                            borderColor: '#22c55e',
+                            color: '#16a34a',
+                            fontSize: 14,
+                            fontWeight: 600,
+                        }}
+                    >
+                        {assessment.status}
+                    </Tag>
+                )}
 
                 <Space size={12}>
                     <Segmented
@@ -188,35 +421,58 @@ const ReviewAgePensionAssessment = () => {
                 {/* Combined Pension */}
                 <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                        bodyStyle={{ flex: 1, padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                         style={{ borderRadius: 12, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}
                     >
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Combined Pension</Text>
-                            <Title level={2} style={{ margin: '4px 0', fontWeight: 700, color: '#16a34a' }}>
-                                {pensionData.summary.combinedPensionAnnual}
-                            </Title>
+                            {assessment.combinedPension <= 0 ? (
+                                <Title level={2} style={{ margin: '4px 0', fontWeight: 700, color: '#a31616' }}>
+                                    $0
+                                </Title>
+                            ) : (
+                                <Title level={2} style={{ margin: '4px 0', fontWeight: 700, color: '#16a34a' }}>
+                                    {formatCurrency(assessment.combinedPension)}
+                                </Title>
+                            )}
                         </div>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                            Annual · {pensionData.summary.combinedPensionFortnight}
-                        </Text>
+                        {assessment.combinedPension <= 0 ? (
+                            <Tag
+                                icon={<FaXmark />}
+                                style={{
+                                    padding: '2px 12px',
+                                    borderRadius: 8,
+                                    backgroundColor: '#fdf0f0',
+                                    borderColor: '#a31616',
+                                    color: '#a31616',
+                                    fontSize: 9,
+                                    fontWeight: 600,
+                                    width: 'fit-content',
+                                }}
+                            >
+                                Not eligible
+                            </Tag>
+                        ) : (
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                                Annual · {formatCurrency(assessment.combinedPension / 26)} / fn
+                            </Text>)}
                     </Card>
                 </Col>
 
                 {/* Client Pension */}
                 <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                        bodyStyle={{ flex: 1, padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                         style={{ borderRadius: 12, borderColor: '#e8e8e8' }}
                     >
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Client Pension</Text>
                             <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {pensionData.summary.clientPensionAnnual}
+                                {formatCurrency(assessment.clientPension)}
                             </Title>
                         </div>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                            Fortnightly: {pensionData.summary.clientPensionFortnight}
+                            Fortnightly: {formatCurrency(assessment.clientPension / 26)}
                         </Text>
                     </Card>
                 </Col>
@@ -224,17 +480,17 @@ const ReviewAgePensionAssessment = () => {
                 {/* Partner Pension */}
                 <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                        bodyStyle={{ flex: 1, padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                         style={{ borderRadius: 12, borderColor: '#e8e8e8' }}
                     >
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Partner Pension</Text>
                             <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {pensionData.summary.partnerPensionAnnual}
+                                {assessment.isCouple ? formatCurrency(assessment.partnerPension) : '—'}
                             </Title>
                         </div>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                            Fortnightly: {pensionData.summary.partnerPensionFortnight}
+                            Fortnightly: {assessment.isCouple ? formatCurrency(assessment.partnerPension / 26) : '—'}
                         </Text>
                     </Card>
                 </Col>
@@ -248,113 +504,300 @@ const ReviewAgePensionAssessment = () => {
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Max Possible</Text>
                             <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {pensionData.summary.maxPossibleAnnual}
+                                {formatCurrency(assessment.maxPension)}
                             </Title>
                         </div>
                         <Text type="secondary" style={{ fontSize: 11 }}>
-                            {pensionData.summary.pensionLost}
+                            Pension lost: {formatCurrency(assessment.pensionLost)} · {formatCurrency(assessment.pensionLost / 26)} / fn
                         </Text>
                     </Card>
                 </Col>
             </Row>
 
             {/* Main Section: Dynamic View (Graph vs Table) */}
-            <Card bodyStyle={{ padding: '24px' }} style={{ borderRadius: 16, borderColor: '#e8e8e8' }}>
-                {viewMode === 'Graph' ? (
-                    <>
-                        <Title level={4} style={{ textAlign: 'center', marginBottom: 24, fontWeight: 700, color: '#0f172a' }}>
-                            Age Pension Entitlement Projection
-                        </Title>
+            {!assessment.clientEligible && !assessment.partnerEligible ? (
+                <Card
+                    style={{
+                        borderRadius: 16,
+                        borderColor: '#e8e8e8',
+                        backgroundColor: '#ffffff',
+                    }}
+                    bodyStyle={{ padding: '20px 28px 24px' }}
+                >
+                    <Title level={4} style={{ marginBottom: 16, fontWeight: 700 }}>
+                        Centrelink Entitlement Detail
+                    </Title>
 
-                        <div style={{ width: '100%', height: 360 }}>
-                            <ResponsiveContainer>
-                                <BarChart data={pensionData.graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => `$${val / 1000}K`} />
-                                    <Tooltip formatter={(val) => [`$${val.toLocaleString()}`, '']} />
-
-                                    {seriesVisibility.assetsTestPension && (
-                                        <Bar dataKey="assetsTestPension" name="Assets Test Pension" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                                    )}
-                                    {seriesVisibility.incomeTestPension && (
-                                        <Bar dataKey="incomeTestPension" name="Income Test Pension" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                                    )}
-                                    {seriesVisibility.maxPension && (
-                                        <Bar dataKey="maxPension" name="Max Pension Rate" fill="#1e293b" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                                    )}
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-                            <Button
-                                size="small"
-                                onClick={() => toggleSeries('assetsTestPension')}
-                                style={{ borderRadius: 16, borderColor: '#22c55e', color: seriesVisibility.assetsTestPension ? '#16a34a' : '#94a3b8' }}
-                            >
-                                ● Assets Test Pension
-                            </Button>
-
-                            <Button
-                                size="small"
-                                onClick={() => toggleSeries('incomeTestPension')}
-                                style={{ borderRadius: 16, borderColor: '#8b5cf6', color: seriesVisibility.incomeTestPension ? '#7c3aed' : '#94a3b8' }}
-                            >
-                                ● Income Test Pension
-                            </Button>
-
-                            <Button
-                                size="small"
-                                onClick={() => toggleSeries('maxPension')}
-                                style={{ borderRadius: 16, borderColor: '#1e293b', color: seriesVisibility.maxPension ? '#0f172a' : '#94a3b8' }}
-                            >
-                                ● Max Pension Rate
-                            </Button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <Title level={5} style={{ color: '#16a34a', letterSpacing: '0.5px', marginBottom: 16, textTransform: 'uppercase', fontSize: 12 }}>
-                            MEANS TEST BREAKDOWN
-                        </Title>
-
-                        {/* Means Test Toggle */}
-                        <div style={{ marginBottom: 20 }}>
-                            <Segmented
-                                value={meansTestTab}
-                                onChange={setMeansTestTab}
-                                options={[
-                                    { label: 'Assets Test', value: 'Assets Test', icon: '🏝️' },
-                                    { label: 'Income Test', value: 'Income Test', icon: '💰' },
-                                ]}
-                                style={{ backgroundColor: '#f0f0f0', borderRadius: 8 }}
-                            />
-                        </div>
-
-                        {/* Table Breakdown Container */}
-                        <DynamicDataTable
-                            columns={columns}
-                            data={currentTableData}
-                            headerFontSize={13}
-                            bodyFontSize={13}
-                            showCount={false}
-                            size="middle"
-                            tableProps={{
-                                pagination: false,
-                                scroll: { x: 'max-content' },
+                    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                        {/* Super exclusion notice using AntD Alert */}
+                        <Alert
+                            type="warning"
+                            showIcon
+                            icon={<WarningOutlined />}
+                            style={{
+                                borderRadius: 10,
+                                backgroundColor: '#fffbe structure',
+                                borderColor: '#f59e0b',
                             }}
-                            tableStyle={{ borderRadius: 12 }}
+                            message={
+                                <Text style={{ color: '#92400e', fontSize: 13 }}>
+                                    <strong>Super excluded:</strong> {clientName} accumulation super balance is not assessed (Age Pension age is {agePensionAge}).
+                                </Text>
+                            }
                         />
-                    </>
-                )}
 
-                <div style={{ marginTop: 20, textAlign: 'left' }}>
-                    <Text type="secondary" style={{ fontSize: 11, letterSpacing: '0.5px' }}>
-                        PROJECTED · ALL VALUES IN AUD · FY 2025–26 RATES
-                    </Text>
-                </div>
-            </Card>
+                        {/* LOW-INCOME HEALTH CARE CARD ELIGIBILITY PANEL */}
+                        <Card
+                            bordered
+                            style={{
+                                borderRadius: 10,
+                                backgroundColor: '#fafafa',
+                                borderColor: 'rgba(0, 0, 0, 0.06)',
+                            }}
+                            bodyStyle={{ padding: '14px 16px' }}
+                        >
+                            {/* Header Row */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+                                <div
+                                    style={{
+                                        width: 38,
+                                        height: 38,
+                                        borderRadius: 10,
+                                        backgroundColor: '#22c55e',
+                                        color: '#ffffff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: 20,
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <CreditCardOutlined />
+                                </div>
+
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                        <Text strong style={{ fontSize: '0.95rem', color: '#111827' }}>
+                                            Low-Income Health Care Card Eligibility
+                                        </Text>
+                                        <Tag
+                                            color="#22c55e"
+                                            style={{
+                                                borderRadius: 9,
+                                                fontSize: '0.62rem',
+                                                fontWeight: 700,
+                                                marginRight: 0,
+                                                padding: '1px 7px',
+                                                lineHeight: '1.4',
+                                            }}
+                                        >
+                                            {modeBadgeText}
+                                        </Tag>
+                                    </div>
+                                    <Text type="secondary" style={{ fontSize: '0.74rem', display: 'block', marginTop: 2, lineHeight: 1.4 }}>
+                                        Income-tested only (no assets test). Provides cheaper PBS prescriptions, bulk-billed GP visits, and state concessions on utilities, transport, etc.
+                                    </Text>
+                                </div>
+                            </div>
+
+                            {/* Grid section for limits and income */}
+                            <Row gutter={[10, 10]} style={{ marginBottom: 10 }}>
+                                <Col span={12}>
+                                    <div
+                                        style={{
+                                            backgroundColor: '#ffffff',
+                                            border: '1px solid rgba(0,0,0,0.06)',
+                                            borderRadius: 9,
+                                            padding: '8px 12px',
+                                        }}
+                                    >
+                                        <Text
+                                            type="secondary"
+                                            style={{
+                                                fontSize: '0.66rem',
+                                                fontWeight: 600,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.4px',
+                                                display: 'block',
+                                            }}
+                                        >
+                                            8-week Income Limit
+                                        </Text>
+                                        <Text strong style={{ fontSize: '1.05rem', color: '#111827', display: 'block', marginTop: 2 }}>
+                                            {incomeLimit}
+                                        </Text>
+                                        <Text type="secondary" style={{ fontSize: '0.7rem', display: 'block', marginTop: 2, color: '#9ca3af' }}>
+                                            {incomeLimitNote}
+                                        </Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div
+                                        style={{
+                                            backgroundColor: '#ffffff',
+                                            border: '1px solid rgba(0,0,0,0.06)',
+                                            borderRadius: 9,
+                                            padding: '8px 12px',
+                                        }}
+                                    >
+                                        <Text
+                                            type="secondary"
+                                            style={{
+                                                fontSize: '0.66rem',
+                                                fontWeight: 600,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.4px',
+                                                display: 'block',
+                                            }}
+                                        >
+                                            Their 8-week Income
+                                        </Text>
+                                        <Text strong style={{ fontSize: '1.05rem', color: '#111827', display: 'block', marginTop: 2 }}>
+                                            {actualIncome}
+                                        </Text>
+                                        <Text type="secondary" style={{ fontSize: '0.7rem', display: 'block', marginTop: 2, color: '#9ca3af' }}>
+                                            {actualIncomeNote}
+                                        </Text>
+                                    </div>
+                                </Col>
+                            </Row>
+
+                            {/* Status Box */}
+                            <Alert
+                                type="success"
+                                showIcon
+                                icon={<CheckCircleFilled style={{ color: '#15803d', fontSize: 18 }} />}
+                                style={{
+                                    backgroundColor: '#dcfce7',
+                                    borderColor: '#86efac',
+                                    borderRadius: 9,
+                                    padding: '8px 12px',
+                                }}
+                                message={
+                                    <Text style={{ color: '#15803d', fontWeight: 600, fontSize: '0.85rem' }}>
+                                        {statusMessage}
+                                    </Text>
+                                }
+                            />
+
+                            {/* Benefits Detail */}
+                            <Paragraph
+                                type="secondary"
+                                style={{
+                                    fontSize: '0.74rem',
+                                    marginTop: 10,
+                                    marginBottom: 0,
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                <strong>Benefits include:</strong> cheaper PBS prescriptions, bulk-billed GP visits where available, lower co-payments, plus state-based concessions on utilities, public transport, and council rates.
+                                <br />
+                                <br />
+                                <strong>Renewal status:</strong> As an existing card holder, the threshold is 125% of the standard limit ({baseLimitFormatted} × 1.25 = {renewalLimitFormatted}).
+                            </Paragraph>
+                        </Card>
+                    </Space>
+                </Card>
+            ) : (
+                <Card bodyStyle={{ padding: '24px' }} style={{ borderRadius: 16, borderColor: '#e8e8e8' }}>
+                    {viewMode === 'Graph' ? (
+                        <>
+                            <Title level={4} style={{ textAlign: 'center', marginBottom: 24, fontWeight: 700, color: '#0f172a' }}>
+                                Age Pension Entitlement Assessment
+                            </Title>
+
+                            <div style={{ width: '100%', height: 360 }}>
+                                <ResponsiveContainer>
+                                    <BarChart data={assessment.graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="person" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => `$${val / 1000}K`} />
+                                        <Tooltip formatter={(val) => [formatCurrency(Number(val)), '']} />
+
+                                        {seriesVisibility.assetsTestPension && (
+                                            <Bar dataKey="assetsTestPension" name="Under Assets Test" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                        )}
+                                        {seriesVisibility.incomeTestPension && (
+                                            <Bar dataKey="incomeTestPension" name="Under Income Test" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                        )}
+                                        {seriesVisibility.maxPension && (
+                                            <Bar dataKey="maxPension" name="Maximum Pension" fill="#1e293b" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                        )}
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+                                <Button
+                                    size="small"
+                                    onClick={() => toggleSeries('assetsTestPension')}
+                                    style={{ borderRadius: 16, borderColor: '#22c55e', color: seriesVisibility.assetsTestPension ? '#16a34a' : '#94a3b8' }}
+                                >
+                                    ● Under Assets Test
+                                </Button>
+
+                                <Button
+                                    size="small"
+                                    onClick={() => toggleSeries('incomeTestPension')}
+                                    style={{ borderRadius: 16, borderColor: '#8b5cf6', color: seriesVisibility.incomeTestPension ? '#7c3aed' : '#94a3b8' }}
+                                >
+                                    ● Under Income Test
+                                </Button>
+
+                                <Button
+                                    size="small"
+                                    onClick={() => toggleSeries('maxPension')}
+                                    style={{ borderRadius: 16, borderColor: '#1e293b', color: seriesVisibility.maxPension ? '#0f172a' : '#94a3b8' }}
+                                >
+                                    ● Maximum Pension
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <Title level={5} style={{ color: '#16a34a', letterSpacing: '0.5px', marginBottom: 16, textTransform: 'uppercase', fontSize: 12 }}>
+                                MEANS TEST BREAKDOWN
+                            </Title>
+
+                            {/* Means Test Toggle */}
+                            <div style={{ marginBottom: 20 }}>
+                                <Segmented
+                                    value={meansTestTab}
+                                    onChange={setMeansTestTab}
+                                    options={[
+                                        { label: 'Assets Test', value: 'Assets Test', icon: '🏝️' },
+                                        { label: 'Income Test', value: 'Income Test', icon: '💰' },
+                                    ]}
+                                    style={{ backgroundColor: '#f0f0f0', borderRadius: 8 }}
+                                />
+                            </div>
+
+                            {/* Table Breakdown Container */}
+                            <DynamicDataTable
+                                columns={columns}
+                                data={currentTableData}
+                                headerFontSize={13}
+                                bodyFontSize={13}
+                                showCount={false}
+                                size="middle"
+                                tableProps={{
+                                    pagination: false,
+                                    scroll: { x: 'max-content' },
+                                }}
+                                tableStyle={{ borderRadius: 12 }}
+                            />
+                        </>
+                    )}
+
+                    <div style={{ marginTop: 20, textAlign: 'left' }}>
+                        <Text type="secondary" style={{ fontSize: 11, letterSpacing: '0.5px' }}>
+                            CALCULATED · ANNUAL VALUES IN AUD · FY 2025–26 RATES · CLIENT {clientAge} · PARTNER {partnerAge || '—'}
+                        </Text>
+                    </div>
+                </Card>
+            )}
+
 
             {/* Edit Modal Context */}
             <AppModal
