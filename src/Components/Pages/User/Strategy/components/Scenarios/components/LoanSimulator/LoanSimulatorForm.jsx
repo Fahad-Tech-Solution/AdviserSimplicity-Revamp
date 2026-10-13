@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Col, Form, message, Row, Select, Space, Typography } from "antd";
-import { useAtomValue, useSetAtom } from "jotai";
+import { Button, Col, Form, message, Row, Space, Typography } from "antd";
+import { useAtom } from "jotai";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
-import { discoveryDataAtom } from "../../../../../../../../store/authState.js";
+import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
-import { useOwnerOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
 
 const { Text } = Typography;
@@ -29,6 +28,8 @@ const LOAN_TYPE_OPTIONS = [
     { label: "Principal & Interest", value: "Principal & Interest" },
     { label: "Interest Only", value: "Interest Only" },
 ];
+
+const EMPTY_SECTION_DATA = {};
 
 function parseCurrencyValue(value) {
     if (value === null || value === undefined || value === "") return undefined;
@@ -55,6 +56,14 @@ function formatNumericInput(value, { currency = false } = {}) {
     return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
 }
 
+function formatPercentValue(value) {
+    const rawValue = String(getChangedValue(value) ?? "").replace(/[^0-9.-]/g, "");
+    if (!rawValue || rawValue === "." || rawValue === "-") return "";
+    const numeric = Number(rawValue);
+    if (!Number.isFinite(numeric)) return "";
+    return `${Math.min(Math.max(numeric, 0), 100)}%`;
+}
+
 function SectionTitle({ children }) {
     return (
         <Text
@@ -74,92 +83,58 @@ function SectionTitle({ children }) {
     );
 }
 
-function buildInitialPerson(person = {}) {
-    return {
-        name: person?.name || "",
-        loanAmount: formatCurrencyValue(person?.loanAmount ?? 500),
-        interestRate: person?.interestRate ?? "10.00",
-        termYears: person?.termYears ?? "25",
-        paymentFrequency: person?.paymentFrequency || "Weekly",
-        loanType: person?.loanType || "Principal & Interest",
-
-        extraRepayments: formatCurrencyValue(person?.extraRepayments ?? 1000),
-        offsetBalance: formatCurrencyValue(person?.offsetBalance ?? 1000),
-        surplusCash: formatCurrencyValue(person?.surplusCash ?? 1000),
-    };
-}
-
-function buildInitialValues(sectionData, allowPartner) {
-    const rawOwner = Array.isArray(sectionData?.owner) ? sectionData.owner : ["client", "partner"];
-    const owner = allowPartner
-        ? rawOwner
-        : rawOwner.filter((value) => value === "client");
+function buildInitialValues(sectionData) {
+    const loanSetup = sectionData?.loanSetup || {};
+    const extrasAndOffsets = sectionData?.extrasAndOffsets || {};
 
     return {
-        owner,
-        client: buildInitialPerson(sectionData?.client),
-        partner: buildInitialPerson(sectionData?.partner),
+        loanSetup: {
+            homeLoanTotal: formatCurrencyValue(loanSetup?.homeLoanTotal ?? ""),
+            interestRate: loanSetup?.interestRate === "" || loanSetup?.interestRate == null
+                ? ""
+                : formatPercentValue(loanSetup.interestRate),
+            termYears: loanSetup?.termYears ?? "",
+            paymentFrequency: loanSetup?.paymentFrequency || "Monthly",
+            loanType: loanSetup?.loanType || "Principal & Interest",
+        },
+        extrasAndOffsets: {
+            extraRepayments: formatCurrencyValue(extrasAndOffsets?.extraRepayments ?? ""),
+            offsetAccountBalance: formatCurrencyValue(extrasAndOffsets?.offsetAccountBalance ?? ""),
+            surplusCash: formatCurrencyValue(extrasAndOffsets?.surplusCash ?? ""),
+        },
     };
 }
 
 export default function LoanSimulatorForm({ modalData }) {
     const [form] = Form.useForm();
-    const ownerOptions = useOwnerOptions();
-    const [editing, setEditing] = useState(false);
+    const [isEditingEnabled, setIsEditingEnabled] = useState(false);
     const [saving, setSaving] = useState(false);
     const { post, patch } = useApi();
 
-    const discoveryData = useAtomValue(discoveryDataAtom);
-    const setDiscoveryData = useSetAtom(discoveryDataAtom);
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
 
-    const sectionData = discoveryData?.[modalData?.key || "loanSimulator"] || {};
-    const allowPartner = !["Single", "Widowed"].includes(
-        discoveryData?.personalDetails?.client?.clientMaritalStatus,
-    );
-
-    const availableOwnerOptions = useMemo(
-        () =>
-            allowPartner
-                ? ownerOptions
-                : ownerOptions.filter((option) => option.value === "client"),
-        [allowPartner, ownerOptions],
-    );
+    const sectionData = selectedReviewAllData?.[modalData?.key || "loanSimulatorDetails"] || EMPTY_SECTION_DATA;
+    const editing = !sectionData?._id || isEditingEnabled;
 
     const initialValues = useMemo(
-        () => buildInitialValues(sectionData, allowPartner),
-        [allowPartner, sectionData],
+        () => buildInitialValues(sectionData),
+        [sectionData],
     );
 
-    const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
+    const loanSetupValues = Form.useWatch("loanSetup", form) || initialValues.loanSetup;
+    const extrasValues = Form.useWatch("extrasAndOffsets", form) || initialValues.extrasAndOffsets;
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
-        setEditing(!sectionData?._id);
-    }, [form, initialValues, sectionData?._id]);
-
-    useEffect(() => {
-        if (!allowPartner && selectedOwners?.includes("partner")) {
-            form.setFieldValue(
-                "owner",
-                selectedOwners.filter((owner) => owner === "client"),
-            );
-        }
-    }, [allowPartner, form, selectedOwners]);
+    }, [form, initialValues]);
 
     // Section 1: Loan Setup Table Columns
     const LOAN_SETUP_COLUMNS = [
         {
-            title: "Owner",
-            key: "ownerLabel",
-            dataIndex: "ownerLabel",
-            editable: false,
-            width: 90,
-        },
-        {
-            title: "Loan Amount ($)",
-            dataIndex: "loanAmount",
-            key: "loanAmount",
-            field: "loanAmount",
+            title: "Home Loan Total ($)",
+            dataIndex: "homeLoanTotal",
+            key: "homeLoanTotal",
+            field: "homeLoanTotal",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
@@ -176,6 +151,12 @@ export default function LoanSimulatorForm({ modalData }) {
             field: "interestRate",
             type: "text",
             placeholder: "0.00",
+            onChange: (value, record, column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, column.field],
+                    formatPercentValue(value),
+                );
+            },
         },
         {
             title: "Term (years)",
@@ -214,13 +195,6 @@ export default function LoanSimulatorForm({ modalData }) {
     // Section 2: Extras & Offsets Table Columns
     const EXTRAS_OFFSETS_COLUMNS = [
         {
-            title: "Owner",
-            key: "ownerLabel",
-            dataIndex: "ownerLabel",
-            editable: false,
-            width: 90,
-        },
-        {
             title: "Extra Repayments ($ per period)",
             dataIndex: "extraRepayments",
             key: "extraRepayments",
@@ -236,9 +210,9 @@ export default function LoanSimulatorForm({ modalData }) {
         },
         {
             title: "Offset Account Balance ($)",
-            dataIndex: "offsetBalance",
-            key: "offsetBalance",
-            field: "offsetBalance",
+            dataIndex: "offsetAccountBalance",
+            key: "offsetAccountBalance",
+            field: "offsetAccountBalance",
             type: "text",
             placeholder: "$0",
             onChange: (value, record, column, currentForm) => {
@@ -264,54 +238,57 @@ export default function LoanSimulatorForm({ modalData }) {
         },
     ];
 
-    // Prepare row mapping for dynamic form binding
-    const rows = useMemo(
-        () =>
-            (selectedOwners || [])
-                .filter((owner) => allowPartner || owner === "client")
-                .map((owner) => ({
-                    key: owner,
-                    formPath: owner,
-                    ownerLabel:
-                        availableOwnerOptions.find((option) => option.value === owner)
-                            ?.label || owner,
-                    name: form.getFieldValue([owner, "name"]),
-                    loanAmount: form.getFieldValue([owner, "loanAmount"]),
-                    interestRate: form.getFieldValue([owner, "interestRate"]),
-                    termYears: form.getFieldValue([owner, "termYears"]),
-                    paymentFrequency: form.getFieldValue([owner, "paymentFrequency"]),
-                    loanType: form.getFieldValue([owner, "loanType"]),
+    // Row definitions for dynamic table binding
+    const loanSetupRows = useMemo(() => [{
+        key: "loanSetup",
+        formPath: "loanSetup",
+        ...loanSetupValues,
+    }], [loanSetupValues]);
 
-                    extraRepayments: form.getFieldValue([owner, "extraRepayments"]),
-                    offsetBalance: form.getFieldValue([owner, "offsetBalance"]),
-                    surplusCash: form.getFieldValue([owner, "surplusCash"]),
-                })),
-        [allowPartner, availableOwnerOptions, form, selectedOwners],
-    );
+    const extrasRows = useMemo(() => [{
+        key: "extrasAndOffsets",
+        formPath: "extrasAndOffsets",
+        ...extrasValues,
+    }], [extrasValues]);
 
     const handleFinish = async (values) => {
-        const formValues = form.getFieldsValue(true);
-        const payload = {
-            ...sectionData,
-            owner: formValues.owner,
-            client: formValues.client,
-            partner: allowPartner ? formValues.partner : {},
-        };
-
         try {
             setSaving(true);
-            const saved = sectionData?._id
-                ? await patch("/loanSimulator/Update", payload)
-                : await post("/loanSimulator/Add", payload);
+            const payload = {
+                ...(sectionData?._id ? { _id: sectionData._id } : {}),
+                scenarioFK: selectedReviewAllData?.scenario?._id || sectionData?.scenarioFK || "",
+                loanSetup: {
+                    homeLoanTotal: values.loanSetup?.homeLoanTotal ?? "",
+                    interestRate: values.loanSetup?.interestRate?.replace("%", "").trim() ?? "",
+                    termYears: values.loanSetup?.termYears
+                        ? Number(parseDigitsValue(values.loanSetup.termYears))
+                        : "",
+                    paymentFrequency: values.loanSetup?.paymentFrequency ?? "",
+                    loanType: values.loanSetup?.loanType ?? "",
+                },
+                extrasAndOffsets: {
+                    extraRepayments: values.extrasAndOffsets?.extraRepayments ?? "",
+                    offsetAccountBalance: values.extrasAndOffsets?.offsetAccountBalance ?? "",
+                    surplusCash: values.extrasAndOffsets?.surplusCash ?? "",
+                },
+            };
 
-            setDiscoveryData((prev) => ({
+            const saved = sectionData?._id
+                ? await patch("/review/loanSimulator/Update", payload)
+                : await post("/review/loanSimulator/Add", payload);
+
+            const savedData = saved?.data?.data || saved?.data || saved || payload;
+
+            setSelectedReviewAllData((prev) => ({
                 ...(prev && typeof prev === "object" ? prev : {}),
-                [modalData?.key || "loanSimulator"]: saved || payload,
+                [modalData?.key || "loanSimulatorDetails"]: savedData,
             }));
 
             message.success(`Loan details ${sectionData?._id ? "updated" : "saved"} successfully`);
+            setIsEditingEnabled(false);
             modalData?.closeModal?.();
         } catch (error) {
+            console.error("Error saving loan details:", error);
             message.error(error?.response?.data?.message || "Failed to save loan details");
         } finally {
             setSaving(false);
@@ -335,24 +312,6 @@ export default function LoanSimulatorForm({ modalData }) {
                 requiredMark={false}
             >
                 <Row gutter={[16, 8]}>
-                    {/* Owner Selector */}
-                    <Col xs={24} md={8}>
-                        <Form.Item
-                            label="Owner"
-                            name="owner"
-                            style={{ marginBottom: 8 }}
-                            rules={[{ required: true, message: "Owner is required" }]}
-                        >
-                            <Select
-                                options={availableOwnerOptions}
-                                mode="multiple"
-                                placeholder="Select owner"
-                                style={{ width: "100%" }}
-                                disabled={!editing}
-                            />
-                        </Form.Item>
-                    </Col>
-
                     {/* Section 1: LOAN SETUP */}
                     <Col xs={24}>
                         <SectionTitle>LOAN SETUP</SectionTitle>
@@ -360,7 +319,7 @@ export default function LoanSimulatorForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={LOAN_SETUP_COLUMNS}
-                            data={rows}
+                            data={loanSetupRows}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -372,7 +331,7 @@ export default function LoanSimulatorForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={EXTRAS_OFFSETS_COLUMNS}
-                            data={rows}
+                            data={extrasRows}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -395,8 +354,9 @@ export default function LoanSimulatorForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="button"
+                                        key={"edit"}
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
-                                        onClick={() => setEditing(true)}
+                                        onClick={() => setIsEditingEnabled(true)}
                                     >
                                         Edit <RiEdit2Fill />
                                     </Button>
@@ -404,6 +364,7 @@ export default function LoanSimulatorForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="submit"
+                                        key={"submit"}
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
                                         loading={saving}
                                         disabled={saving}
