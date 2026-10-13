@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Button, InputNumber, Space, message, Spin } from 'antd';
 import {
     EditOutlined,
@@ -15,6 +15,23 @@ import { RateReferenceObject } from '../../../../store/authState';
 import { useAtom } from 'jotai';
 import TaxRates from './TaxRates/TaxRates';
 
+const DEFAULT_EXPECTED_RETURNS = {
+    Cash: '3.0',
+    Conservative: '3.8',
+    ModeratelyConservative: '4.5',
+    Balanced: '5.0',
+    Growth: '6.0',
+    HighGrowth: '6.5'
+};
+
+const getExpectedReturns = (expectedReturn = {}) =>
+    Object.fromEntries(
+        Object.entries(DEFAULT_EXPECTED_RETURNS).map(([key, defaultValue]) => [
+            key,
+            expectedReturn[key] ?? defaultValue
+        ])
+    );
+
 const RateReference = () => {
 
     let [rateReference, setRateReference] = useAtom(RateReferenceObject);
@@ -22,31 +39,9 @@ const RateReference = () => {
     let [modalOpen, setModalOpen] = useState(false);
     let [modalData, setModalData] = useState({});
     let { get, patch } = useApi();
-    // Initial state for Investment Returns so they can be edited and reset
-    const defaultInvestmentReturns = useMemo(() => {
-        if (rateReference && rateReference.investmentReturns) {
-            return {
-                cash: rateReference.investmentReturns.cash,
-                conservative: rateReference.investmentReturns.conservative,
-                moderatelyConservative: rateReference.investmentReturns.moderatelyConservative,
-                balanced: rateReference.investmentReturns.balanced,
-                growth: rateReference.investmentReturns.growth,
-                highGrowth: rateReference.investmentReturns.highGrowth
-            };
-        } else {
-            return {
-                cash: 3.0,
-                conservative: 3.8,
-                moderatelyConservative: 4.5,
-                balanced: 5.0,
-                growth: 6.0,
-                highGrowth: 6.5
-            };
-        }
-
-    }, [rateReference]);
-
-    const [investmentReturns, setInvestmentReturns] = useState(defaultInvestmentReturns);
+    const initialExpectedReturns = getExpectedReturns(rateReference?.expectedReturn);
+    const [investmentReturns, setInvestmentReturns] = useState(initialExpectedReturns);
+    const [isSavingReturns, setIsSavingReturns] = useState(false);
 
     const renderTitleBlock = useTitleBlock({
         titleStyle: { fontFamily: 'Georgia, serif' },
@@ -55,34 +50,69 @@ const RateReference = () => {
     const handleReturnChange = (key, value) => {
         setInvestmentReturns((prev) => ({
             ...prev,
-            [key]: value
+            [key]: value === null || value === undefined ? '' : String(value)
         }));
     };
 
+    const hasInvalidExpectedReturn = Object.keys(DEFAULT_EXPECTED_RETURNS).some(
+        (key) => investmentReturns[key] === '' || !Number.isFinite(Number(investmentReturns[key]))
+    );
+    const hasExpectedReturnChanges = Object.keys(DEFAULT_EXPECTED_RETURNS).some(
+        (key) =>
+            investmentReturns[key] === '' ||
+            Number(investmentReturns[key]) !== Number(initialExpectedReturns[key])
+    );
+
     const handleResetDefaults = () => {
-        setInvestmentReturns(defaultInvestmentReturns);
+        setInvestmentReturns({ ...DEFAULT_EXPECTED_RETURNS });
+    };
+
+    const handleSaveExpectedReturns = async () => {
+        if (hasInvalidExpectedReturn) return;
+        const expectedReturn = Object.fromEntries(
+            Object.keys(DEFAULT_EXPECTED_RETURNS).map((key) => [
+                key,
+                Number(investmentReturns[key]).toFixed(1)
+            ])
+        );
+        setIsSavingReturns(true);
+        try {
+            await patch(`/reviewRateReference/Update`, {
+                ...rateReference,
+                expectedReturn
+            });
+            setRateReference((prev) => ({
+                ...prev,
+                expectedReturn
+            }));
+            message.success('Expected returns updated successfully.');
+        } catch (error) {
+            console.error('Error updating expected returns:', error);
+            message.error('Failed to update expected returns. Please try again later.');
+        } finally {
+            setIsSavingReturns(false);
+        }
     };
 
     useEffect(() => {
-        FetchInvestmentReturns();
-    }, []);
-
-    const FetchInvestmentReturns = async () => {
-        setIsLoading(true);
-        try {
-            const response = await get(`/reviewRateReference`);
-            if (response && response.data) {
-                console.log('Fetched investment returns:', response.data);
-                setRateReference(response.data);
+        const fetchInvestmentReturns = async () => {
+            setIsLoading(true);
+            try {
+                const response = await get(`/reviewRateReference`);
+                if (response && response.data) {
+                    setRateReference(response.data);
+                    setInvestmentReturns(getExpectedReturns(response.data.expectedReturn));
+                }
+            } catch (error) {
+                console.error('Error fetching investment returns:', error);
+                message.error('Failed to fetch investment returns. Please try again later.');
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching investment returns:', error);
-            message.error('Failed to fetch investment returns. Please try again later.');
-        }
-        finally {
-            setIsLoading(false);
-        }
-    };
+        };
+
+        fetchInvestmentReturns();
+    }, [get, setRateReference]);
 
     const RateReferenceSave = async (updateValues) => {
         // setIsLoading(true);
@@ -107,6 +137,35 @@ const RateReference = () => {
         } catch (error) {
             console.error('Error patching rate reference:', error);
             message.error('Failed to update rate reference. Please try again later.');
+        }
+        finally {
+            // setIsLoading(false);
+        }
+    };
+
+    const TaxRateSave = async (updateValues) => {
+        // setIsLoading(true);
+        try {
+            const response = await patch(`/reviewRateReference/Update`, {
+                ...rateReference,
+                taxRatesSchema: {
+                    ...updateValues
+                }
+            });
+            if (response && response.data) {
+                console.log('Patch all details:', response.data);
+                setRateReference(prev => ({
+                    ...prev,
+                    taxRatesSchema: {
+                        ...updateValues
+                    }
+                }));
+                setModalOpen(false);
+
+            }
+        } catch (error) {
+            console.error('Error patching rate reference:', error);
+            message.error('Failed to update rate reference. Please try again later. pm307626 ');
         }
         finally {
             // setIsLoading(false);
@@ -152,9 +211,9 @@ const RateReference = () => {
                 )}
                 {modalData.Key === "TaxRates" && (
                     <TaxRates
-                        initialValue={rateReference?.rateReference || {}}
+                        initialValue={rateReference?.taxRatesSchema || {}}
                         onClose={() => setModalOpen(false)}
-                        onSave={RateReferenceSave}
+                        onSave={TaxRateSave}
                     />
                 )}
             </AppModal>
@@ -301,14 +360,25 @@ const RateReference = () => {
                             Investment Returns by Risk Profile
                         </span>
                     </div>
-                    <Button
-                        icon={<ReloadOutlined />}
-                        size="small"
-                        onClick={handleResetDefaults}
-                        style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}
-                    >
-                        Reset to defaults
-                    </Button>
+                    {hasExpectedReturnChanges == false ?
+                        (<Button
+                            icon={<ReloadOutlined />}
+                            onClick={handleResetDefaults}
+                            style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}
+                        >
+                            Reset to defaults
+                        </Button>)
+                        :
+                        (
+                            <Button
+                                type="primary"
+                                loading={isSavingReturns}
+                                disabled={hasInvalidExpectedReturn}
+                                onClick={handleSaveExpectedReturns}
+                            >
+                                Submit
+                            </Button>
+                        )}
                 </div>
 
                 <SectionHeader title="EXPECTED RETURN P.A. (AFTER FEES, USED ACROSS PROJECTIONS)" />
@@ -316,42 +386,42 @@ const RateReference = () => {
                 <EditableRow
                     label="Cash"
                     defaultValue="Default 3.00%"
-                    value={investmentReturns.cash}
-                    onChange={(val) => handleReturnChange('cash', val)}
+                    value={investmentReturns.Cash}
+                    onChange={(val) => handleReturnChange('Cash', val)}
                 />
                 <EditableRow
                     label="Conservative"
                     defaultValue="Default 3.80%"
-                    value={investmentReturns.conservative}
-                    onChange={(val) => handleReturnChange('conservative', val)}
+                    value={investmentReturns.Conservative}
+                    onChange={(val) => handleReturnChange('Conservative', val)}
                 />
                 <EditableRow
                     label="Moderately Conservative"
                     defaultValue="Default 4.50%"
-                    value={investmentReturns.moderatelyConservative}
-                    onChange={(val) => handleReturnChange('moderatelyConservative', val)}
+                    value={investmentReturns.ModeratelyConservative}
+                    onChange={(val) => handleReturnChange('ModeratelyConservative', val)}
                 />
                 <EditableRow
                     label="Balanced"
                     defaultValue="Default 5.00%"
-                    value={investmentReturns.balanced}
-                    onChange={(val) => handleReturnChange('balanced', val)}
+                    value={investmentReturns.Balanced}
+                    onChange={(val) => handleReturnChange('Balanced', val)}
                 />
                 <EditableRow
                     label="Growth"
                     defaultValue="Default 6.00%"
-                    value={investmentReturns.growth}
-                    onChange={(val) => handleReturnChange('growth', val)}
+                    value={investmentReturns.Growth}
+                    onChange={(val) => handleReturnChange('Growth', val)}
                 />
                 <EditableRow
                     label="High Growth"
                     defaultValue="Default 6.50%"
-                    value={investmentReturns.highGrowth}
-                    onChange={(val) => handleReturnChange('highGrowth', val)}
+                    value={investmentReturns.HighGrowth}
+                    onChange={(val) => handleReturnChange('HighGrowth', val)}
                 />
 
                 <div style={{ marginTop: 20, fontSize: 11, color: '#94a3b8' }}>
-                    Values are saved automatically and used as the default investment return wherever a risk profile drives a projection. Edit any cell to override; click <strong>Reset to defaults</strong> to revert.
+                    Values are used as the default investment return wherever a risk profile drives a projection. Submit changes to save them; use <strong>Reset to defaults</strong> to restore the defaults.
                 </div>
             </Card>
 
@@ -423,10 +493,11 @@ const EditableRow = ({ label, defaultValue, value, onChange }) => (
                     step={0.1}
                     value={value}
                     onChange={onChange}
-                    precision={2}
+                    precision={1}
+                    formatter={(inputValue) => inputValue === null || inputValue === undefined || inputValue === '' ? '' : `${inputValue}%`}
+                    parser={(inputValue) => inputValue?.replace('%', '') ?? ''}
                     style={{ width: 75, borderRadius: 6, textAlign: 'right' }}
                 />
-                <span style={{ fontSize: 12, color: '#64748b' }}>%</span>
             </div>
         </div>
     </div>

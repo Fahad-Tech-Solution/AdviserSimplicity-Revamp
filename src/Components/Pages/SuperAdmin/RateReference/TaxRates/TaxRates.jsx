@@ -4,6 +4,43 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
+const formatGroupedInputValue = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+const formatCurrencyInput = (value) => {
+    const formattedValue = formatGroupedInputValue(value);
+    return formattedValue ? `$${formattedValue}` : '';
+};
+
+const formatPercentageInput = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    const percentage = Number(value) * 100;
+    return Number.isFinite(percentage)
+        ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(percentage)}%`
+        : '';
+};
+
+const parseCurrencyInput = (value) => value?.replace(/[$,\s]/g, '') ?? '';
+
+const parsePercentageInput = (value) => {
+    const rawValue = value?.replace(/[%,\s]/g, '');
+    if (!rawValue) return '';
+    const numericValue = Number(rawValue);
+    return Number.isFinite(numericValue) ? numericValue / 100 : '';
+};
+
+const currencyInputProps = {
+    formatter: formatCurrencyInput,
+    parser: parseCurrencyInput,
+};
+
+const percentageInputProps = {
+    formatter: formatPercentageInput,
+    parser: parsePercentageInput,
+};
+
 // Helper to strip currency/percentage formatting and convert strings like "$23,365" or "0.1" to numbers
 const parseNumber = (val) => {
     if (typeof val === 'number') return val;
@@ -146,42 +183,41 @@ const TaxRates = ({ initialValue, onClose, onSave }) => {
                                 <Row gutter={8} style={{ fontWeight: 700, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>
                                     <Col span={6}>Min ($)</Col>
                                     <Col span={6}>Max ($, blank=∞)</Col>
-                                    <Col span={5}>Rate (e.g. 0.30)</Col>
-                                    <Col span={5}>Base Tax ($)</Col>
-                                    <Col span={2}></Col>
+                                    <Col span={6}>Rate (%)</Col>
+                                    <Col span={6}>Base Tax ($)</Col>
                                 </Row>
 
                                 {fields.map(({ key, name, ...restField }) => (
                                     <Row gutter={8} key={key} align="middle">
                                         <Col span={6}>
                                             <Form.Item {...restField} name={[name, 'min']} style={{ marginBottom: 0 }}>
-                                                <InputNumber style={{ width: '100%' }} step={1} />
+                                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} />
                                             </Form.Item>
                                         </Col>
                                         <Col span={6}>
                                             <Form.Item {...restField} name={[name, 'max']} style={{ marginBottom: 0 }}>
-                                                <InputNumber placeholder="∞" style={{ width: '100%' }} step={1} />
+                                                <InputNumber {...currencyInputProps} placeholder="∞" style={{ width: '100%' }} step={1} />
                                             </Form.Item>
                                         </Col>
-                                        <Col span={5}>
+                                        <Col span={6}>
                                             <Form.Item {...restField} name={[name, 'rate']} style={{ marginBottom: 0 }}>
-                                                <InputNumber style={{ width: '100%' }} step={0.01} precision={4} />
+                                                <InputNumber  style={{ width: '100%' }} step={0.01} precision={4} />
                                             </Form.Item>
                                         </Col>
-                                        <Col span={5}>
+                                        <Col span={6}>
                                             <Form.Item {...restField} name={[name, 'baseTax']} style={{ marginBottom: 0 }}>
-                                                <InputNumber style={{ width: '100%' }} step={1} />
+                                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} />
                                             </Form.Item>
                                         </Col>
-                                        <Col span={2} style={{ textAlign: 'center' }}>
+                                        {/* <Col span={2} style={{ textAlign: 'center' }}>
                                             <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(name)} />
-                                        </Col>
+                                        </Col> */}
                                     </Row>
                                 ))}
 
-                                <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} style={{ marginTop: '4px' }}>
+                                {/* <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} style={{ marginTop: '4px' }}>
                                     Add Bracket
-                                </Button>
+                                </Button> */}
                             </div>
                         )}
                     </Form.List>
@@ -195,10 +231,10 @@ const TaxRates = ({ initialValue, onClose, onSave }) => {
                         Medicare Levy
                     </Title>
                     <Row gutter={12}>
-                        <Col span={6}><Form.Item label="Exempt below ($)" name="medicare-low"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Full rate above ($)" name="medicare-full"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Shade-in rate (e.g. 0.10)" name="medicare-reduced-rate"><InputNumber style={{ width: '100%' }} step={0.01} precision={4} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Full rate (e.g. 0.02)" name="medicare-full-rate"><InputNumber style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Exempt below ($)" name="medicare-low"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Full rate above ($)" name="medicare-full"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Shade-in rate (%)" name="medicare-reduced-rate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.01} precision={4} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Full rate (%)" name="medicare-full-rate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -208,12 +244,12 @@ const TaxRates = ({ initialValue, onClose, onSave }) => {
                         Low Income Tax Offset (LITO)
                     </Title>
                     <Row gutter={12}>
-                        <Col span={8}><Form.Item label="Max offset ($)" name="lito-max"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Full at or below ($)" name="lito-full-thresh"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Band 1 ends at ($)" name="lito-band1-end"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Band 1 taper (e.g. 0.05)" name="lito-band1-rate"><InputNumber style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Phases out at ($)" name="lito-taper-end"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Band 2 taper (e.g. 0.015)" name="lito-band2-rate"><InputNumber style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Max offset ($)" name="lito-max"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Full at or below ($)" name="lito-full-thresh"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Band 1 ends at ($)" name="lito-band1-end"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Band 1 taper (%)" name="lito-band1-rate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Phases out at ($)" name="lito-taper-end"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Band 2 taper (%)" name="lito-band2-rate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -223,9 +259,9 @@ const TaxRates = ({ initialValue, onClose, onSave }) => {
                         SAPTO — Single
                     </Title>
                     <Row gutter={12}>
-                        <Col span={8}><Form.Item label="Max offset ($)" name="sapto-single-max"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Full below ($)" name="sapto-single-lower"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Nil above ($)" name="sapto-single-upper"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Max offset ($)" name="sapto-single-max"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Full below ($)" name="sapto-single-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Nil above ($)" name="sapto-single-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -235,10 +271,10 @@ const TaxRates = ({ initialValue, onClose, onSave }) => {
                         SAPTO — Couple (each)
                     </Title>
                     <Row gutter={12}>
-                        <Col span={6}><Form.Item label="Max offset ($)" name="sapto-couple-max"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Full below ($)" name="sapto-couple-lower"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Nil above ($)" name="sapto-couple-upper"><InputNumber style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Taper rate (e.g. 0.125)" name="sapto-taper"><InputNumber style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Max offset ($)" name="sapto-couple-max"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Full below ($)" name="sapto-couple-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Nil above ($)" name="sapto-couple-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Taper rate (%)" name="sapto-taper"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.001} precision={4} /></Form.Item></Col>
                     </Row>
                 </div>
 

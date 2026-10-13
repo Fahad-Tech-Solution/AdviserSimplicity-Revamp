@@ -3,6 +3,33 @@ import { Form, InputNumber, Button, Alert, Divider, Typography, Row, Col, messag
 
 const { Title, Text } = Typography;
 
+const formatGroupedInputValue = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+const formatCurrencyInput = (value) => {
+    const formattedValue = formatGroupedInputValue(value);
+    return formattedValue ? `$${formattedValue}` : '';
+};
+
+const formatPercentageInput = (value) => {
+    const formattedValue = formatGroupedInputValue(value);
+    return formattedValue ? `${formattedValue}%` : '';
+};
+
+const parseFormattedInput = (value) => value?.replace(/[$,%\s]/g, '') ?? '';
+
+const currencyInputProps = {
+    formatter: formatCurrencyInput,
+    parser: parseFormattedInput,
+};
+
+const percentageInputProps = {
+    formatter: formatPercentageInput,
+    parser: parseFormattedInput,
+};
+
 // Helper to strip currency/percent formatting and convert strings like "$1,300,000" or "1.25%" to numbers
 const parseNumber = (val) => {
     if (typeof val === 'number') return val;
@@ -200,12 +227,12 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         <Col span={10}><Text style={{ fontSize: '0.85rem' }}>Basis Payment</Text></Col>
                         <Col span={7}>
                             <Form.Item name="bp-client" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
                         <Col span={7}>
                             <Form.Item name="bp-partner" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
 
@@ -213,12 +240,12 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         <Col span={10}><Text style={{ fontSize: '0.85rem' }}>Pharmaceutical Benefit</Text></Col>
                         <Col span={7}>
                             <Form.Item name="pb-client" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
                         <Col span={7}>
                             <Form.Item name="pb-partner" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
 
@@ -226,12 +253,12 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         <Col span={10}><Text style={{ fontSize: '0.85rem' }}>Clean Energy Supplement</Text></Col>
                         <Col span={7}>
                             <Form.Item name="ce-client" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
                         <Col span={7}>
                             <Form.Item name="ce-partner" style={{ marginBottom: 0 }}>
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.01} precision={2} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.01} precision={2} />
                             </Form.Item>
                         </Col>
 
@@ -239,8 +266,9 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         <Col span={10}><Text strong style={{ color: '#006d77' }}>Total Full Pension ($/fn)</Text></Col>
                         <Col span={7}>
                             <InputNumber
+                                {...currencyInputProps}
                                 value={clientTotal}
-                                prefix="$"
+
                                 readOnly
                                 precision={2}
                                 style={{ width: '100%', background: '#f0faf1', fontWeight: 700, color: '#006d77' }}
@@ -248,8 +276,9 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         </Col>
                         <Col span={7}>
                             <InputNumber
+                                {...currencyInputProps}
                                 value={partnerTotal}
-                                prefix="$"
+
                                 readOnly
                                 precision={2}
                                 style={{ width: '100%', background: '#f0faf1', fontWeight: 700, color: '#006d77' }}
@@ -266,10 +295,10 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Assets Test Thresholds — Homeowner ($)
                     </Title>
                     <Row gutter={12}>
-                        <Col span={6}><Form.Item label="Client Lower" name="ath-client-lower"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Client Upper" name="ath-client-upper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Partner Lower" name="ath-partner-lower"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Partner Upper" name="ath-partner-upper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Client Lower" name="ath-client-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Client Upper" name="ath-client-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Partner Lower" name="ath-partner-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Partner Upper" name="ath-partner-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -279,10 +308,10 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Assets Test Thresholds — Non-Homeowner ($)
                     </Title>
                     <Row gutter={12}>
-                        <Col span={6}><Form.Item label="Client Lower" name="atnh-client-lower"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Client Upper" name="atnh-client-upper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Partner Lower" name="atnh-partner-lower"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Partner Upper" name="atnh-partner-upper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Client Lower" name="atnh-client-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Client Upper" name="atnh-client-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Partner Lower" name="atnh-partner-lower"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Partner Upper" name="atnh-partner-upper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -295,8 +324,8 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Each partner is paid the <strong>single</strong> rate, so the cut-off is higher than an ordinary couple. Free areas are the couple lower thresholds above.
                     </Text>
                     <Row gutter={12}>
-                        <Col span={12}><Form.Item label="Homeowner Upper" name="is-homeownerUpper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={12}><Form.Item label="Non-Homeowner Upper" name="is-nonHomeownerUpper"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Homeowner Upper" name="is-homeownerUpper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Non-Homeowner Upper" name="is-nonHomeownerUpper"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -306,8 +335,8 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Income Test Free Areas ($/fn)
                     </Title>
                     <Row gutter={12}>
-                        <Col span={12}><Form.Item label="Client ($/fn)" name="itfa-client"><InputNumber prefix="$" style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={12}><Form.Item label="Partner Combined ($/fn)" name="itfa-partner"><InputNumber prefix="$" style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Client ($/fn)" name="itfa-client"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Partner Combined ($/fn)" name="itfa-partner"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -320,9 +349,9 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Fortnightly income at which the pension reduces to $0.
                     </Text>
                     <Row gutter={12}>
-                        <Col span={8}><Form.Item label="Client" name="itco-client"><InputNumber prefix="$" style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Partner" name="itco-partner"><InputNumber prefix="$" style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Illness-sep. (combined)" name="itco-illnessSeparatedCombined"><InputNumber prefix="$" style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Client" name="itco-client"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Partner" name="itco-partner"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Illness-sep. (combined)" name="itco-illnessSeparatedCombined"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.10} precision={2} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -332,10 +361,10 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Deeming
                     </Title>
                     <Row gutter={12}>
-                        <Col span={6}><Form.Item label="Client Threshold ($)" name="dr-clientThreshold"><InputNumber prefix="$" style={{ width: '100%' }} step={100} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Partner Threshold ($)" name="dr-partnerThreshold"><InputNumber prefix="$" style={{ width: '100%' }} step={100} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Lower Rate (%)" name="dr-lowerRate"><InputNumber suffix="%" style={{ width: '100%' }} step={0.01} precision={2} /></Form.Item></Col>
-                        <Col span={6}><Form.Item label="Upper Rate (%)" name="dr-upperRate"><InputNumber suffix="%" style={{ width: '100%' }} step={0.01} precision={2} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Client Threshold ($)" name="dr-clientThreshold"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={100} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Partner Threshold ($)" name="dr-partnerThreshold"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={100} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Lower Rate (%)" name="dr-lowerRate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.01} precision={2} /></Form.Item></Col>
+                        <Col span={6}><Form.Item label="Upper Rate (%)" name="dr-upperRate"><InputNumber {...percentageInputProps} style={{ width: '100%' }} step={0.01} precision={2} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -347,7 +376,7 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                     <Row gutter={12}>
                         <Col span={8}>
                             <Form.Item label="Reduction ($ per $1,000/fn)" name="at-reductionRate">
-                                <InputNumber prefix="$" style={{ width: '100%' }} step={0.5} />
+                                <InputNumber {...currencyInputProps} style={{ width: '100%' }} step={0.5} />
                             </Form.Item>
                         </Col>
                     </Row>
@@ -362,8 +391,8 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Annual limits used by the Super Projections and contribution calculators.
                     </Text>
                     <Row gutter={12}>
-                        <Col span={12}><Form.Item label="Concessional Cap ($)" name="cc-concessionalCap"><InputNumber prefix="$" style={{ width: '100%' }} step={500} /></Form.Item></Col>
-                        <Col span={12}><Form.Item label="Non-Concessional Cap ($)" name="cc-nonConcessionalCap"><InputNumber prefix="$" style={{ width: '100%' }} step={1000} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Concessional Cap ($)" name="cc-concessionalCap"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={500} /></Form.Item></Col>
+                        <Col span={12}><Form.Item label="Non-Concessional Cap ($)" name="cc-nonConcessionalCap"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1000} /></Form.Item></Col>
                     </Row>
                 </div>
 
@@ -376,9 +405,9 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
                         Per-week income limits — multiplied by 8 to give the 8-week threshold the LIHCC uses.
                     </Text>
                     <Row gutter={12}>
-                        <Col span={8}><Form.Item label="Client ($/week)" name="lihcc-clientPerWeek"><InputNumber prefix="$" style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Partner Combined ($/week)" name="lihcc-partnerCombinedPerWeek"><InputNumber prefix="$" style={{ width: '100%' }} step={1} /></Form.Item></Col>
-                        <Col span={8}><Form.Item label="Per dependent child ($/week)" name="lihcc-perDependentChildPerWeek"><InputNumber prefix="$" style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Client ($/week)" name="lihcc-clientPerWeek"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Partner Combined ($/week)" name="lihcc-partnerCombinedPerWeek"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
+                        <Col span={8}><Form.Item label="Per dependent child ($/week)" name="lihcc-perDependentChildPerWeek"><InputNumber {...currencyInputProps} style={{ width: '100%' }} step={1} /></Form.Item></Col>
                     </Row>
                 </div>
 
