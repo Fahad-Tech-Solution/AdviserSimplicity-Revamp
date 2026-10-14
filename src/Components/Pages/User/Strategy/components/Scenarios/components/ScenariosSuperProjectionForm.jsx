@@ -113,15 +113,15 @@ function buildInitialPerson(person = {}) {
         riskGoal: person?.riskGoal || "Balanced",
 
         contributionType: person?.contributionType || "",
-        sgcPercent: person?.sgcPercent ?? "",
+        sgcPercent: formatPercentValue(person?.sgcPercent),
         sgcAmount: formatCurrencyValue(person?.sgcAmount),
         maxConcessional: formatCurrencyValue(person?.maxConcessional),
         ssPersonalConcessional: formatCurrencyValue(person?.ssPersonalConcessional),
         nonConcessional: formatCurrencyValue(person?.nonConcessional),
         lumpSumNcc: formatCurrencyValue(person?.lumpSumNcc),
 
-        investmentReturn: person?.investmentReturn ?? "",
-        salaryGrowth: person?.salaryGrowth ?? "",
+        investmentReturn: formatPercentValue(person?.investmentReturn),
+        salaryGrowth: formatPercentValue(person?.salaryGrowth),
         projectionPeriod: person?.projectionPeriod ?? "",
         insurancePremium: formatCurrencyValue(person?.insurancePremium),
         premiumIndexation: person?.premiumIndexation ?? "",

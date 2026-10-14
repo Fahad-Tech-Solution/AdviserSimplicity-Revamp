@@ -45,44 +45,51 @@ export default function DynamicDataTable({
   const totalPages = Math.max(1, Math.ceil(computedTotal / pageSize));
 
   const resolvedColumns = useMemo(
-    () =>
-      (columns || []).map((col) => {
-        const userOnCell = col.onCell;
-        const userOnHeaderCell = col.onHeaderCell;
-        const shouldEllipsis = Boolean(col.ellipsis);
+    () => {
+      const resolveColumns = (sourceColumns) =>
+        (sourceColumns || []).map((col) => {
+          const userOnCell = col.onCell;
+          const userOnHeaderCell = col.onHeaderCell;
+          const shouldEllipsis = Boolean(col.ellipsis);
 
-        return {
-          ...col,
-          ellipsis: shouldEllipsis,
-          onCell: (record, rowIndex) => {
-            const userCellProps = userOnCell?.(record, rowIndex) || {};
+          return {
+            ...col,
+            ellipsis: shouldEllipsis,
+            ...(Array.isArray(col.children)
+              ? { children: resolveColumns(col.children) }
+              : {}),
+            onCell: (record, rowIndex) => {
+              const userCellProps = userOnCell?.(record, rowIndex) || {};
 
-            return {
-              ...userCellProps,
-              style: {
-                wordBreak: shouldEllipsis ? "normal" : "break-word",
-                overflowWrap: shouldEllipsis ? "normal" : "anywhere",
-                whiteSpace: shouldEllipsis ? "nowrap" : "normal",
-                ...userCellProps.style,
-              },
-            };
-          },
-          onHeaderCell: (column) => {
-            const userHeaderProps = userOnHeaderCell?.(column) || {};
+              return {
+                ...userCellProps,
+                style: {
+                  wordBreak: shouldEllipsis ? "normal" : "break-word",
+                  overflowWrap: shouldEllipsis ? "normal" : "anywhere",
+                  whiteSpace: shouldEllipsis ? "nowrap" : "normal",
+                  ...userCellProps.style,
+                },
+              };
+            },
+            onHeaderCell: (column) => {
+              const userHeaderProps = userOnHeaderCell?.(column) || {};
 
-            return {
-              ...userHeaderProps,
-              style: {
-                background: primaryColor,
-                color: "#fff",
-                fontWeight: 600,
-                borderInlineColor: "#ffffff",
-                ...userHeaderProps.style,
-              },
-            };
-          },
-        };
-      }),
+              return {
+                ...userHeaderProps,
+                style: {
+                  background: primaryColor,
+                  color: "#fff",
+                  fontWeight: 600,
+                  borderInlineColor: "#ffffff",
+                  ...userHeaderProps.style,
+                },
+              };
+            },
+          };
+        });
+
+      return resolveColumns(columns);
+    },
     [columns, primaryColor],
   );
 

@@ -1,11 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Col, Form, Input, message, Row, Space, Tabs, Typography } from "antd";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
 import { RiEdit2Fill } from "react-icons/ri";
-import { discoveryDataAtom } from "../../../../../../../../store/authState.js";
+import {
+    RateReferenceObject,
+    SelectedClient,
+    SelectedReviewAllData,
+} from "../../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
+import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData.js";
+import {
+    calculateInsuranceNeeds,
+    formatInsuranceMoney,
+    getAgeFromDob,
+} from "./insuranceNeedsCalculations.js";
 
 const { Text } = Typography;
 
@@ -18,16 +28,35 @@ const TABLE_PROPS = {
     bodyFontSize: 12,
 };
 
-function parseCurrencyValue(value) {
-    if (value === null || value === undefined || value === "") return undefined;
-    const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
-    return Number.isFinite(numeric) ? numeric : undefined;
-}
+const COVER_TYPES = [
+    { key: "life", label: "Life" },
+    { key: "tpd", label: "TPD" },
+    { key: "trauma", label: "Trauma" },
+];
 
-function formatCurrencyValue(value) {
-    const numeric = parseCurrencyValue(value);
-    return numeric !== undefined ? toCommaAndDollar(numeric) : "";
-}
+const YEARS_OPTIONS = [
+    ...Array.from({ length: 40 }, (_, index) => {
+        const value = String(index + 1);
+        return { label: value, value };
+    }),
+];
+
+const WAITING_PERIOD_OPTIONS = [
+    "14 days",
+    "30 days",
+    "60 days",
+    "90 days",
+    "180 days",
+    "1 year",
+].map((value) => ({ label: value, value }));
+
+const BENEFIT_PERIOD_OPTIONS = [
+    "2 years",
+    "5 years",
+    "To age 60",
+    "To age 65",
+    "To age 70",
+].map((value) => ({ label: value, value }));
 
 function parseDigitsValue(value) {
     return String(value ?? "").replace(/[^0-9]/g, "");
@@ -37,10 +66,44 @@ function getChangedValue(value) {
     return value?.target?.value ?? value;
 }
 
+function formatPercentValue(value) {
+    const rawValue = String(getChangedValue(value) ?? "").replace(/[^0-9.-]/g, "");
+    if (!rawValue || rawValue === "." || rawValue === "-") return "";
+    const numeric = Number(rawValue);
+    if (!Number.isFinite(numeric)) return "";
+    return `${Math.min(Math.max(numeric, 0), 100)}%`;
+}
+
 function formatNumericInput(value, { currency = false } = {}) {
     const digits = parseDigitsValue(getChangedValue(value));
     if (!digits) return "";
     return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
+}
+
+function formatCurrencyField(value, record, column, currentForm) {
+    currentForm.setFieldValue(
+        [...record.formPath, column.field],
+        formatNumericInput(value, { currency: true }),
+    );
+}
+
+function formatPercentField(value, record, column, currentForm) {
+    currentForm.setFieldValue(
+        [...record.formPath, column.field],
+        formatPercentValue(value),
+    );
+}
+
+function formatAssumptionPercent(value, form, fieldName) {
+    form.setFieldValue(fieldName, formatPercentValue(value));
+}
+
+function formatCurrencyValues(record, fields) {
+    fields.forEach((field) => {
+        if (record[field] !== "" && record[field] !== null && record[field] !== undefined) {
+            record[field] = formatNumericInput(record[field], { currency: true });
+        }
+    });
 }
 
 function SectionTitle({ children }) {
@@ -62,116 +125,287 @@ function SectionTitle({ children }) {
     );
 }
 
-function buildInitialProfile() {
-    return {
+function buildInitialProfile(profile = {}) {
+    const initialProfile = {
         assumptions: {
-            investmentReturn: "5",
-            inflation: "2.5",
+            investmentReturn: profile?.assumptions?.investmentReturn ?? "5",
+            inflation: profile?.assumptions?.inflation ?? "2.5",
         },
-        existingCover: [
-            {
-                key: "1",
-                name: "sadawd",
-                lifeCover: "$1,000,000",
-                lifePremium: "$1,200",
-                tpdCover: "$1,000,000",
-                tpdPremium: "$1,500",
-                traumaCover: "$100,000",
-                traumaPremium: "$1,200",
-                ipCover: "$3,600",
-                ipPremium: "$4,500",
-                totalPremium: "$8,400",
-            },
-        ],
-        lumpsumNeeds: [
-            { key: "1", coverType: "Life", homeMortgage: "$50", investmentLoans: "$0", personalLoans: "$0", creditCards: "$0", funeral: "$30,000", medical: "$0", emergencyFunds: "$0", capitalNeeds: "$0", other: "$0" },
-            { key: "2", coverType: "TPD", homeMortgage: "$50", investmentLoans: "$0", personalLoans: "$0", creditCards: "$0", funeral: "$0", medical: "$100,000", emergencyFunds: "$0", capitalNeeds: "$50,000", other: "$0" },
-            { key: "3", coverType: "Trauma", homeMortgage: "$0", investmentLoans: "$0", personalLoans: "$0", creditCards: "$0", funeral: "$0", medical: "$100,000", emergencyFunds: "$0", capitalNeeds: "$0", other: "$0" },
-        ],
-        incomeReplacement: [
-            { key: "1", grossIncome: "$12", currentNetIncome: "$12", life: "$12", lifeYears: "39", tpd: "$12", tpdYears: "34", taxTpdInSuper: true, trauma: "$12", traumaYears: "2" },
-        ],
-        incomeProtection: [
-            { key: "1", annualIncome: "$12", pctIncome: "70", pctSuper: "12", waitingPeriod: "30 days", benefitPeriod: "To age 65", incomeBenefitCovered: "$1/mo", ipIncomeBenefit: "$8/yr", superContributionsCover: "$0/mo", netMonthlyAfterTax: "$1/mo" },
-        ],
-        realisableAssets: [
-            { key: "1", coverType: "Life", superannuation: "$120", cash: "$0", investmentProperties: "$0", sharePortfolio: "$0", otherAssets: "$0" },
-            { key: "2", coverType: "TPD", superannuation: "$120", cash: "$0", investmentProperties: "$0", sharePortfolio: "$0", otherAssets: "$0" },
-            { key: "3", coverType: "Trauma", superannuation: "$0", cash: "$0", investmentProperties: "$0", sharePortfolio: "$0", otherAssets: "$0" },
-        ],
+        existingCover: {
+            name: "",
+            lifeCover: "",
+            lifePremium: "",
+            tpdCover: "",
+            tpdPremium: "",
+            traumaCover: "",
+            traumaPremium: "",
+            ipMonthlyCover: "",
+            ipPremium: "",
+            totalPremium: "",
+            ...profile?.existingCover,
+        },
+        lumpSumNeeds: Object.fromEntries(
+            COVER_TYPES.map(({ key }) => [
+                key,
+                {
+                    homeMortgage: "",
+                    investmentLoans: "",
+                    personalLoans: "",
+                    creditCards: "",
+                    funeral: "",
+                    medical: "",
+                    emergencyFunds: "",
+                    capitalNeeds: "",
+                    other: "",
+                    ...profile?.lumpSumNeeds?.[key],
+                },
+            ]),
+        ),
+        incomeReplacement: {
+            grossIncome: "",
+            currentNetIncomeAfterTax: "",
+            lifeAmount: "",
+            lifeYears: "",
+            tpdAmount: "",
+            tpdYears: "",
+            taxTpdInSuper: false,
+            traumaAmount: "",
+            traumaYears: "",
+            ...profile?.incomeReplacement,
+        },
+        incomeProtectionDetails: {
+            annualIncome: "",
+            percentIncome: "70",
+            percentSuper: "12",
+            waitingPeriod: "30 days",
+            benefitPeriod: "To age 65",
+            incomeBenefitCovered: "",
+            ipIncomeBenefitAnnual: "",
+            superContributionsCover: "",
+            netMonthlyAfterTax: "",
+            ...profile?.incomeProtectionDetails,
+        },
+        realisableAssets: Object.fromEntries(
+            COVER_TYPES.map(({ key }) => [
+                key,
+                {
+                    superannuation: "",
+                    cash: "",
+                    investmentProperties: "",
+                    sharePortfolio: "",
+                    otherRealisableAssets: "",
+                    ...profile?.realisableAssets?.[key],
+                },
+            ]),
+        ),
     };
+
+    initialProfile.assumptions.investmentReturn = formatPercentValue(
+        initialProfile.assumptions.investmentReturn,
+    );
+    initialProfile.assumptions.inflation = formatPercentValue(
+        initialProfile.assumptions.inflation,
+    );
+    formatCurrencyValues(initialProfile.existingCover, [
+        "lifeCover",
+        "lifePremium",
+        "tpdCover",
+        "tpdPremium",
+        "traumaCover",
+        "traumaPremium",
+        "ipMonthlyCover",
+        "ipPremium",
+        "totalPremium",
+    ]);
+    formatCurrencyValues(initialProfile.incomeReplacement, [
+        "grossIncome",
+        "currentNetIncomeAfterTax",
+        "lifeAmount",
+        "tpdAmount",
+        "traumaAmount",
+    ]);
+    formatCurrencyValues(initialProfile.incomeProtectionDetails, [
+        "annualIncome",
+        "incomeBenefitCovered",
+        "ipIncomeBenefitAnnual",
+        "superContributionsCover",
+        "netMonthlyAfterTax",
+    ]);
+    COVER_TYPES.forEach(({ key }) => {
+        formatCurrencyValues(initialProfile.lumpSumNeeds[key], [
+            "homeMortgage",
+            "investmentLoans",
+            "personalLoans",
+            "creditCards",
+            "funeral",
+            "medical",
+            "emergencyFunds",
+            "capitalNeeds",
+            "other",
+        ]);
+        formatCurrencyValues(initialProfile.realisableAssets[key], [
+            "superannuation",
+            "cash",
+            "investmentProperties",
+            "sharePortfolio",
+            "otherRealisableAssets",
+        ]);
+    });
+    initialProfile.incomeProtectionDetails.percentIncome = formatPercentValue(
+        initialProfile.incomeProtectionDetails.percentIncome,
+    );
+    initialProfile.incomeProtectionDetails.percentSuper = formatPercentValue(
+        initialProfile.incomeProtectionDetails.percentSuper,
+    );
+
+    return initialProfile;
 }
 
 export default function InsuranceNeedsForm({ modalData }) {
+    const getReviewName = useGetReviewName();
     const [form] = Form.useForm();
     const [activeProfileTab, setActiveProfileTab] = useState("client");
-    const [editing, setEditing] = useState(false);
+    const [isEditingEnabled, setIsEditingEnabled] = useState(false);
     const [saving, setSaving] = useState(false);
-    const { post, patch } = useApi();
-
-    const discoveryData = useAtomValue(discoveryDataAtom);
-    const setDiscoveryData = useSetAtom(discoveryDataAtom);
-
-    const sectionData = discoveryData?.[modalData?.key || "insuranceNeeds"] || {};
-    const allowPartner = !["Single", "Widowed"].includes(
-        discoveryData?.personalDetails?.client?.clientMaritalStatus,
+    const { patch } = useApi();
+    const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const selectedClient = useAtomValue(SelectedClient);
+    const rateReference = useAtomValue(RateReferenceObject);
+    const taxRatesSchema = rateReference?.taxRatesSchema;
+    const sectionData = useMemo(
+        () =>
+            selectedReviewAllData?.insuranceNeedsDetails ??
+            (typeof selectedReviewAllData?.insuranceNeeds === "object"
+                ? selectedReviewAllData.insuranceNeeds
+                : {}),
+        [selectedReviewAllData],
+    );
+    const editing = !sectionData?._id || isEditingEnabled;
+    const maritalStatus =
+        selectedReviewAllData?.personalDetails?.client?.clientMaritalStatus ||
+        selectedClient?.client?.clientMaritalStatus ||
+        "";
+    const allowPartner = !["single", "widowed"].includes(
+        String(maritalStatus).toLowerCase(),
     );
 
     const initialValues = useMemo(() => {
         return {
-            client: sectionData?.client || buildInitialProfile(),
-            partner: sectionData?.partner || buildInitialProfile(),
+            client: buildInitialProfile(sectionData?.client),
+            partner: buildInitialProfile(sectionData?.partner),
         };
     }, [sectionData]);
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
-        setEditing(!sectionData?._id);
-    }, [form, initialValues, sectionData?._id]);
+    }, [form, initialValues]);
+
+    const currentProfileData =
+        Form.useWatch(activeProfileTab, form) || initialValues[activeProfileTab];
+    const currentProfileAge = getAgeFromDob(
+        selectedReviewAllData?.personalDetails?.[activeProfileTab]?.DOB,
+    );
+    const currentCalculation = useMemo(
+        () => calculateInsuranceNeeds(currentProfileData, currentProfileAge, taxRatesSchema),
+        [currentProfileData, currentProfileAge, taxRatesSchema],
+    );
 
     // Section 1: Existing Cover & Premiums
     const EXISTING_COVER_COLUMNS = [
-        { title: "Name", dataIndex: "name", key: "name", field: "name", type: "text" },
-        { title: "Life Cover ($)", dataIndex: "lifeCover", key: "lifeCover", field: "lifeCover", type: "text" },
-        { title: "Life Premium ($/yr)", dataIndex: "lifePremium", key: "lifePremium", field: "lifePremium", type: "text" },
-        { title: "TPD Cover ($)", dataIndex: "tpdCover", key: "tpdCover", field: "tpdCover", type: "text" },
-        { title: "TPD Premium ($/yr)", dataIndex: "tpdPremium", key: "tpdPremium", field: "tpdPremium", type: "text" },
-        { title: "Trauma Cover ($)", dataIndex: "traumaCover", key: "traumaCover", field: "traumaCover", type: "text" },
-        { title: "Trauma Premium ($/yr)", dataIndex: "traumaPremium", key: "traumaPremium", field: "traumaPremium", type: "text" },
-        { title: "IP ($/mo)", dataIndex: "ipCover", key: "ipCover", field: "ipCover", type: "text" },
-        { title: "IP Premium ($/yr)", dataIndex: "ipPremium", key: "ipPremium", field: "ipPremium", type: "text" },
-        { title: "Total Premium ($/yr)", dataIndex: "totalPremium", key: "totalPremium", field: "totalPremium", editable: false },
+        {
+            title: "Name",
+            key: "name",
+            dataIndex: "name",
+            editable: false,
+            width: 90,
+            renderView: () => (
+                <span style={{ fontWeight: 600 }}>{getReviewName(activeProfileTab)}</span>
+            ),
+        },
+        {
+            title: "Life",
+            key: "life",
+            children: [
+                { title: "Cover ($)", dataIndex: "lifeCover", key: "lifeCover", field: "lifeCover", type: "text", onChange: formatCurrencyField },
+                { title: "Premium ($/yr)", dataIndex: "lifePremium", key: "lifePremium", field: "lifePremium", type: "text", onChange: formatCurrencyField },
+            ],
+        },
+        {
+            title: "TPD",
+            key: "tpd",
+            children: [
+                { title: "Cover ($)", dataIndex: "tpdCover", key: "tpdCover", field: "tpdCover", type: "text", onChange: formatCurrencyField },
+                { title: "Premium ($/yr)", dataIndex: "tpdPremium", key: "tpdPremium", field: "tpdPremium", type: "text", onChange: formatCurrencyField },
+            ],
+        },
+        {
+            title: "Trauma",
+            key: "trauma",
+            children: [
+                { title: "Cover ($)", dataIndex: "traumaCover", key: "traumaCover", field: "traumaCover", type: "text", onChange: formatCurrencyField },
+                { title: "Premium ($/yr)", dataIndex: "traumaPremium", key: "traumaPremium", field: "traumaPremium", type: "text", onChange: formatCurrencyField },
+            ],
+        },
+        {
+            title: "IP",
+            key: "ip",
+            children: [
+                { title: "$/mo", dataIndex: "ipMonthlyCover", key: "ipMonthlyCover", field: "ipMonthlyCover", type: "text", onChange: formatCurrencyField },
+                { title: "Premium ($/yr)", dataIndex: "ipPremium", key: "ipPremium", field: "ipPremium", type: "text", onChange: formatCurrencyField },
+            ],
+        },
+        {
+            title: "Total Premium ($/yr)",
+            key: "totalPremium",
+            dataIndex: "totalPremium",
+            type: "text",
+            disabled: true,
+            renderEdit: () => (
+                <Text>{formatInsuranceMoney(
+                    ["lifePremium", "tpdPremium", "traumaPremium", "ipPremium"]
+                        .reduce((total, field) => total + Number(
+                            String(currentProfileData?.existingCover?.[field] ?? "")
+                                .replace(/[^0-9.-]/g, ""),
+                        ) || 0, 0),
+                )}</Text>
+            ),
+        },
     ];
 
     // Section 2: Lumpsum Needs
     const LUMPSUM_NEEDS_COLUMNS = [
         { title: "Cover Type", dataIndex: "coverType", key: "coverType", editable: false, width: 100 },
-        { title: "Home Mortgage", dataIndex: "homeMortgage", key: "homeMortgage", field: "homeMortgage", type: "text" },
-        { title: "Investment Loans", dataIndex: "investmentLoans", key: "investmentLoans", field: "investmentLoans", type: "text" },
-        { title: "Personal Loans", dataIndex: "personalLoans", key: "personalLoans", field: "personalLoans", type: "text" },
-        { title: "Credit Cards", dataIndex: "creditCards", key: "creditCards", field: "creditCards", type: "text" },
-        { title: "Funeral", dataIndex: "funeral", key: "funeral", field: "funeral", type: "text" },
-        { title: "Medical", dataIndex: "medical", key: "medical", field: "medical", type: "text" },
-        { title: "Emergency Funds", dataIndex: "emergencyFunds", key: "emergencyFunds", field: "emergencyFunds", type: "text" },
-        { title: "Capital Needs", dataIndex: "capitalNeeds", key: "capitalNeeds", field: "capitalNeeds", type: "text" },
-        { title: "Other", dataIndex: "other", key: "other", field: "other", type: "text" },
+        { title: "Home Mortgage", dataIndex: "homeMortgage", key: "homeMortgage", field: "homeMortgage", type: "text", onChange: formatCurrencyField },
+        { title: "Investment Loans", dataIndex: "investmentLoans", key: "investmentLoans", field: "investmentLoans", type: "text", onChange: formatCurrencyField },
+        { title: "Personal Loans", dataIndex: "personalLoans", key: "personalLoans", field: "personalLoans", type: "text", onChange: formatCurrencyField },
+        { title: "Credit Cards", dataIndex: "creditCards", key: "creditCards", field: "creditCards", type: "text", onChange: formatCurrencyField },
+        { title: "Funeral", dataIndex: "funeral", key: "funeral", field: "funeral", type: "text", onChange: formatCurrencyField },
+        { title: "Medical", dataIndex: "medical", key: "medical", field: "medical", type: "text", onChange: formatCurrencyField },
+        { title: "Emergency Funds", dataIndex: "emergencyFunds", key: "emergencyFunds", field: "emergencyFunds", type: "text", onChange: formatCurrencyField },
+        { title: "Capital Needs", dataIndex: "capitalNeeds", key: "capitalNeeds", field: "capitalNeeds", type: "text", onChange: formatCurrencyField },
+        { title: "Other", dataIndex: "other", key: "other", field: "other", type: "text", onChange: formatCurrencyField },
     ];
 
     // Section 3: Income Replacement
     const INCOME_REPLACEMENT_COLUMNS = [
-        { title: "Gross Income (p.a.)", dataIndex: "grossIncome", key: "grossIncome", field: "grossIncome", type: "text" },
-        { title: "Current Net Income After Tax (p.a.) (computed)", dataIndex: "currentNetIncome", key: "currentNetIncome", editable: false },
-        { title: "Life", dataIndex: "life", key: "life", field: "life", type: "text" },
-        { title: "Years", dataIndex: "lifeYears", key: "lifeYears", field: "lifeYears", type: "text" },
-        { title: "TPD", dataIndex: "tpd", key: "tpd", field: "tpd", type: "text" },
-        { title: "Years", dataIndex: "tpdYears", key: "tpdYears", field: "tpdYears", type: "text" },
+        { title: "Gross Income (p.a.)", dataIndex: "grossIncome", key: "grossIncome", field: "grossIncome", type: "text", onChange: formatCurrencyField },
+        {
+            title: "Current Net Income After Tax (p.a.) (computed)", dataIndex: "currentNetIncomeAfterTax", key: "currentNetIncomeAfterTax", type: "text",
+            disabled: true,
+            renderEdit: () => <Text>{currentCalculation.computedFields.currentNetIncomeAfterTax}</Text>,
+        },
+        { title: "Life", dataIndex: "lifeAmount", key: "lifeAmount", field: "lifeAmount", type: "text", onChange: formatCurrencyField },
+        { title: "Years", dataIndex: "lifeYears", key: "lifeYears", field: "lifeYears", type: "select", options: YEARS_OPTIONS },
+        { title: "TPD", dataIndex: "tpdAmount", key: "tpdAmount", field: "tpdAmount", type: "text", onChange: formatCurrencyField },
+        { title: "Years", dataIndex: "tpdYears", key: "tpdYears", field: "tpdYears", type: "select", options: YEARS_OPTIONS },
         {
             title: "Tax TPD in Super",
             dataIndex: "taxTpdInSuper",
             key: "taxTpdInSuper",
-            render: (text, record, index) => (
+            type: "checkbox",
+            renderEdit: ({ record }) => (
                 <Form.Item
-                    name={[activeProfileTab, "incomeReplacement", index, "taxTpdInSuper"]}
+                    name={[...record.formPath, "taxTpdInSuper"]}
                     valuePropName="checked"
                     style={{ margin: 0 }}
                 >
@@ -179,65 +413,151 @@ export default function InsuranceNeedsForm({ modalData }) {
                 </Form.Item>
             ),
         },
-        { title: "Trauma", dataIndex: "trauma", key: "trauma", field: "trauma", type: "text" },
-        { title: "Years", dataIndex: "traumaYears", key: "traumaYears", field: "traumaYears", type: "text" },
+        { title: "Trauma", dataIndex: "traumaAmount", key: "traumaAmount", field: "traumaAmount", type: "text", onChange: formatCurrencyField },
+        { title: "Years", dataIndex: "traumaYears", key: "traumaYears", field: "traumaYears", type: "select", options: YEARS_OPTIONS },
     ];
 
     // Section 4: Income Protection Details
     const INCOME_PROTECTION_COLUMNS = [
-        { title: "Annual Income ($)", dataIndex: "annualIncome", key: "annualIncome", field: "annualIncome", type: "text" },
-        { title: "% Income", dataIndex: "pctIncome", key: "pctIncome", field: "pctIncome", type: "text" },
-        { title: "% Super", dataIndex: "pctSuper", key: "pctSuper", field: "pctSuper", type: "text" },
-        { title: "Waiting Period", dataIndex: "waitingPeriod", key: "waitingPeriod", field: "waitingPeriod", type: "text" },
-        { title: "Benefit Period", dataIndex: "benefitPeriod", key: "benefitPeriod", field: "benefitPeriod", type: "text" },
-        { title: "Income Benefit Covered ($/mo) (computed)", dataIndex: "incomeBenefitCovered", key: "incomeBenefitCovered", editable: false },
-        { title: "IP Income Benefit (p.a.) (annual gross)", dataIndex: "ipIncomeBenefit", key: "ipIncomeBenefit", editable: false },
-        { title: "Super Contributions Cover ($/mo) (computed)", dataIndex: "superContributionsCover", key: "superContributionsCover", editable: false },
-        { title: "Net Monthly After Tax (IP income net)", dataIndex: "netMonthlyAfterTax", key: "netMonthlyAfterTax", editable: false },
+        { title: "Annual Income ($)", dataIndex: "annualIncome", key: "annualIncome", field: "annualIncome", type: "text", onChange: formatCurrencyField },
+        { title: "% Income", dataIndex: "percentIncome", key: "percentIncome", field: "percentIncome", type: "text", onChange: formatPercentField },
+        { title: "% Super", dataIndex: "percentSuper", key: "percentSuper", field: "percentSuper", type: "text", onChange: formatPercentField },
+        { title: "Waiting Period", dataIndex: "waitingPeriod", key: "waitingPeriod", field: "waitingPeriod", type: "select", options: WAITING_PERIOD_OPTIONS },
+        { title: "Benefit Period", dataIndex: "benefitPeriod", key: "benefitPeriod", field: "benefitPeriod", type: "select", options: BENEFIT_PERIOD_OPTIONS },
+
+        {
+            title: "Income Benefit Covered ($/mo) (computed)", dataIndex: "incomeBenefitCovered", key: "incomeBenefitCovered", type: "text",
+            disabled: true,
+            renderEdit: () => <Text>{currentCalculation.computedFields.incomeBenefitCovered}</Text>,
+        },
+        {
+            title: "IP Income Benefit (p.a.) (annual gross)", dataIndex: "ipIncomeBenefitAnnual", key: "ipIncomeBenefitAnnual", type: "text",
+            disabled: true,
+            renderEdit: () => <Text>{currentCalculation.computedFields.ipIncomeBenefitAnnual}</Text>,
+        },
+        {
+            title: "Super Contributions Cover ($/mo) (computed)", dataIndex: "superContributionsCover", key: "superContributionsCover", type: "text",
+            disabled: true,
+            renderEdit: () => <Text>{currentCalculation.computedFields.superContributionsCover}</Text>,
+        },
+        {
+            title: "Net Monthly After Tax (IP income net)", dataIndex: "netMonthlyAfterTax", key: "netMonthlyAfterTax", type: "text",
+            disabled: true,
+            renderEdit: () => <Text>{currentCalculation.computedFields.netMonthlyAfterTax}</Text>,
+        },
     ];
 
     // Section 5: Realisable Assets
     const REALISABLE_ASSETS_COLUMNS = [
         { title: "Cover Type", dataIndex: "coverType", key: "coverType", editable: false, width: 100 },
-        { title: "Superannuation", dataIndex: "superannuation", key: "superannuation", field: "superannuation", type: "text" },
-        { title: "Cash", dataIndex: "cash", key: "cash", field: "cash", type: "text" },
-        { title: "Investment Properties (equity)", dataIndex: "investmentProperties", key: "investmentProperties", field: "investmentProperties", type: "text" },
-        { title: "Share Portfolio / Managed Funds", dataIndex: "sharePortfolio", key: "sharePortfolio", field: "sharePortfolio", type: "text" },
-        { title: "Other Realisable Assets", dataIndex: "otherAssets", key: "otherAssets", field: "otherAssets", type: "text" },
+        { title: "Superannuation", dataIndex: "superannuation", key: "superannuation", field: "superannuation", type: "text", onChange: formatCurrencyField },
+        { title: "Cash", dataIndex: "cash", key: "cash", field: "cash", type: "text", onChange: formatCurrencyField },
+        { title: "Investment Properties (equity)", dataIndex: "investmentProperties", key: "investmentProperties", field: "investmentProperties", type: "text", onChange: formatCurrencyField },
+        { title: "Share Portfolio / Managed Funds", dataIndex: "sharePortfolio", key: "sharePortfolio", field: "sharePortfolio", type: "text", onChange: formatCurrencyField },
+        { title: "Other Realisable Assets", dataIndex: "otherRealisableAssets", key: "otherRealisableAssets", field: "otherRealisableAssets", type: "text", onChange: formatCurrencyField },
     ];
 
-    const currentProfileData = Form.useWatch(activeProfileTab, form) || initialValues[activeProfileTab];
+    const toNumericValue = (value) => {
+        if (value === "" || value === null || value === undefined) return "";
+        const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
+        return Number.isFinite(numeric) ? numeric : "";
+    };
+
+    const toPayloadProfile = (profile, personKey) => {
+        const normalized = buildInitialProfile(profile);
+        const profileAge = getAgeFromDob(
+            selectedReviewAllData?.personalDetails?.[personKey]?.DOB,
+        );
+        const calculated = calculateInsuranceNeeds(
+            profile,
+            profileAge,
+            taxRatesSchema,
+        );
+        const premiums = normalized.existingCover;
+        return {
+            ...normalized,
+            existingCover: {
+                ...premiums,
+                totalPremium: formatInsuranceMoney(
+                    ["lifePremium", "tpdPremium", "traumaPremium", "ipPremium"]
+                        .reduce(
+                            (total, field) =>
+                                total +
+                                Number(
+                                    String(premiums[field] ?? "").replace(/[^0-9.-]/g, ""),
+                                ),
+                            0,
+                        ),
+                ),
+            },
+            incomeReplacement: {
+                ...normalized.incomeReplacement,
+                currentNetIncomeAfterTax:
+                    calculated.computedFields.currentNetIncomeAfterTax,
+            },
+            assumptions: {
+                ...normalized.assumptions,
+                investmentReturn: toNumericValue(normalized.assumptions.investmentReturn),
+                inflation: toNumericValue(normalized.assumptions.inflation),
+            },
+            incomeProtectionDetails: {
+                ...normalized.incomeProtectionDetails,
+                percentIncome: toNumericValue(normalized.incomeProtectionDetails.percentIncome),
+                percentSuper: toNumericValue(normalized.incomeProtectionDetails.percentSuper),
+                incomeBenefitCovered: calculated.computedFields.incomeBenefitCovered,
+                ipIncomeBenefitAnnual: calculated.computedFields.ipIncomeBenefitAnnual,
+                superContributionsCover: calculated.computedFields.superContributionsCover,
+                netMonthlyAfterTax: calculated.computedFields.netMonthlyAfterTax,
+            },
+        };
+    };
 
     const handleFinish = async (values) => {
-        const payload = {
-            ...sectionData,
-            client: values.client,
-            partner: allowPartner ? values.partner : {},
-        };
-
         try {
             setSaving(true);
-            const saved = sectionData?._id
-                ? await patch("/insuranceNeeds/Update", payload)
-                : await post("/insuranceNeeds/Add", payload);
+            const scenarioFK =
+                selectedReviewAllData?.scenario?._id ||
+                sectionData?.scenarioFK ||
+                "";
+            if (!scenarioFK) {
+                message.error("Load a review scenario before saving insurance details.");
+                return;
+            }
 
-            setDiscoveryData((prev) => ({
-                ...(prev && typeof prev === "object" ? prev : {}),
-                [modalData?.key || "insuranceNeeds"]: saved || payload,
+            const payload = {
+                ...(sectionData?._id ? { _id: sectionData._id } : {}),
+                scenarioFK,
+                client: toPayloadProfile(values.client, "client"),
+                partner: allowPartner
+                    ? toPayloadProfile(values.partner, "partner")
+                    : {},
+            };
+            const saved = await patch("/review/insuranceNeeds/Update", payload);
+            const savedData = saved?.data?.data || saved?.data || saved || payload;
+
+            setSelectedReviewAllData((previous) => ({
+                ...(previous && typeof previous === "object" ? previous : {}),
+                insuranceNeedsDetails: savedData,
             }));
 
-            message.success(`Insurance details ${sectionData?._id ? "updated" : "saved"} successfully`);
+            message.success("Insurance details updated successfully");
+            setIsEditingEnabled(false);
             modalData?.closeModal?.();
         } catch (error) {
-            message.error(error?.response?.data?.message || "Failed to save insurance details");
+            console.error("Error updating insurance details:", error);
+            message.error(
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to save insurance details",
+            );
         } finally {
             setSaving(false);
         }
     };
 
     const tabItems = [
-        { key: "client", label: "Client" },
-        ...(allowPartner ? [{ key: "partner", label: "Partner" }] : []),
+        { key: "client", label: getReviewName("client") },
+        ...(allowPartner ? [{ key: "partner", label: getReviewName("partner") }] : []),
     ];
 
     return (
@@ -277,7 +597,17 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     name={[activeProfileTab, "assumptions", "investmentReturn"]}
                                     style={{ margin: 0 }}
                                 >
-                                    <Input disabled={!editing} style={{ width: 60, textAlign: "center" }} />
+                                    <Input
+                                        disabled={!editing}
+                                        onChange={(value) =>
+                                            formatAssumptionPercent(
+                                                value,
+                                                form,
+                                                [activeProfileTab, "assumptions", "investmentReturn"],
+                                            )
+                                        }
+                                        style={{ width: 70, textAlign: "center" }}
+                                    />
                                 </Form.Item>
                                 <Text style={{ fontSize: 13, color: "#6b7280" }}>% p.a.</Text>
                             </Space>
@@ -288,7 +618,17 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     name={[activeProfileTab, "assumptions", "inflation"]}
                                     style={{ margin: 0 }}
                                 >
-                                    <Input disabled={!editing} style={{ width: 60, textAlign: "center" }} />
+                                    <Input
+                                        disabled={!editing}
+                                        onChange={(value) =>
+                                            formatAssumptionPercent(
+                                                value,
+                                                form,
+                                                [activeProfileTab, "assumptions", "inflation"],
+                                            )
+                                        }
+                                        style={{ width: 70, textAlign: "center" }}
+                                    />
                                 </Form.Item>
                                 <Text style={{ fontSize: 13, color: "#6b7280" }}>% p.a.</Text>
                             </Space>
@@ -302,10 +642,23 @@ export default function InsuranceNeedsForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={EXISTING_COVER_COLUMNS}
-                            data={(currentProfileData?.existingCover || []).map((row) => ({
-                                ...row,
+                            data={[{
+                                ...currentProfileData?.existingCover,
+                                key: "existingCover",
+                                totalPremium: formatInsuranceMoney(
+                                    ["lifePremium", "tpdPremium", "traumaPremium", "ipPremium"]
+                                        .reduce(
+                                        (total, field) =>
+                                            total +
+                                            Number(
+                                                String(currentProfileData?.existingCover?.[field] ?? "")
+                                                    .replace(/[^0-9.-]/g, ""),
+                                            ),
+                                        0,
+                                        ),
+                                ),
                                 formPath: [activeProfileTab, "existingCover"],
-                            }))}
+                            }]}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -317,9 +670,11 @@ export default function InsuranceNeedsForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={LUMPSUM_NEEDS_COLUMNS}
-                            data={(currentProfileData?.lumpsumNeeds || []).map((row) => ({
-                                ...row,
-                                formPath: [activeProfileTab, "lumpsumNeeds"],
+                            data={COVER_TYPES.map(({ key, label }) => ({
+                                ...currentProfileData?.lumpSumNeeds?.[key],
+                                key,
+                                coverType: label,
+                                formPath: [activeProfileTab, "lumpSumNeeds", key],
                             }))}
                             tableProps={TABLE_PROPS}
                         />
@@ -332,10 +687,13 @@ export default function InsuranceNeedsForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={INCOME_REPLACEMENT_COLUMNS}
-                            data={(currentProfileData?.incomeReplacement || []).map((row) => ({
-                                ...row,
+                            data={[{
+                                ...currentProfileData?.incomeReplacement,
+                                currentNetIncomeAfterTax:
+                                    currentCalculation.computedFields.currentNetIncomeAfterTax,
+                                key: "incomeReplacement",
                                 formPath: [activeProfileTab, "incomeReplacement"],
-                            }))}
+                            }]}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -347,10 +705,12 @@ export default function InsuranceNeedsForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={INCOME_PROTECTION_COLUMNS}
-                            data={(currentProfileData?.incomeProtection || []).map((row) => ({
-                                ...row,
-                                formPath: [activeProfileTab, "incomeProtection"],
-                            }))}
+                            data={[{
+                                ...currentProfileData?.incomeProtectionDetails,
+                                ...currentCalculation.computedFields,
+                                key: "incomeProtectionDetails",
+                                formPath: [activeProfileTab, "incomeProtectionDetails"],
+                            }]}
                             tableProps={TABLE_PROPS}
                         />
                     </Col>
@@ -362,9 +722,11 @@ export default function InsuranceNeedsForm({ modalData }) {
                             form={form}
                             editing={editing}
                             columns={REALISABLE_ASSETS_COLUMNS}
-                            data={(currentProfileData?.realisableAssets || []).map((row) => ({
-                                ...row,
-                                formPath: [activeProfileTab, "realisableAssets"],
+                            data={COVER_TYPES.map(({ key, label }) => ({
+                                ...currentProfileData?.realisableAssets?.[key],
+                                key,
+                                coverType: label,
+                                formPath: [activeProfileTab, "realisableAssets", key],
                             }))}
                             tableProps={TABLE_PROPS}
                         />
@@ -386,8 +748,9 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="button"
+                                        key={"edit"}
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
-                                        onClick={() => setEditing(true)}
+                                        onClick={() => setIsEditingEnabled(true)}
                                     >
                                         Edit <RiEdit2Fill />
                                     </Button>
@@ -395,6 +758,7 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="submit"
+                                        key={"submit"}
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
                                         loading={saving}
                                         disabled={saving}

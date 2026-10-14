@@ -128,12 +128,33 @@ const buildMembersNode = (client = {}, partner = {}) => {
   );
 };
 
-/** Lowercase single string used for substring search across household, names, #, phones, emails. */
+function normalizeSearchText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getEmailSearchValues(record) {
+  if (!record || typeof record !== "object") return [];
+
+  return Object.entries(record)
+    .filter(([key]) => key.toLowerCase().includes("email"))
+    .map(([, value]) => value)
+    .filter((value) => value !== undefined && value !== null && value !== "");
+}
+
 function buildRowSearchHaystack(row) {
-  const client = row?.client || {};
-  const partner = row?.partner || {};
+  const client = row?.client ?? {};
+  const partner = row?.partner ?? {};
   const parts = [
-    row.household,
+    row?.household,
+    row?.no,
+    row?._id,
+    row?.assignID?.email,
+    ...getEmailSearchValues(row),
+    ...getEmailSearchValues(client),
+    ...getEmailSearchValues(partner),
     getClientLastName(client),
     client.clientTitle,
     client.clientGivenName,
@@ -141,39 +162,36 @@ function buildRowSearchHaystack(row) {
     client.clientLastName,
     client.clientPreferredName,
     getClientName(client),
-    String(client.clientAge ?? ""),
+    client.clientAge,
     partner.partnerTitle,
     partner.partnerGivenName,
     partner.partnerMiddleName,
     partner.partnerLastName,
     partner.partnerPreferredName,
     getPartnerName(partner),
-    String(partner.partnerAge ?? ""),
-    String(row.no ?? ""),
+    partner.partnerAge,
     getClientPhone(client),
     getPartnerPhone(partner),
     getClientEmail(client),
     getPartnerEmail(partner),
-    row.assignID?.email,
-    row._id ? String(row._id) : "",
+    getClientAddress(client),
+    getPartnerAddress(partner),
   ];
-  return parts
-    .filter((p) => p !== undefined && p !== null && p !== "")
-    .join(" ")
-    .toLowerCase();
+  return normalizeSearchText(parts.filter((part) => part !== "").join(" "));
 }
 
 function rowMatchesSearch(row, queryRaw) {
-  const q = String(queryRaw ?? "")
-    .trim()
-    .toLowerCase();
+  const q = normalizeSearchText(queryRaw).trim();
   if (!q) return true;
+
   const hay = buildRowSearchHaystack(row);
-  if (hay.includes(q)) return true;
+  const queryTerms = q.split(/\s+/);
+  if (queryTerms.every((term) => hay.includes(term))) return true;
+
   const digitsQuery = q.replace(/\D/g, "");
   if (digitsQuery.length >= 2) {
     const phones =
-      `${getClientPhone(row.client)} ${getPartnerPhone(row.partner)}`.replace(
+      `${getClientPhone(row?.client)} ${getPartnerPhone(row?.partner)}`.replace(
         /\D/g,
         "",
       );
@@ -906,14 +924,15 @@ const HouseholdTable = ({ onAction, searchText = "", viewMode = false }) => {
 
   const filteredTableData = useMemo(() => {
     const q = String(searchText ?? "").trim();
-    const baseData = !q ? tableData : tableData.filter((row) => rowMatchesSearch(row, q));
-
-    return baseData.filter((row) => {
+    const allTableData = tableData.filter((row) => {
       if (viewMode === true) {
         return row.softDelete === true;
       }
       return row.softDelete !== true;
-    }).map((row, index) => ({
+    })
+    const baseData = !q ? allTableData : allTableData.filter((row) => rowMatchesSearch(row, q));
+
+    return baseData.map((row, index) => ({
       ...row,
       no: index + 1,
     }));

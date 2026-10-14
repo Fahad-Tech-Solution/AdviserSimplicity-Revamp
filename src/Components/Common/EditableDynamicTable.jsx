@@ -109,8 +109,17 @@ export default function EditableDynamicTable({
   } = tableProps || {};
 
   const resolvedColumns = useMemo(
-    () =>
-      (columns || []).map((column) => {
+    () => {
+      const resolveColumns = (sourceColumns) =>
+        (sourceColumns || []).map((column) => {
+          if (Array.isArray(column.children)) {
+            return {
+              ...column,
+              key: column.key || column.title,
+              children: resolveColumns(column.children),
+            };
+          }
+
         const lockedWidthStyle = buildLockedWidthStyle(column.width);
 
         return {
@@ -247,7 +256,10 @@ export default function EditableDynamicTable({
             return formatCellValue(value, column, record);
           },
         };
-      }),
+        });
+
+      return resolveColumns(columns);
+    },
     [columns, editing, form, getFieldName, rowPathKey],
   );
 

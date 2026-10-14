@@ -165,7 +165,7 @@ const RateReference = () => {
             }
         } catch (error) {
             console.error('Error patching rate reference:', error);
-            message.error('Failed to update rate reference. Please try again later. pm307626 ');
+            message.error('Failed to update rate reference. Please try again later. ');
         }
         finally {
             // setIsLoading(false);
