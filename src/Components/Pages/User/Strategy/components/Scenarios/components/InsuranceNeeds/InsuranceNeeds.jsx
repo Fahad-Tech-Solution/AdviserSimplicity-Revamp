@@ -370,7 +370,7 @@ const InsuranceNeeds = () => {
                     <Col key={metric.key} xs={24} sm={12} md={6}>
                         <Card
                             bodyStyle={{ padding: 16, minHeight: 112, display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-                            style={{ borderRadius: 12, borderColor: "#e8e8e8", height: "100%", borderTop: `3px solid ${metric.accent}` }}
+                            style={{ borderRadius: 12, borderColor: "#e8e8e8", height: "100%",  }}
                         >
                             <div>
                                 <Text type="secondary" style={{ fontSize: 13 }}>{metric.label}</Text>

@@ -300,8 +300,13 @@ export default function InsuranceNeedsForm({ modalData }) {
         form.setFieldsValue(initialValues);
     }, [form, initialValues]);
 
-    const currentProfileData =
-        Form.useWatch(activeProfileTab, form) || initialValues[activeProfileTab];
+    const watchedProfileData = Form.useWatch(activeProfileTab, {
+        form,
+        preserve: true,
+    });
+    const currentProfileData = editing
+        ? watchedProfileData ?? initialValues[activeProfileTab]
+        : initialValues[activeProfileTab];
     const currentProfileAge = getAgeFromDob(
         selectedReviewAllData?.personalDetails?.[activeProfileTab]?.DOB,
     );
@@ -515,6 +520,7 @@ export default function InsuranceNeedsForm({ modalData }) {
     const handleFinish = async (values) => {
         try {
             setSaving(true);
+            const allValues = form.getFieldsValue(true);
             const scenarioFK =
                 selectedReviewAllData?.scenario?._id ||
                 sectionData?.scenarioFK ||
@@ -527,9 +533,15 @@ export default function InsuranceNeedsForm({ modalData }) {
             const payload = {
                 ...(sectionData?._id ? { _id: sectionData._id } : {}),
                 scenarioFK,
-                client: toPayloadProfile(values.client, "client"),
+                client: toPayloadProfile(
+                    allValues.client ?? values.client ?? initialValues.client,
+                    "client",
+                ),
                 partner: allowPartner
-                    ? toPayloadProfile(values.partner, "partner")
+                    ? toPayloadProfile(
+                        allValues.partner ?? values.partner ?? initialValues.partner,
+                        "partner",
+                    )
                     : {},
             };
             const saved = await patch("/review/insuranceNeeds/Update", payload);
@@ -565,6 +577,7 @@ export default function InsuranceNeedsForm({ modalData }) {
             <Form
                 form={form}
                 initialValues={initialValues}
+                preserve
                 onFinish={handleFinish}
                 colon={false}
                 requiredMark={false}
