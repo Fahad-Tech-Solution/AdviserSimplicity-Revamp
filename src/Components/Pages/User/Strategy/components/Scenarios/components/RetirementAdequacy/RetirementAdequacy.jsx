@@ -477,7 +477,7 @@ const RetirementAdequacy = () => {
                     icon: "💸",
                 })}
             >
-                <RetirementAdequacyForm/>
+                <RetirementAdequacyForm modalData={{ closeModal: () => { setOpenModal(false) } }} />
             </AppModal>
         </div>
     );

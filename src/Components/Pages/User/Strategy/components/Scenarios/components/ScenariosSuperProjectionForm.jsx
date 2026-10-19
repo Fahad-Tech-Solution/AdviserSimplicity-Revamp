@@ -334,7 +334,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     };
 
     const calculateProjectedBalance = useCallback((value, name, formPath, currentForm) => {
-        let values = currentForm.getFieldsValue();
+        let values = currentForm.getFieldsValue(true);
         const pathValues = values?.[formPath] || {};
 
         // Map correct field names as defined in table columns
@@ -363,7 +363,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             case "riskGoal":
                 riskProfile = value;
                 if (RISK_PROFILE_RETURNS[value] !== undefined) {
-                    investmentReturn = RISK_PROFILE_RETURNS[value] + "%";
+                    investmentReturn = RISK_PROFILE_RETURNS[value];
                 }
                 break;
             case "investmentReturn":
@@ -426,7 +426,9 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
         currentForm.setFieldsValue({
             [formPath]: {
                 ...values[formPath],
-                investmentReturn: investmentReturn !== undefined ? investmentReturn : values?.[formPath]?.investmentReturn,
+                investmentReturn: Number.isFinite(investmentReturn)
+                    ? `${investmentReturn}%`
+                    : values?.[formPath]?.investmentReturn ?? "",
                 projectedBalance: formatCurrencyValue(projectedBalanceEnd) || "", // Fix: key is projectedBalance
             },
         });
@@ -662,7 +664,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "projectionPeriod",
             placeholder: "0",
             type: "select",
-            options: Array.from({ length: 31 }, (_, i) => ({ label: `${i == 0 ? 'Now' : i}`, value: i })),
+            options: Array.from({ length: 31 }, (_, i) => ({ label: `${i == 0 ? 'Now' : i}`, value: `${i == 0 ? 'Now' : i}` })),
             onChange: (value, record, column, currentForm) => {
                 calculateProjectedBalance(value, column.field, record.formPath, currentForm);
                 currentForm.setFieldValue(
@@ -701,7 +703,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "premiumIndexation",
             placeholder: "0%",
             type: "select",
-            options: Array.from({ length: 17 }, (_, i) => ({ label: `${i === 0 ? '(Auto Based on age)' : `${i - 1}%`}`, value: i })),
+            options: Array.from({ length: 17 }, (_, i) => ({ label: `${i === 0 ? '(Auto Based on age)' : `${i - 1}%`}`, value: `${i === 0 ? '(Auto Based on age)' : `${i - 1}%`}` })),
             onChange: (value, record, column, currentForm) => {
                 calculateProjectedBalance(value, column.field, record.formPath, currentForm);
                 currentForm.setFieldValue(
@@ -719,7 +721,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             field: "premiumYears",
             placeholder: "0",
             type: "select",
-            options: Array.from({ length: 30 }, (_, i) => ({ label: i + 1, value: i + 1 })),
+            options: Array.from({ length: 30 }, (_, i) => ({ label: `${i + 1}`, value: `${i + 1}` })),
             onChange: (value, record, column, currentForm) => {
                 calculateProjectedBalance(value, column.field, record.formPath, currentForm);
                 currentForm.setFieldValue(

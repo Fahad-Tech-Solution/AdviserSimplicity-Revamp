@@ -52,7 +52,7 @@ const Scenarios = () => {
     const fetchAllScenarios = async () => {
         setLoading(true);
         try {
-            
+
             let res = await get("reviewScenario/" + selectedClient?._id)
             if (res?.data) {
                 setReviews(res.data);
@@ -124,7 +124,9 @@ const Scenarios = () => {
                                 "scenarioFK": row?._id || "",
                                 "name": selectedClient?.client?.clientPreferredName || "",
                                 "email": selectedClient?.client?.Email,
-                                "url": window.location.origin + "/#/whats-change-questions"
+                                "url": window.location.origin === "https://as.denarowealth.com.au" ?
+                                    (window.location.origin + "/whats-change-questions") :
+                                    (window.location.origin + "/AdviserSimplicity-Revamp/#/whats-change-questions")
                             }
                         );
                         break;

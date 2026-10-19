@@ -146,6 +146,23 @@ const ReviewAddQuestions = () => {
         return Object.fromEntries(params.entries());
     }, [location?.search]);
 
+
+    const initialValues = {
+        income: "",
+        employment: "",
+        health: "",
+        dependants: "",
+        goals: "",
+        incomeNeed: "",
+        happyWithInvestments: "",
+        insurance: "",
+        address: "",
+        inheritance: "",
+        lifestyleSpending: "",
+        homeLoan: "",
+        extraSuper: "",
+    }
+
     const handleSubmit = async (values) => {
         try {
             setLoading(true);
@@ -287,7 +304,7 @@ const ReviewAddQuestions = () => {
             </div>
 
             {/* Ant Design Form Wrapper */}
-            <Form form={form} onFinish={handleSubmit} layout="vertical">
+            <Form initialValues={initialValues} form={form} onFinish={handleSubmit} layout="vertical">
                 <Space direction="vertical" size={12} style={{ width: '100%' }}>
                     {reviewQuestions.map((q, index) => (
                         <Form.Item key={q.id} style={{ marginBottom: 0 }}>

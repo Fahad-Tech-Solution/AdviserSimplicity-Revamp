@@ -6,8 +6,6 @@ import {
     Row,
     Segmented,
     Space,
-    Table,
-    Tag,
     Typography,
 } from "antd";
 import {
@@ -29,6 +27,7 @@ import {
     SelectedReviewAllData,
 } from "../../../../../../../../store/authState.js";
 import AppModal from "../../../../../../../Common/AppModal";
+import DynamicDataTable from "../../../../../../../Common/DynamicDataTable";
 import useTitleBlock from "../../../../../../../../hooks/useTitleBlock";
 import InsuranceNeedsForm from "./InsuranceNeedsForm";
 import {
@@ -38,6 +37,7 @@ import {
     projectInsurancePremiums,
     toInsuranceNumber,
 } from "./insuranceNeedsCalculations.js";
+import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData.js";
 
 const { Text, Title } = Typography;
 
@@ -53,7 +53,7 @@ function getInsuranceSection(reviewData) {
     return (
         reviewData?.insuranceNeedsDetails ||
         (reviewData?.insuranceNeeds &&
-        typeof reviewData.insuranceNeeds === "object"
+            typeof reviewData.insuranceNeeds === "object"
             ? reviewData.insuranceNeeds
             : {})
     );
@@ -69,99 +69,108 @@ function getPersonDob(reviewData, selectedClient, person) {
 }
 
 function getCoverStatus(value) {
-    if (value > 100) return { label: "Shortfall", color: "error" };
-    if (value < -100) return { label: "Surplus", color: "success" };
+    if (value > 0) return { label: "Shortfall", color: "error" };
+    if (value < 0) return { label: "Surplus", color: "success" };
     return { label: "Fully covered", color: "success" };
 }
 
 function buildDetailedColumns() {
+    const cellStyle = (record, value) => {
+        if (record.rowType === "section") {
+            return { background: "#f9fafb", color: "#16a34a", fontWeight: 700 };
+        }
+        if (record.rowType === "total") {
+            return { background: "#f0fdf4", color: "#15803d", fontWeight: 700 };
+        }
+        if (record.rowType === "muted") {
+            return { color: "#6b7280", fontStyle: "italic" };
+        }
+        if (record.rowType === "tax") {
+            return { color: "#c2410c", fontWeight: 600 };
+        }
+        if (record.rowType === "cover") {
+            return {
+                color: Number(value) < 0 ? "#15803d" : "#b91c1c",
+                fontWeight: 700,
+                background: "#f0fdf4",
+            };
+        }
+        return {};
+    };
+
     return [
         {
-            title: "Calculation",
+            title: "Item",
             dataIndex: "label",
             key: "label",
-            fixed: "left",
-            width: 260,
+            width: "46%",
+            onCell: (record) => ({ style: cellStyle(record) }),
+            render: (value, record) =>
+                record.rowType === "section"
+                    ? <Text strong style={{ color: "#16a34a", textTransform: "uppercase", letterSpacing: "1px", fontSize: 11 }}>{value}</Text>
+                    : <Text style={cellStyle(record)}>{value}</Text>,
         },
         ...COVER_META.map(({ key, label }) => ({
             title: label.replace(" Cover", ""),
             dataIndex: key,
             key,
             align: "right",
-            width: 150,
+            width: "18%",
+            onCell: (record) => ({ style: cellStyle(record, record[key]) }),
             render: (value, record) =>
-                record.label === "Years required"
-                    ? `${Math.round(Number(value) || 0)} years`
-                    : formatInsuranceMoney(value),
+                record.rowType === "section" || value === ""
+                    ? ""
+                    : record.rowType === "years"
+                        ? `${Math.round(Number(value) || 0)} yrs`
+                        : value === "N/A"
+                            ? <Text type="secondary">N/A</Text>
+                            : formatInsuranceMoney(value),
         })),
     ];
 }
 
-const SUMMARY_COLUMNS = [
+function buildIncomeProtectionRows(profile, calculated) {
+    const details = profile?.incomeProtectionDetails || {};
+    const percentIncome = details.percentIncome === "" ||
+        details.percentIncome === null || details.percentIncome === undefined
+        ? 70
+        : toInsuranceNumber(details.percentIncome);
+    const percentSuper = details.percentSuper === "" ||
+        details.percentSuper === null || details.percentSuper === undefined
+        ? 12
+        : toInsuranceNumber(details.percentSuper);
+
+    return [
+        { key: "annual-income", label: "Annual Income to be Covered", value: formatInsuranceMoney(calculated.ip.annualIncome) },
+        { key: "income-percent", label: "% of Income to Cover", value: `${percentIncome}%` },
+        { key: "super-percent", label: "Super Contrib. % Cover", value: `${percentSuper}%` },
+        { key: "income-benefit-monthly", label: "Income Benefit Covered (monthly)", value: formatInsuranceMoney(calculated.ip.monthlyBenefit, "/mo"), color: "#1d4ed8" },
+        { key: "super-benefit-monthly", label: "Super Contributions Cover (monthly)", value: formatInsuranceMoney(calculated.ip.monthlySuper, "/mo"), color: "#1d4ed8" },
+        { key: "income-benefit-annual", label: "IP Income Benefit (annual gross)", value: formatInsuranceMoney(calculated.ip.annualBenefit), color: "#1d4ed8" },
+        { key: "net-monthly", label: "Net Monthly After Tax (IP income net)", value: formatInsuranceMoney(calculated.ip.netMonthlyAfterTax, "/mo"), color: "#15803d" },
+        { key: "existing-cover", label: "Existing Monthly IP Cover", value: formatInsuranceMoney(calculated.ip.existingMonthly, "/mo") },
+        { key: "waiting-period", label: "Waiting Period", value: details.waitingPeriod || "30 days" },
+        { key: "benefit-period", label: "Benefit Period", value: details.benefitPeriod || "To age 65" },
+    ];
+}
+
+const INCOME_PROTECTION_COLUMNS = [
+    { title: "Item", dataIndex: "label", key: "label", width: "70%" },
     {
-        title: "Cover Type",
-        dataIndex: "coverType",
-        key: "coverType",
-        render: (value) => <Text strong>{value}</Text>,
-    },
-    {
-        title: "Required Cover",
-        dataIndex: "required",
-        key: "required",
+        title: "Value",
+        dataIndex: "value",
+        key: "value",
         align: "right",
-        render: (value, record) =>
-            record.key === "ip"
-                ? formatInsuranceMoney(value, "/mo")
-                : formatInsuranceMoney(value),
-    },
-    {
-        title: "Existing Cover",
-        dataIndex: "existing",
-        key: "existing",
-        align: "right",
-        render: (value, record) =>
-            record.key === "ip"
-                ? formatInsuranceMoney(value, "/mo")
-                : formatInsuranceMoney(value),
-    },
-    {
-        title: "Shortfall / Surplus",
-        dataIndex: "shortfall",
-        key: "shortfall",
-        align: "right",
-        render: (value, record) => {
-            const status = getCoverStatus(value);
-            const surplus = status.label === "Surplus";
-            const color = status.label === "Shortfall" ? "#b91c1c" : "#15803d";
-            return (
-                <Text strong style={{ color }}>
-                    {status.label === "Fully covered"
-                        ? "Fully covered"
-                        : `${surplus ? "Surplus" : "Shortfall"} · ${formatInsuranceMoney(
-                            Math.abs(value),
-                            record.key === "ip" ? "/mo" : "",
-                        )}`}
-                </Text>
-            );
-        },
-    },
-    {
-        title: "Status",
-        dataIndex: "status",
-        key: "status",
-        align: "center",
-        render: (value, record) => {
-            const status = record.key === "ip"
-                ? getCoverStatus(record.shortfall)
-                : getCoverStatus(record.shortfall);
-            return <Tag color={status.color}>{value || status.label}</Tag>;
-        },
+        width: "30%",
+        render: (value, record) => <Text strong style={{ color: record.color }}>{value}</Text>,
     },
 ];
 
 const PREMIUM_COLUMNS = [
-    { title: "Age", dataIndex: "age", key: "age", fixed: "left", width: 90,
-        render: (value, record) => `${value}${record.isCurrent ? " (now)" : value === 65 ? " (end)" : ""}` },
+    {
+        title: "Age", dataIndex: "age", key: "age", fixed: "left", width: 90,
+        render: (value, record) => `${value}${record.isCurrent ? " (now)" : value === 65 ? " (end)" : ""}`
+    },
     ...["life", "tpd", "trauma", "ip"].map((key) => ({
         title: key.toUpperCase(),
         dataIndex: key,
@@ -203,6 +212,7 @@ const InsuranceNeeds = () => {
     const taxRatesSchema = rateReference?.taxRatesSchema;
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({ titleStyle: headingStyle });
+    const getReviewName = useGetReviewName();
 
     const section = useMemo(
         () => getInsuranceSection(selectedReviewAllData),
@@ -226,8 +236,13 @@ const InsuranceNeeds = () => {
         getPersonDob(selectedReviewAllData, selectedClient, activeProfile),
     );
     const calculated = useMemo(
-        () => calculateInsuranceNeeds(profile, age, taxRatesSchema),
-        [profile, age, taxRatesSchema],
+        () => calculateInsuranceNeeds(
+            profile,
+            age,
+            taxRatesSchema,
+            { mortgageAmount: selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal },
+        ),
+        [profile, age, taxRatesSchema, selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal],
     );
     const premiumProjection = useMemo(
         () => projectInsurancePremiums(profile, age, premiumHorizon),
@@ -236,20 +251,7 @@ const InsuranceNeeds = () => {
 
     const ipRequiredMonthly =
         calculated.ip.monthlyBenefit + calculated.ip.monthlySuper;
-    const summaryRows = [
-        ...calculated.coverRows.map((row) => ({
-            ...row,
-            coverType: `${row.coverType} Cover`,
-        })),
-        {
-            key: "ip",
-            coverType: "Income Protection",
-            required: ipRequiredMonthly,
-            existing: calculated.ip.existingMonthly,
-            shortfall: calculated.ip.shortfall,
-            status: getCoverStatus(calculated.ip.shortfall).label,
-        },
-    ];
+    const incomeProtectionRows = buildIncomeProtectionRows(profile, calculated);
 
     const chartData = [
         ...COVER_META.map(({ key, label }) => ({
@@ -290,9 +292,9 @@ const InsuranceNeeds = () => {
         ...COVER_META.map(({ key, label, color }) => {
             const gap = calculated.shortfallByType[key];
             const status = getCoverStatus(gap);
-            const subText = gap > 100
+            const subText = gap > 0
                 ? `Shortfall · ${formatInsuranceMoney(gap)}`
-                : gap < -100
+                : gap < 0
                     ? `Surplus · ${formatInsuranceMoney(Math.abs(gap))}`
                     : "Fully covered";
             return {
@@ -308,12 +310,12 @@ const InsuranceNeeds = () => {
             key: "ip",
             label: "IP Cover",
             value: formatInsuranceMoney(calculated.ip.existingMonthly, "/mo"),
-            subText: calculated.ip.shortfall > 50
+            subText: calculated.ip.shortfall > 0
                 ? `Shortfall · ${formatInsuranceMoney(calculated.ip.shortfall, "/mo")}`
-                : calculated.ip.shortfall < -50
+                : calculated.ip.shortfall < 0
                     ? `Surplus · ${formatInsuranceMoney(Math.abs(calculated.ip.shortfall), "/mo")}`
                     : "Fully covered",
-            color: calculated.ip.shortfall > 50 ? "#b91c1c" : "#15803d",
+            color: calculated.ip.shortfall > 0 ? "#b91c1c" : "#15803d",
             accent: "#1d4ed8",
         },
     ];
@@ -333,8 +335,8 @@ const InsuranceNeeds = () => {
                     value={activeProfile === "client" ? "Client" : "Partner"}
                     onChange={(value) => setSelectedProfile(value.toLowerCase())}
                     options={[
-                        { label: "Client", value: "Client", icon: "👤" },
-                        ...(allowPartner ? [{ label: "Partner", value: "Partner", icon: "👥" }] : []),
+                        { label: getReviewName("client"), value: "Client", icon: "👤" },
+                        ...(allowPartner ? [{ label: getReviewName("partner"), value: "Partner", icon: "👥" }] : []),
                     ]}
                 />
                 <Space size={12} wrap>
@@ -370,7 +372,7 @@ const InsuranceNeeds = () => {
                     <Col key={metric.key} xs={24} sm={12} md={6}>
                         <Card
                             bodyStyle={{ padding: 16, minHeight: 112, display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-                            style={{ borderRadius: 12, borderColor: "#e8e8e8", height: "100%",  }}
+                            style={{ borderRadius: 12, borderColor: "#e8e8e8", height: "100%", }}
                         >
                             <div>
                                 <Text type="secondary" style={{ fontSize: 13 }}>{metric.label}</Text>
@@ -434,31 +436,34 @@ const InsuranceNeeds = () => {
                         </>
                     ) : (
                         <>
-                            <Title level={5} style={{ color: "#22c55e", letterSpacing: "0.5px", marginBottom: 16, textTransform: "uppercase" }}>
-                                Insurance Cover Breakdown
+                            <Title level={5} style={{ color: "#22c55e", letterSpacing: "2px", marginBottom: 16, textTransform: "uppercase" }}>
+                                Cover Needs — {getReviewName(activeProfile)}
                             </Title>
-                            <Table
-                                columns={SUMMARY_COLUMNS}
-                                dataSource={summaryRows}
-                                rowKey="key"
-                                pagination={false}
+                            <DynamicDataTable
+                                columns={detailColumns}
+                                data={calculated.detailedRows}
+                                noPagination
                                 size="small"
-                                scroll={{ x: 800 }}
+                                headerFontSize={12}
+                                bodyFontSize={12}
+                                horizontalScroll={false}
+                                tableProps={{ rowKey: "key" }}
+                                tableStyle={{ borderRadius: 12, overflow: "hidden" }}
                             />
-                            <details style={{ marginTop: 20 }}>
-                                <summary style={{ cursor: "pointer", color: "#15803d", fontWeight: 600 }}>
-                                    View calculation breakdown
-                                </summary>
-                                <Table
-                                    style={{ marginTop: 12 }}
-                                    columns={detailColumns}
-                                    dataSource={calculated.detailedRows}
-                                    rowKey="label"
-                                    pagination={false}
-                                    size="small"
-                                    scroll={{ x: 720 }}
-                                />
-                            </details>
+                            <Title level={5} style={{ color: "#22c55e", letterSpacing: "2px", margin: "20px 0px 12px", textTransform: "uppercase" }}>
+                                Income Protection
+                            </Title>
+                            <DynamicDataTable
+                                columns={INCOME_PROTECTION_COLUMNS}
+                                data={incomeProtectionRows}
+                                noPagination
+                                size="small"
+                                headerFontSize={12}
+                                bodyFontSize={12}
+                                horizontalScroll={false}
+                                tableProps={{ rowKey: "key" }}
+                                tableStyle={{ borderRadius: 12, overflow: "hidden" }}
+                            />
                         </>
                     )
                 ) : (
@@ -515,13 +520,16 @@ const InsuranceNeeds = () => {
                                     <Text type="secondary">{premiumNotice}</Text>
                                 </div>
                             ) : (
-                                <Table
+                                <DynamicDataTable
                                     columns={PREMIUM_COLUMNS}
-                                    dataSource={premiumProjection.rows}
-                                    rowKey="age"
-                                    pagination={false}
+                                    data={premiumProjection.rows}
+                                    showCount={false}
+                                    noPagination
                                     size="small"
-                                    scroll={{ x: 850 }}
+                                    headerFontSize={12}
+                                    bodyFontSize={12}
+                                    tableProps={{ rowKey: "age", scroll: { x: "max-content" } }}
+                                    tableStyle={{ borderRadius: 12 }}
                                 />
                             )}
                         </>
@@ -538,15 +546,15 @@ const InsuranceNeeds = () => {
                         <Text type="secondary" style={{ fontSize: 11 }}>
                             Investment return {
                                 profile?.assumptions?.investmentReturn === "" ||
-                                profile?.assumptions?.investmentReturn === null ||
-                                profile?.assumptions?.investmentReturn === undefined
+                                    profile?.assumptions?.investmentReturn === null ||
+                                    profile?.assumptions?.investmentReturn === undefined
                                     ? 5
                                     : toInsuranceNumber(profile.assumptions.investmentReturn)
                             }% ·
                             Inflation {
                                 profile?.assumptions?.inflation === "" ||
-                                profile?.assumptions?.inflation === null ||
-                                profile?.assumptions?.inflation === undefined
+                                    profile?.assumptions?.inflation === null ||
+                                    profile?.assumptions?.inflation === undefined
                                     ? 2.5
                                     : toInsuranceNumber(profile.assumptions.inflation)
                             }% ·
@@ -560,7 +568,7 @@ const InsuranceNeeds = () => {
             <AppModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                width="90vw"
+                width="70vw"
                 title={renderTitleBlock({ title: "Insurance Needs Inputs", icon: "🛡️" })}
             >
                 <InsuranceNeedsForm modalData={{ closeModal: () => setOpenModal(false) }} />

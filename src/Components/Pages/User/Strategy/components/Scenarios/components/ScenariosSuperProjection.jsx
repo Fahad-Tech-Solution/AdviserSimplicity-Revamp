@@ -431,7 +431,7 @@ const ScenariosSuperProjection = () => {
                     icon: "🐷",
                 })}
             >
-                <ScenariosSuperProjectionForm />
+                <ScenariosSuperProjectionForm modalData={{ closeModal: () => { setOpenModal(false) } }} />
             </AppModal>
         </div>
     );

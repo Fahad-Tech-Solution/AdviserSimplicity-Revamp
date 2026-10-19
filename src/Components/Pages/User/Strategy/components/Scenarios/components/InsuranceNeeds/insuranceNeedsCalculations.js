@@ -16,6 +16,12 @@ const LUMP_SUM_FIELDS = [
     ["other", "Other"],
 ];
 
+export const DEFAULT_LUMP_SUM_NEEDS = {
+    life: { funeral: "30000" },
+    tpd: { medical: "100000", capitalNeeds: "50000" },
+    trauma: { medical: "100000" },
+};
+
 const ASSET_FIELDS = [
     ["superannuation", "Superannuation"],
     ["cash", "Cash"],
@@ -32,8 +38,8 @@ const DEFAULT_TAX_RATES = {
         { min: 135001, max: 190000, rate: 0.37 },
         { min: 190001, max: Infinity, rate: 0.45 },
     ],
-    medicareLow: 23365,
-    medicareFull: 29206,
+    medicareLow: 26000,
+    medicareFull: 32500,
     medicareReducedRate: 0.1,
     medicareFullRate: 0.02,
     litoMax: 700,
@@ -189,13 +195,19 @@ function calculatePersonAgeBasedYears(age) {
         : { life: 0, tpd: 0, trauma: 2 };
 }
 
-export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
+export function calculateInsuranceNeeds(
+    profile = {},
+    age = 0,
+    taxRatesSchema,
+    linkedDefaults = {},
+) {
     const assumptions = profile.assumptions || {};
     const income = profile.incomeReplacement || {};
     const existing = profile.existingCover || {};
     const ipDetails = profile.incomeProtectionDetails || {};
     const realisableAssets = profile.realisableAssets || {};
     const grossIncome = toInsuranceNumber(income.grossIncome);
+    const mortgageAmount = toInsuranceNumber(linkedDefaults.mortgageAmount);
     const netEstimate = estimateNetFromGross(grossIncome, taxRatesSchema);
     const investmentReturn = (
         assumptions.investmentReturn === "" ||
@@ -228,18 +240,28 @@ export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
     const coverRequiredByType = {};
     const shortfallByType = {};
     const recommendedByType = {};
+    const getLumpSumValue = (key, field) => {
+        const configuredValue = profile.lumpSumNeeds?.[key]?.[field];
+        const value = configuredValue === undefined || configuredValue === null
+            ? toInsuranceNumber(DEFAULT_LUMP_SUM_NEEDS[key]?.[field])
+            : toInsuranceNumber(configuredValue);
+        return field === "homeMortgage" &&
+            value === 0 &&
+            (key === "life" || key === "tpd")
+            ? mortgageAmount
+            : value;
+    };
     const rows = LUMP_SUM_FIELDS.map(([field, label]) => {
         const row = { label };
         COVER_TYPES.forEach(({ key }) => {
-            row[key] = toInsuranceNumber(profile.lumpSumNeeds?.[key]?.[field]);
+            row[key] = getLumpSumValue(key, field);
         });
         return row;
     });
 
     COVER_TYPES.forEach(({ key }) => {
         lumpSumByType[key] = LUMP_SUM_FIELDS.reduce(
-            (total, [field]) =>
-                total + toInsuranceNumber(profile.lumpSumNeeds?.[key]?.[field]),
+            (total, [field]) => total + getLumpSumValue(key, field),
             0,
         );
         const annualNetNeed =
@@ -261,7 +283,7 @@ export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
         otherAssetsByType[key] = assetsByType[key];
     });
 
-    const tpdTax = income.taxTpdInSuper
+    const tpdTax = income.taxTpdInSuper !== false
         ? (lumpSumByType.tpd + incomeByType.tpd) * 0.22
         : 0;
     const ongoingByType = {
@@ -271,10 +293,8 @@ export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
     };
     const coverRows = COVER_TYPES.map(({ key, label }) => {
         totalNeedsByType[key] = lumpSumByType[key] + ongoingByType[key];
-        coverRequiredByType[key] = Math.max(
-            0,
-            totalNeedsByType[key] - otherAssetsByType[key],
-        );
+        coverRequiredByType[key] =
+            totalNeedsByType[key] - otherAssetsByType[key];
         shortfallByType[key] =
             coverRequiredByType[key] - existingByType[key];
         recommendedByType[key] = Math.max(
@@ -288,9 +308,9 @@ export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
             existing: existingByType[key],
             shortfall: shortfallByType[key],
             status:
-                shortfallByType[key] > 1000
+                shortfallByType[key] > 0
                     ? "Shortfall"
-                    : shortfallByType[key] < -1000
+                    : shortfallByType[key] < 0
                         ? "Surplus"
                         : "Fully covered",
         };
@@ -336,29 +356,77 @@ export function calculateInsuranceNeeds(profile = {}, age = 0, taxRatesSchema) {
         effectiveTaxRate: ipTaxEstimate.effectiveRate,
     };
 
+    const sectionRow = (key, label) => ({
+        key,
+        label,
+        life: "",
+        tpd: "",
+        trauma: "",
+        rowType: "section",
+    });
+    const totalRow = (key, label, values, rowType = "total") => ({
+        key,
+        label,
+        ...values,
+        rowType,
+    });
     const detailedRows = [
-        ...rows,
-        { label: "Total lump-sum needs", ...lumpSumByType },
-        { label: "Net income required (p.a.)", ...Object.fromEntries(COVER_TYPES.map(({ key }) => [key, toInsuranceNumber(income[`${key}Amount`]) || netEstimate.net])) },
-        { label: "Years required", ...yearsByType },
-        { label: "Income required (present value)", ...incomeByType },
-        { label: "Tax on TPD claim held in super", life: 0, tpd: tpdTax, trauma: 0 },
-        { label: "Total ongoing needs", ...ongoingByType },
-        { label: "Total needs", ...totalNeedsByType },
+        sectionRow("lump-sum-section", "Lump Sum Needs"),
+        ...rows.map((row, index) => ({
+            ...row,
+            key: `lump-sum-${index}`,
+            rowType: "detail",
+        })),
+        totalRow("lump-sum-total", "Total Lump Sum Needs", lumpSumByType),
+        sectionRow("ongoing-section", "Ongoing Income Needs"),
+        totalRow(
+            "net-income",
+            "Net Income Required (p.a.)",
+            Object.fromEntries(
+                COVER_TYPES.map(({ key }) => [
+                    key,
+                    toInsuranceNumber(income[`${key}Amount`]) || netEstimate.net,
+                ]),
+            ),
+            "detail",
+        ),
+        totalRow("years-required", "Number of Years Needed", yearsByType, "years"),
+        totalRow("income-present-value", "Income Required (PV of annuity)", incomeByType, "muted"),
+        totalRow("tpd-tax", "Tax on TPD claim if held in Super", {
+            life: "N/A",
+            tpd: tpdTax,
+            trauma: "N/A",
+        }, "tax"),
+        totalRow("ongoing-total", "Total Ongoing Needs", ongoingByType),
+        sectionRow("assets-section", "Less Realisable Assets"),
         ...ASSET_FIELDS.map(([field, label]) => ({
-            label: `Realisable asset: ${label}`,
+            key: `asset-${field}`,
+            label,
             ...Object.fromEntries(
                 COVER_TYPES.map(({ key }) => [
                     key,
                     toInsuranceNumber(realisableAssets[key]?.[field]),
                 ]),
             ),
+            rowType: "asset",
         })),
-        { label: "Total realisable assets", ...assetsByType },
-        { label: "Cover required before existing insurance", ...coverRequiredByType },
-        { label: "Existing insurance cover", ...existingByType },
-        { label: "Shortfall / surplus", ...shortfallByType },
-        { label: "Recommended cover (nearest $100,000)", ...recommendedByType },
+        {
+            key: "existing-insurance",
+            label: "Existing Insurance Cover",
+            ...existingByType,
+            rowType: "asset",
+        },
+        totalRow(
+            "assets-total",
+            "Total Realisable Assets",
+            Object.fromEntries(
+                COVER_TYPES.map(({ key }) => [
+                    key,
+                    assetsByType[key] + existingByType[key],
+                ]),
+            ),
+        ),
+        totalRow("cover-required", "Total Cover Required", shortfallByType, "cover"),
     ];
 
     const computedFields = {

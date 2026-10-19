@@ -5,6 +5,7 @@ import DynamicDataTable from '../../../../../../../Common/DynamicDataTable';
 import AppModal from '../../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../../hooks/useTitleBlock';
 import ReviewsTaxPlanningForm from './ReviewsTaxPlanningForm';
+import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
 
 const { Text, Title } = Typography;
 
@@ -78,6 +79,8 @@ const ReviewsTaxPlanning = () => {
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
     const [selectedProfile, setSelectedProfile] = useState('client');
+    const getReviewName = useGetReviewName();
+
 
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({ titleStyle: headingStyle });
@@ -94,8 +97,8 @@ const ReviewsTaxPlanning = () => {
                     value={selectedProfile}
                     onChange={(val) => setSelectedProfile(val)}
                     options={[
-                        { label: 'Client', value: 'client', icon: '👤' },
-                        { label: 'Partner', value: 'partner', icon: '👥' },
+                        { label: getReviewName('client'), value: 'client', icon: '👤' },
+                        { label: getReviewName('partner'), value: 'partner', icon: '👥' },
                     ]}
                     style={{ padding: 3, backgroundColor: '#f3f4f6', borderRadius: 8 }}
                 />
@@ -277,13 +280,15 @@ const ReviewsTaxPlanning = () => {
             <AppModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                width={"70vw"}
+                width={"60vw"}
                 title={renderTitleBlock({
                     title: "Tax Planning Inputs",
                     icon: "📑",
                 })}
             >
-                <ReviewsTaxPlanningForm />
+                <ReviewsTaxPlanningForm
+                    modalData={{ closeModal: () => setOpenModal(false) }}
+                />
             </AppModal>
         </div>
     );

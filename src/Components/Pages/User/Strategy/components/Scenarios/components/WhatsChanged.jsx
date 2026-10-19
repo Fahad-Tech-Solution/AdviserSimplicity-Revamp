@@ -492,7 +492,9 @@ const WhatsChanged = () => {
                                 "scenarioFK": selectedReviewAllData?.scenario?._id || "",
                                 "name": selectedClient?.client?.clientPreferredName || "",
                                 "email": selectedClient?.client?.Email,
-                                "url": window.location.origin + "/#/whats-change-questions"
+                                "url": window.location.origin === "https://as.denarowealth.com.au" ?
+                                    (window.location.origin + "/whats-change-questions") :
+                                    (window.location.origin + "/AdviserSimplicity-Revamp/#/whats-change-questions")
                             }
                         )}
                         loading={EmailSending}

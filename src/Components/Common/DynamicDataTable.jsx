@@ -116,6 +116,7 @@ export default function DynamicDataTable({
           minHeight: 0,
           width: "100%",
           overflowX: horizontalScroll ? "auto" : "visible",
+          overflowY: "hidden",
           ...wrapperStyle,
         }}
       >

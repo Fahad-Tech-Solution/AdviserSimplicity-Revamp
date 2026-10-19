@@ -13,6 +13,7 @@ import useApi from "../../../../../../../../hooks/useApi.js";
 import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData.js";
 import {
     calculateInsuranceNeeds,
+    DEFAULT_LUMP_SUM_NEEDS,
     formatInsuranceMoney,
     getAgeFromDob,
 } from "./insuranceNeedsCalculations.js";
@@ -157,6 +158,7 @@ function buildInitialProfile(profile = {}) {
                     emergencyFunds: "",
                     capitalNeeds: "",
                     other: "",
+                    ...DEFAULT_LUMP_SUM_NEEDS[key],
                     ...profile?.lumpSumNeeds?.[key],
                 },
             ]),
@@ -168,7 +170,7 @@ function buildInitialProfile(profile = {}) {
             lifeYears: "",
             tpdAmount: "",
             tpdYears: "",
-            taxTpdInSuper: false,
+            taxTpdInSuper: true,
             traumaAmount: "",
             traumaYears: "",
             ...profile?.incomeReplacement,
@@ -310,9 +312,16 @@ export default function InsuranceNeedsForm({ modalData }) {
     const currentProfileAge = getAgeFromDob(
         selectedReviewAllData?.personalDetails?.[activeProfileTab]?.DOB,
     );
+    const mortgageAmount =
+        selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal;
     const currentCalculation = useMemo(
-        () => calculateInsuranceNeeds(currentProfileData, currentProfileAge, taxRatesSchema),
-        [currentProfileData, currentProfileAge, taxRatesSchema],
+        () => calculateInsuranceNeeds(
+            currentProfileData,
+            currentProfileAge,
+            taxRatesSchema,
+            { mortgageAmount },
+        ),
+        [currentProfileData, currentProfileAge, taxRatesSchema, mortgageAmount],
     );
 
     // Section 1: Existing Cover & Premiums
@@ -477,6 +486,7 @@ export default function InsuranceNeedsForm({ modalData }) {
             profile,
             profileAge,
             taxRatesSchema,
+            { mortgageAmount },
         );
         const premiums = normalized.existingCover;
         return {
@@ -661,13 +671,13 @@ export default function InsuranceNeedsForm({ modalData }) {
                                 totalPremium: formatInsuranceMoney(
                                     ["lifePremium", "tpdPremium", "traumaPremium", "ipPremium"]
                                         .reduce(
-                                        (total, field) =>
-                                            total +
-                                            Number(
-                                                String(currentProfileData?.existingCover?.[field] ?? "")
-                                                    .replace(/[^0-9.-]/g, ""),
-                                            ),
-                                        0,
+                                            (total, field) =>
+                                                total +
+                                                Number(
+                                                    String(currentProfileData?.existingCover?.[field] ?? "")
+                                                        .replace(/[^0-9.-]/g, ""),
+                                                ),
+                                            0,
                                         ),
                                 ),
                                 formPath: [activeProfileTab, "existingCover"],
@@ -761,7 +771,7 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="button"
-                                        key={"edit"}
+                                        key="button"
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
                                         onClick={() => setIsEditingEnabled(true)}
                                     >
@@ -771,7 +781,7 @@ export default function InsuranceNeedsForm({ modalData }) {
                                     <Button
                                         type="primary"
                                         htmlType="submit"
-                                        key={"submit"}
+                                        key="submit"
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
                                         loading={saving}
                                         disabled={saving}
