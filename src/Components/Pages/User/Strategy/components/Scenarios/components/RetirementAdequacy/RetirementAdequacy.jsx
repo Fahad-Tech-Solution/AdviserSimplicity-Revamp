@@ -8,6 +8,7 @@ import useTitleBlock from '../../../../../../../../hooks/useTitleBlock';
 import RetirementAdequacyForm from './RetirementAdequacyForm.jsx';
 import { SelectedReviewAllData } from '../../../../../../../../store/authState';
 import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
+import AnalysisModal from '../AnalysisModal/AnalysisModal.jsx';
 
 const { Text, Title } = Typography;
 
@@ -252,6 +253,7 @@ const RetirementAdequacy = () => {
     const [selectedProfile, setSelectedProfile] = useState('client');
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
     const getReviewName = useGetReviewName();
 
@@ -288,6 +290,71 @@ const RetirementAdequacy = () => {
     const currentChartData = calculatedData.rows;
     const currentTableData = calculatedData.rows;
     const hasData = currentChartData.length > 0;
+
+    const analysisContent = useMemo(() => {
+        const section = selectedReviewAllData?.retirementAdequacyDetails || {};
+        const isHousehold = selectedProfile === 'cashflow';
+        const person = section[selectedProfile] || {};
+        const storedName = person.preferredName || getReviewName(selectedProfile);
+        const normalizedName = String(storedName || '').trim();
+        const personName = normalizedName && !['client', 'partner'].includes(normalizedName.toLowerCase())
+            ? normalizedName.split(/\s+/)[0]
+            : selectedProfile === 'partner' ? 'your partner' : 'you';
+        const years = currentChartData.length;
+        const finalBalance = currentChartData.at(-1)?.closingBalance ?? 0;
+        const sustainable = years >= 40 && finalBalance > 0;
+        const duration = sustainable
+            ? 'over 40 years (still funded at the projection limit)'
+            : `about ${years} ${years === 1 ? 'year' : 'years'}`;
+        const annualPayment = parseNumber(currentChartData[0]?.annualPayment);
+        const analysis = [];
+        const readAloud = [];
+
+        if (!years) {
+            analysis.push('Enter a pension balance and date of birth to generate a retirement income projection.');
+            readAloud.push('Enter a pension balance and date of birth to generate a retirement income projection.');
+        } else if (isHousehold) {
+            analysis.push(
+                `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. The projection is funded for ${duration}, ending with ${formatCurrency(finalBalance)}.`,
+            );
+            readAloud.push(
+                `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. It is projected to last ${duration}, with a final balance of ${formatCurrency(finalBalance)}.`,
+            );
+        } else {
+            const explicitReturn = parseNumber(person.investmentReturn, NaN);
+            const returnRate = Number.isFinite(explicitReturn)
+                ? explicitReturn
+                : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced;
+            const returnLabel = `${Number(returnRate.toFixed(1))}%`;
+            analysis.push(
+                `${personName}: ${currentMetrics.startingBalance} at ${returnLabel} annual return · first-year minimum annual pension ${formatCurrency(annualPayment)} · projected to last ${duration}.`,
+            );
+            readAloud.push(
+                `${personName}, your account-based pension of ${currentMetrics.startingBalance}, at a ${returnLabel} annual return and drawing a minimum of ${formatCurrency(annualPayment)} in the first year, is projected to last ${duration}.`,
+            );
+        }
+
+        const durationColor = sustainable || years >= 25
+            ? '#16a34a'
+            : years >= 15 ? '#d97706' : '#dc2626';
+
+        return {
+            subtitle: isHousehold
+                ? '🏦 Household Account-Based Pension Results'
+                : `🏦 Account-Based Pension Results for ${personName}`,
+            metrics: years
+                ? [
+                    { label: isHousehold ? 'Combined balance' : 'Starting balance', value: currentMetrics.startingBalance },
+                    { label: 'First-year pension', value: formatCurrency(annualPayment) },
+                    { label: 'Years sustained', value: sustainable ? '40+ yrs' : `${years} yrs`, color: durationColor },
+                    { label: 'Final balance', value: formatCurrency(finalBalance) },
+                ]
+                : [],
+            analysis,
+            readAloud: readAloud.join(' '),
+        };
+    }, [currentChartData, currentMetrics, getReviewName, selectedProfile, selectedReviewAllData]);
+
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
 
@@ -299,7 +366,10 @@ const RetirementAdequacy = () => {
                     onChange={(val) => setSelectedProfile(val)}
                     options={[
                         { label: getReviewName('client'), value: 'client', icon: '👤' },
-                        { label: getReviewName('partner'), value: 'partner', icon: '👥' },
+                        ...(selectedReviewAllData?.personalDetails?.owner?.includes("partner")
+                            ? [{ label: getReviewName("partner"), value: 'Partner', icon: "👥" }]
+                            : []),
+                        // { label: getReviewName('partner'), value: 'partner', icon: '👥' },
                         { label: 'Cashflow', value: 'cashflow', icon: '🏛️' },
                     ]}
                     style={{ padding: 3, backgroundColor: '#f3f4f6', borderRadius: 8 }}
@@ -319,6 +389,7 @@ const RetirementAdequacy = () => {
                     <Button
                         style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: '#fff', borderRadius: 8, fontWeight: 600 }}
                         icon={"🧠"}
+                        onClick={() => setOpenAnalysisModal(true)}
                     >
                         Analyse
                     </Button>
@@ -479,6 +550,12 @@ const RetirementAdequacy = () => {
             >
                 <RetirementAdequacyForm modalData={{ closeModal: () => { setOpenModal(false) } }} />
             </AppModal>
+            <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

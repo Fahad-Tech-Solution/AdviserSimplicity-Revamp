@@ -141,7 +141,7 @@ function buildInitialValues(sectionData) {
 
     return {
         personalDetails: {
-            situation: String(personalDetails?.situation || "single").toLowerCase(),
+            situation: String(personalDetails?.situation || "couple").toLowerCase(),
             homeOwnership: String(personalDetails?.homeOwnership || "homeowner").toLowerCase(),
             clientAge: personalDetails?.clientAge ?? "",
             partnerAge: personalDetails?.partnerAge ?? "",

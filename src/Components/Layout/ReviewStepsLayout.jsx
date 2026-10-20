@@ -9,7 +9,7 @@ import {
     matchReviewRoute,
     pathMatchesReviewRoute,
 } from "../Routes/User.Routes.jsx";
-import { verifyPersonalDetailsFilled } from "../../hooks/helpers.js";
+import { formatAustralianDate, verifyPersonalDetailsFilled } from "../../hooks/helpers.js";
 import useApi from "../../hooks/useApi.js";
 
 const { Text, Title } = Typography;
@@ -186,8 +186,6 @@ const ReviewStepsLayout = () => {
         finally {
             setLoading(false);
         }
-
-
     }
 
 
@@ -233,7 +231,7 @@ const ReviewStepsLayout = () => {
                         </div>
                         <div>
                             <Space size={10}>
-                                📅 Date: <Text>10/10/2026</Text>
+                                📅 Date: <Text>{formatAustralianDate(selectedReviewAllData?.scenario?.createdAt) || "10/10/2026"}</Text>
                             </Space>
                         </div>
                     </div>

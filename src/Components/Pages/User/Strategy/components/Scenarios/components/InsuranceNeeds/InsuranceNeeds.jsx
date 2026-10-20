@@ -222,9 +222,7 @@ const InsuranceNeeds = () => {
         selectedReviewAllData?.personalDetails?.client?.clientMaritalStatus ||
         selectedClient?.client?.clientMaritalStatus ||
         "";
-    const allowPartner = !["single", "widowed"].includes(
-        String(maritalStatus).toLowerCase(),
-    );
+    const allowPartner = selectedReviewAllData?.personalDetails?.owner?.includes("partner")
 
     const activeProfile = allowPartner ? selectedProfile : "client";
 
@@ -417,7 +415,7 @@ const InsuranceNeeds = () => {
                                             <Bar dataKey="currentCover" name="Current Cover" stackId="cover" fill="#2b3b5c" maxBarSize={60} />
                                         )}
                                         {seriesVisibility.shortfall && (
-                                            <Bar dataKey="shortfall" name="Shortfall" stackId="cover" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                            <Bar dataKey="shortfall" name="Shortfall" stackId="cover" fill="#22C55E" radius={[4, 4, 0, 0]} maxBarSize={60} />
                                         )}
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -489,7 +487,7 @@ const InsuranceNeeds = () => {
                                                 <Line type="monotone" dataKey="life" name="Life" stroke="#b91c1c" dot={false} />
                                                 <Line type="monotone" dataKey="tpd" name="TPD" stroke="#c2410c" dot={false} />
                                                 <Line type="monotone" dataKey="trauma" name="Trauma" stroke="#7e22ce" dot={false} />
-                                                <Line type="monotone" dataKey="ip" name="IP" stroke="#22c55e" dot={false} />
+                                                <Line type="monotone" dataKey="ip" name="IP" stroke="#22C55E" dot={false} />
                                                 <Line type="monotone" dataKey="total" name="Total" stroke="#2b3a5e" strokeWidth={3} dot={false} />
                                             </LineChart>
                                         </ResponsiveContainer>

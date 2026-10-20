@@ -197,7 +197,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             },
         },
         {
-            title: "NCC Top Up ($)",
+            title: <>NCC Top Up ($) <sub>(one-off)</sub></>,
             dataIndex: "nccTopUp",
             key: "nccTopUp",
             field: "nccTopUp",
@@ -219,7 +219,7 @@ export default function RetirementAdequacyForm({ modalData }) {
             options: Array.from({ length: 30 }, (_, i) => ({ label: `Year ${i + 1}`, value: `Year ${i + 1}` })),
         },
         {
-            title: "Withdrawal Amount ($)",
+            title: <>Withdrawal Amount ($) <sub>(one-off)</sub></>,
             dataIndex: "withdrawalAmount",
             key: "withdrawalAmount",
             field: "withdrawalAmount",

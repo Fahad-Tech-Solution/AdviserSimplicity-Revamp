@@ -9,6 +9,8 @@ import ReviewAgePensionAssessmentForm from './ReviewAgePensionAssessmentForm';
 import { useAtom } from 'jotai';
 import { SelectedReviewAllData } from '../../../../../../../../store/authState';
 import { FaXmark } from 'react-icons/fa6';
+import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
+import AnalysisModal from '../AnalysisModal/AnalysisModal';
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -42,6 +44,26 @@ const amount = (value) => {
 };
 
 const formatCurrency = (value) => `$${Math.round(value || 0).toLocaleString('en-AU')}`;
+const formatSpeechCurrency = (value) => {
+    const rounded = Math.round(Number(value) || 0);
+    if (rounded === 0) return 'zero dollars';
+    const sign = rounded < 0 ? 'negative ' : '';
+    const absolute = Math.abs(rounded);
+    if (absolute >= 1000000) {
+        const millions = Math.round((absolute / 1000000) * 10) / 10;
+        return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+    }
+    if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
+    if (absolute >= 10000) {
+        const thousands = Math.round(absolute / 500) * 500 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    if (absolute >= 1000) {
+        const thousands = Math.round(absolute / 100) * 100 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    return `${sign}${absolute} dollars`;
+};
 const formatTableAmount = (value) => {
     if (!value) return '—';
     return value < 0 ? `(${formatCurrency(-value)})` : formatCurrency(value);
@@ -57,7 +79,7 @@ function calculateAgePensionAssessment(data = {}) {
     const partnerFinancial = financial.partner || data.partner || {};
     const clientIncome = income.client || data.client || {};
     const partnerIncome = income.partner || data.partner || {};
-    const situation = String(personal.situation || 'single').toLowerCase();
+    const situation = String(personal.situation || 'couple').toLowerCase();
     const illnessSeparated = situation.includes('illness');
     const isCouple = situation.includes('couple') || illnessSeparated;
     const homeowner = String(personal.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
@@ -212,7 +234,12 @@ function calculateAgePensionAssessment(data = {}) {
         ['Salary / Business Income (gross)', salaryClient, isCouple ? salaryPartner : 0, salaryClient + salaryPartner],
         ['Work Bonus (−)', -workBonusClient, isCouple ? -workBonusPartner : 0, -(workBonusClient + workBonusPartner)],
         ['Other Income', otherIncomeClient, isCouple ? otherIncomePartner : 0, otherIncomeClient + otherIncomePartner],
-        ['Other Income Streams (less deductible)', netAbpClient, isCouple ? netAbpPartner : 0, netAbpClient + netAbpPartner],
+        [
+            'Other Income Streams (less deductible)',
+            netAbpClient,
+            isCouple ? netAbpPartner : 0,
+            Math.max(0, abpPaymentClient + abpPaymentPartner - abpDeductibleClient - abpDeductiblePartner),
+        ],
     ].map(([item, client, partner, total], index) =>
         row(String(index + 1), item, formatTableAmount(client), isCouple ? formatTableAmount(partner) : '—', formatTableAmount(total)));
     incomeRows.push(
@@ -223,19 +250,23 @@ function calculateAgePensionAssessment(data = {}) {
         row('income-under', 'Under Income Test (p.a.)', '', '', formatCurrency(underIncome), { isHighlighted: true, isFinal: true }),
     );
 
-    const testPensionPerPerson = (testBasis) =>
-        (testBasis > 0 ? testBasis / (isCouple ? 2 : 1) + personSupplement : 0);
+    const testPensionPerPerson = (testBasis, eligible) =>
+        (eligible && testBasis > 0
+            ? testBasis / (isCouple ? 2 : 1) + personSupplement
+            : 0);
     const graphData = [
         ...(clientEligible ? [{
             person: 'Client',
-            assetsTestPension: testPensionPerPerson(underAssets),
-            incomeTestPension: testPensionPerPerson(underIncome),
+            actualPension: clientPension,
+            assetsTestPension: testPensionPerPerson(underAssets, clientEligible),
+            incomeTestPension: testPensionPerPerson(underIncome, clientEligible),
             maxPension: fullPersonBasis + personSupplement,
         }] : []),
         ...(partnerEligible ? [{
             person: 'Partner',
-            assetsTestPension: testPensionPerPerson(underAssets),
-            incomeTestPension: testPensionPerPerson(underIncome),
+            actualPension: partnerPension,
+            assetsTestPension: testPensionPerPerson(underAssets, partnerEligible),
+            incomeTestPension: testPensionPerPerson(underIncome, partnerEligible),
             maxPension: fullPersonBasis + personSupplement,
         }] : []),
     ];
@@ -246,6 +277,12 @@ function calculateAgePensionAssessment(data = {}) {
         isCouple,
         clientEligible,
         partnerEligible,
+        eligibleCount,
+        isNoPension: combinedPension <= 0,
+        isFullPension: combinedPension > 0 && actualBasis >= fullBasis - 1,
+        determiningTest: underAssets === 0 && underIncome === 0
+            ? 'none'
+            : underAssets <= underIncome ? 'assets' : 'income',
         status: combinedPension <= 0
             ? 'Not eligible'
             : (actualBasis >= fullBasis - 1 ? 'Full pension' : 'Part pension'),
@@ -254,6 +291,8 @@ function calculateAgePensionAssessment(data = {}) {
         combinedPension,
         maxPension,
         pensionLost,
+        totalAssets,
+        totalAssessableIncome: assessableIncome,
         assetRows,
         incomeRows,
         graphData,
@@ -274,11 +313,95 @@ const ReviewAgePensionAssessment = () => {
     );
     const { clientAge, partnerAge } = assessment;
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
+    const getReviewName = useGetReviewName();
     const [seriesVisibility, setSeriesVisibility] = useState({
-        assetsTestPension: true,
-        incomeTestPension: false,
+        actualPension: true,
         maxPension: true,
     });
+    const analysisContent = useMemo(() => {
+        const reviewData = selectedReviewAllData || {};
+        const firstName = (role) => {
+            const preferredName = reviewData.personalDetails?.[role]?.preferredName || getReviewName(role);
+            const name = String(preferredName || '').trim();
+            if (!name || ['client', 'partner'].includes(name.toLowerCase())) {
+                return role === 'partner' ? 'your partner' : 'you';
+            }
+            return name.split(/\s+/)[0];
+        };
+        const clientName = firstName('client');
+        const partnerName = firstName('partner');
+        const who = assessment.isCouple ? `${clientName} and ${partnerName}` : clientName;
+        const pronoun = assessment.isCouple ? 'you both' : 'you';
+        const status = assessment.isNoPension
+            ? 'No pension entitlement'
+            : assessment.isFullPension ? 'Full Age Pension' : 'Part Age Pension';
+        const testName = assessment.determiningTest === 'none'
+            ? 'means tests'
+            : `${assessment.determiningTest} test`;
+        const analysis = [];
+        const speech = [`${who}, based on the Age Pension assessment:`];
+
+        if (assessment.isNoPension) {
+            const ageIneligible = assessment.eligibleCount === 0;
+            analysis.push(
+                `<strong>${who}</strong> — <strong>${status}</strong>${ageIneligible
+                    ? ' because the Age Pension age requirement has not been met.'
+                    : ` based on the ${testName}.`}`,
+            );
+            speech.push(ageIneligible
+                ? `The Age Pension age requirement has not been met, so ${pronoun} are not currently entitled to the Age Pension.`
+                : `Unfortunately, based on the ${testName}, ${pronoun} are not currently entitled to the Age Pension.`);
+        } else {
+            analysis.push(
+                `<strong>${who}</strong> — <strong>${status}</strong>${assessment.isFullPension
+                    ? '.'
+                    : `, limited by the ${testName}.`}`,
+            );
+            speech.push(assessment.isFullPension
+                ? `Good news — ${pronoun} qualify for the full Age Pension.`
+                : `${pronoun.charAt(0).toUpperCase()}${pronoun.slice(1)} qualify for a part Age Pension, limited by the ${testName}.`);
+            analysis.push(
+                `Total pension: <strong>${formatCurrency(assessment.combinedPension)} per year</strong> (<strong>${formatCurrency(assessment.combinedPension / 26)} per fortnight</strong>).`,
+            );
+            speech.push(
+                `Your total pension is ${formatSpeechCurrency(assessment.combinedPension)} per year, or ${formatSpeechCurrency(assessment.combinedPension / 26)} per fortnight.`,
+            );
+        }
+
+        analysis.push(`Your total assessable assets: <strong>${formatCurrency(assessment.totalAssets)}</strong>.`);
+        analysis.push(`Your assessable income: <strong>${formatCurrency(assessment.totalAssessableIncome)}</strong> per year.`);
+        if (!assessment.isNoPension && assessment.pensionLost > 0) {
+            analysis.push(
+                `Reduced from the full rate by <strong>${formatCurrency(assessment.pensionLost)} per year</strong> due to the ${testName}.`,
+            );
+            speech.push(
+                `This is ${formatSpeechCurrency(assessment.pensionLost)} less than the full rate, due to the ${testName}.`,
+            );
+        }
+        speech.push('This is an estimate based on the information provided, not a Centrelink determination.');
+
+        return {
+            subtitle: `🏛️ Age Pension Results for ${who}`,
+            metrics: [
+                {
+                    label: 'Entitlement',
+                    value: status,
+                    color: assessment.isNoPension
+                        ? '#dc2626'
+                        : assessment.isFullPension ? '#16a34a' : '#d97706',
+                },
+                ...(!assessment.isNoPension
+                    ? [
+                        { label: 'Per year', value: formatCurrency(assessment.combinedPension) },
+                        { label: 'Per fortnight', value: formatCurrency(assessment.combinedPension / 26) },
+                    ]
+                    : []),
+            ],
+            analysis,
+            readAloud: speech.join(' '),
+        };
+    }, [assessment, getReviewName, selectedReviewAllData]);
 
     const headingStyle = { fontFamily: 'Georgia, serif' };
     const renderTitleBlock = useTitleBlock({
@@ -399,6 +522,7 @@ const ReviewAgePensionAssessment = () => {
                     <Button
                         style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: '#fff', borderRadius: 8, fontWeight: 600 }}
                         icon={"🧠"}
+                        onClick={() => setOpenAnalysisModal(true)}
                     >
                         Analyse
                     </Button>
@@ -715,11 +839,8 @@ const ReviewAgePensionAssessment = () => {
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => `$${val / 1000}K`} />
                                         <Tooltip formatter={(val) => [formatCurrency(Number(val)), '']} />
 
-                                        {seriesVisibility.assetsTestPension && (
-                                            <Bar dataKey="assetsTestPension" name="Under Assets Test" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                                        )}
-                                        {seriesVisibility.incomeTestPension && (
-                                            <Bar dataKey="incomeTestPension" name="Under Income Test" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                        {seriesVisibility.actualPension && (
+                                            <Bar dataKey="actualPension" name="Current Entitlement" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={24} />
                                         )}
                                         {seriesVisibility.maxPension && (
                                             <Bar dataKey="maxPension" name="Maximum Pension" fill="#1e293b" radius={[3, 3, 0, 0]} maxBarSize={24} />
@@ -731,18 +852,10 @@ const ReviewAgePensionAssessment = () => {
                             <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
                                 <Button
                                     size="small"
-                                    onClick={() => toggleSeries('assetsTestPension')}
-                                    style={{ borderRadius: 16, borderColor: '#22c55e', color: seriesVisibility.assetsTestPension ? '#16a34a' : '#94a3b8' }}
+                                    onClick={() => toggleSeries('actualPension')}
+                                    style={{ borderRadius: 16, borderColor: '#22c55e', color: seriesVisibility.actualPension ? '#16a34a' : '#94a3b8' }}
                                 >
-                                    ● Under Assets Test
-                                </Button>
-
-                                <Button
-                                    size="small"
-                                    onClick={() => toggleSeries('incomeTestPension')}
-                                    style={{ borderRadius: 16, borderColor: '#8b5cf6', color: seriesVisibility.incomeTestPension ? '#7c3aed' : '#94a3b8' }}
-                                >
-                                    ● Under Income Test
+                                    ● Current Entitlement
                                 </Button>
 
                                 <Button
@@ -813,6 +926,12 @@ const ReviewAgePensionAssessment = () => {
                     modalData={{ closeModal: () => setOpenModal(false) }}
                 />
             </AppModal>
+             <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

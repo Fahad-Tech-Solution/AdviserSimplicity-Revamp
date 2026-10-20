@@ -121,7 +121,13 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
         form.setFieldsValue(initialValues);
     }, [form, initialValues]);
 
-    const currentProfileData = Form.useWatch(activeProfileTab, form) || initialValues[activeProfileTab];
+    const watchedProfileData = Form.useWatch(activeProfileTab, {
+        form,
+        preserve: true,
+    });
+    const currentProfileData = editing
+        ? watchedProfileData ?? initialValues[activeProfileTab]
+        : initialValues[activeProfileTab];
     const incomeSourcesColumns = [
         { title: "Type", dataIndex: "type", key: "type", editable: false, width: 100 },
         ...INCOME_FIELDS.map(([key, title]) => ({
@@ -290,7 +296,11 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
                                         type="primary"
                                         htmlType="button"
                                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
-                                        onClick={() => setIsEditingEnabled(true)}
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            setIsEditingEnabled(true);
+                                        }}
                                     >
                                         Edit <RiEdit2Fill />
                                     </Button>

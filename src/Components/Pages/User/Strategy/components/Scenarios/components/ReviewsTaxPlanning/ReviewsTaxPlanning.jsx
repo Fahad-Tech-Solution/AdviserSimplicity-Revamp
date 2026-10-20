@@ -1,91 +1,132 @@
 import React, { useState } from 'react';
 import { Card, Button, Segmented, Row, Col, Typography, Space } from 'antd';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, Cell, LabelList, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
+import { useAtomValue } from 'jotai';
 import DynamicDataTable from '../../../../../../../Common/DynamicDataTable';
 import AppModal from '../../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../../hooks/useTitleBlock';
 import ReviewsTaxPlanningForm from './ReviewsTaxPlanningForm';
 import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
+import { SelectedReviewAllData } from '../../../../../../../../store/authState.js';
+import { calculateTaxPlanningProfile } from './taxPlanningCalculations.js';
 
 const { Text, Title } = Typography;
 
-// Mock Data structure for Tax Planning matching the UI image
-const taxPlanningData = {
-    summary: {
-        currentTax: '-$810',
-        currentTaxSub: 'net refund (incl. Medicare)',
-        proposedTax: '$3,788',
-        proposedTaxSub: 'net payable (incl. Medicare)',
-        taxSavings: '-$4,598',
-        taxSavingsSub: 'additional tax',
-        personalTaxSavings: '$112',
-        personalTaxSavingsSub: 'proposed vs current',
-    },
-    graphData: [
-        { scenario: 'Current', taxAmount: -810, displayVal: '$-810' }, { scenario: 'Proposed', taxAmount: 3788, displayVal: '$4K' },
-    ],
-    tableData: [
-        { key: '1', item: 'Gross Income', current: '$85,000', proposed: '$92,000', variance: '+$7,000' },
-        { key: '2', item: 'Allowable Deductions', current: '$2,500', proposed: '$3,800', variance: '+$1,300' },
-        { key: '3', item: 'Taxable Income', current: '$82,500', proposed: '$88,200', variance: '+$5,700' },
-        { key: '4', item: 'Gross Tax on Taxable Income', current: '$16,422', proposed: '$18,312', variance: '+$1,890' },
-        { key: '5', item: 'Medicare Levy', current: '$1,650', proposed: '$1,764', variance: '+$114' },
-        { key: '6', item: 'Tax Offsets & Credits', current: '$18,882', proposed: '$16,288', variance: '-$2,594' },
-        { key: '7', item: 'Net Tax Payable / (Refund)', current: '-$810', proposed: '$3,788', variance: '+$4,598' },
-    ],
+const formatTaxMoney = (value) => {
+    const rounded = Math.round(Number(value) || 0);
+    return `${rounded < 0 ? "-$" : "$"}${Math.abs(rounded).toLocaleString("en-AU")}`;
 };
 
-// Table Column Definitions
+const formatTaxTableMoney = (value) => {
+    const rounded = Math.round(Number(value) || 0);
+    const amount = Math.abs(rounded).toLocaleString("en-AU");
+    return rounded < 0 ? `($${amount})` : `$${amount}`;
+};
+
+const formatCompactTaxMoney = (value) => {
+    const amount = Number(value) || 0;
+    const sign = amount < 0 ? "-$" : "$";
+    const absoluteAmount = Math.abs(amount);
+    if (absoluteAmount >= 1_000_000) return `${sign}${(absoluteAmount / 1_000_000).toFixed(1)}M`;
+    if (absoluteAmount >= 1_000) return `${sign}${(absoluteAmount / 1_000).toFixed(1)}K`;
+    return `${sign}${Math.round(absoluteAmount)}`;
+};
+
+const renderTaxLabel = ({ x, y, width, height, value }) => (
+    <text
+        x={x + width / 2}
+        y={value < 0 ? y + height + 18 : y - 8}
+        textAnchor="middle"
+        fill={value < 0 ? '#f1f2f3' : '#1f2937'}
+        fontSize={13}
+        fontWeight={700}
+    >
+        {formatTaxMoney(value)}
+    </text>
+);
+
 const columns = [
-    { title: 'Tax Breakdown Item', dataIndex: 'item', key: 'item', align: 'left' },
-    { title: 'Current Position', dataIndex: 'current', key: 'current', align: 'right' },
-    { title: 'Proposed Position', dataIndex: 'proposed', key: 'proposed', align: 'right' },
     {
-        title: 'Variance',
-        dataIndex: 'variance',
-        key: 'variance',
+        title: 'Tax Breakdown Item',
+        dataIndex: 'label',
+        key: 'label',
+        render: (value, record) => (
+            <span style={{
+                fontWeight: record.type === 'section' || record.type === 'total' || record.type === 'grand' ? 700 : 400,
+                color: record.type === 'section' ? '#15803d' : undefined,
+            }}>
+                {value}
+            </span>
+        ),
+        onCell: (record) => record.type === 'section'
+            ? { colSpan: 4, style: { backgroundColor: '#f8fafc' } }
+            : {},
+    },
+    {
+        title: 'Current',
+        dataIndex: 'currentValue',
+        key: 'currentValue',
         align: 'right',
-        render: (val) => {
-            const isNegative = val.startsWith('-');
-            return <span style={{ color: isNegative ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{val}</span>;
-        }
+        render: (value, record) => record.type === 'section' ? '' : formatTaxTableMoney(value),
+        onCell: (record) => record.type === 'section' ? { colSpan: 0 } : {},
+    },
+    {
+        title: 'Proposed',
+        dataIndex: 'proposedValue',
+        key: 'proposedValue',
+        align: 'right',
+        render: (value, record) => record.type === 'section' ? '' : formatTaxTableMoney(value),
+        onCell: (record) => record.type === 'section' ? { colSpan: 0 } : {},
+    },
+    {
+        title: 'Difference',
+        key: 'difference',
+        align: 'right',
+        render: (_, record) => {
+            if (record.type === 'section') return '';
+            const difference = (record.proposedValue || 0) - (record.currentValue || 0);
+            if (Math.abs(difference) < 0.5) {
+                return <span style={{ color: '#9ca3af' }}>$0</span>;
+            }
+            const beneficial = record.benefitSign === -1
+                ? difference < 0
+                : record.benefitSign === 1
+                    ? difference > 0
+                    : null;
+            const color = beneficial === null ? '#6b7280' : beneficial ? '#15803d' : '#dc2626';
+            const sign = difference > 0 ? '+' : '−';
+            return (
+                <span style={{ color, fontWeight: 600 }}>
+                    {sign}{formatTaxMoney(Math.abs(difference))}
+                </span>
+            );
+        },
+        onCell: (record) => record.type === 'section' ? { colSpan: 0 } : {},
     },
 ];
-
-// Custom bar renderer to draw distinct colors and top value labels
-const RenderCustomBar = (props) => {
-    const { x, y, width, height, payload } = props;
-    const isCurrent = payload.scenario === 'Current';
-    const barColor = isCurrent ? '#22c55e' : '#1e293b';
-
-    return (
-        <g>
-            <rect x={x} y={y} width={width} height={height} fill={barColor} rx={4} ry={4} />
-            <text
-                x={x + width / 2}
-                y={isCurrent ? y - 10 : y - 12}
-                fill={isCurrent ? '#22c55e' : '#0f172a'}
-                textAnchor="middle"
-                fontSize={13}
-                fontWeight={700}
-            >
-                {payload.displayVal}
-            </text>
-        </g>
-    );
-};
 
 const ReviewsTaxPlanning = () => {
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
     const [selectedProfile, setSelectedProfile] = useState('client');
     const getReviewName = useGetReviewName();
-
+    const selectedReviewAllData = useAtomValue(SelectedReviewAllData);
+    const profile = selectedReviewAllData?.taxPlanningDetails?.[selectedProfile];
+    const calculation = calculateTaxPlanningProfile(profile);
+    const current = calculation.current;
+    const proposed = calculation.proposed;
+    const currentTax = current?.netPayable ?? 0;
+    const proposedTax = proposed?.netPayable ?? 0;
+    const taxSavings = current && proposed ? currentTax - proposedTax : 0;
+    const personalTaxSavings = current && proposed ? current.totalTax - proposed.totalTax : 0;
+    const graphData = [
+        { scenario: 'Current', netPayable: currentTax },
+        { scenario: 'Proposed', netPayable: proposedTax },
+    ];
+    const tableData = calculation.tableRows;
 
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({ titleStyle: headingStyle });
-
-    const summary = taxPlanningData.summary;
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -98,7 +139,9 @@ const ReviewsTaxPlanning = () => {
                     onChange={(val) => setSelectedProfile(val)}
                     options={[
                         { label: getReviewName('client'), value: 'client', icon: '👤' },
-                        { label: getReviewName('partner'), value: 'partner', icon: '👥' },
+                        ...(selectedReviewAllData?.personalDetails?.owner?.includes("partner") || selectedReviewAllData?.owner?.includes("partner") || selectedReviewAllData?.personalDetails?.owner?.includes("partner")
+                            ? [{ label: getReviewName("partner"), value: 'partner', icon: "👥" }]
+                            : []),
                     ]}
                     style={{ padding: 3, backgroundColor: '#f3f4f6', borderRadius: 8 }}
                 />
@@ -144,10 +187,12 @@ const ReviewsTaxPlanning = () => {
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Current Tax</Text>
                             <Title level={2} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {summary.currentTax}
+                                {formatTaxMoney(currentTax)}
                             </Title>
                         </div>
-                        <Text style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>{summary.currentTaxSub}</Text>
+                        <Text style={{ fontSize: 11, color: currentTax < 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                            {currentTax < 0 ? 'net refund (incl. Medicare)' : 'net payable (incl. Medicare)'}
+                        </Text>
                     </Card>
                 </Col>
 
@@ -160,10 +205,12 @@ const ReviewsTaxPlanning = () => {
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Proposed Tax</Text>
                             <Title level={2} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {summary.proposedTax}
+                                {formatTaxMoney(proposedTax)}
                             </Title>
                         </div>
-                        <Text style={{ fontSize: 11, color: '#ea580c', fontWeight: 600 }}>{summary.proposedTaxSub}</Text>
+                        <Text style={{ fontSize: 11, color: proposedTax < 0 ? '#16a34a' : '#ea580c', fontWeight: 600 }}>
+                            {proposedTax < 0 ? 'net refund (incl. Medicare)' : 'net payable (incl. Medicare)'}
+                        </Text>
                     </Card>
                 </Col>
 
@@ -176,10 +223,12 @@ const ReviewsTaxPlanning = () => {
                         <div>
                             <Text style={{ fontSize: 13, color: '#374151' }}>Tax Savings</Text>
                             <Title level={2} style={{ margin: '4px 0', fontWeight: 700, color: '#16a34a' }}>
-                                {summary.taxSavings}
+                                {formatTaxMoney(taxSavings)}
                             </Title>
                         </div>
-                        <Text style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>{summary.taxSavingsSub}</Text>
+                        <Text style={{ fontSize: 11, color: taxSavings >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                            {taxSavings > 0 ? 'tax saved' : taxSavings < 0 ? 'additional tax' : 'proposed vs current'}
+                        </Text>
                     </Card>
                 </Col>
 
@@ -192,10 +241,10 @@ const ReviewsTaxPlanning = () => {
                         <div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Personal Tax Savings</Text>
                             <Title level={2} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {summary.personalTaxSavings}
+                                {formatTaxMoney(personalTaxSavings)}
                             </Title>
                         </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{summary.personalTaxSavingsSub}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>proposed vs current</Text>
                     </Card>
                 </Col>
             </Row>
@@ -203,75 +252,98 @@ const ReviewsTaxPlanning = () => {
             {/* Dynamic View Card (Graph vs Table) */}
             <Card bodyStyle={{ padding: '24px' }} style={{ borderRadius: 16, borderColor: '#e8e8e8' }}>
                 {viewMode === 'Graph' ? (
-                    <div style={{ position: 'relative' }}>
-                        {/* Red Lost Indicator Pill Overlay */}
-                        <div style={{
-                            position: 'absolute',
-                            top: '46%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            backgroundColor: '#fff',
-                            border: '1px solid #fca5a5',
-                            color: '#dc2626',
-                            padding: '4px 14px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            zIndex: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                        }}>
-                            $5K lost
-                        </div>
-
-                        <div style={{ width: '100%', height: 380 }}>
-                            <ResponsiveContainer>
-                                <BarChart data={taxPlanningData.graphData} margin={{ top: 30, right: 80, left: 20, bottom: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis
-                                        dataKey="scenario"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }}
+                    <div style={{ width: '100%', height: 380, position: 'relative' }}>
+                        {current && proposed && taxSavings !== 0 && (
+                            <div style={{
+                                position: 'absolute',
+                                zIndex: 1,
+                                top: 8,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                padding: '4px 14px',
+                                borderRadius: 16,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                                backgroundColor: taxSavings > 0 ? '#f0fdf4' : '#fef2f2',
+                                border: `1px solid ${taxSavings > 0 ? '#22c55e' : '#dc2626'}`,
+                                color: taxSavings > 0 ? '#15803d' : '#dc2626',
+                            }}>
+                                {taxSavings > 0 ? '+' : ''}{formatCompactTaxMoney(taxSavings)} {taxSavings > 0 ? 'saved' : 'additional tax'}
+                            </div>
+                        )}
+                        <ResponsiveContainer>
+                            <BarChart data={graphData} margin={{ top: 34, right: 24, left: 12, bottom: 12 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <ReferenceLine y={0} stroke="#94a3b8" />
+                                <XAxis
+                                    dataKey="scenario"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                    domain={([dataMin, dataMax]) => {
+                                        const range = Math.abs(dataMax - dataMin);
+                                        const padding = (range || Math.abs(dataMin) || Math.abs(dataMax) || 1) * 0.08;
+                                        return [
+                                            Math.min(0, dataMin - padding),
+                                            Math.max(0, dataMax + padding),
+                                        ];
+                                    }}
+                                    tickFormatter={formatCompactTaxMoney}
+                                />
+                                <Tooltip formatter={(val) => [formatTaxMoney(val), 'Tax payable / (refund)']} />
+                                <Bar
+                                    dataKey="netPayable"
+                                    maxBarSize={160}
+                                    radius={[0, 0, 6, 6]}
+                                >
+                                    <Cell fill="#22c55e" />
+                                    <Cell fill="#1e293b" />
+                                    <LabelList
+                                        dataKey="netPayable"
+                                        content={renderTaxLabel}
+                                        style={{ fontSize: 13, fontWeight: 700 }}
                                     />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 11 }}
-                                        tickFormatter={(val) => `$${val < 0 ? `-${Math.abs(val / 1000)}` : val / 1000}K`}
-                                        domain={[-1000, 4000]}
-                                    />
-                                    <Tooltip formatter={(val) => [`$${val.toLocaleString()}`, 'Tax Amount']} />
-                                    <Bar
-                                        dataKey="taxAmount"
-                                        shape={<RenderCustomBar />}
-                                        maxBarSize={160}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
 
                         <Text type="secondary" style={{ display: 'block', textAlign: 'center', fontSize: 12, marginTop: 12, fontWeight: 600, color: '#334155' }}>
-                            Client
+                            {getReviewName(selectedProfile)}
                         </Text>
                     </div>
                 ) : (
                     <>
                         <Title level={5} style={{ color: '#22c55e', letterSpacing: '0.5px', marginBottom: 16, textTransform: 'uppercase' }}>
-                            TAX PLANNING ANALYSIS BREAKDOWN
+                            TAX PLANNING COMPARISON · CURRENT VS PROPOSED
                         </Title>
 
-                        <DynamicDataTable
-                            columns={columns}
-                            data={taxPlanningData.tableData}
-                            headerFontSize={12}
-                            bodyFontSize={12}
-                            showCount={false}
-                            size="small"
-                            tableProps={{
-                                scroll: { x: 'max-content' }
-                            }}
-                            tableStyle={{ borderRadius: 12 }}
-                        />
+                        {tableData.length ? (
+                            <>
+                                <DynamicDataTable
+                                    columns={columns}
+                                    data={tableData}
+                                    headerFontSize={12}
+                                    bodyFontSize={12}
+                                    showCount={false}
+                                    size="small"
+                                    tableProps={{ scroll: { x: 'max-content' } }}
+                                    tableStyle={{ borderRadius: 12 }}
+                                />
+                                <Text type="secondary" style={{ display: 'block', marginTop: 14, fontSize: 11 }}>
+                                    DIFFERENCE COLUMN · GREEN = TAX SAVING · RED = ADDITIONAL TAX
+                                </Text>
+                            </>
+                        ) : (
+                            <Text type="secondary">
+                                Enter tax information for both Current and Proposed to see the comparison.
+                            </Text>
+                        )}
                     </>
                 )}
             </Card>

@@ -8,21 +8,13 @@ import ScenariosSuperProjectionForm from './ScenariosSuperProjectionForm';
 import { useGetReviewName } from '../../../../../../../hooks/useUserDashboardData';
 import { SelectedReviewAllData } from '../../../../../../../store/authState';
 import { useAtom } from 'jotai';
+import AnalysisModal from './AnalysisModal/AnalysisModal';
 
 const { Text, Title } = Typography;
 
 const CONCESSIONAL_CAP = 32500;
 const CONTRIBUTION_TAX_RATE = 0.15;
 const INSURANCE_NET_COST = 0.85;
-
-const DEFAULT_RISK_RETURNS = {
-    Cash: 3,
-    Conservative: 3.8,
-    'Moderately Conservative': 4.5,
-    Balanced: 5,
-    Growth: 6,
-    'High Growth': 6.5,
-};
 
 // Helper function to convert numeric strings like "$30,000" or "2.5%" to Float
 const parseNum = (val, defaultVal = 0) => {
@@ -60,13 +52,13 @@ const getAgeFromDob = (dob) => {
 };
 
 const getInsuranceIndexationRate = (value, age) => {
-    const selectedValue = parseNum(value, 0);
-    if (selectedValue === 0) {
+    const normalizedValue = String(value ?? "").trim().toLowerCase();
+    if (!normalizedValue || normalizedValue.includes("auto")) {
         if (!age || age < 40) return 8;
         if (age < 60) return 12;
         return 18;
     }
-    return Math.max(0, selectedValue - 1);
+    return Math.max(0, parseNum(value, 0));
 };
 
 // Mirrors calcSuperProjection in AdviserSimplicity_Review.html.
@@ -75,14 +67,13 @@ const calculateProjections = (personData, currentAge) => {
 
     const startingBalance = parseNum(personData.superAnnuationTotal, 0);
     const annualIncome = parseNum(personData.incomeFromBusinessTotal, 0);
-    const sgcPercent = parseNum(personData.sgcPercent, 12);
+    const sgcPercent = parseNum(personData.sgcPercent, 0) || 12;
     const salarySacrifice = parseNum(personData.ssPersonalConcessional, 0);
     const annualNcc = parseNum(personData.nonConcessional, 0);
     const lumpSumNcc = parseNum(personData.lumpSumNcc, 0);
-    const riskReturn = DEFAULT_RISK_RETURNS[personData.riskGoal] ?? 5;
-    const returnRate = parseNum(personData.investmentReturn, riskReturn) / 100;
-    const salaryGrowthRate = parseNum(personData.salaryGrowth, 2) / 100;
-    const years = Math.max(0, Math.floor(parseNum(personData.projectionPeriod, 10)));
+    const returnRate = (parseNum(personData.investmentReturn, 0) || 5) / 100;
+    const salaryGrowthRate = (parseNum(personData.salaryGrowth, 0) || 2) / 100;
+    const years = Math.max(0, Math.floor(parseNum(personData.projectionPeriod, 0) || 10));
     const grossInsurancePremium = parseNum(personData.insurancePremium, 0);
     const premiumIndexationRate = getInsuranceIndexationRate(personData.premiumIndexation, currentAge) / 100;
     const requestedPremiumYears = parseNum(personData.premiumYears, 0);
@@ -180,6 +171,14 @@ const calculateProjections = (personData, currentAge) => {
             strategyGain: formatCurrency(finalWith - finalWithout),
             yr10Summary: `Yr ${years}: ${projectedBalance} (with) vs ${balanceWithoutFormatted} (without)`,
         },
+        analysisInputs: {
+            finalBalance: finalWith,
+            balanceWithout: finalWithout,
+            annualReturn: returnRate * 100,
+            salarySacrifice,
+            years,
+            currentAge,
+        },
         chart,
         table
     };
@@ -206,6 +205,7 @@ const ScenariosSuperProjection = () => {
     const [selectedProfile, setSelectedProfile] = useState('client');
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
 
     const getReviewName = useGetReviewName();
@@ -239,6 +239,87 @@ const ScenariosSuperProjection = () => {
     const currentChartData = calculatedData.chart;
     const currentTableData = calculatedData.table;
 
+    const analysisContent = useMemo(() => {
+        const {
+            finalBalance,
+            balanceWithout,
+            annualReturn,
+            salarySacrifice,
+            years,
+            currentAge,
+        } = calculatedData.analysisInputs;
+        const preferredName = getReviewName(selectedProfile).trim();
+        const profileName = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
+            ? preferredName.split(/\s+/)[0]
+            : selectedProfile === "partner" ? "your partner" : "the client";
+        const uplift = finalBalance - balanceWithout;
+        const upliftPct = balanceWithout > 0 ? (uplift / balanceWithout) * 100 : 0;
+        const endAge = currentAge > 0 ? currentAge + years : null;
+        const safeName = profileName.replace(/[&<>"']/g, (character) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        })[character]);
+        const formatAnalysisMoney = (value) => `$${Math.round(Number(value) || 0).toLocaleString("en-AU")}`;
+        const formatAnalysisPercent = (value) =>
+            `${(Number(value) || 0).toFixed(2).replace(/\.?0+$/, "")}%`;
+        const formatSpeechMoney = (value) => {
+            const rounded = Math.round(Number(value) || 0);
+            if (rounded === 0) return "zero dollars";
+            const absolute = Math.abs(rounded);
+            const sign = rounded < 0 ? "negative " : "";
+            if (absolute >= 1000000) {
+                const millions = Math.round((absolute / 1000000) * 10) / 10;
+                return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+            }
+            if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
+            if (absolute >= 10000) {
+                const thousands = Math.round(absolute / 500) * 500 / 1000;
+                return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+            }
+            if (absolute >= 1000) {
+                const thousands = Math.round(absolute / 100) * 100 / 1000;
+                return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+            }
+            return `${sign}${absolute} dollars`;
+        };
+
+        const analysis = [
+            `<strong>${safeName}</strong>, your projected super balance after ${years} years is <strong>${formatAnalysisMoney(finalBalance)}</strong>${endAge ? ` (at age ${endAge})` : ""}`,
+        ];
+        const speech = [`${profileName}, based on our projections:`];
+        speech.push(`After ${years} years, your projected super balance is ${formatSpeechMoney(finalBalance)}${endAge ? `, reaching that at age ${endAge}` : ""}.`);
+
+        if (salarySacrifice > 0 && uplift > 100) {
+            analysis.push(
+                `Your salary sacrifice strategy adds <strong>${formatAnalysisMoney(uplift)}</strong> over no strategy (<strong>${upliftPct.toFixed(1)}% uplift</strong>)`,
+            );
+            speech.push(
+                `Your salary sacrifice strategy adds an extra ${formatSpeechMoney(uplift)} compared to no sacrifice, a ${upliftPct.toFixed(1)} percent uplift.`,
+            );
+        }
+
+        analysis.push(
+            `Assumptions: ${formatAnalysisPercent(annualReturn)} annual return${salarySacrifice ? `, ${formatAnalysisMoney(salarySacrifice)} salary sacrifice per year` : ""}`,
+        );
+        speech.push("Please note these are projections only based on the assumptions provided, and are not guaranteed. Actual outcomes may differ.");
+
+        return {
+            subtitle: `💼 Super Results for ${profileName}`,
+            metrics: [
+                { label: "Final balance", value: formatAnalysisMoney(finalBalance) },
+                { label: "Years projected", value: String(years) },
+                ...(salarySacrifice > 0
+                    ? [{ label: "Strategy uplift", value: formatAnalysisMoney(uplift), color: "#16a34a" }]
+                    : []),
+            ],
+            analysis,
+            readAloud: speech.join(" "),
+        };
+    }, [calculatedData, getReviewName, selectedProfile]);
+
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
 
@@ -249,7 +330,7 @@ const ScenariosSuperProjection = () => {
                     onChange={(val) => setSelectedProfile(val.toLowerCase())}
                     options={[
                         { label: getReviewName("client"), value: 'Client', icon: "👤" },
-                        ...(selectedReviewAllData?.superannuationDetails?.owner?.includes("partner") || selectedReviewAllData?.owner?.includes("partner") || selectedReviewAllData?.personalDetails?.owner?.includes("partner")
+                        ...(selectedReviewAllData?.personalDetails?.owner?.includes("partner") || selectedReviewAllData?.owner?.includes("partner") || selectedReviewAllData?.personalDetails?.owner?.includes("partner")
                             ? [{ label: getReviewName("partner"), value: 'Partner', icon: "👥" }]
                             : []),
                     ]}
@@ -270,6 +351,7 @@ const ScenariosSuperProjection = () => {
                     <Button
                         style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: '#fff', borderRadius: 8, fontWeight: 600 }}
                         icon={"🧠"}
+                        onClick={() => { setOpenAnalysisModal(true); }}
                     >
                         Analyse
                     </Button>
@@ -278,7 +360,7 @@ const ScenariosSuperProjection = () => {
                         type="primary"
                         icon={"✏️"}
                         style={{ backgroundColor: '#22c55e', borderColor: '#22c55e', borderRadius: 8, fontWeight: 600 }}
-                        onClick={() => { setOpenModal(true) }}
+                        onClick={() => { setOpenModal(true); }}
                     >
                         Edit Inputs
                     </Button>
@@ -433,6 +515,13 @@ const ScenariosSuperProjection = () => {
             >
                 <ScenariosSuperProjectionForm modalData={{ closeModal: () => { setOpenModal(false) } }} />
             </AppModal>
+
+            <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

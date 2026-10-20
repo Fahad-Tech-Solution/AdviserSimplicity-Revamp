@@ -7,6 +7,8 @@ import AppModal from "../../../../../../../Common/AppModal";
 import useTitleBlock from "../../../../../../../../hooks/useTitleBlock";
 import LoanSimulatorForm from "./LoanSimulatorForm";
 import { SelectedReviewAllData } from "../../../../../../../../store/authState";
+import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData";
+import AnalysisModal from "../AnalysisModal/AnalysisModal";
 
 const { Text, Title } = Typography;
 const FREQUENCIES = {
@@ -43,6 +45,32 @@ function formatCurrencyWithDecimals(value) {
 function formatTerm(years) {
     if (!years) return "—";
     return `${years} ${years === 1 ? "yr" : "yrs"}`;
+}
+
+function formatAnalysisYears(years) {
+    const rounded = Math.round(Number(years) || 0);
+    return Math.abs(years - rounded) < 0.05 ? String(rounded) : Number(years).toFixed(1);
+}
+
+function formatSpeechCurrency(value) {
+    const rounded = Math.round(Number(value) || 0);
+    if (rounded === 0) return "zero dollars";
+    const sign = rounded < 0 ? "negative " : "";
+    const absolute = Math.abs(rounded);
+    if (absolute >= 1000000) {
+        const millions = Math.round((absolute / 1000000) * 10) / 10;
+        return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+    }
+    if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
+    if (absolute >= 10000) {
+        const thousands = Math.round(absolute / 500) * 500 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    if (absolute >= 1000) {
+        const thousands = Math.round(absolute / 100) * 100 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    return `${sign}${absolute} dollars`;
 }
 
 function simulateLoan({ amount, annualRate, termYears, frequency, loanType, extraPerPeriod, offset }) {
@@ -222,7 +250,9 @@ const TABLE_COLUMNS = [
 const LoanSimulator = () => {
     const [viewMode, setViewMode] = useState("Graph");
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const getReviewName = useGetReviewName();
     const [seriesVisibility, setSeriesVisibility] = useState({
         withExtraOffset: true,
         minimumOnly: true,
@@ -261,6 +291,83 @@ const LoanSimulator = () => {
         }
         : null;
 
+    const analysisContent = useMemo(() => {
+        const loanSetup = loanDetails?.loanSetup || {};
+        const strategy = loanDetails?.extrasAndOffsets || {};
+        const amount = toNumber(loanSetup.homeLoanTotal);
+        const rate = toNumber(loanSetup.interestRate);
+        const termYears = Math.floor(toNumber(loanSetup.termYears));
+        const frequencyLabel = results?.frequencyLabel || loanSetup.paymentFrequency || "payment period";
+        const extraRepayments = toNumber(strategy.extraRepayments);
+        const offsetBalance = toNumber(strategy.offsetAccountBalance);
+        const surplusCash = toNumber(strategy.surplusCash);
+        const hasStrategy = extraRepayments > 0 || offsetBalance > 0 || surplusCash > 0;
+        const preferredName = String(getReviewName("client") || "").trim();
+        const name = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
+            ? preferredName.split(/\s+/)[0]
+            : "you";
+
+        if (!results) {
+            const prompt = "Enter a valid loan amount, interest rate, and loan term to generate the loan analysis.";
+            return {
+                subtitle: "🏠 Loan Results",
+                metrics: [],
+                analysis: [prompt],
+                readAloud: prompt,
+            };
+        }
+
+        const minimumRepayment = results.minimumScenario.minimumRepayment;
+        const strategyBits = [];
+        if (extraRepayments > 0) {
+            strategyBits.push(`${formatCurrency(extraRepayments)} extra per ${frequencyLabel.toLowerCase()}`);
+        }
+        if (offsetBalance > 0) strategyBits.push(`${formatCurrency(offsetBalance)} in offset`);
+        if (surplusCash > 0) {
+            strategyBits.push(`${formatCurrency(surplusCash)} surplus per ${frequencyLabel.toLowerCase()}`);
+        }
+
+        const analysis = [
+            `<strong>${name}</strong>, your loan of <strong>${formatCurrency(amount)}</strong> over <strong>${termYears} years</strong> at <strong>${rate}%</strong>.`,
+            `Minimum repayment: <strong>${formatCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}</strong>.`,
+        ];
+        const speech = [
+            `${name}, based on your loan details:`,
+            `Your ${formatSpeechCurrency(amount)} loan over ${termYears} years at ${rate}% has a minimum repayment of ${formatSpeechCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}.`,
+        ];
+
+        if (hasStrategy) {
+            analysis.push(`Your strategy: ${strategyBits.join(" · ")}.`);
+            if (results.termSaved > 0.05) {
+                const yearsSaved = formatAnalysisYears(results.termSaved);
+                analysis.push(`<strong style="color:#16a34a">✓ You’ll pay off ${yearsSaved} years sooner.</strong>`);
+                speech.push(`${name}, with this strategy you’ll pay off the loan ${yearsSaved} years sooner than the minimum schedule.`);
+            }
+            if (results.interestSaved > 1000) {
+                analysis.push(`<strong style="color:#16a34a">✓ Interest saved: ${formatCurrency(results.interestSaved)}.</strong>`);
+                speech.push(`You’ll save approximately ${formatSpeechCurrency(results.interestSaved)} in interest.`);
+            }
+        } else {
+            speech.push(`${name}, currently no additional strategy is applied — the loan follows the minimum repayment schedule.`);
+        }
+
+        return {
+            subtitle: `🏠 Loan Results for ${name}`,
+            metrics: [
+                { label: "Loan amount", value: formatCurrency(amount) },
+                { label: "Min repayment", value: formatCurrency(minimumRepayment) },
+                ...(results.termSaved > 0.05
+                    ? [{ label: "Years saved", value: `${formatAnalysisYears(results.termSaved)} yrs`, color: "#16a34a" }]
+                    : []),
+                ...(results.interestSaved > 1000
+                    ? [{ label: "Interest saved", value: formatCurrency(results.interestSaved), color: "#16a34a" }]
+                    : []),
+            ],
+            analysis,
+            readAloud: speech.join(" "),
+        };
+    }, [getReviewName, loanDetails, results]);
+
     return (
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: 20, fontFamily: "sans-serif" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
@@ -282,6 +389,7 @@ const LoanSimulator = () => {
                     <Button
                         style={{ backgroundColor: "#8b5cf6", borderColor: "#8b5cf6", color: "#fff", borderRadius: 8, fontWeight: 600 }}
                         icon="🧠"
+                        onClick={() => setOpenAnalysisModal(true)}
                     >
                         Analyse
                     </Button>
@@ -291,6 +399,13 @@ const LoanSimulator = () => {
                         style={{ backgroundColor: "#22c55e", borderColor: "#22c55e" }}
                     >
                         ✏️ Edit Inputs
+                    </Button>
+                    <Button
+                        style={{ backgroundColor: "#8b5cf6", borderColor: "#8b5cf6", color: "#fff", borderRadius: 8, fontWeight: 600 }}
+                        icon="🧠"
+                        onClick={() => setOpenAnalysisModal(true)}
+                    >
+                        Analyse
                     </Button>
                 </Space>
             </div>
@@ -370,15 +485,20 @@ const LoanSimulator = () => {
                     PROJECTED · ALL VALUES IN AUD · INDICATIVE ONLY
                 </Text>
             </div>
-
             <AppModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                width="70vw"
+                width="50vw"
                 title={renderTitleBlock({ title: "Loan Simulator Inputs", icon: "🏠" })}
             >
                 <LoanSimulatorForm modalData={{ closeModal: () => setOpenModal(false) }} />
             </AppModal>
+            <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

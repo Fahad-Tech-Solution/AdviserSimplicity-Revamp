@@ -180,17 +180,14 @@ function getInsuranceIndexRateByAge(age) {
 }
 
 function getPremiumIndexationRate(value, age) {
-    const selectedValue = Number(value);
+    const normalizedValue = String(value ?? "").trim().toLowerCase();
     if (
-        value === null ||
-        value === undefined ||
-        value === "" ||
-        !Number.isFinite(selectedValue) ||
-        selectedValue === 0
+        !normalizedValue ||
+        normalizedValue.includes("auto")
     ) {
         return getInsuranceIndexRateByAge(age);
     }
-    return Math.max(0, selectedValue - 1);
+    return Math.max(0, parseFloat(normalizedValue.replace("%", "")) || 0);
 }
 
 /**
@@ -199,49 +196,51 @@ function getPremiumIndexationRate(value, age) {
 const calculateProjectedBalanceEnd = (data) => {
     const {
         superBalance = 0,
-        riskProfile = "Balanced",
         investmentReturn,
         salary = 0,
-        sgcPercent = 0,
+        sgcPercent = 12,
         ssPersonalConcessional = 0,
         nonConcessional = 0,
         lumpSumNCCFinal = 0,
-        salaryGrowthPercent = 0,
-        projectionPeriodYears = 1,
+        salaryGrowthPercent = 2,
+        projectionPeriodYears = 10,
         insurancePremium = 0,
         premiumIndexationPercent = 0,
         premiumYears = 0,
         currentAge,
     } = data;
 
-    // Get return rate based on Risk Profile or custom input override
-    const returnRatePct = (investmentReturn !== undefined && !isNaN(investmentReturn) && investmentReturn !== "")
+    // Match the projection calculator's default annual return when no override is entered.
+    const returnRatePct = (investmentReturn && !isNaN(investmentReturn))
         ? investmentReturn
-        : (RISK_PROFILE_RETURNS[riskProfile] ?? 5.0);
+        : 5.0;
 
+    const effectiveSgcPercent = sgcPercent || 12;
+    const effectiveSalaryGrowthPercent = salaryGrowthPercent || 2;
+    const effectiveProjectionPeriodYears = projectionPeriodYears || 10;
     const returnRate = returnRatePct / 100;
-    const salaryGrowthRate = salaryGrowthPercent / 100;
+    const salaryGrowthRate = effectiveSalaryGrowthPercent / 100;
     const premiumIndexRate = premiumIndexationPercent / 100;
 
     let currentSalary = salary;
     let currentPremium = insurancePremium * INSURANCE_TAX_REBATE_NET;
     let currentBalance = superBalance;
     const nccAnnual = currentAge >= 75 ? 0 : nonConcessional;
-    const lumpSumNcc = currentAge + projectionPeriodYears >= 75
+    const lumpSumNcc = currentAge + effectiveProjectionPeriodYears >= 75
         ? 0
         : lumpSumNCCFinal;
     const activePremiumYears = premiumYears > 0
-        ? Math.min(premiumYears, projectionPeriodYears)
-        : projectionPeriodYears;
+        ? Math.min(premiumYears, effectiveProjectionPeriodYears)
+        : effectiveProjectionPeriodYears;
 
-    for (let yr = 1; yr <= projectionPeriodYears; yr++) {
-        const sg = currentSalary * (sgcPercent / 100);
+    for (let yr = 1; yr <= effectiveProjectionPeriodYears; yr++) {
+        const sg = currentSalary * (effectiveSgcPercent / 100);
         const concessionalContributions = Math.min(
             sg + ssPersonalConcessional,
             CONCESSIONAL_CAP,
         );
         const actualSalarySacrifice = Math.max(0, concessionalContributions - sg);
-        const nccLumpThisYear = yr === projectionPeriodYears ? lumpSumNcc : 0;
+        const nccLumpThisYear = yr === effectiveProjectionPeriodYears ? lumpSumNcc : 0;
         const premiumThisYear = yr <= activePremiumYears ? currentPremium : 0;
         const earnings =
             (currentBalance + sg + actualSalarySacrifice) * returnRate;
