@@ -93,7 +93,7 @@ export default function AnalysisModal({
     return (
         <Modal
             open={openAnalysisModal}
-            width={"50vw"}
+            width={"40vw"}
             centered={true}
             closable={true}
             mask={{ enabled: true, blur: true, closable: false }}

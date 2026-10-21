@@ -6,7 +6,7 @@ import EditableDynamicTable from '../../../../../../Common/EditableDynamicTable'
 import { formatAustralianDate, formatNumber, toCommaAndDollar } from '../../../../../../../hooks/helpers';
 import useApi from '../../../../../../../hooks/useApi';
 import { useOwnerOptions, useReviewOptions } from '../../../../../../../hooks/useUserDashboardData';
-import { SelectedReviewAllData } from '../../../../../../../store/authState';
+import { SelectedClient, SelectedReviewAllData } from '../../../../../../../store/authState';
 import { useAtom, useAtomValue } from 'jotai';
 
 const { Text } = Typography;
@@ -92,6 +92,24 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
     const { post, patch } = useApi();
     const ownerOptions = useReviewOptions();
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const [selectedClient] = useAtom(SelectedClient);
+
+    const reviewOwnerOptions = useMemo(() => {
+        if (ownerOptions.some((option) => option.value === 'partner')) {
+            return ownerOptions;
+        }
+
+        const maritalStatus = String(
+            selectedClient?.client?.clientMaritalStatus || '',
+        ).trim().toLowerCase();
+
+        if (!maritalStatus || ['single', 'widowed'].includes(maritalStatus)) {
+            return ownerOptions;
+        }
+
+        return [...ownerOptions, { label: selectedReviewAllData?.personalDetails?.partner?.preferredName || "partner", value: 'partner' }];
+    }, [ownerOptions, selectedClient]);
+
 
 
     const initialValues = useMemo(() => {
@@ -340,7 +358,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                                 mode="multiple"
                                 allowClear
                                 placeholder="Select owner"
-                                options={ownerOptions}
+                                options={reviewOwnerOptions}
                                 style={{ width: '100%' }}
                                 disabled={!editing}
                             />

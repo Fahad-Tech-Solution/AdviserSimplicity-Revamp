@@ -9,12 +9,37 @@ import ReviewsTaxPlanningForm from './ReviewsTaxPlanningForm';
 import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
 import { SelectedReviewAllData } from '../../../../../../../../store/authState.js';
 import { calculateTaxPlanningProfile } from './taxPlanningCalculations.js';
+import AnalysisModal from '../AnalysisModal/AnalysisModal.jsx';
 
 const { Text, Title } = Typography;
+
+const TAX_ANALYSIS_DISCLAIMER =
+    "The figures shown are projections and estimates based on the assumptions and inputs provided. They are <strong>not guaranteed</strong> and actual outcomes may differ materially due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This is general information only and does not constitute personal financial product advice. Past performance is not a reliable indicator of future performance. For formal advice tailored to the client's specific situation, refer to the calculator's detailed output and the Record of Advice.";
 
 const formatTaxMoney = (value) => {
     const rounded = Math.round(Number(value) || 0);
     return `${rounded < 0 ? "-$" : "$"}${Math.abs(rounded).toLocaleString("en-AU")}`;
+};
+
+const formatTaxSpeechMoney = (value) => {
+    const rounded = Math.round(Number(value) || 0);
+    if (rounded === 0) return "zero dollars";
+    const sign = rounded < 0 ? "negative " : "";
+    const absolute = Math.abs(rounded);
+    if (absolute >= 1_000_000) {
+        const millions = Math.round((absolute / 1_000_000) * 10) / 10;
+        return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+    }
+    if (absolute >= 100_000) return `${sign}${Math.round(absolute / 1_000)} thousand dollars`;
+    if (absolute >= 10_000) {
+        const thousands = Math.round(absolute / 500) * 500 / 1_000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    if (absolute >= 1_000) {
+        const thousands = Math.round(absolute / 100) * 100 / 1_000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    return `${sign}${absolute} dollars`;
 };
 
 const formatTaxTableMoney = (value) => {
@@ -108,6 +133,7 @@ const columns = [
 const ReviewsTaxPlanning = () => {
     const [viewMode, setViewMode] = useState('Graph');
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedProfile, setSelectedProfile] = useState('client');
     const getReviewName = useGetReviewName();
     const selectedReviewAllData = useAtomValue(SelectedReviewAllData);
@@ -127,6 +153,92 @@ const ReviewsTaxPlanning = () => {
 
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({ titleStyle: headingStyle });
+    const analysisContent = (() => {
+        const preferredName = String(getReviewName(selectedProfile) || '').trim();
+        const name = preferredName &&
+            !['client', 'partner'].includes(preferredName.toLowerCase())
+            ? preferredName.split(/\s+/)[0]
+            : selectedProfile === 'partner' ? 'your partner' : 'the client';
+        const scenarios = [
+            { label: 'Current', result: current },
+            { label: 'Proposed', result: proposed },
+        ].filter(({ result }) => result);
+        const subtitle = `💰 Tax Results for ${name}`;
+
+        if (!scenarios.length) {
+            const prompt = 'Enter tax information for Current or Proposed to generate the tax analysis.';
+            return { subtitle, metrics: [], analysis: [prompt], readAloud: prompt };
+        }
+
+        const scenarioSummary = ({ label, result }) => {
+            const effectiveRate = result.assessable > 0
+                ? (result.taxBasicPayable / result.assessable) * 100
+                : 0;
+            const netTax = result.netPayable;
+            const settlement = netTax < 0
+                ? `Refund ${formatTaxMoney(Math.abs(netTax))}`
+                : netTax > 0
+                    ? `Balance owing ${formatTaxMoney(netTax)}`
+                    : 'No balance owing or refund';
+            return {
+                effectiveRate,
+                label,
+                result,
+                settlement,
+                text: `${label}: Taxable income ${formatTaxMoney(result.taxable)} · Tax + Medicare ${formatTaxMoney(result.taxBasicPayable)} · Effective ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}% · ${settlement}`,
+            };
+        };
+        const summaries = scenarios.map(scenarioSummary);
+        const analysis = summaries.map(({ text }) => text);
+        const speech = [
+            `${name}, here's your tax analysis:`,
+            ...summaries.map(({ label, result, effectiveRate }) => {
+                const settlement = result.netPayable < 0
+                    ? `You may be due a refund of approximately ${formatTaxSpeechMoney(Math.abs(result.netPayable))}.`
+                    : result.netPayable > 0
+                        ? `You may have a balance owing of approximately ${formatTaxSpeechMoney(result.netPayable)}.`
+                        : 'There is no estimated balance owing or refund.';
+                return `${label} scenario: your taxable income is ${formatTaxSpeechMoney(result.taxable)}, with tax and Medicare of approximately ${formatTaxSpeechMoney(result.taxBasicPayable)} and an effective rate of ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%. ${settlement}`;
+            }),
+        ];
+
+        if (current && proposed) {
+            const savings = current.netPayable - proposed.netPayable;
+            const comparison = Math.abs(savings) < 0.5
+                ? 'The proposed scenario makes no material change to the estimated total tax payable or refund.'
+                : savings > 0
+                    ? `The proposed scenario reduces estimated total tax payable by ${formatTaxMoney(savings)} compared with Current.`
+                    : `The proposed scenario increases estimated total tax payable by ${formatTaxMoney(Math.abs(savings))} compared with Current.`;
+            analysis.push(
+                `<strong style="color:${savings >= 0 ? '#16a34a' : '#dc2626'}">${comparison}</strong>`,
+            );
+            speech.push(comparison);
+        }
+
+        const proposedSummary = summaries.find(({ label }) => label === 'Proposed') || summaries[0];
+        const taxSavings = current && proposed
+            ? current.netPayable - proposed.netPayable
+            : null;
+        const metrics = [
+            { label: 'Taxable income', value: formatTaxMoney(proposedSummary.result.taxable) },
+            { label: 'Tax + Medicare', value: formatTaxMoney(proposedSummary.result.taxBasicPayable) },
+            { label: 'Effective rate', value: `${proposedSummary.effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%` },
+            ...(taxSavings === null
+                ? []
+                : [{
+                    label: taxSavings >= 0 ? 'Tax saved' : 'Additional tax',
+                    value: formatTaxMoney(Math.abs(taxSavings)),
+                    color: taxSavings >= 0 ? '#16a34a' : '#dc2626',
+                }]),
+        ];
+
+        return {
+            subtitle,
+            metrics,
+            analysis,
+            readAloud: `${speech.join(' ')} Tax figures are estimates based on current Australian tax rules.`,
+        };
+    })();
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -161,6 +273,7 @@ const ReviewsTaxPlanning = () => {
                     <Button
                         style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: '#fff', borderRadius: 8, fontWeight: 600 }}
                         icon={"🧠"}
+                        onClick={() => setOpenAnalysisModal(true)}
                     >
                         Analyse
                     </Button>
@@ -362,6 +475,14 @@ const ReviewsTaxPlanning = () => {
                     modalData={{ closeModal: () => setOpenModal(false) }}
                 />
             </AppModal>
+
+            <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                disclaimer={TAX_ANALYSIS_DISCLAIMER}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

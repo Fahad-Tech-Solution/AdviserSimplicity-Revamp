@@ -287,9 +287,7 @@ export default function InsuranceNeedsForm({ modalData }) {
         selectedReviewAllData?.personalDetails?.client?.clientMaritalStatus ||
         selectedClient?.client?.clientMaritalStatus ||
         "";
-    const allowPartner = !["single", "widowed"].includes(
-        String(maritalStatus).toLowerCase(),
-    );
+    const allowPartner = selectedReviewAllData?.personalDetails?.owner?.includes("partner")
 
     const initialValues = useMemo(() => {
         return {

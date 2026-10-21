@@ -400,13 +400,6 @@ const LoanSimulator = () => {
                     >
                         ✏️ Edit Inputs
                     </Button>
-                    <Button
-                        style={{ backgroundColor: "#8b5cf6", borderColor: "#8b5cf6", color: "#fff", borderRadius: 8, fontWeight: 600 }}
-                        icon="🧠"
-                        onClick={() => setOpenAnalysisModal(true)}
-                    >
-                        Analyse
-                    </Button>
                 </Space>
             </div>
 

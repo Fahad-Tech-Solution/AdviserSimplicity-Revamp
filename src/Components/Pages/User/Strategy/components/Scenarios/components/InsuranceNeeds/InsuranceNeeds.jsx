@@ -38,6 +38,7 @@ import {
     toInsuranceNumber,
 } from "./insuranceNeedsCalculations.js";
 import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData.js";
+import AnalysisModal from "../AnalysisModal/AnalysisModal.jsx";
 
 const { Text, Title } = Typography;
 
@@ -46,6 +47,9 @@ const COVER_META = [
     { key: "tpd", label: "TPD Cover", color: "#c2410c" },
     { key: "trauma", label: "Trauma Cover", color: "#7e22ce" },
 ];
+
+const INSURANCE_ANALYSIS_DISCLAIMER =
+    "The figures shown are projections and estimates based on the assumptions and inputs provided. They are <strong>not guaranteed</strong> and actual outcomes may differ materially due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This is general information only and does not constitute personal financial product advice. Past performance is not a reliable indicator of future performance. For formal advice tailored to the client's specific situation, refer to the calculator's detailed output and the Record of Advice.";
 
 const MONEY_TOOLTIP = (value) => formatInsuranceMoney(value);
 
@@ -72,6 +76,27 @@ function getCoverStatus(value) {
     if (value > 0) return { label: "Shortfall", color: "error" };
     if (value < 0) return { label: "Surplus", color: "success" };
     return { label: "Fully covered", color: "success" };
+}
+
+function formatInsuranceSpeechCurrency(value) {
+    const rounded = Math.round(Number(value) || 0);
+    if (rounded === 0) return "zero dollars";
+    const sign = rounded < 0 ? "negative " : "";
+    const absolute = Math.abs(rounded);
+    if (absolute >= 1000000) {
+        const millions = Math.round((absolute / 1000000) * 10) / 10;
+        return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+    }
+    if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
+    if (absolute >= 10000) {
+        const thousands = Math.round(absolute / 500) * 500 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    if (absolute >= 1000) {
+        const thousands = Math.round(absolute / 100) * 100 / 1000;
+        return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    }
+    return `${sign}${absolute} dollars`;
 }
 
 function buildDetailedColumns() {
@@ -202,6 +227,7 @@ const InsuranceNeeds = () => {
     const [coverTab, setCoverTab] = useState("Insurance Cover");
     const [premiumHorizon, setPremiumHorizon] = useState("10y");
     const [openModal, setOpenModal] = useState(false);
+    const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [seriesVisibility, setSeriesVisibility] = useState({
         currentCover: true,
         shortfall: true,
@@ -324,6 +350,149 @@ const InsuranceNeeds = () => {
             ? "Enter annual premiums in Edit Inputs to see the projection."
             : "";
 
+    const analysisContent = useMemo(() => {
+        const getFirstName = (person) => {
+            const preferredName = String(getReviewName(person) || "").trim();
+            if (preferredName && !["client", "partner"].includes(preferredName.toLowerCase())) {
+                return preferredName.split(/\s+/)[0];
+            }
+            return person === "partner" ? "your partner" : "the client";
+        };
+        const people = ["client", ...(allowPartner ? ["partner"] : [])];
+        const leadName = getFirstName("client");
+        const bullets = [];
+        const tiles = [];
+        const speakParts = [`${leadName}, here's your insurance cover summary:`];
+        const gapDetails = (gap) => ({
+            abs: Math.abs(gap),
+            color: gap > 1000 ? "#dc2626" : gap < -1000 ? "#16a34a" : "#6b7280",
+            label: gap > 1000 ? "shortfall" : gap < -1000 ? "surplus" : "covered",
+        });
+        const fmtRow = (label, gap, existing, suffix = "") => {
+            const formattedGap = gapDetails(gap);
+            const existingText = `${formatInsuranceMoney(existing)}${suffix}`;
+            if (formattedGap.label === "covered") {
+                return `<span style="color:${formattedGap.color}">${label}: ${existingText} held · ${formattedGap.label}</span>`;
+            }
+            return `<span style="color:${formattedGap.color}">${label}: ${existingText} held · ${formattedGap.label} ${formatInsuranceMoney(formattedGap.abs)}${suffix}</span>`;
+        };
+        const speakCover = (label, gap) => {
+            if (gap > 1000) return `${label}: ${formatInsuranceSpeechCurrency(gap)} additional cover required`;
+            if (gap < -1000) return `${label}: ${formatInsuranceSpeechCurrency(Math.abs(gap))} surplus to needs`;
+            return `${label}: adequately covered`;
+        };
+
+        let totalHouseholdShortfall = 0;
+        people.forEach((person) => {
+            const personProfile = section?.[person] || {};
+            const personAge = getAgeFromDob(
+                getPersonDob(selectedReviewAllData, selectedClient, person),
+            );
+            const personResults = person === activeProfile
+                ? calculated
+                : calculateInsuranceNeeds(
+                    personProfile,
+                    personAge,
+                    taxRatesSchema,
+                    {
+                        mortgageAmount:
+                            selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal,
+                    },
+                );
+            if (!personResults) return;
+
+            const name = getFirstName(person);
+            const gaps = Object.fromEntries(
+                COVER_META.map(({ key }) => {
+                    const required = Math.max(0, personResults.coverRequiredByType[key]);
+                    return [key, required - personResults.existingByType[key]];
+                }),
+            );
+            const ipGap = personResults.ip.shortfall;
+            const existing = personResults.existingByType;
+            const personShortfall = COVER_META.reduce(
+                (total, { key }) => total + Math.max(0, gaps[key]),
+                0,
+            );
+            totalHouseholdShortfall += personShortfall;
+
+            bullets.push(`<strong style="font-size:14px">${name}</strong>`);
+            bullets.push(fmtRow("❤️ Life", gaps.life, existing.life));
+            bullets.push(fmtRow("♿ TPD", gaps.tpd, existing.tpd));
+            bullets.push(fmtRow("🏥 Trauma", gaps.trauma, existing.trauma));
+            bullets.push(fmtRow("💼 IP", ipGap, personResults.ip.existingMonthly, "/mo"));
+
+            const speakBits = [
+                speakCover("Life cover", gaps.life),
+                speakCover("TPD cover", gaps.tpd),
+                speakCover("Trauma cover", gaps.trauma),
+            ];
+            if (ipGap > 50) {
+                speakBits.push(`Income Protection: ${formatInsuranceSpeechCurrency(ipGap)} per month shortfall`);
+            } else if (ipGap < -50) {
+                speakBits.push(`Income Protection: ${formatInsuranceSpeechCurrency(Math.abs(ipGap))} per month surplus`);
+            } else {
+                speakBits.push("Income Protection: adequately covered");
+            }
+            speakParts.push(personShortfall > 1000
+                ? `For ${name}: ${speakBits.join(". ")}. Total shortfall of ${formatInsuranceSpeechCurrency(personShortfall)} across all cover types.`
+                : `For ${name}: ${speakBits.join(". ")}. Existing cover is adequate across all categories.`);
+
+            if (person === "client") {
+                const tileLabel = (gap) => gap > 1000
+                    ? `${formatInsuranceMoney(gap)} short`
+                    : gap < -1000
+                        ? `${formatInsuranceMoney(Math.abs(gap))} surplus`
+                        : "Covered";
+                const tileColor = (gap) => gap > 1000
+                    ? "#dc2626"
+                    : gap < -1000
+                        ? "#16a34a"
+                        : "#374151";
+                tiles.push(
+                    ...COVER_META.map(({ key, label }) => ({
+                        label: label.replace(" Cover", ""),
+                        value: tileLabel(gaps[key]),
+                        color: tileColor(gaps[key]),
+                    })),
+                    {
+                        label: "IP",
+                        value: ipGap > 50
+                            ? `${formatInsuranceMoney(ipGap)}/mo short`
+                            : ipGap < -50
+                                ? `${formatInsuranceMoney(Math.abs(ipGap))}/mo surplus`
+                                : "Covered",
+                        color: ipGap > 50 ? "#dc2626" : ipGap < -50 ? "#16a34a" : "#374151",
+                    },
+                );
+            }
+        });
+
+        if (!bullets.length) return { subtitle: "", metrics: [], analysis: [], readAloud: "" };
+        bullets.push(totalHouseholdShortfall > 1000
+            ? `<strong style="color:#dc2626">⚠ Total household shortfall: ${formatInsuranceMoney(totalHouseholdShortfall)} additional cover required</strong>`
+            : '<strong style="color:#16a34a">✓ Household is adequately covered across all categories</strong>');
+
+        const subtitle = allowPartner
+            ? `🛡️ Insurance Summary for ${getFirstName("client")} & ${getFirstName("partner")}`
+            : `🛡️ Insurance Summary for ${leadName}`;
+        return {
+            subtitle,
+            metrics: tiles.slice(0, 4),
+            analysis: bullets,
+            readAloud: speakParts.join(" "),
+        };
+    }, [
+        activeProfile,
+        allowPartner,
+        calculated,
+        getReviewName,
+        section,
+        selectedClient,
+        selectedReviewAllData,
+        taxRatesSchema,
+    ]);
+
     const detailColumns = useMemo(() => buildDetailedColumns(), []);
 
     return (
@@ -351,6 +520,7 @@ const InsuranceNeeds = () => {
                         onClick={() => {
                             setCoverTab("Insurance Cover");
                             setViewMode("Table");
+                            setOpenAnalysisModal(true);
                         }}
                     >
                         🧠 Analyse
@@ -571,6 +741,13 @@ const InsuranceNeeds = () => {
             >
                 <InsuranceNeedsForm modalData={{ closeModal: () => setOpenModal(false) }} />
             </AppModal>
+            <AnalysisModal
+                content={analysisContent}
+                subtitle={analysisContent.subtitle}
+                disclaimer={INSURANCE_ANALYSIS_DISCLAIMER}
+                openAnalysisModal={openAnalysisModal}
+                onClose={() => { setOpenAnalysisModal(false) }}
+            />
         </div>
     );
 };

@@ -101,13 +101,9 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
         () => selectedReviewAllData?.taxPlanningDetails || {},
         [selectedReviewAllData?.taxPlanningDetails],
     );
-    const maritalStatus =
-        selectedReviewAllData?.personalDetails?.client?.clientMaritalStatus ||
-        selectedClient?.client?.clientMaritalStatus ||
-        "";
-    const allowPartner = !["single", "widowed"].includes(
-        String(maritalStatus).toLowerCase(),
-    );
+
+    const allowPartner = selectedReviewAllData?.personalDetails?.owner?.includes("partner");
+
     const editing = !sectionData?._id || isEditingEnabled;
 
     const initialValues = useMemo(() => {
