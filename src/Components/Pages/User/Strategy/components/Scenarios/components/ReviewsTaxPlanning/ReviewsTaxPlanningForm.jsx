@@ -17,11 +17,7 @@ const TABLE_PROPS = {
     bodyFontSize: 12,
 };
 
-const SAPTO_OPTIONS = [
-    { label: "Yes — Couple", value: "Yes — Couple" },
-    { label: "Yes — Single", value: "Yes — Single" },
-    { label: "No", value: "No" },
-];
+
 
 const INCOME_FIELDS = [
     ["salary", "Salary"],
@@ -104,6 +100,11 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
 
     const allowPartner = selectedReviewAllData?.personalDetails?.owner?.includes("partner");
 
+    const SAPTO_OPTIONS = [
+        ...(allowPartner ? [{ label: "Yes — Couple", value: "Yes — Couple" }] : []),
+        { label: "Yes — Single", value: "Yes — Single" },
+        { label: "No", value: "No" },
+    ];
     const editing = !sectionData?._id || isEditingEnabled;
 
     const initialValues = useMemo(() => {

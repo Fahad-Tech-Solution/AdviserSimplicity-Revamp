@@ -15,6 +15,13 @@ const FREQUENCIES = {
     Weekly: 52,
     Fortnightly: 26,
     Monthly: 12,
+    Annually: 1,
+};
+const NUMERIC_FREQUENCIES = {
+    52: "Weekly",
+    26: "Fortnightly",
+    12: "Monthly",
+    1: "Annually",
 };
 const CURRENCY_FORMATTER = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -138,13 +145,17 @@ function simulateLoan({ amount, annualRate, termYears, frequency, loanType, extr
     };
 }
 
-function calculateLoanResults(loanData) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function calculateLoanResults(loanData) {
     const loanSetup = loanData?.loanSetup || {};
     const extrasAndOffsets = loanData?.extrasAndOffsets || {};
     const amount = toNumber(loanSetup.homeLoanTotal);
     const annualRate = toNumber(loanSetup.interestRate);
     const termYears = Math.floor(toNumber(loanSetup.termYears));
-    const frequencyLabel = loanSetup.paymentFrequency || "Monthly";
+    const rawFrequency = String(loanSetup.paymentFrequency || "Monthly").trim();
+    const frequencyLabel = Object.keys(FREQUENCIES).find(
+        (label) => label.toLowerCase() === rawFrequency.toLowerCase(),
+    ) || NUMERIC_FREQUENCIES[Number(rawFrequency)] || rawFrequency;
     const frequency = FREQUENCIES[frequencyLabel];
 
     if (amount <= 0 || annualRate < 0 || termYears <= 0 || !frequency) return null;

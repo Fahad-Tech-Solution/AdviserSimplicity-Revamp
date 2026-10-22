@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, Avatar, Button, Space, Typography, Badge, Modal, Select, Slider, Switch, message } from 'antd';
+import { useAtomValue } from 'jotai';
 import {
     CommentOutlined,
     FilePdfOutlined,
@@ -18,6 +19,10 @@ import {
 import nattyAvatar from "../../../../../../../../assets/image/ProfileImages/NattyAI.png";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Document, HeadingLevel, Packer, Paragraph as DocxParagraph, Table, TableCell, TableRow, TextRun, WidthType } from 'docx';
+import { saveAs } from 'file-saver';
+import { RateReferenceObject, SelectedClient, SelectedReviewAllData } from '../../../../../../../../store/authState.js';
+import { buildReviewSummaryData, formatMoney } from './reviewSummaryDocuments.js';
 
 const { Text, Paragraph } = Typography;
 
@@ -30,6 +35,18 @@ const VCI_QUEUE = [
 ];
 
 const ReviewNattyAiSummary = () => {
+    const selectedReviewAllData = useAtomValue(SelectedReviewAllData);
+    const selectedClient = useAtomValue(SelectedClient);
+    const rateReferenceObject = useAtomValue(RateReferenceObject);
+    const summary = useMemo(
+        () => buildReviewSummaryData(
+            selectedReviewAllData,
+            selectedClient,
+            rateReferenceObject?.taxRatesSchema,
+        ),
+        [selectedReviewAllData, selectedClient, rateReferenceObject],
+    );
+
     // Navigation & Content States
     const [activeTab, setActiveTab] = useState('review-summary');
 
@@ -52,6 +69,15 @@ const ReviewNattyAiSummary = () => {
 
     const recognitionRef = useRef(null);
 
+    const summaryNarrative = useMemo(() => {
+        const lines = [
+            `Annual review summary for ${summary.householdName}, prepared ${summary.date}.`,
+            ...summary.highlights.map(({ label, value }) => `${label}: ${value}.`),
+            ...summary.nextSteps.map((step, index) => `Next step ${index + 1}: ${step}`),
+        ];
+        return lines.join(' ');
+    }, [summary]);
+
     // 1. Initialize Speech Synthesis Voices
     useEffect(() => {
         const updateVoices = () => {
@@ -73,8 +99,10 @@ const ReviewNattyAiSummary = () => {
     // Clean up speech on unmount
     useEffect(() => {
         return () => {
-            stopSpeaking();
-            stopSpeechRecognition();
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            recognitionRef.current?.stop();
         };
     }, []);
 
@@ -232,25 +260,16 @@ const ReviewNattyAiSummary = () => {
             return;
         }
 
-        const content = `Right, Client — let me wrap up where we've landed today in plain English. ` +
-            `On super, we're boosting your contributions through salary sacrifice. ` +
-            `On the Age Pension, you're entitled to approximately $31,000 a year at the full rate. ` +
-            `Even without the Age Pension, you're likely eligible for a Low-Income Health Care Card. ` +
-            `Client's and Partner's insurance cover look about right, so we'd keep them as is.`;
-
-        speakText(content);
+        speakText(summaryNarrative);
     };
 
     const handleCopy = () => {
-        const content = `Right, Client — let me wrap up where we've landed today in plain English.\n\n` +
-            `💼 On super, we're boosting your contributions through salary sacrifice. This builds your retirement savings while reducing the tax you pay along the way.\n` +
-            `🏛️ On the Age Pension, you're entitled to about approximately $31,000 a year (around $1,200 a fortnight) at the full rate.\n` +
-            `💳 Even without the Age Pension, you're likely eligible for a Low-Income Health Care Card, which gives cheaper prescriptions and other concessions.\n` +
-            `🛡️ Client's insurance cover looks about right, so we'd keep it as is.\n` +
-            `🛡️ Partner's insurance cover looks about right, so we'd keep it as is.`;
-
-        navigator.clipboard.writeText(content);
-        message.success('Summary copied to clipboard!');
+        navigator.clipboard.writeText(summaryNarrative)
+            .then(() => message.success('Summary copied to clipboard!'))
+            .catch((error) => {
+                console.error('Unable to copy review summary', error);
+                message.error('Unable to copy the summary. Check clipboard permissions and try again.');
+            });
     };
 
     const generatePdf = () => {
@@ -275,17 +294,17 @@ const ReviewNattyAiSummary = () => {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.setTextColor(100, 116, 139);
-            doc.text("Prepared for asaawd  ·  21 September 2026", 14, 24);
+            doc.text(`Prepared for ${summary.householdName} · ${summary.date}`, 14, 24);
 
             // Top Right Brand Logo / Text
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(...secondaryColor);
-            doc.text('Denaro Wealth', 196, 18, { align: 'right' });
+            doc.text('Adviser Simplicity', 196, 18, { align: 'right' });
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(148, 163, 184);
-            doc.text('Your Trusted Adviser', 196, 23, { align: 'right' });
+            doc.text('Annual Review Summary', 196, 23, { align: 'right' });
 
             doc.setDrawColor(226, 232, 240);
             doc.setLineWidth(0.4);
@@ -306,7 +325,13 @@ const ReviewNattyAiSummary = () => {
                 startY: 47,
                 margin: { left: 14, right: 14 },
                 head: [['CURRENT BALANCE', 'PAID OFF SOONER', 'INTEREST SAVED']],
-                body: [['approximately $3,400', '29 yrs', 'approximately $3,900']],
+                body: [[
+                    summary.loan
+                        ? formatMoney(selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal)
+                        : 'Not provided',
+                    summary.loan ? `${summary.loan.termSaved} yrs` : 'Not calculated',
+                    summary.loan ? formatMoney(summary.loan.interestSaved) : 'Not calculated',
+                ]],
                 theme: 'grid',
                 headStyles: {
                     fillColor: lightBg,
@@ -327,13 +352,21 @@ const ReviewNattyAiSummary = () => {
             let currentY = doc.lastAutoTable.finalY + 8;
             doc.setFontSize(10);
             doc.setTextColor(...secondaryColor);
-            doc.text("ASAAWD'S SUPER — 15 YRS @ 5.23% P.A.", 14, currentY);
+            const superSection = summary.sections.find((section) => section.title === 'Superannuation Projection');
+            doc.text(`${summary.householdName.toUpperCase()}'S SUPERANNUATION`, 14, currentY);
 
             autoTable(doc, {
                 startY: currentY + 3,
                 margin: { left: 14, right: 14 },
                 head: [['WITHOUT STRATEGY', 'WITH STRATEGY']],
-                body: [['$7,641,601,886,867,108,000,000,000', '$7,641,601,886,867,108,000,000']],
+                body: summary.people.map((person) => [
+                    superSection?.rows?.find((row) =>
+                        row.label === `${person.name} — without additional strategy`,
+                    )?.value || 'Not provided',
+                    superSection?.rows?.find((row) =>
+                        row.label === `${person.name} — projected balance`,
+                    )?.value || 'Not provided',
+                ]),
                 theme: 'grid',
                 headStyles: {
                     fillColor: lightBg,
@@ -357,11 +390,16 @@ const ReviewNattyAiSummary = () => {
             autoTable(doc, {
                 startY: currentY,
                 margin: { left: 14, right: 14 },
-                head: [["ASAAWD'S PENSION INCOME", 'AGE PENSION ENTITLEMENT']],
+                head: [['RETIREMENT PENSION DETAILS', 'AGE PENSION ENTITLEMENT']],
                 body: [
                     [
-                        'approximately $230\nLasts ~1 yrs (to age -1)',
-                        'approximately $31,000/yr\nFull rate · $1,201 per fortnight'
+                        summary.sections.find((section) => section.title === 'Retirement Adequacy')?.rows
+                            ?.map((row) => `${row.label}: ${row.value}`)
+                            .join('\n') || 'Not provided',
+                        summary.sections.find((section) => section.title === 'Age Pension Assessment')
+                            ?.rows?.slice(0, 3)
+                            .map((row) => `${row.label}: ${row.value}`)
+                            .join('\n') || 'Not assessed',
                     ]
                 ],
                 theme: 'plain',
@@ -382,17 +420,24 @@ const ReviewNattyAiSummary = () => {
             currentY = doc.lastAutoTable.finalY + 8;
             doc.setFontSize(10);
             doc.setTextColor(...secondaryColor);
-            doc.text('INSURANCE COVERAGE (asaawd)', 14, currentY);
+            doc.text(`INSURANCE COVERAGE (${summary.householdName})`, 14, currentY);
 
             autoTable(doc, {
                 startY: currentY + 3,
                 margin: { left: 14, right: 14 },
-                head: [['TYPE', 'STATUS', 'COVERAGE RATIO']],
-                body: [
-                    ['Life', 'Adequate', '100% covered · 0% gap'],
-                    ['TPD', 'Adequate', '100% covered · 0% gap'],
-                    ['Trauma', 'Adequate', '91% covered · 9% gap']
-                ],
+                head: [['TYPE', 'STATUS', 'EXISTING COVER · GAP']],
+                body: summary.insurance.flatMap((person) => [
+                    ...person.cover.map((item) => [
+                        `${person.person} — ${item.type}`,
+                        item.gap > 0 ? 'Shortfall' : 'Adequate',
+                        `${formatMoney(item.existing)} held · ${formatMoney(item.gap)} gap`,
+                    ]),
+                    [
+                        `${person.person} — Income protection`,
+                        person.ip.gap > 0 ? 'Shortfall' : 'Adequate',
+                        `${formatMoney(person.ip.existing)}/mo held · ${formatMoney(person.ip.gap)}/mo gap`,
+                    ],
+                ]),
                 theme: 'striped',
                 headStyles: {
                     fillColor: primaryColor,
@@ -418,13 +463,7 @@ const ReviewNattyAiSummary = () => {
             autoTable(doc, {
                 startY: currentY + 3,
                 margin: { left: 14, right: 14 },
-                body: [
-                    ['1', 'Salary sacrifice arrangement with employer'],
-                    ['2', 'Action insurance recommendations per ROA'],
-                    ['3', 'Age Pension — $31,223 p.a.'],
-                    ['4', 'Review home loan strategy with lender'],
-                    ['5', 'Issue Record of Advice (ROA) document']
-                ],
+                body: summary.nextSteps.map((step, index) => [String(index + 1), step]),
                 theme: 'plain',
                 bodyStyles: {
                     fontSize: 8.5,
@@ -450,11 +489,115 @@ const ReviewNattyAiSummary = () => {
             doc.text(doc.splitTextToSize(disclaimer, 182), 14, pageHeight - 17);
 
             // Save PDF
-            doc.save('Review_Summary_asaawd.pdf');
+            const filename = summary.householdName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+            doc.save(`Review_Summary_${filename || 'Client'}.pdf`);
             message.success('PDF downloaded successfully!');
         } catch (err) {
             console.error(err);
             message.error('Failed to generate PDF document.');
+        }
+    };
+
+    const generateWordDocument = async () => {
+        try {
+            const cell = (text, header = false) => new TableCell({
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                shading: header ? { fill: 'EAF1F8' } : undefined,
+                children: [new DocxParagraph({
+                    children: [new TextRun({
+                        text: String(text || '—'),
+                        bold: header,
+                        font: 'Arial',
+                        size: 20,
+                    })],
+                })],
+            });
+            const tableForRows = (rows) => new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                columnWidths: [4800, 4800],
+                rows: [
+                    new TableRow({ children: [cell('Item', true), cell('Details', true)] }),
+                    ...rows.map(({ label, value }) => new TableRow({
+                        children: [cell(label), cell(value)],
+                    })),
+                ],
+            });
+            const children = [
+                new DocxParagraph({
+                    text: 'Review Meeting Summary',
+                    heading: HeadingLevel.TITLE,
+                }),
+                new DocxParagraph({
+                    children: [
+                        new TextRun({ text: `Prepared for ${summary.householdName}`, bold: true, font: 'Arial' }),
+                        new TextRun({ text: `  |  ${summary.date}`, font: 'Arial' }),
+                    ],
+                    spacing: { after: 280 },
+                }),
+                new DocxParagraph({
+                    text: 'Summary of the information and projections available in this review.',
+                    spacing: { after: 240 },
+                }),
+            ];
+
+            if (summary.highlights.length) {
+                children.push(new DocxParagraph({ text: 'Key Outcomes', heading: HeadingLevel.HEADING_1 }));
+                children.push(tableForRows(summary.highlights));
+            } else {
+                children.push(new DocxParagraph({
+                    text: 'No calculated outcomes are available yet. Complete the relevant review sections to include projections.',
+                    spacing: { after: 240 },
+                }));
+            }
+
+            summary.sections.forEach((section) => {
+                children.push(new DocxParagraph({
+                    text: section.title,
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 300 },
+                }));
+                children.push(tableForRows(section.rows));
+            });
+
+            children.push(new DocxParagraph({
+                text: 'Recommended Next Steps',
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 300 },
+            }));
+            summary.nextSteps.forEach((step) => {
+                children.push(new DocxParagraph({
+                    text: step,
+                    bullet: { indent: 360 },
+                }));
+            });
+            children.push(new DocxParagraph({
+                children: [new TextRun({
+                    text: 'Important: This summary is based on the data and assumptions recorded in the review. Projections are estimates, are not guaranteed, and do not replace the formal Record of Advice or personal financial product advice.',
+                    italics: true,
+                    color: '64748B',
+                    size: 18,
+                    font: 'Arial',
+                })],
+                spacing: { before: 400 },
+            }));
+
+            const document = new Document({
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 900, right: 900, bottom: 900, left: 900 },
+                        },
+                    },
+                    children,
+                }],
+            });
+            const blob = await Packer.toBlob(document);
+            const filename = summary.householdName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+            saveAs(blob, `Review_Meeting_Summary_${filename || 'Client'}.docx`);
+            message.success('Word review summary downloaded successfully!');
+        } catch (error) {
+            console.error('Unable to generate Word review summary', error);
+            message.error('Failed to generate the Word review summary.');
         }
     };
 
@@ -475,7 +618,7 @@ const ReviewNattyAiSummary = () => {
 
                     {/* Avatar & Title */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <Badge status={isSpeaking ? "processing" : "success"} dot offset={[-4, 38]}>
+                        <Badge status={isSpeaking || isListening ? "processing" : "success"} dot offset={[-4, 38]}>
                             <Avatar
                                 size={54}
                                 src={nattyAvatar}
@@ -483,7 +626,7 @@ const ReviewNattyAiSummary = () => {
                         </Badge>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: 18, color: '#111827', lineHeight: '1.2' }}>
-                                NattyAI {isSpeaking && <span style={{ fontSize: 12, color: '#52c41a', marginLeft: 6 }}>🔊 Speaking</span>}
+                                NattyAI {(isSpeaking || isListening) && <span style={{ fontSize: 12, color: '#52c41a', marginLeft: 6 }}>{isSpeaking ? '🔊 Speaking' : '🎙 Listening'}</span>}
                             </div>
                             <Text type="secondary" style={{ fontSize: 13 }}>Summary ready — replay any time</Text>
                         </div>
@@ -529,7 +672,7 @@ const ReviewNattyAiSummary = () => {
 
                         {/* Tab 3 */}
                         <Button
-                            onClick={() => setActiveTab('review-summary')}
+                            onClick={() => { setActiveTab('review-summary'); generateWordDocument(); }}
                             style={{
                                 height: 52,
                                 minWidth: 160,
@@ -551,33 +694,35 @@ const ReviewNattyAiSummary = () => {
 
                 <div style={{ padding: '8px 4px', fontSize: 14, color: '#1f2937', lineHeight: '1.7' }}>
                     <Paragraph style={{ marginBottom: 20 }}>
-                        👏 Right, Client — let me wrap up where we've landed today in plain English.
+                        Annual review summary for <strong>{summary.householdName}</strong>, prepared {summary.date}.
                     </Paragraph>
 
                     <Space direction="vertical" size={16} style={{ width: '100%', marginBottom: 24 }}>
+                        {summary.highlights.length > 0 ? summary.highlights.map(({ label, value }) => (
+                            <div key={label}><strong>{label}:</strong> {value}</div>
+                        )) : (
+                            <div>Complete review sections to see calculated outcomes here.</div>
+                        )}
+                        {summary.sections.map((section) => (
+                            <div key={section.title} style={{ width: '100%' }}>
+                                <strong>{section.title}</strong>
+                                <ul style={{ margin: '4px 0 0', paddingLeft: 24 }}>
+                                    {section.rows.map(({ label, value }) => (
+                                        <li key={label}>{label}: {value}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
                         <div>
-                            💼 <strong>On super,</strong> we're boosting your contributions through salary sacrifice. This builds your retirement savings while reducing the tax you pay along the way.
-                        </div>
-
-                        <div>
-                            🏛️ <strong>On the Age Pension,</strong> you're entitled to about approximately $31,000 a year (around $1,200 a fortnight) at the full rate.
-                        </div>
-
-                        <div>
-                            💳 Even without the Age Pension, you're likely eligible for a <strong>Low-Income Health Care Card</strong>, which gives cheaper prescriptions and other concessions.
-                        </div>
-
-                        <div>
-                            🛡️ Client's insurance cover looks about right, so we'd keep it as is.
-                        </div>
-
-                        <div>
-                            🛡️ Partner's insurance cover looks about right, so we'd keep it as is.
+                            <strong>Recommended next steps</strong>
+                            <ol style={{ margin: '4px 0 0', paddingLeft: 24 }}>
+                                {summary.nextSteps.map((step) => <li key={step}>{step}</li>)}
+                            </ol>
                         </div>
                     </Space>
 
                     <Paragraph style={{ color: '#374151', marginBottom: 28 }}>
-                        That's the overview. Each area also has its own detailed analysis if you'd like to go deeper, and we'll follow up if we need anything else.
+                        Projections are estimates based on the data recorded in the review and should be considered with the formal Record of Advice.
                     </Paragraph>
                 </div>
 

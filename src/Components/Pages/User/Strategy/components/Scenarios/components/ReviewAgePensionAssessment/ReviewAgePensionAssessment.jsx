@@ -69,7 +69,8 @@ const formatTableAmount = (value) => {
     return value < 0 ? `(${formatCurrency(-value)})` : formatCurrency(value);
 };
 
-function calculateAgePensionAssessment(data = {}) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function calculateAgePensionAssessment(data = {}) {
     const personal = data.personalDetails || data;
     const lifestyle = data.lifestyleAssets || data.lifestyle || {};
     const property = data.investmentPropertyAndOtherAssets || data.investmentProperty || {};

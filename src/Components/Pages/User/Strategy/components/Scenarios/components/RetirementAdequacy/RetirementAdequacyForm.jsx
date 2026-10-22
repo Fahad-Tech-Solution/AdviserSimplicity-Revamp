@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
-import { useReviewOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
+import { useGetReviewName, useReviewOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
 
 const { Text } = Typography;
 
@@ -151,6 +151,7 @@ export default function RetirementAdequacyForm({ modalData }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const { patch } = useApi();
+    const getReviewName = useGetReviewName();
 
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
     const initialData = selectedReviewAllData?.retirementAdequacyDetails || {};
@@ -164,6 +165,16 @@ export default function RetirementAdequacyForm({ modalData }) {
     const includeAgePension = Form.useWatch("includeAgePension", form) || initialValues.includeAgePension;
     const agePensionProjection =
         Form.useWatch("agePensionProjection", form) || initialValues.agePensionProjection;
+    const personalDetailsOwners = selectedReviewAllData?.personalDetails?.owner;
+    const superannuationOwners = selectedReviewAllData?.superannuationDetails?.owner;
+
+    const showPartnerTransferButton =
+        Array.isArray(personalDetailsOwners) &&
+        personalDetailsOwners.includes("partner") &&
+        Array.isArray(superannuationOwners) &&
+        superannuationOwners.includes("partner") &&
+        Array.isArray(selectedOwners) &&
+        selectedOwners.includes("partner");
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
@@ -439,13 +450,13 @@ export default function RetirementAdequacyForm({ modalData }) {
                 const ownerOldInput = initialData?.[ownerKey] || {};
                 return {
                     preferredName: ownerInput.preferredName || ownerOldInput.preferredName || "",
-                    DOB: ownerInput.DOB ? dayjs(ownerInput.DOB).toISOString() : ownerOldInput.DOB || "",
-                    accountBasedPensionTotal: ownerInput.accountBasedPensionTotal || ownerOldInput.accountBasedPensionTotal || "",
-                    nccTopUp: ownerInput.nccTopUp || ownerOldInput.nccTopUp || "",
-                    nccTopUpYear: ownerInput.nccTopUpYear || ownerOldInput.nccTopUpYear || "Year 1",
-                    withdrawalAmount: ownerInput.withdrawalAmount || ownerOldInput.withdrawalAmount || "",
-                    riskGoal: ownerInput.riskGoal || ownerOldInput.riskGoal || "",
-                    investmentReturn: ownerInput.investmentReturn || ownerOldInput.investmentReturn || "",
+                    DOB: ownerInput?.DOB && dayjs(ownerInput.DOB).toISOString() || "",
+                    accountBasedPensionTotal: ownerInput.accountBasedPensionTotal || "",
+                    nccTopUp: ownerInput.nccTopUp || "",
+                    nccTopUpYear: ownerInput.nccTopUpYear || "",
+                    withdrawalAmount: ownerInput.withdrawalAmount || "",
+                    riskGoal: ownerInput.riskGoal || "",
+                    investmentReturn: ownerInput.investmentReturn || "",
                 };
             };
 
@@ -458,22 +469,22 @@ export default function RetirementAdequacyForm({ modalData }) {
 
             const payload = {
                 ...initialData,
-                pensionStartDate: values?.pensionStartDate ? dayjs(values.pensionStartDate).toISOString() : initialData?.pensionStartDate || "",
+                pensionStartDate: values?.pensionStartDate && dayjs(values.pensionStartDate).toISOString() || "",
                 includeAgePension: isAgePensionIncluded,
                 owner: activeOwners,
                 client: clientSelected ? buildPayloadForOwner("client") : initialData?.client,
                 partner: partnerSelected ? buildPayloadForOwner("partner") : initialData?.partner,
                 agePensionProjection: {
                     includeAgePension: isAgePensionIncluded,
-                    relationshipStatus: agePensionInput.relationshipStatus || agePensionOldInput.relationshipStatus || "Auto (from owners)",
-                    homeOwnership: agePensionInput.homeOwnership || agePensionOldInput.homeOwnership || "Non-Homeowner",
-                    personalAssets: agePensionInput.personalAssets || agePensionOldInput.personalAssets || "$0",
-                    otherFinancialInvestments: agePensionInput.otherFinancialInvestments || agePensionOldInput.otherFinancialInvestments || "$0",
-                    thresholdIndexation: agePensionInput.thresholdIndexation || agePensionOldInput.thresholdIndexation || "2.5%",
-                    annualLivingExpenses: agePensionInput.annualLivingExpenses || agePensionOldInput.annualLivingExpenses || "",
-                    expensesIndexation: agePensionInput.expensesIndexation || agePensionOldInput.expensesIndexation || "2.5%",
-                    extraWithdrawal: agePensionInput.extraWithdrawal || agePensionOldInput.extraWithdrawal || "",
-                    withdrawalFrequency: agePensionInput.withdrawalFrequency || agePensionOldInput.withdrawalFrequency || "None",
+                    relationshipStatus: agePensionInput.relationshipStatus || "",
+                    homeOwnership: agePensionInput.homeOwnership || "",
+                    personalAssets: agePensionInput.personalAssets || "",
+                    otherFinancialInvestments: agePensionInput.otherFinancialInvestments || "",
+                    thresholdIndexation: agePensionInput.thresholdIndexation || "",
+                    annualLivingExpenses: agePensionInput.annualLivingExpenses || "",
+                    expensesIndexation: agePensionInput.expensesIndexation || "",
+                    extraWithdrawal: agePensionInput.extraWithdrawal || "",
+                    withdrawalFrequency: agePensionInput.withdrawalFrequency || "",
                 },
             };
 
@@ -493,6 +504,15 @@ export default function RetirementAdequacyForm({ modalData }) {
             setSaving(false);
         }
     };
+
+    const extractData = (dataOf) => {
+        let superAnnuation = selectedReviewAllData?.superannuationDetails?.[dataOf] || {}
+        console.log()
+        "incomeFromBusinessTotal superAnnuationTotal riskGoal"
+
+    }
+
+
 
     return (
         <div style={{ padding: "16px 4px 0px 4px" }}>
@@ -517,7 +537,18 @@ export default function RetirementAdequacyForm({ modalData }) {
                             label="Owner"
                             name="owner"
                             style={{ marginBottom: 8 }}
-                            rules={[{ required: true, message: "Owner is required" }]}
+                            rules={[
+                                { required: true, message: "Owner is required" },
+                                {
+                                    validator: (_, owners) => {
+                                        if (Array.isArray(owners) && owners.includes('partner') && !owners.includes('client')) {
+                                            return Promise.reject(new Error(`Select ${getReviewName("client")} when ${getReviewName("partner")} is selected`));
+                                        }
+
+                                        return Promise.resolve();
+                                    },
+                                },
+                            ]}
                         >
                             <Select
                                 options={ownerOptions}
@@ -594,38 +625,68 @@ export default function RetirementAdequacyForm({ modalData }) {
                         <div
                             style={{
                                 display: "flex",
-                                justifyContent: "flex-end",
+                                justifyContent: "space-between",
                                 gap: 12,
                                 marginTop: 16,
                             }}
                         >
-                            <Space>
-                                <Button onClick={() => modalData?.closeModal?.()}>
-                                    Close
+                            <div style={{
+                                display: "flex",
+                                justifyContent: "flex-start",
+                                gap: 12,
+                                marginTop: 16,
+                            }}>
+                                <Button disabled={editing}
+                                    onClick={() => { extractData("client") }}
+                                >
+                                    → Transfer Client from Super
                                 </Button>
-                                {!editing ? (
-                                    <Button
-                                        type="primary"
-                                        htmlType="button"
-                                        key="edit"
-                                        style={{ backgroundColor: "#22c55e" }}
-                                        onClick={() => setEditing(true)}
-                                    >
-                                        Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        type="primary"
-                                        key="submit"
-                                        htmlType="submit"
-                                        style={{ backgroundColor: "#22c55e" }}
-                                        loading={saving}
-                                        disabled={saving}
-                                    >
-                                        Save
-                                    </Button>
+
+                                {showPartnerTransferButton && (
+                                    <Button disabled={editing}
+                                        onClick={() => { extractData("partner") }}
+                                    > → Transfer Partner from Super</Button>
                                 )}
-                            </Space>
+
+                            </div>
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    gap: 12,
+                                    marginTop: 16,
+
+                                }}
+                            >
+                                <Space>
+                                    <Button onClick={() => modalData?.closeModal?.()}>
+                                        Close
+                                    </Button>
+                                    {!editing ? (
+                                        <Button
+                                            type="primary"
+                                            htmlType="button"
+                                            key="edit"
+                                            style={{ backgroundColor: "#22c55e" }}
+                                            onClick={() => setEditing(true)}
+                                        >
+                                            Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="primary"
+                                            key="submit"
+                                            htmlType="submit"
+                                            style={{ backgroundColor: "#22c55e" }}
+                                            loading={saving}
+                                            disabled={saving}
+                                        >
+                                            Save
+                                        </Button>
+                                    )}
+                                </Space>
+                            </div>
                         </div>
                     </Col>
                 </Row>

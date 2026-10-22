@@ -62,7 +62,8 @@ const getInsuranceIndexationRate = (value, age) => {
 };
 
 // Mirrors calcSuperProjection in AdviserSimplicity_Review.html.
-const calculateProjections = (personData, currentAge) => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const calculateProjections = (personData, currentAge) => {
     if (!personData) return { metrics: {}, chart: [], table: [] };
 
     const startingBalance = parseNum(personData.superAnnuationTotal, 0);

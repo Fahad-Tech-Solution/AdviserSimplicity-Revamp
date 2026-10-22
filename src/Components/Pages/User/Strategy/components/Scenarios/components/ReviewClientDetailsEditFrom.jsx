@@ -353,7 +353,23 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
             <Form form={form} initialValues={initialValues} onFinish={handleFinish} layout="vertical">
                 <Row style={{ marginBottom: 24 }}>
                     <Col xs={6}>
-                        <Form.Item label="Owner" name="owner" style={{ marginBottom: 0 }}>
+                        <Form.Item
+                            label="Owner"
+                            name="owner"
+                            style={{ marginBottom: 0 }}
+                            rules={[
+                                { required: true, message: "Owner is required" },
+                                {
+                                    validator: (_, owners) => {
+                                        if (Array.isArray(owners) && owners.includes('partner') && !owners.includes('client')) {
+                                            return Promise.reject(new Error(`Select ${selectedReviewAllData?.personalDetails?.client?.preferredName || "client"} when ${selectedReviewAllData?.personalDetails?.partner?.preferredName || "partner"} is selected`));
+                                        }
+
+                                        return Promise.resolve();
+                                    },
+                                },
+                            ]}
+                        >
                             <Select
                                 mode="multiple"
                                 allowClear

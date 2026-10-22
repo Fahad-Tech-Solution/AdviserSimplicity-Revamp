@@ -13,8 +13,6 @@ import {
     BarChart,
     CartesianGrid,
     Legend,
-    Line,
-    LineChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -52,6 +50,16 @@ const INSURANCE_ANALYSIS_DISCLAIMER =
     "The figures shown are projections and estimates based on the assumptions and inputs provided. They are <strong>not guaranteed</strong> and actual outcomes may differ materially due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This is general information only and does not constitute personal financial product advice. Past performance is not a reliable indicator of future performance. For formal advice tailored to the client's specific situation, refer to the calculator's detailed output and the Record of Advice.";
 
 const MONEY_TOOLTIP = (value) => formatInsuranceMoney(value);
+
+function getMarginalTaxRate(grossIncome) {
+    const gross = toInsuranceNumber(grossIncome);
+    if (gross <= 18_200) return 0;
+    if (gross <= 26_000) return 0.16;
+    if (gross <= 45_000) return 0.18;
+    if (gross <= 135_000) return 0.32;
+    if (gross <= 190_000) return 0.39;
+    return 0.47;
+}
 
 function getInsuranceSection(reviewData) {
     return (
@@ -169,10 +177,10 @@ function buildIncomeProtectionRows(profile, calculated) {
         { key: "annual-income", label: "Annual Income to be Covered", value: formatInsuranceMoney(calculated.ip.annualIncome) },
         { key: "income-percent", label: "% of Income to Cover", value: `${percentIncome}%` },
         { key: "super-percent", label: "Super Contrib. % Cover", value: `${percentSuper}%` },
-        { key: "income-benefit-monthly", label: "Income Benefit Covered (monthly)", value: formatInsuranceMoney(calculated.ip.monthlyBenefit, "/mo"), color: "#1d4ed8" },
-        { key: "super-benefit-monthly", label: "Super Contributions Cover (monthly)", value: formatInsuranceMoney(calculated.ip.monthlySuper, "/mo"), color: "#1d4ed8" },
-        { key: "income-benefit-annual", label: "IP Income Benefit (annual gross)", value: formatInsuranceMoney(calculated.ip.annualBenefit), color: "#1d4ed8" },
-        { key: "net-monthly", label: "Net Monthly After Tax (IP income net)", value: formatInsuranceMoney(calculated.ip.netMonthlyAfterTax, "/mo"), color: "#15803d" },
+        { key: "income-benefit-monthly", label: <>Income Benefit Covered <span style={{ fontSize: "11px", color: "#9ca3af" }}>(monthly)</span></>, value: formatInsuranceMoney(calculated.ip.monthlyBenefit, "/mo"), color: "#1d4ed8" },
+        { key: "super-benefit-monthly", label: <>Super Contributions Cover <span style={{ fontSize: "11px", color: "#9ca3af" }}>(monthly)</span></>, value: formatInsuranceMoney(calculated.ip.monthlySuper, "/mo"), color: "#1d4ed8" },
+        { key: "income-benefit-annual", label: <>IP Income Benefit <span style={{ fontSize: "11px", color: "#9ca3af" }}>(annual gross)</span></>, value: formatInsuranceMoney(calculated.ip.annualBenefit), color: "#1d4ed8" },
+        { key: "net-monthly", label: <>Net Monthly After Tax <span style={{ fontSize: "11px", color: "#9ca3af" }}>(IP income net)</span></>, value: formatInsuranceMoney(calculated.ip.netMonthlyAfterTax, "/mo"), color: "#15803d" },
         { key: "existing-cover", label: "Existing Monthly IP Cover", value: formatInsuranceMoney(calculated.ip.existingMonthly, "/mo") },
         { key: "waiting-period", label: "Waiting Period", value: details.waitingPeriod || "30 days" },
         { key: "benefit-period", label: "Benefit Period", value: details.benefitPeriod || "To age 65" },
@@ -225,6 +233,7 @@ const InsuranceNeeds = () => {
     const [selectedProfile, setSelectedProfile] = useState("client");
     const [viewMode, setViewMode] = useState("Graph");
     const [coverTab, setCoverTab] = useState("Insurance Cover");
+    const [premiumChartMode, setPremiumChartMode] = useState("cost");
     const [premiumHorizon, setPremiumHorizon] = useState("10y");
     const [openModal, setOpenModal] = useState(false);
     const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
@@ -281,8 +290,10 @@ const InsuranceNeeds = () => {
         ...COVER_META.map(({ key, label }) => ({
             category: label.replace(" Cover", ""),
             currentCover: calculated.existingByType[key],
-            shortfall: Math.max(0, calculated.shortfallByType[key]),
-            required: calculated.coverRequiredByType[key],
+            shortfall: Math.max(
+                0,
+                calculated.totalNeedsByType[key] - calculated.existingByType[key],
+            ),
         })),
         {
             category: "IP (annualised)",
@@ -296,6 +307,51 @@ const InsuranceNeeds = () => {
         () => projectInsurancePremiums(profile, age, "10y"),
         [profile, age],
     );
+    const incomeForTax = profile?.incomeReplacement?.grossIncome;
+    const marginalTaxRate = getMarginalTaxRate(incomeForTax);
+    const ipOwnershipRows = useMemo(
+        () => premiumChartProjection.rows.map((row) => ({
+            age: row.age,
+            insideSuper: row.ip * 0.85,
+            ownName: row.ip * (1 - marginalTaxRate),
+        })),
+        [premiumChartProjection.rows, marginalTaxRate],
+    );
+    const ipOwnershipSummary = useMemo(() => {
+        if (!ipOwnershipRows.length) return "";
+
+        const insideSuperTotal = ipOwnershipRows.reduce(
+            (total, row) => total + row.insideSuper,
+            0,
+        );
+        const ownNameTotal = ipOwnershipRows.reduce(
+            (total, row) => total + row.ownName,
+            0,
+        );
+        const savings = insideSuperTotal - ownNameTotal;
+        const firstAge = ipOwnershipRows[0].age;
+        const lastAge = ipOwnershipRows[ipOwnershipRows.length - 1].age;
+        const savingsText = savings < 0
+            ? `-${formatInsuranceMoney(Math.abs(savings))}`
+            : formatInsuranceMoney(savings);
+
+        return `First ${ipOwnershipRows.length} years (age ${firstAge}–${lastAge}) after-tax cost — Inside Super: ${formatInsuranceMoney(insideSuperTotal)} · Own Name: ${formatInsuranceMoney(ownNameTotal)} · Savings owning in own name: ${savingsText} · MTR ${Math.round(marginalTaxRate * 100)}%`;
+    }, [ipOwnershipRows, marginalTaxRate]);
+    const ipOwnershipNotice = !age
+        ? "Add a date of birth in Client Details to see the comparison."
+        : age >= 65
+            ? "IP cover typically ceases at age 65 — no projection."
+            : toInsuranceNumber(profile?.existingCover?.ipPremium) <= 0
+                ? "Enter an IP premium in Edit Inputs to see the ownership comparison."
+                : "";
+    const premiumProjectionSummary = useMemo(() => {
+        const rows = premiumChartProjection.rows;
+        if (!rows.length) return "";
+
+        const firstYear = rows[0];
+        const lastYear = rows[rows.length - 1];
+        return `First ${rows.length} years (age ${firstYear.age}–${lastYear.age}) · Annual premium at year ${lastYear.age - firstYear.age}: ${formatInsuranceMoney(lastYear.total)} · Cumulative: ${formatInsuranceMoney(lastYear.cumulative)}`;
+    }, [premiumChartProjection]);
     const aggregateShortfall = COVER_META.reduce(
         (total, { key }) => total + Math.max(0, calculated.shortfallByType[key]),
         0,
@@ -611,6 +667,7 @@ const InsuranceNeeds = () => {
                                 columns={detailColumns}
                                 data={calculated.detailedRows}
                                 noPagination
+                                showCount={false}
                                 size="small"
                                 headerFontSize={12}
                                 bodyFontSize={12}
@@ -629,6 +686,7 @@ const InsuranceNeeds = () => {
                                 headerFontSize={12}
                                 bodyFontSize={12}
                                 horizontalScroll={false}
+                                showCount={false}
                                 tableProps={{ rowKey: "key" }}
                                 tableStyle={{ borderRadius: 12, overflow: "hidden" }}
                             />
@@ -637,34 +695,75 @@ const InsuranceNeeds = () => {
                 ) : (
                     viewMode === "Graph" ? (
                         <>
-                            <Title level={4} style={{ textAlign: "center", marginBottom: 8, fontWeight: 700, color: "#0f172a" }}>
-                                Cost of Cover — Annual Premium Projection
-                            </Title>
-                            {premiumNotice ? (
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                                <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#0f172a" }}>
+                                    {premiumChartMode === "cost"
+                                        ? `Cost of Cover — Annual Premium Projection (${getReviewName(activeProfile)})`
+                                        : `IP Ownership Comparison — ${getReviewName(activeProfile)} (10-Year After-Tax Cost)`}
+                                </Title>
+                                <Segmented
+                                    value={premiumChartMode}
+                                    onChange={setPremiumChartMode}
+                                    options={[
+                                        { label: "Cost of Cover", value: "cost" },
+                                        { label: "IP Ownership", value: "ipOwnership" },
+                                    ]}
+                                />
+                            </div>
+                            {premiumChartMode === "cost" && premiumNotice ? (
                                 <div style={{ minHeight: 280, display: "grid", placeItems: "center" }}>
                                     <Text type="secondary">{premiumNotice}</Text>
+                                </div>
+                            ) : premiumChartMode === "ipOwnership" && ipOwnershipNotice ? (
+                                <div style={{ minHeight: 280, display: "grid", placeItems: "center" }}>
+                                    <Text type="secondary">{ipOwnershipNotice}</Text>
                                 </div>
                             ) : (
                                 <>
                                     <div style={{ width: "100%", height: 360 }}>
                                         <ResponsiveContainer>
-                                            <LineChart data={premiumChartProjection.rows} margin={{ top: 20, right: 24, left: 20, bottom: 16 }}>
+                                            <BarChart
+                                                data={premiumChartMode === "cost" ? premiumChartProjection.rows : ipOwnershipRows}
+                                                margin={{ top: 20, right: 24, left: 20, bottom: 32 }}
+                                            >
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="age" tickFormatter={(value) => `Age ${value}`} />
-                                                <YAxis tickFormatter={(value) => `$${Math.round(value / 1000)}K`} />
+                                                <XAxis
+                                                    dataKey="age"
+                                                    tickFormatter={(value, index) => index === 0 ? `${value} (now)` : value}
+                                                />
+                                                <YAxis tickFormatter={(value) => `$${Math.round(value).toLocaleString("en-AU")}`} />
                                                 <Tooltip formatter={MONEY_TOOLTIP} labelFormatter={(value) => `Age ${value}`} />
-                                                <Legend />
-                                                <Line type="monotone" dataKey="life" name="Life" stroke="#b91c1c" dot={false} />
-                                                <Line type="monotone" dataKey="tpd" name="TPD" stroke="#c2410c" dot={false} />
-                                                <Line type="monotone" dataKey="trauma" name="Trauma" stroke="#7e22ce" dot={false} />
-                                                <Line type="monotone" dataKey="ip" name="IP" stroke="#22C55E" dot={false} />
-                                                <Line type="monotone" dataKey="total" name="Total" stroke="#2b3a5e" strokeWidth={3} dot={false} />
-                                            </LineChart>
+                                                {premiumChartMode === "cost" ? (
+                                                    <>
+                                                        <Legend />
+                                                        <Bar dataKey="life" name="Life" fill="#3b82f6" />
+                                                        <Bar dataKey="tpd" name="TPD" fill="#8b5cf6" />
+                                                        <Bar dataKey="trauma" name="Trauma" fill="#f59e0b" />
+                                                        <Bar dataKey="ip" name="IP" fill="#22c55e" />
+                                                        <Bar dataKey="total" name="Total" fill="#2b3a5e" />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Bar dataKey="insideSuper" name="Inside Super (×0.85)" fill="#3b82f6" />
+                                                        <Bar dataKey="ownName" name="Own Name (×(1 − MTR))" fill="#22c55e" />
+                                                    </>
+                                                )}
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     </div>
                                     <Text type="secondary" style={{ display: "block", textAlign: "center", fontSize: 12 }}>
-                                        Indicative annual premiums use age-banded increases plus 3% annual cover indexation; IP ceases at age 65.
+                                        {premiumChartMode === "cost" ? premiumProjectionSummary : ipOwnershipSummary}
                                     </Text>
+                                    {premiumChartMode === "ipOwnership" && (
+                                        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+                                            <Button size="small" style={{ borderRadius: 16, borderColor: "#3b82f6", color: "#2563eb", fontWeight: 600 }}>
+                                                ● Inside Super (×0.85)
+                                            </Button>
+                                            <Button size="small" style={{ borderRadius: 16, borderColor: "#22c55e", color: "#16a34a", fontWeight: 600 }}>
+                                                ● Own Name (×(1 − MTR))
+                                            </Button>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </>

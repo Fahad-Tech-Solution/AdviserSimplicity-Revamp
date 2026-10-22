@@ -22,6 +22,7 @@ const PAYMENT_FREQUENCY_OPTIONS = [
     { label: "Weekly", value: "Weekly" },
     { label: "Fortnightly", value: "Fortnightly" },
     { label: "Monthly", value: "Monthly" },
+    { label: "Annually", value: "Annually" },
 ];
 
 const LOAN_TYPE_OPTIONS = [
@@ -64,6 +65,29 @@ function formatPercentValue(value) {
     return `${Math.min(Math.max(numeric, 0), 100)}%`;
 }
 
+function normalizePaymentFrequency(value) {
+    const normalizedValue = String(value ?? "").trim().toLowerCase();
+    const frequenciesByNumber = {
+        "52": "Weekly",
+        "26": "Fortnightly",
+        "12": "Monthly",
+        "1": "Annually",
+    };
+    const frequenciesByName = {
+        weekly: "Weekly",
+        fortnightly: "Fortnightly",
+        monthly: "Monthly",
+        annual: "Annually",
+        annually: "Annually",
+        yearly: "Annually",
+        year: "Annually",
+    };
+
+    return frequenciesByNumber[normalizedValue] ||
+        frequenciesByName[normalizedValue] ||
+        (normalizedValue ? value : "Monthly");
+}
+
 function SectionTitle({ children }) {
     return (
         <Text
@@ -87,6 +111,8 @@ function buildInitialValues(sectionData) {
     const loanSetup = sectionData?.loanSetup || {};
     const extrasAndOffsets = sectionData?.extrasAndOffsets || {};
 
+
+
     return {
         loanSetup: {
             homeLoanTotal: formatCurrencyValue(loanSetup?.homeLoanTotal ?? ""),
@@ -94,7 +120,7 @@ function buildInitialValues(sectionData) {
                 ? ""
                 : formatPercentValue(loanSetup.interestRate),
             termYears: loanSetup?.termYears ?? "",
-            paymentFrequency: loanSetup?.paymentFrequency || "Monthly",
+            paymentFrequency: normalizePaymentFrequency(loanSetup?.paymentFrequency),
             loanType: loanSetup?.loanType || "Principal & Interest",
         },
         extrasAndOffsets: {
@@ -272,6 +298,7 @@ export default function LoanSimulatorForm({ modalData }) {
                     surplusCash: values.extrasAndOffsets?.surplusCash ?? "",
                 },
             };
+
 
             const saved = sectionData?._id
                 ? await patch("/review/loanSimulator/Update", payload)

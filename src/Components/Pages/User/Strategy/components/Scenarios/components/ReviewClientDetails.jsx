@@ -177,7 +177,7 @@ const ReviewClientDetails = () => {
   }, [selectedReviewAllData]);
 
   const [openModal, setOpenModal] = useState();
-  const showPartner = selectedReviewAllData?.personalDetails?.partner?.preferredName ? true : false;
+  const showPartner = (selectedReviewAllData?.personalDetails?.partner?.preferredName && selectedReviewAllData?.personalDetails?.owner.includes("partner")) ? true : false;
 
   const renderTitleBlock = useTitleBlock({
     titleStyle: headingStyle,

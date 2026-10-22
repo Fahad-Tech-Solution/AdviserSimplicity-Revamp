@@ -443,6 +443,7 @@ const ReviewsTaxPlanning = () => {
                                     data={tableData}
                                     headerFontSize={12}
                                     bodyFontSize={12}
+                                    noPagination
                                     showCount={false}
                                     size="small"
                                     tableProps={{ scroll: { x: 'max-content' } }}

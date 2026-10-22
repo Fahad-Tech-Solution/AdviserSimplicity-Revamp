@@ -5,7 +5,7 @@ import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.
 import { RiEdit2Fill, RiErrorWarningLine } from "react-icons/ri";
 import { SelectedReviewAllData } from "../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
-import { useReviewOptions } from "../../../../../../../hooks/useUserDashboardData.js";
+import { useGetReviewName, useReviewOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
 
 const { Text } = Typography;
@@ -272,6 +272,8 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const { patch } = useApi();
+    const getReviewName = useGetReviewName();
+
 
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
     const initialData = useMemo(
@@ -834,23 +836,23 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                 const ownerOldInput = initialData?.[ownerKey] || {};
                 return {
                     preferredName: ownerInput.preferredName || ownerOldInput.preferredName || "",
-                    incomeFromBusinessTotal: ownerInput.incomeFromBusinessTotal || ownerOldInput.incomeFromBusinessTotal || "",
-                    superAnnuationTotal: ownerInput.superAnnuationTotal || ownerOldInput.superAnnuationTotal || "",
-                    riskGoal: ownerInput.riskGoal || ownerOldInput.riskGoal || "",
-                    contributionType: ownerInput.contributionType || ownerOldInput.contributionType || "",
-                    sgcPercent: ownerInput.sgcPercent || ownerOldInput.sgcPercent || "",
-                    sgcAmount: ownerInput.sgcAmount || ownerOldInput.sgcAmount || "",
-                    maxConcessional: ownerInput.maxConcessional || ownerOldInput.maxConcessional || "",
-                    ssPersonalConcessional: ownerInput.ssPersonalConcessional || ownerOldInput.ssPersonalConcessional || "",
-                    nonConcessional: ownerInput.nonConcessional || ownerOldInput.nonConcessional || "",
-                    lumpSumNcc: ownerInput.lumpSumNcc || ownerOldInput.lumpSumNcc || "",
-                    investmentReturn: ownerInput.investmentReturn?.toString() || ownerOldInput.investmentReturn?.toString() || "",
-                    salaryGrowth: ownerInput.salaryGrowth || ownerOldInput.salaryGrowth || "",
-                    projectionPeriod: (ownerInput.projectionPeriod)?.toString() || ownerOldInput.projectionPeriod?.toString() || "",
-                    insurancePremium: ownerInput.insurancePremium || ownerOldInput.insurancePremium || "",
-                    premiumIndexation: ownerInput.premiumIndexation ?? ownerOldInput.premiumIndexation ?? "",
-                    premiumYears: ownerInput.premiumYears?.toString() ?? ownerOldInput.premiumYears?.toString() ?? "",
-                    projectedBalance: ownerInput.projectedBalance || ownerOldInput.projectedBalance || "",
+                    incomeFromBusinessTotal: ownerInput.incomeFromBusinessTotal || "",
+                    superAnnuationTotal: ownerInput.superAnnuationTotal || "",
+                    riskGoal: ownerInput.riskGoal || "",
+                    contributionType: ownerInput.contributionType || "",
+                    sgcPercent: ownerInput.sgcPercent || "",
+                    sgcAmount: ownerInput.sgcAmount || "",
+                    maxConcessional: ownerInput.maxConcessional || "",
+                    ssPersonalConcessional: ownerInput.ssPersonalConcessional || "",
+                    nonConcessional: ownerInput.nonConcessional || "",
+                    lumpSumNcc: ownerInput.lumpSumNcc || "",
+                    investmentReturn: ownerInput.investmentReturn?.toString() || "",
+                    salaryGrowth: ownerInput.salaryGrowth || "",
+                    projectionPeriod: (ownerInput.projectionPeriod)?.toString() || "",
+                    insurancePremium: ownerInput.insurancePremium || "",
+                    premiumIndexation: ownerInput.premiumIndexation ?? "",
+                    premiumYears: ownerInput.premiumYears?.toString() ?? "",
+                    projectedBalance: ownerInput.projectedBalance || "",
                 };
             };
 
@@ -904,7 +906,18 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
                             label="Owner"
                             name="owner"
                             style={{ marginBottom: 8 }}
-                            rules={[{ required: true, message: "Owner is required" }]}
+                            rules={[
+                                { required: true, message: "Owner is required" },
+                                {
+                                    validator: (_, owners) => {
+                                        if (Array.isArray(owners) && owners.includes('partner') && !owners.includes('client')) {
+                                            return Promise.reject(new Error(`Select ${getReviewName("client")} when ${getReviewName("partner")} is selected`));
+                                        }
+
+                                        return Promise.resolve();
+                                    },
+                                },
+                            ]}
                         >
                             <Select
                                 options={ownerOptions}
