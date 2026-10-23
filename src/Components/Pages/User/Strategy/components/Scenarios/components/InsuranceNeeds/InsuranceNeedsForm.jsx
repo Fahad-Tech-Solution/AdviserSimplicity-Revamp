@@ -506,21 +506,21 @@ export default function InsuranceNeedsForm({ modalData }) {
             incomeReplacement: {
                 ...normalized.incomeReplacement,
                 currentNetIncomeAfterTax:
-                    calculated.computedFields.currentNetIncomeAfterTax,
+                    calculated.computedFields.currentNetIncomeAfterTax || "",
             },
             assumptions: {
                 ...normalized.assumptions,
-                investmentReturn: toNumericValue(normalized.assumptions.investmentReturn),
-                inflation: toNumericValue(normalized.assumptions.inflation),
+                investmentReturn: toNumericValue(normalized.assumptions.investmentReturn) || "",
+                inflation: toNumericValue(normalized.assumptions.inflation) || "",
             },
             incomeProtectionDetails: {
                 ...normalized.incomeProtectionDetails,
-                percentIncome: toNumericValue(normalized.incomeProtectionDetails.percentIncome),
-                percentSuper: toNumericValue(normalized.incomeProtectionDetails.percentSuper),
-                incomeBenefitCovered: calculated.computedFields.incomeBenefitCovered,
-                ipIncomeBenefitAnnual: calculated.computedFields.ipIncomeBenefitAnnual,
-                superContributionsCover: calculated.computedFields.superContributionsCover,
-                netMonthlyAfterTax: calculated.computedFields.netMonthlyAfterTax,
+                percentIncome: toNumericValue(normalized.incomeProtectionDetails.percentIncome) || 0,
+                percentSuper: toNumericValue(normalized.incomeProtectionDetails.percentSuper) || 0,
+                incomeBenefitCovered: calculated.computedFields.incomeBenefitCovered || "",
+                ipIncomeBenefitAnnual: calculated.computedFields.ipIncomeBenefitAnnual || "",
+                superContributionsCover: calculated.computedFields.superContributionsCover || "",
+                netMonthlyAfterTax: calculated.computedFields.netMonthlyAfterTax || "",
             },
         };
     };

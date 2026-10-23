@@ -265,6 +265,27 @@ export default function HomeLoanModal({ modalData }) {
       field: "loanTermRemaining",
       type: "select",
       options: LOAN_TERM_OPTIONS,
+      rules: [
+        {
+          validator: (_, value) => {
+            const selectedLoanTerm = form.getFieldValue("loanTerm");
+
+            if (
+              value &&
+              selectedLoanTerm &&
+              Number(value) > Number(selectedLoanTerm)
+            ) {
+              return Promise.reject(
+                new Error(
+                  "Loan Term Remaining must be less than or equal to Loan Term",
+                ),
+              );
+            }
+
+            return Promise.resolve();
+          },
+        },
+      ],
     },
   ];
 
@@ -345,23 +366,6 @@ export default function HomeLoanModal({ modalData }) {
       </div>
       <Form form={form} initialValues={initialValues} layout="vertical">
         <Row gutter={[16, 16]}>
-          {editing && validationErrors.length > 0 ? (
-            <Col xs={24}>
-              <Alert
-                type="error"
-                showIcon
-                message="Validation Errors"
-                description={
-                  <ul style={{ marginBottom: 0, paddingLeft: 18 }}>
-                    {validationErrors.map((field) => (
-                      <li key={field.name.join(".")}>{field.errors[0]}</li>
-                    ))}
-                  </ul>
-                }
-              />
-            </Col>
-          ) : null}
-
           <Col xs={24}>
             <EditableDynamicTable
               form={form}

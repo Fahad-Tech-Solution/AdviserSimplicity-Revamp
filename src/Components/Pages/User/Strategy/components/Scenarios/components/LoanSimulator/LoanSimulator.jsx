@@ -215,7 +215,9 @@ const TABLE_COLUMNS = [
         dataIndex: "repayment",
         key: "repayment",
         align: "right",
-        render: (value) => formatCurrency(value),
+        render: (value, record) => (<span style={record.paidOff ? { color: "#15803d", fontWeight: 700 } : undefined}>
+            {formatCurrency(value)}
+        </span>),
     },
     {
         title: "Principal",

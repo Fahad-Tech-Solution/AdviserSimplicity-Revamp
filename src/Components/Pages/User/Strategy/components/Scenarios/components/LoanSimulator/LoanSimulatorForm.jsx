@@ -288,7 +288,7 @@ export default function LoanSimulatorForm({ modalData }) {
                     interestRate: values.loanSetup?.interestRate?.replace("%", "").trim() ?? "",
                     termYears: values.loanSetup?.termYears
                         ? Number(parseDigitsValue(values.loanSetup.termYears))
-                        : "",
+                        : 0,
                     paymentFrequency: values.loanSetup?.paymentFrequency ?? "",
                     loanType: values.loanSetup?.loanType ?? "",
                 },

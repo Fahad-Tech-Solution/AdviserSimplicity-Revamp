@@ -6,8 +6,11 @@ import AppModal from '../../../../../../../Common/AppModal';
 import useTitleBlock from '../../../../../../../../hooks/useTitleBlock';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import ReviewAgePensionAssessmentForm from './ReviewAgePensionAssessmentForm';
-import { useAtom } from 'jotai';
-import { SelectedReviewAllData } from '../../../../../../../../store/authState';
+import { useAtom, useAtomValue } from 'jotai';
+import {
+    RateReferenceObject,
+    SelectedReviewAllData,
+} from '../../../../../../../../store/authState';
 import { FaXmark } from 'react-icons/fa6';
 import { useGetReviewName } from '../../../../../../../../hooks/useUserDashboardData';
 import AnalysisModal from '../AnalysisModal/AnalysisModal';
@@ -38,10 +41,33 @@ const AGE_PENSION_RATES = {
     assetsTaperPerThousandFn: 3,
 };
 
+const AGE_PENSION_AGE = 67;
+
 const amount = (value) => {
     const parsed = Number(String(value ?? '').replace(/[^0-9.-]/g, ''));
     return Number.isFinite(parsed) ? parsed : 0;
 };
+
+function ageFromDateOfBirth(value) {
+    if (!value) return 0;
+    const dateOfBirth = new Date(value);
+    if (Number.isNaN(dateOfBirth.getTime())) return 0;
+
+    const today = new Date();
+    let age = today.getFullYear() - dateOfBirth.getFullYear();
+    if (
+        today.getMonth() < dateOfBirth.getMonth() ||
+        (today.getMonth() === dateOfBirth.getMonth() &&
+            today.getDate() < dateOfBirth.getDate())
+    ) {
+        age -= 1;
+    }
+    return age > 0 ? age : 0;
+}
+
+function resolveAge(assessmentAge, profileAge, dateOfBirth) {
+    return amount(assessmentAge) || amount(profileAge) || ageFromDateOfBirth(dateOfBirth);
+}
 
 const formatCurrency = (value) => `$${Math.round(value || 0).toLocaleString('en-AU')}`;
 const formatSpeechCurrency = (value) => {
@@ -70,8 +96,10 @@ const formatTableAmount = (value) => {
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function calculateAgePensionAssessment(data = {}) {
+export function calculateAgePensionAssessment(data = {}, reviewPersonalDetails = {}) {
     const personal = data.personalDetails || data;
+    const clientPersonalDetails = reviewPersonalDetails?.client || reviewPersonalDetails;
+    const partnerPersonalDetails = reviewPersonalDetails?.partner || {};
     const lifestyle = data.lifestyleAssets || data.lifestyle || {};
     const property = data.investmentPropertyAndOtherAssets || data.investmentProperty || {};
     const financial = data.financialAssets || {};
@@ -84,10 +112,18 @@ export function calculateAgePensionAssessment(data = {}) {
     const illnessSeparated = situation.includes('illness');
     const isCouple = situation.includes('couple') || illnessSeparated;
     const homeowner = String(personal.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
-    const clientAge = amount(personal.clientAge);
-    const partnerAge = amount(personal.partnerAge);
-    const clientEligible = clientAge >= 67;
-    const partnerEligible = isCouple && partnerAge >= 67;
+    const clientAge = resolveAge(
+        personal.clientAge,
+        clientPersonalDetails?.clientAge,
+        clientPersonalDetails?.clientDOB,
+    );
+    const partnerAge = resolveAge(
+        personal.partnerAge,
+        partnerPersonalDetails?.partnerAge,
+        partnerPersonalDetails?.partnerDOB,
+    );
+    const clientEligible = clientAge >= AGE_PENSION_AGE;
+    const partnerEligible = isCouple && partnerAge >= AGE_PENSION_AGE;
 
     const vehicleClient = amount(lifestyle.vehiclesClient);
     const vehiclePartner = amount(lifestyle.vehiclesPartner);
@@ -275,6 +311,7 @@ export function calculateAgePensionAssessment(data = {}) {
     return {
         clientAge,
         partnerAge,
+        lihccExistingHolder: Boolean(personal.lihccExistingHolder),
         isCouple,
         clientEligible,
         partnerEligible,
@@ -285,7 +322,7 @@ export function calculateAgePensionAssessment(data = {}) {
             ? 'none'
             : underAssets <= underIncome ? 'assets' : 'income',
         status: combinedPension <= 0
-            ? 'Not eligible'
+            ? eligibleCount === 0 ? 'Below Age Pension age' : 'No pension entitlement'
             : (actualBasis >= fullBasis - 1 ? 'Full pension' : 'Part pension'),
         clientPension,
         partnerPension,
@@ -304,13 +341,17 @@ const ReviewAgePensionAssessment = () => {
     const [viewMode, setViewMode] = useState('Table');
     const [meansTestTab, setMeansTestTab] = useState('Assets Test');
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
+    const rateReference = useAtomValue(RateReferenceObject);
+    const agePensionData =
+        selectedReviewAllData?.agePensionAssessmentDetails
+        || selectedReviewAllData?.agePensionDetails
+        || {};
     const assessment = useMemo(
         () => calculateAgePensionAssessment(
-            selectedReviewAllData?.agePensionAssessmentDetails
-            || selectedReviewAllData?.agePensionDetails
-            || {},
+            agePensionData,
+            selectedReviewAllData?.personalDetails,
         ),
-        [selectedReviewAllData],
+        [agePensionData, selectedReviewAllData?.personalDetails],
     );
     const { clientAge, partnerAge } = assessment;
     const [openModal, setOpenModal] = useState(false);
@@ -461,18 +502,39 @@ const ReviewAgePensionAssessment = () => {
         }));
     };
 
-    const {
-        clientName = "Client's",
-        agePensionAge = 67,
-        modeBadgeText = "RENEWAL · 125%",
-        incomeLimit = "$8,110",
-        incomeLimitNote = "Single ($811/wk × 8) +25% holder uplift",
-        actualIncome = "$3,256",
-        actualIncomeNote = "Equivalent of $407/week",
-        statusMessage = "continues to be eligible — $4,854 below the renewal (125%) threshold",
-        renewalLimitFormatted = "$8,110",
-        baseLimitFormatted = "$6,488",
-    } = {};
+    const clientName =
+        selectedReviewAllData?.personalDetails?.client?.clientPreferredName ||
+        getReviewName('client');
+    const lihccRates = rateReference?.lowIncomeHealthCareCard;
+    const baseWeeklyIncomeLimit = amount(
+        assessment.isCouple
+            ? lihccRates?.partnerCombinedPerWeek
+            : lihccRates?.clientPerWeek,
+    );
+    const hasConfiguredLihccLimit = baseWeeklyIncomeLimit > 0;
+    const dependentChildren = (
+        selectedReviewAllData?.personalDetails?.children?.arrayOfChildren || []
+    ).filter((child) =>
+        ["yes", "true"].includes(String(child?.depenantChild).toLowerCase()),
+    ).length;
+    const dependentAllowancePerWeek = amount(lihccRates?.perDependentChildPerWeek);
+    const holderUplift = assessment.lihccExistingHolder ? 1.25 : 1;
+    const weeklyIncomeLimit =
+        (baseWeeklyIncomeLimit + dependentChildren * dependentAllowancePerWeek) *
+        holderUplift;
+    const eightWeekIncomeLimit = weeklyIncomeLimit * 8;
+    const estimatedEightWeekIncome = assessment.totalAssessableIncome * (8 / 52);
+    const lihccEligible =
+        hasConfiguredLihccLimit && estimatedEightWeekIncome <= eightWeekIncomeLimit;
+    const lihccStatusMessage = !hasConfiguredLihccLimit
+        ? 'Income limit is unavailable. Configure the Low-Income Health Care Card rate reference to assess eligibility.'
+        : lihccEligible
+            ? `Estimated 8-week income is ${formatCurrency(eightWeekIncomeLimit - estimatedEightWeekIncome)} below the ${assessment.lihccExistingHolder ? 'renewal' : 'claim'} threshold.`
+            : `Estimated 8-week income is ${formatCurrency(estimatedEightWeekIncome - eightWeekIncomeLimit)} above the ${assessment.lihccExistingHolder ? 'renewal' : 'claim'} threshold.`;
+    const lihccLimitNote = hasConfiguredLihccLimit
+        ? `${assessment.isCouple ? 'Couple combined' : 'Single'}: ${formatCurrency(baseWeeklyIncomeLimit)} per week × 8${dependentChildren ? `, plus ${dependentChildren} dependent-child allowance(s)` : ''}${assessment.lihccExistingHolder ? ' × 1.25 renewal uplift' : ''}.`
+        : 'No configured income limit is available.';
+    const estimatedWeeklyIncome = estimatedEightWeekIncome / 8;
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -490,7 +552,7 @@ const ReviewAgePensionAssessment = () => {
                             fontWeight: 600,
                         }}
                     >
-                        Not eligible
+                        {assessment.status}
                     </Tag>
                 ) : (
                     <Tag
@@ -575,7 +637,7 @@ const ReviewAgePensionAssessment = () => {
                                     width: 'fit-content',
                                 }}
                             >
-                                Not eligible
+                                {assessment.status}
                             </Tag>
                         ) : (
                             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -661,13 +723,17 @@ const ReviewAgePensionAssessment = () => {
                             icon={<WarningOutlined />}
                             style={{
                                 borderRadius: 10,
-                                backgroundColor: '#fffbe structure',
+                                backgroundColor: '#fffbeb',
                                 borderColor: '#f59e0b',
                             }}
                             message={
                                 <Text style={{ color: '#92400e', fontSize: 13 }}>
-                                    <strong>Super excluded:</strong> {clientName} accumulation super balance is not assessed (Age Pension age is {agePensionAge}).
-                                </Text>
+                                <strong>Age eligibility not met:</strong>{' '}
+                                {clientName} is age {assessment.clientAge}
+                                {assessment.isCouple
+                                    ? ` and ${getReviewName('partner')} is age ${assessment.partnerAge}`
+                                    : ''}. Age Pension age is {AGE_PENSION_AGE}; accumulation super is excluded until age eligibility is met.
+                            </Text>
                             }
                         />
 
@@ -706,7 +772,13 @@ const ReviewAgePensionAssessment = () => {
                                             Low-Income Health Care Card Eligibility
                                         </Text>
                                         <Tag
-                                            color="#22c55e"
+                                            color={
+                                                !hasConfiguredLihccLimit
+                                                    ? "default"
+                                                    : lihccEligible
+                                                        ? "#22c55e"
+                                                        : "error"
+                                            }
                                             style={{
                                                 borderRadius: 9,
                                                 fontSize: '0.62rem',
@@ -716,7 +788,9 @@ const ReviewAgePensionAssessment = () => {
                                                 lineHeight: '1.4',
                                             }}
                                         >
-                                            {modeBadgeText}
+                                            {assessment.lihccExistingHolder
+                                                ? "RENEWAL · 125%"
+                                                : "NEW CLAIM"}
                                         </Tag>
                                     </div>
                                     <Text type="secondary" style={{ fontSize: '0.74rem', display: 'block', marginTop: 2, lineHeight: 1.4 }}>
@@ -749,10 +823,12 @@ const ReviewAgePensionAssessment = () => {
                                             8-week Income Limit
                                         </Text>
                                         <Text strong style={{ fontSize: '1.05rem', color: '#111827', display: 'block', marginTop: 2 }}>
-                                            {incomeLimit}
+                                            {hasConfiguredLihccLimit
+                                                ? formatCurrency(eightWeekIncomeLimit)
+                                                : "Not configured"}
                                         </Text>
                                         <Text type="secondary" style={{ fontSize: '0.7rem', display: 'block', marginTop: 2, color: '#9ca3af' }}>
-                                            {incomeLimitNote}
+                                            {lihccLimitNote}
                                         </Text>
                                     </div>
                                 </Col>
@@ -779,10 +855,10 @@ const ReviewAgePensionAssessment = () => {
                                             Their 8-week Income
                                         </Text>
                                         <Text strong style={{ fontSize: '1.05rem', color: '#111827', display: 'block', marginTop: 2 }}>
-                                            {actualIncome}
+                                            {formatCurrency(estimatedEightWeekIncome)}
                                         </Text>
                                         <Text type="secondary" style={{ fontSize: '0.7rem', display: 'block', marginTop: 2, color: '#9ca3af' }}>
-                                            {actualIncomeNote}
+                                            Estimated from annual assessable income · {formatCurrency(estimatedWeeklyIncome)}/week
                                         </Text>
                                     </div>
                                 </Col>
@@ -790,18 +866,46 @@ const ReviewAgePensionAssessment = () => {
 
                             {/* Status Box */}
                             <Alert
-                                type="success"
+                                type={
+                                    !hasConfiguredLihccLimit
+                                        ? "warning"
+                                        : lihccEligible
+                                            ? "success"
+                                            : "error"
+                                }
                                 showIcon
-                                icon={<CheckCircleFilled style={{ color: '#15803d', fontSize: 18 }} />}
+                                icon={
+                                    lihccEligible
+                                        ? <CheckCircleFilled style={{ color: '#15803d', fontSize: 18 }} />
+                                        : <WarningOutlined style={{ fontSize: 18 }} />
+                                }
                                 style={{
-                                    backgroundColor: '#dcfce7',
-                                    borderColor: '#86efac',
+                                    backgroundColor: !hasConfiguredLihccLimit
+                                        ? '#fffbeb'
+                                        : lihccEligible
+                                            ? '#dcfce7'
+                                            : '#fef2f2',
+                                    borderColor: !hasConfiguredLihccLimit
+                                        ? '#f59e0b'
+                                        : lihccEligible
+                                            ? '#86efac'
+                                            : '#fecaca',
                                     borderRadius: 9,
                                     padding: '8px 12px',
                                 }}
                                 message={
-                                    <Text style={{ color: '#15803d', fontWeight: 600, fontSize: '0.85rem' }}>
-                                        {statusMessage}
+                                    <Text
+                                        style={{
+                                            color: !hasConfiguredLihccLimit
+                                                ? '#92400e'
+                                                : lihccEligible
+                                                    ? '#15803d'
+                                                    : '#b91c1c',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        {lihccStatusMessage}
                                     </Text>
                                 }
                             />
@@ -817,9 +921,13 @@ const ReviewAgePensionAssessment = () => {
                                 }}
                             >
                                 <strong>Benefits include:</strong> cheaper PBS prescriptions, bulk-billed GP visits where available, lower co-payments, plus state-based concessions on utilities, public transport, and council rates.
-                                <br />
-                                <br />
-                                <strong>Renewal status:</strong> As an existing card holder, the threshold is 125% of the standard limit ({baseLimitFormatted} × 1.25 = {renewalLimitFormatted}).
+                                {assessment.lihccExistingHolder && hasConfiguredLihccLimit ? (
+                                    <>
+                                        <br />
+                                        <br />
+                                        <strong>Renewal status:</strong> The threshold includes the 125% existing-holder uplift.
+                                    </>
+                                ) : null}
                             </Paragraph>
                         </Card>
                     </Space>

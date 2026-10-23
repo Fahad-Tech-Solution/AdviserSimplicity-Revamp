@@ -202,6 +202,9 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
         Form.useWatch("investmentPropertyAndOtherAssets", form) ||
         initialValues.investmentPropertyAndOtherAssets;
     const income = Form.useWatch("income", form) || initialValues.income;
+    const showPartnerRows =
+        selectedReviewAllData?.personalDetails?.owner?.includes("partner") ??
+        false;
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
@@ -529,27 +532,29 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
     }], [investmentPropertyAndOtherAssets]);
 
     const financialAssetRows = useMemo(
-        () => ["client", "partner"].map((owner) => ({
-            key: owner,
-            formPath: ["financialAssets", owner],
-            ownerLabel:
-                ownerOptions.find((option) => option.value === owner)?.label ||
-                (owner === "client" ? "Client" : "Partner"),
-            ...financialAssets[owner],
-        })),
-        [financialAssets, ownerOptions],
+        () =>
+            ["client", ...(showPartnerRows ? ["partner"] : [])].map((owner) => ({
+                key: owner,
+                formPath: ["financialAssets", owner],
+                ownerLabel:
+                    ownerOptions.find((option) => option.value === owner)?.label ||
+                    (owner === "client" ? "Client" : "Partner"),
+                ...financialAssets[owner],
+            })),
+        [financialAssets, ownerOptions, showPartnerRows],
     );
 
     const incomeRows = useMemo(
-        () => ["client", "partner"].map((owner) => ({
-            key: `income-${owner}`,
-            formPath: ["income", owner],
-            ownerLabel:
-                ownerOptions.find((option) => option.value === owner)?.label ||
-                (owner === "client" ? "Client" : "Partner"),
-            ...income[owner],
-        })),
-        [income, ownerOptions],
+        () =>
+            ["client", ...(showPartnerRows ? ["partner"] : [])].map((owner) => ({
+                key: `income-${owner}`,
+                formPath: ["income", owner],
+                ownerLabel:
+                    ownerOptions.find((option) => option.value === owner)?.label ||
+                    (owner === "client" ? "Client" : "Partner"),
+                ...income[owner],
+            })),
+        [income, ownerOptions, showPartnerRows],
     );
 
     const handleFinish = async (values) => {

@@ -241,6 +241,10 @@ const InsuranceNeeds = () => {
         currentCover: true,
         shortfall: true,
     });
+    const [ipOwnershipSeriesVisibility, setIpOwnershipSeriesVisibility] = useState({
+        insideSuper: true,
+        ownName: true,
+    });
     const selectedReviewAllData = useAtomValue(SelectedReviewAllData);
     const selectedClient = useAtomValue(SelectedClient);
     const rateReference = useAtomValue(RateReferenceObject);
@@ -363,6 +367,14 @@ const InsuranceNeeds = () => {
     const toggleSeries = (key) => {
         setSeriesVisibility((previous) => {
             const otherKey = key === "currentCover" ? "shortfall" : "currentCover";
+            if (previous[key] && !previous[otherKey]) return previous;
+            return { ...previous, [key]: !previous[key] };
+        });
+    };
+
+    const toggleIpOwnershipSeries = (key) => {
+        setIpOwnershipSeriesVisibility((previous) => {
+            const otherKey = key === "insideSuper" ? "ownName" : "insideSuper";
             if (previous[key] && !previous[otherKey]) return previous;
             return { ...previous, [key]: !previous[key] };
         });
@@ -744,8 +756,12 @@ const InsuranceNeeds = () => {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Bar dataKey="insideSuper" name="Inside Super (×0.85)" fill="#3b82f6" />
-                                                        <Bar dataKey="ownName" name="Own Name (×(1 − MTR))" fill="#22c55e" />
+                                                        {ipOwnershipSeriesVisibility.insideSuper && (
+                                                            <Bar dataKey="insideSuper" name="Inside Super (×0.85)" fill="#3b82f6" />
+                                                        )}
+                                                        {ipOwnershipSeriesVisibility.ownName && (
+                                                            <Bar dataKey="ownName" name="Own Name (×(1 − MTR))" fill="#22c55e" />
+                                                        )}
                                                     </>
                                                 )}
                                             </BarChart>
@@ -756,10 +772,28 @@ const InsuranceNeeds = () => {
                                     </Text>
                                     {premiumChartMode === "ipOwnership" && (
                                         <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-                                            <Button size="small" style={{ borderRadius: 16, borderColor: "#3b82f6", color: "#2563eb", fontWeight: 600 }}>
+                                            <Button
+                                                size="small"
+                                                onClick={() => toggleIpOwnershipSeries("insideSuper")}
+                                                style={{
+                                                    borderRadius: 16,
+                                                    borderColor: "#3b82f6",
+                                                    color: ipOwnershipSeriesVisibility.insideSuper ? "#2563eb" : "#94a3b8",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
                                                 ● Inside Super (×0.85)
                                             </Button>
-                                            <Button size="small" style={{ borderRadius: 16, borderColor: "#22c55e", color: "#16a34a", fontWeight: 600 }}>
+                                            <Button
+                                                size="small"
+                                                onClick={() => toggleIpOwnershipSeries("ownName")}
+                                                style={{
+                                                    borderRadius: 16,
+                                                    borderColor: "#22c55e",
+                                                    color: ipOwnershipSeriesVisibility.ownName ? "#16a34a" : "#94a3b8",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
                                                 ● Own Name (×(1 − MTR))
                                             </Button>
                                         </div>

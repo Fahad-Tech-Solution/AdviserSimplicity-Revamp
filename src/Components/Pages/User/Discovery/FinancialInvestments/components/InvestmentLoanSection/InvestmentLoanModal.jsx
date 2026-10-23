@@ -371,7 +371,39 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
-        // width: 180,
+        dependencies: ({ record }) => [
+          [record.formPath, "loanTerm"],
+        ],
+        rules: ({ record, form: currentForm }) => [
+          {
+            validator: (_, value) => {
+              const selectedLoanTerm = currentForm.getFieldValue([
+                record.formPath,
+                "loanTerm",
+              ]);
+              const remainingYears = Number(value);
+              const loanTermYears = Number(selectedLoanTerm);
+
+              if (
+                value !== undefined &&
+                value !== null &&
+                selectedLoanTerm !== undefined &&
+                selectedLoanTerm !== null &&
+                Number.isFinite(remainingYears) &&
+                Number.isFinite(loanTermYears) &&
+                remainingYears > loanTermYears
+              ) {
+                return Promise.reject(
+                  new Error(
+                    "Loan Term Remaining must be less than or equal to Loan Term",
+                  ),
+                );
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ],
       },
       {
         title: "Deductible Loan Amount",
@@ -470,6 +502,39 @@ export default function InvestmentLoanModal({ modalData }) {
         field: "loanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
+          dependencies: ({ record }) => [
+          [record.formPath, "loanTerm"],
+        ],
+        rules: ({ record, form: currentForm }) => [
+          {
+            validator: (_, value) => {
+              const selectedLoanTerm = currentForm.getFieldValue([
+                record.formPath,
+                "loanTerm",
+              ]);
+              const remainingYears = Number(value);
+              const loanTermYears = Number(selectedLoanTerm);
+
+              if (
+                value !== undefined &&
+                value !== null &&
+                selectedLoanTerm !== undefined &&
+                selectedLoanTerm !== null &&
+                Number.isFinite(remainingYears) &&
+                Number.isFinite(loanTermYears) &&
+                remainingYears > loanTermYears
+              ) {
+                return Promise.reject(
+                  new Error(
+                    "Loan Term Remaining must be less than or equal to Loan Term",
+                  ),
+                );
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ],
         // width: 150,
       },
       {

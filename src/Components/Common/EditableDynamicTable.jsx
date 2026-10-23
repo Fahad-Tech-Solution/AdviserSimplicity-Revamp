@@ -161,6 +161,10 @@ export default function EditableDynamicTable({
               rowPathKey,
               getFieldName,
             );
+            const resolveColumnValue = (value) =>
+              typeof value === "function"
+                ? value({ record, column, form, fieldName })
+                : value;
             const resolvedAction = column.action
               ? {
                 ...column.action,
@@ -222,10 +226,10 @@ export default function EditableDynamicTable({
                     type={column.type || "text"}
                     options={column.options}
                     placeholder={column.placeholder}
-                    rules={column.rules}
+                    rules={resolveColumnValue(column.rules)}
                     disabled={resolvedDisabled}
                     hidden={column.hidden}
-                    dependencies={column.dependencies}
+                    dependencies={resolveColumnValue(column.dependencies)}
                     valuePropName={column.valuePropName}
                     action={resolvedAction}
                     fieldProps={column.fieldProps}

@@ -384,7 +384,9 @@ export function calculateInsuranceNeeds(
     ),
     totalRow(
       "tpd-tax",
-      "Tax on TPD claim if held in Super (applied)",
+      `Tax on TPD claim if held in Super (${
+        income.taxTpdInSuper !== false ? "applied" : "not applied"
+      })`,
       {
         life: "N/A",
         tpd: tpdTax,

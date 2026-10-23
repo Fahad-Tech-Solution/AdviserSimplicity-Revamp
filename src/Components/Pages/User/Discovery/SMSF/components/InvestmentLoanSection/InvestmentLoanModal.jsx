@@ -315,6 +315,58 @@ export default function InvestmentLoanModal({ modalData }) {
       },
     ];
 
+    const loanTermColumns = [
+      {
+        title: "Loan Term",
+        dataIndex: "loanTerm",
+        key: "loanTerm",
+        field: "loanTerm",
+        type: "select",
+        options: LOAN_TERM_OPTIONS,
+      },
+      {
+        title: "Loan Term Remaining",
+        dataIndex: "loanTermRemaining",
+        key: "loanTermRemaining",
+        field: "loanTermRemaining",
+        type: "select",
+        options: LOAN_TERM_OPTIONS,
+        dependencies: ({ record }) => [
+          [record.formPath, "loanTerm"],
+        ],
+        rules: ({ record, form: currentForm }) => [
+          {
+            validator: (_, value) => {
+              const selectedLoanTerm = currentForm.getFieldValue([
+                record.formPath,
+                "loanTerm",
+              ]);
+              const remainingYears = Number(value);
+              const loanTermYears = Number(selectedLoanTerm);
+
+              if (
+                value !== undefined &&
+                value !== null &&
+                selectedLoanTerm !== undefined &&
+                selectedLoanTerm !== null &&
+                Number.isFinite(remainingYears) &&
+                Number.isFinite(loanTermYears) &&
+                remainingYears > loanTermYears
+              ) {
+                return Promise.reject(
+                  new Error(
+                    "Loan Term Remaining must be less than or equal to Loan Term",
+                  ),
+                );
+              }
+
+              return Promise.resolve();
+            },
+          },
+        ],
+      },
+    ];
+
     const marginLoanColumns = [
       {
         title: "Monthly Contribution",
@@ -357,24 +409,7 @@ export default function InvestmentLoanModal({ modalData }) {
           );
         },
       },
-      {
-        title: "Loan Term",
-        dataIndex: "loanTerm",
-        key: "loanTerm",
-        field: "loanTerm",
-        type: "select",
-        options: LOAN_TERM_OPTIONS,
-        // width: 150,
-      },
-      {
-        title: "Loan Term Remaining",
-        dataIndex: "loanTermRemaining",
-        key: "loanTermRemaining",
-        field: "loanTermRemaining",
-        type: "select",
-        options: LOAN_TERM_OPTIONS,
-        // width: 180,
-      },
+      ...loanTermColumns,
       {
         title: "Deductible Loan Amount",
         dataIndex: "deductibleLoanAmount",
@@ -456,24 +491,7 @@ export default function InvestmentLoanModal({ modalData }) {
           );
         },
       },
-      {
-        title: "Loan Term",
-        dataIndex: "loanTerm",
-        key: "loanTerm",
-        field: "loanTerm",
-        type: "select",
-        options: LOAN_TERM_OPTIONS,
-        // width: 150,
-      },
-      {
-        title: "Loan Term Remaining",
-        dataIndex: "loanTermRemaining",
-        key: "loanTermRemaining",
-        field: "loanTermRemaining",
-        type: "select",
-        options: LOAN_TERM_OPTIONS,
-        // width: 150,
-      },
+      ...loanTermColumns,
       {
         title: "Deductible Loan Amount",
         dataIndex: "deductibleLoanAmount",

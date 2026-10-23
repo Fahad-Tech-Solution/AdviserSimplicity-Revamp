@@ -19,10 +19,12 @@ import {
 import nattyAvatar from "../../../../../../../../assets/image/ProfileImages/NattyAI.png";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Document, HeadingLevel, Packer, Paragraph as DocxParagraph, Table, TableCell, TableRow, TextRun, WidthType } from 'docx';
+import { Document, Packer, Paragraph as DocxParagraph, TextRun, Table, TableRow, TableCell,
+        WidthType, ShadingType, HeadingLevel, AlignmentType, Footer, PageNumber,} from 'docx';
 import { saveAs } from 'file-saver';
 import { RateReferenceObject, SelectedClient, SelectedReviewAllData } from '../../../../../../../../store/authState.js';
 import { buildReviewSummaryData, formatMoney } from './reviewSummaryDocuments.js';
+
 
 const { Text, Paragraph } = Typography;
 
@@ -272,6 +274,232 @@ const ReviewNattyAiSummary = () => {
             });
     };
 
+    // const generatePdf = () => {
+    //     try {
+    //         const doc = new jsPDF({
+    //             orientation: 'portrait',
+    //             unit: 'mm',
+    //             format: 'a4'
+    //         });
+
+    //         const primaryColor = [15, 23, 42];     // Dark Slate
+    //         const secondaryColor = [37, 99, 235];  // Blue
+    //         const greenColor = [22, 101, 52];      // Dark Green
+    //         const lightBg = [248, 250, 252];       // Light Gray/Blue
+
+    //         // ── 1. HEADER SECTION ──
+    //         doc.setFont('helvetica', 'bold');
+    //         doc.setFontSize(20);
+    //         doc.setTextColor(...primaryColor);
+    //         doc.text('Your Annual Review Summary', 14, 18);
+
+    //         doc.setFont('helvetica', 'normal');
+    //         doc.setFontSize(10);
+    //         doc.setTextColor(100, 116, 139);
+    //         doc.text(`Prepared for ${summary.householdName} · ${summary.date}`, 14, 24);
+
+    //         // Top Right Brand Logo / Text
+    //         doc.setFont('helvetica', 'bold');
+    //         doc.setFontSize(12);
+    //         doc.setTextColor(...secondaryColor);
+    //         doc.text('Adviser Simplicity', 196, 18, { align: 'right' });
+    //         doc.setFontSize(9);
+    //         doc.setFont('helvetica', 'normal');
+    //         doc.setTextColor(148, 163, 184);
+    //         doc.text('Annual Review Summary', 196, 23, { align: 'right' });
+
+    //         doc.setDrawColor(226, 232, 240);
+    //         doc.setLineWidth(0.4);
+    //         doc.line(14, 28, 196, 28);
+
+    //         // ── 2. SECTION TITLE ──
+    //         doc.setFont('helvetica', 'bold');
+    //         doc.setFontSize(11);
+    //         doc.setTextColor(...primaryColor);
+    //         doc.text('KEY PROJECTIONS & STRATEGIES', 14, 36);
+
+    //         // ── 3. HOME LOAN STRATEGY ──
+    //         doc.setFontSize(10);
+    //         doc.setTextColor(...secondaryColor);
+    //         doc.text('HOME LOAN STRATEGY', 14, 44);
+
+    //         autoTable(doc, {
+    //             startY: 47,
+    //             margin: { left: 14, right: 14 },
+    //             head: [['CURRENT BALANCE', 'PAID OFF SOONER', 'INTEREST SAVED']],
+    //             body: [[
+    //                 summary.loan
+    //                     ? formatMoney(selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal)
+    //                     : 'Not provided',
+    //                 summary.loan ? `${summary.loan.termSaved} yrs` : 'Not calculated',
+    //                 summary.loan ? formatMoney(summary.loan.interestSaved) : 'Not calculated',
+    //             ]],
+    //             theme: 'grid',
+    //             headStyles: {
+    //                 fillColor: lightBg,
+    //                 textColor: primaryColor,
+    //                 fontStyle: 'bold',
+    //                 fontSize: 8,
+    //                 halign: 'center'
+    //             },
+    //             bodyStyles: {
+    //                 textColor: [30, 41, 59],
+    //                 fontSize: 9,
+    //                 halign: 'center',
+    //                 fontStyle: 'bold'
+    //             }
+    //         });
+
+    //         // ── 4. SUPERANNUATION PROJECTION ──
+    //         let currentY = doc.lastAutoTable.finalY + 8;
+    //         doc.setFontSize(10);
+    //         doc.setTextColor(...secondaryColor);
+    //         const superSection = summary.sections.find((section) => section.title === 'Superannuation Projection');
+    //         doc.text(`${summary.householdName.toUpperCase()}'S SUPERANNUATION`, 14, currentY);
+
+    //         autoTable(doc, {
+    //             startY: currentY + 3,
+    //             margin: { left: 14, right: 14 },
+    //             head: [['WITHOUT STRATEGY', 'WITH STRATEGY']],
+    //             body: summary.people.map((person) => [
+    //                 superSection?.rows?.find((row) =>
+    //                     row.label === `${person.name} — without additional strategy`,
+    //                 )?.value || 'Not provided',
+    //                 superSection?.rows?.find((row) =>
+    //                     row.label === `${person.name} — projected balance`,
+    //                 )?.value || 'Not provided',
+    //             ]),
+    //             theme: 'grid',
+    //             headStyles: {
+    //                 fillColor: lightBg,
+    //                 textColor: primaryColor,
+    //                 fontStyle: 'bold',
+    //                 fontSize: 8,
+    //                 halign: 'center'
+    //             },
+    //             bodyStyles: {
+    //                 textColor: greenColor,
+    //                 fontSize: 8.5,
+    //                 halign: 'center',
+    //                 fontStyle: 'bold'
+    //             }
+    //         });
+
+    //         // ── 5. PENSION & AGE PENSION ──
+    //         currentY = doc.lastAutoTable.finalY + 8;
+
+    //         // Two Column Layout for Pension & Age Pension
+    //         autoTable(doc, {
+    //             startY: currentY,
+    //             margin: { left: 14, right: 14 },
+    //             head: [['RETIREMENT PENSION DETAILS', 'AGE PENSION ENTITLEMENT']],
+    //             body: [
+    //                 [
+    //                     summary.sections.find((section) => section.title === 'Retirement Adequacy')?.rows
+    //                         ?.map((row) => `${row.label}: ${row.value}`)
+    //                         .join('\n') || 'Not provided',
+    //                     summary.sections.find((section) => section.title === 'Age Pension Assessment')
+    //                         ?.rows?.slice(0, 3)
+    //                         .map((row) => `${row.label}: ${row.value}`)
+    //                         .join('\n') || 'Not assessed',
+    //                 ]
+    //             ],
+    //             theme: 'plain',
+    //             headStyles: {
+    //                 fillColor: lightBg,
+    //                 textColor: secondaryColor,
+    //                 fontStyle: 'bold',
+    //                 fontSize: 9
+    //             },
+    //             bodyStyles: {
+    //                 textColor: [51, 65, 85],
+    //                 fontSize: 8.5,
+    //                 cellPadding: 4
+    //             }
+    //         });
+
+    //         // ── 6. INSURANCE COVERAGE TABLE ──
+    //         currentY = doc.lastAutoTable.finalY + 8;
+    //         doc.setFontSize(10);
+    //         doc.setTextColor(...secondaryColor);
+    //         doc.text(`INSURANCE COVERAGE (${summary.householdName})`, 14, currentY);
+
+    //         autoTable(doc, {
+    //             startY: currentY + 3,
+    //             margin: { left: 14, right: 14 },
+    //             head: [['TYPE', 'STATUS', 'EXISTING COVER · GAP']],
+    //             body: summary.insurance.flatMap((person) => [
+    //                 ...person.cover.map((item) => [
+    //                     `${person.person} — ${item.type}`,
+    //                     item.gap > 0 ? 'Shortfall' : 'Adequate',
+    //                     `${formatMoney(item.existing)} held · ${formatMoney(item.gap)} gap`,
+    //                 ]),
+    //                 [
+    //                     `${person.person} — Income protection`,
+    //                     person.ip.gap > 0 ? 'Shortfall' : 'Adequate',
+    //                     `${formatMoney(person.ip.existing)}/mo held · ${formatMoney(person.ip.gap)}/mo gap`,
+    //                 ],
+    //             ]),
+    //             theme: 'striped',
+    //             headStyles: {
+    //                 fillColor: primaryColor,
+    //                 textColor: [255, 255, 255],
+    //                 fontStyle: 'bold',
+    //                 fontSize: 8.5
+    //             },
+    //             bodyStyles: {
+    //                 fontSize: 8.5,
+    //                 textColor: [30, 41, 59]
+    //             },
+    //             columnStyles: {
+    //                 1: { fontStyle: 'bold', textColor: greenColor }
+    //             }
+    //         });
+
+    //         // ── 7. YOUR NEXT STEPS ──
+    //         currentY = doc.lastAutoTable.finalY + 8;
+    //         doc.setFontSize(10);
+    //         doc.setTextColor(...primaryColor);
+    //         doc.text('YOUR NEXT STEPS', 14, currentY);
+
+    //         autoTable(doc, {
+    //             startY: currentY + 3,
+    //             margin: { left: 14, right: 14 },
+    //             body: summary.nextSteps.map((step, index) => [String(index + 1), step]),
+    //             theme: 'plain',
+    //             bodyStyles: {
+    //                 fontSize: 8.5,
+    //                 cellPadding: 2,
+    //                 textColor: [51, 65, 85]
+    //             },
+    //             columnStyles: {
+    //                 0: { fontStyle: 'bold', textColor: secondaryColor, cellWidth: 10 }
+    //             }
+    //         });
+
+    //         // ── 8. FOOTER DISCLAIMER ──
+    //         const pageHeight = doc.internal.pageSize.getHeight();
+    //         doc.setDrawColor(226, 232, 240);
+    //         doc.line(14, pageHeight - 22, 196, pageHeight - 22);
+
+    //         doc.setFontSize(7);
+    //         doc.setFont('helvetica', 'normal');
+    //         doc.setTextColor(148, 163, 184);
+
+    //         const disclaimer = "Disclaimer: This is a summary document only and does not constitute personal financial advice. All projections are illustrative and based on the assumptions discussed; actual returns will vary. Refer to your full Record of Advice (ROA) document for complete recommendations, assumptions, fees and disclosures.";
+
+    //         doc.text(doc.splitTextToSize(disclaimer, 182), 14, pageHeight - 17);
+
+    //         // Save PDF
+    //         const filename = summary.householdName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+    //         doc.save(`Review_Summary_${filename || 'Client'}.pdf`);
+    //         message.success('PDF downloaded successfully!');
+    //     } catch (err) {
+    //         console.error(err);
+    //         message.error('Failed to generate PDF document.');
+    //     }
+    // };
+
     const generatePdf = () => {
         try {
             const doc = new jsPDF({
@@ -280,213 +508,397 @@ const ReviewNattyAiSummary = () => {
                 format: 'a4'
             });
 
-            const primaryColor = [15, 23, 42];     // Dark Slate
-            const secondaryColor = [37, 99, 235];  // Blue
-            const greenColor = [22, 101, 52];      // Dark Green
-            const lightBg = [248, 250, 252];       // Light Gray/Blue
+            const primaryColor = [5, 28, 100];      // Midnight Blue (#051C64)
+            const secondaryColor = [37, 99, 235];   // Blue (#2563eb)
+            const greenColor = [22, 101, 52];       // Dark Green (#166534)
+            const redColor = [185, 28, 28];         // Shortfall red
+            const lightBg = [248, 250, 252];        // Light Gray/Blue
+            const cardBg = [239, 246, 255];         // Light Blue Tint (#eff6ff)
+            const borderCol = [191, 219, 254];      // Soft Blue Border (#bfdbfe)
+            const hairline = [226, 232, 240];       // Neutral hairline / card border
+            const mutedText = [100, 116, 139];      // Slate muted
+            const textDark = [30, 41, 59];          // Slate Dark
 
-            // ── 1. HEADER SECTION ──
+            const MARGIN = 14;
+            const CONTENT_W = 182;
+            const PAGE_BOTTOM = 268;                // keep clear of the footer
+
+            // ── 1. CURVED HEADER BANNER WITH SMOOTH CANVAS GRADIENT (unchanged) ──
+            const bannerX = 14;
+            const bannerY = 12;
+            const bannerWidth = 182;
+            const bannerHeight = 28;
+            const radius = 4;
+
+            const canvas = document.createElement('canvas');
+            const scale = 4;
+            canvas.width = bannerWidth * scale;
+            canvas.height = bannerHeight * scale;
+            const ctx = canvas.getContext('2d');
+
+            if (ctx) {
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+                gradient.addColorStop(0, '#051C64');
+                gradient.addColorStop(1, '#166534');
+                ctx.fillStyle = gradient;
+
+                ctx.beginPath();
+                ctx.roundRect(0, 0, canvas.width, canvas.height, radius * scale);
+                ctx.fill();
+
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', bannerX, bannerY, bannerWidth, bannerHeight);
+            }
+
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(20);
-            doc.setTextColor(...primaryColor);
-            doc.text('Your Annual Review Summary', 14, 18);
+            doc.setFontSize(16);
+            doc.setTextColor(255, 255, 255);
+            doc.text('Your Annual Review Summary', bannerX + 6, bannerY + 11);
 
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(100, 116, 139);
-            doc.text(`Prepared for ${summary.householdName} · ${summary.date}`, 14, 24);
-
-            // Top Right Brand Logo / Text
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(...secondaryColor);
-            doc.text('Adviser Simplicity', 196, 18, { align: 'right' });
             doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(148, 163, 184);
-            doc.text('Annual Review Summary', 196, 23, { align: 'right' });
+            doc.setTextColor(226, 232, 240);
+            doc.text(`Prepared for ${summary.householdName}`, bannerX + 6, bannerY + 19);
 
-            doc.setDrawColor(226, 232, 240);
-            doc.setLineWidth(0.4);
-            doc.line(14, 28, 196, 28);
-
-            // ── 2. SECTION TITLE ──
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(...primaryColor);
-            doc.text('KEY PROJECTIONS & STRATEGIES', 14, 36);
+            doc.setFontSize(10.5);
+            doc.setTextColor(255, 255, 255);
+            doc.text(summary.date || '23 October 2026', bannerX + bannerWidth - 6, bannerY + 11, { align: 'right' });
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(203, 213, 225);
+            doc.text('Denaro Wealth', bannerX + bannerWidth - 6, bannerY + 18, { align: 'right' });
 
-            // ── 3. HOME LOAN STRATEGY ──
-            doc.setFontSize(10);
+            let currentY = bannerY + bannerHeight + 12;
+
+            // ── Helpers ──────────────────────────────────────────────
+            const ensureSpace = (needed) => {
+                if (currentY + needed > PAGE_BOTTOM) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+            };
+
+            // Soft card: faint offset "shadow" + hairline border + rounded corners
+            const drawCard = (x, y, w, h, opts = {}) => {
+                const { fill = [255, 255, 255], border = hairline, r = 2.5, shadow = true } = opts;
+                if (shadow) {
+                    doc.setFillColor(241, 245, 249);
+                    doc.roundedRect(x + 0.2, y + 0.5, w, h, r, r, 'F');
+                }
+                doc.setFillColor(...fill);
+                doc.setDrawColor(...border);
+                doc.setLineWidth(0.25);
+                doc.roundedRect(x, y, w, h, r, r, 'FD');
+            };
+
+            // Rounded progress bar (track + fill)
+            const drawProgress = (x, y, w, pct, color) => {
+                const h = 1.8;
+                doc.setFillColor(226, 232, 240);
+                doc.roundedRect(x, y, w, h, h / 2, h / 2, 'F');
+                const fillW = Math.max(h, w * Math.min(Math.max(pct, 0), 1));
+                if (pct > 0) {
+                    doc.setFillColor(...color);
+                    doc.roundedRect(x, y, fillW, h, h / 2, h / 2, 'F');
+                }
+            };
+
+            // Vector status icon (standard PDF fonts can't render the ✓ glyph)
+            const drawStatusIcon = (cx, cy, ok) => {
+                const color = ok ? greenColor : redColor;
+                doc.setFillColor(...color);
+                doc.circle(cx, cy, 1.6, 'F');
+                doc.setDrawColor(255, 255, 255);
+                doc.setLineWidth(0.35);
+                doc.setLineCap('round');
+                doc.setLineJoin('round');
+                if (ok) {
+                    doc.line(cx - 0.75, cy + 0.05, cx - 0.2, cy + 0.65);
+                    doc.line(cx - 0.2, cy + 0.65, cx + 0.8, cy - 0.6);
+                } else {
+                    doc.line(cx, cy - 0.85, cx, cy + 0.25);
+                    doc.line(cx, cy + 0.85, cx, cy + 0.86);
+                }
+                doc.setLineCap('butt');
+            };
+
+            // Section header: green accent bar + title + light hairline with short green accent
+            const addSectionHeader = (titleText) => {
+                ensureSpace(16);
+                doc.setFillColor(...greenColor);
+                doc.roundedRect(MARGIN, currentY - 4, 1.2, 5, 0.6, 0.6, 'F');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.setTextColor(...primaryColor);
+                doc.text(titleText.toUpperCase(), MARGIN + 4, currentY);
+
+                doc.setDrawColor(...hairline);
+                doc.setLineWidth(0.3);
+                doc.line(MARGIN, currentY + 3, MARGIN + CONTENT_W, currentY + 3);
+
+                doc.setDrawColor(...greenColor);
+                doc.setLineWidth(0.6);
+                doc.setLineCap('round');
+                doc.line(MARGIN, currentY + 3, MARGIN + 22, currentY + 3);
+                doc.setLineCap('butt');
+
+                currentY += 10;
+            };
+
+            const clamp01 = (n) => Math.min(Math.max(n, 0), 1);
+            const coveragePct = (existing, required, gap) => {
+                if (!(gap > 0)) return 1;
+                if (required > 0) return clamp01(existing / required);
+                return 0.5; // shortfall but no target available
+            };
+
+            // ── 2. KEY PROJECTIONS & STRATEGIES ──────────────────────
+            addSectionHeader('Key Projections & Strategies');
+
+            // 3. Home loan strategy — three metric cards
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
             doc.setTextColor(...secondaryColor);
-            doc.text('HOME LOAN STRATEGY', 14, 44);
+            doc.text('HOME LOAN STRATEGY', MARGIN, currentY);
+            currentY += 3.5;
 
-            autoTable(doc, {
-                startY: 47,
-                margin: { left: 14, right: 14 },
-                head: [['CURRENT BALANCE', 'PAID OFF SOONER', 'INTEREST SAVED']],
-                body: [[
-                    summary.loan
+            const loanMetrics = [
+                {
+                    label: 'CURRENT BALANCE',
+                    value: summary.loan
                         ? formatMoney(selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal)
                         : 'Not provided',
-                    summary.loan ? `${summary.loan.termSaved} yrs` : 'Not calculated',
-                    summary.loan ? formatMoney(summary.loan.interestSaved) : 'Not calculated',
-                ]],
-                theme: 'grid',
-                headStyles: {
-                    fillColor: lightBg,
-                    textColor: primaryColor,
-                    fontStyle: 'bold',
-                    fontSize: 8,
-                    halign: 'center'
+                    color: primaryColor
                 },
-                bodyStyles: {
-                    textColor: [30, 41, 59],
-                    fontSize: 9,
-                    halign: 'center',
-                    fontStyle: 'bold'
+                {
+                    label: 'PAID OFF SOONER',
+                    value: summary.loan ? `${summary.loan.termSaved} yrs` : 'Not calculated',
+                    color: primaryColor
+                },
+                {
+                    label: 'INTEREST SAVED',
+                    value: summary.loan ? formatMoney(summary.loan.interestSaved) : 'Not calculated',
+                    color: summary.loan ? greenColor : primaryColor
                 }
+            ];
+
+            const loanGap = 5;
+            const loanW = (CONTENT_W - loanGap * 2) / 3;
+            const loanH = 18;
+            ensureSpace(loanH + 6);
+
+            loanMetrics.forEach((m, i) => {
+                const x = MARGIN + i * (loanW + loanGap);
+                drawCard(x, currentY, loanW, loanH);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5);
+                doc.setTextColor(...mutedText);
+                doc.text(m.label, x + 4.5, currentY + 6.5);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(...m.color);
+                doc.text(String(m.value), x + 4.5, currentY + 13.5);
             });
+            currentY += loanH + 7;
 
-            // ── 4. SUPERANNUATION PROJECTION ──
-            let currentY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(10);
-            doc.setTextColor(...secondaryColor);
-            const superSection = summary.sections.find((section) => section.title === 'Superannuation Projection');
-            doc.text(`${summary.householdName.toUpperCase()}'S SUPERANNUATION`, 14, currentY);
+            // 4. Age pension highlight card
+            const agePensionRow = summary.sections.find((s) => s.title === 'Age Pension Assessment')?.rows?.[0];
+            const pensionValue = agePensionRow ? String(agePensionRow.value) : 'Approximately $31,000/yr';
+            const pensionLabel = agePensionRow ? String(agePensionRow.label) : '';
+            const pensionH = pensionLabel ? 25 : 21;
 
-            autoTable(doc, {
-                startY: currentY + 3,
-                margin: { left: 14, right: 14 },
-                head: [['WITHOUT STRATEGY', 'WITH STRATEGY']],
-                body: summary.people.map((person) => [
-                    superSection?.rows?.find((row) =>
-                        row.label === `${person.name} — without additional strategy`,
-                    )?.value || 'Not provided',
-                    superSection?.rows?.find((row) =>
-                        row.label === `${person.name} — projected balance`,
-                    )?.value || 'Not provided',
-                ]),
-                theme: 'grid',
-                headStyles: {
-                    fillColor: lightBg,
-                    textColor: primaryColor,
-                    fontStyle: 'bold',
-                    fontSize: 8,
-                    halign: 'center'
-                },
-                bodyStyles: {
-                    textColor: greenColor,
-                    fontSize: 8.5,
-                    halign: 'center',
-                    fontStyle: 'bold'
-                }
-            });
+            ensureSpace(pensionH + 6);
+            drawCard(MARGIN, currentY, CONTENT_W, pensionH, { fill: cardBg, border: borderCol, r: 3, shadow: false });
 
-            // ── 5. PENSION & AGE PENSION ──
-            currentY = doc.lastAutoTable.finalY + 8;
-
-            // Two Column Layout for Pension & Age Pension
-            autoTable(doc, {
-                startY: currentY,
-                margin: { left: 14, right: 14 },
-                head: [['RETIREMENT PENSION DETAILS', 'AGE PENSION ENTITLEMENT']],
-                body: [
-                    [
-                        summary.sections.find((section) => section.title === 'Retirement Adequacy')?.rows
-                            ?.map((row) => `${row.label}: ${row.value}`)
-                            .join('\n') || 'Not provided',
-                        summary.sections.find((section) => section.title === 'Age Pension Assessment')
-                            ?.rows?.slice(0, 3)
-                            .map((row) => `${row.label}: ${row.value}`)
-                            .join('\n') || 'Not assessed',
-                    ]
-                ],
-                theme: 'plain',
-                headStyles: {
-                    fillColor: lightBg,
-                    textColor: secondaryColor,
-                    fontStyle: 'bold',
-                    fontSize: 9
-                },
-                bodyStyles: {
-                    textColor: [51, 65, 85],
-                    fontSize: 8.5,
-                    cellPadding: 4
-                }
-            });
-
-            // ── 6. INSURANCE COVERAGE TABLE ──
-            currentY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(10);
-            doc.setTextColor(...secondaryColor);
-            doc.text(`INSURANCE COVERAGE (${summary.householdName})`, 14, currentY);
-
-            autoTable(doc, {
-                startY: currentY + 3,
-                margin: { left: 14, right: 14 },
-                head: [['TYPE', 'STATUS', 'EXISTING COVER · GAP']],
-                body: summary.insurance.flatMap((person) => [
-                    ...person.cover.map((item) => [
-                        `${person.person} — ${item.type}`,
-                        item.gap > 0 ? 'Shortfall' : 'Adequate',
-                        `${formatMoney(item.existing)} held · ${formatMoney(item.gap)} gap`,
-                    ]),
-                    [
-                        `${person.person} — Income protection`,
-                        person.ip.gap > 0 ? 'Shortfall' : 'Adequate',
-                        `${formatMoney(person.ip.existing)}/mo held · ${formatMoney(person.ip.gap)}/mo gap`,
-                    ],
-                ]),
-                theme: 'striped',
-                headStyles: {
-                    fillColor: primaryColor,
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold',
-                    fontSize: 8.5
-                },
-                bodyStyles: {
-                    fontSize: 8.5,
-                    textColor: [30, 41, 59]
-                },
-                columnStyles: {
-                    1: { fontStyle: 'bold', textColor: greenColor }
-                }
-            });
-
-            // ── 7. YOUR NEXT STEPS ──
-            currentY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(10);
-            doc.setTextColor(...primaryColor);
-            doc.text('YOUR NEXT STEPS', 14, currentY);
-
-            autoTable(doc, {
-                startY: currentY + 3,
-                margin: { left: 14, right: 14 },
-                body: summary.nextSteps.map((step, index) => [String(index + 1), step]),
-                theme: 'plain',
-                bodyStyles: {
-                    fontSize: 8.5,
-                    cellPadding: 2,
-                    textColor: [51, 65, 85]
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', textColor: secondaryColor, cellWidth: 10 }
-                }
-            });
-
-            // ── 8. FOOTER DISCLAIMER ──
-            const pageHeight = doc.internal.pageSize.getHeight();
-            doc.setDrawColor(226, 232, 240);
-            doc.line(14, pageHeight - 22, 196, pageHeight - 22);
-
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(7);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(148, 163, 184);
+            doc.setTextColor(...secondaryColor);
+            doc.text('AGE PENSION ENTITLEMENT', MARGIN + 6, currentY + 7);
 
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.setTextColor(...primaryColor);
+            doc.text(pensionValue, MARGIN + 6, currentY + 16);
+
+            if (pensionLabel) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(...mutedText);
+                doc.text(pensionLabel, MARGIN + 6, currentY + 21.5);
+            }
+            currentY += pensionH + 10;
+
+            // ── 5. INSURANCE COVERAGE ────────────────────────────────
+            addSectionHeader(`Insurance Coverage (${summary.householdName})`);
+
+            const cardGap = 5;
+            const cardWidth = (CONTENT_W - cardGap * 2) / 3;
+            const cardHeight = 27;
+
+            summary.insurance.forEach((person) => {
+                ensureSpace(5 + cardHeight + 4);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(...textDark);
+                doc.text(person.person, MARGIN, currentY);
+                currentY += 4;
+
+                const allCovers = [
+                    ...person.cover.map((c) => ({
+                        name: c.type,
+                        ok: !(c.gap > 0),
+                        pct: coveragePct(c.existing, c.required ?? c.needed, c.gap),
+                        detail: `${formatMoney(c.existing)} held`
+                    })),
+                    {
+                        name: 'Income Protection',
+                        ok: !(person.ip.gap > 0),
+                        pct: coveragePct(person.ip.existing, person.ip.required ?? person.ip.needed, person.ip.gap),
+                        detail: `${formatMoney(person.ip.existing)}/mo`
+                    }
+                ];
+
+                allCovers.forEach((item, idx) => {
+                    const col = idx % 3;
+                    if (idx > 0 && col === 0) {
+                        currentY += cardHeight + 5;
+                    }
+                    ensureSpace(cardHeight);
+
+                    const x = MARGIN + col * (cardWidth + cardGap);
+                    const y = currentY;
+                    const innerX = x + 4.5;
+                    const innerW = cardWidth - 9;
+                    const accent = item.ok ? greenColor : redColor;
+                    const pctRounded = Math.round(item.pct * 100);
+
+                    drawCard(x, y, cardWidth, cardHeight);
+
+                    // Name + held amount
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(...textDark);
+                    doc.text(item.name, innerX, y + 7);
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...mutedText);
+                    doc.text(item.detail, innerX, y + 11.5);
+
+                    // Status (vector icon + text)
+                    drawStatusIcon(innerX + 1.6, y + 16.2, item.ok);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...accent);
+                    doc.text(item.ok ? 'Adequate' : 'Shortfall', innerX + 5, y + 17);
+
+                    // Progress bar
+                    drawProgress(innerX, y + 20, innerW, item.pct, accent);
+
+                    // Captions under the bar
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6.3);
+                    doc.setTextColor(...mutedText);
+                    doc.text(`${pctRounded}% covered`, innerX, y + 24.5);
+                    doc.text(`${100 - pctRounded}% gap`, innerX + innerW, y + 24.5, { align: 'right' });
+                });
+
+                currentY += cardHeight + 8;
+            });
+
+            // ── 6. YOUR NEXT STEPS (two-column grid, wrapped text, page-safe) ──
+            addSectionHeader('Your Next Steps');
+
+            const stepGap = 6;
+            const colWidth = (CONTENT_W - stepGap) / 2;
+            const badgeSpace = 15;                  // left room for number badge
+            const lineH = 3.5;
+            const minStepH = 12;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+
+            const prepared = summary.nextSteps.map((step) => {
+                let lines = doc.splitTextToSize(String(step), colWidth - badgeSpace - 4);
+                if (lines.length > 3) {
+                    lines = lines.slice(0, 3);
+                    lines[2] = lines[2].replace(/\s*\S{0,3}$/, '') + '...';
+                }
+                return { lines, h: Math.max(minStepH, lines.length * lineH + 6) };
+            });
+
+            for (let i = 0; i < prepared.length; i += 2) {
+                const pair = prepared.slice(i, i + 2);
+                const rowH = Math.max(...pair.map((p) => p.h));
+                ensureSpace(rowH);
+
+                pair.forEach((p, k) => {
+                    const index = i + k;
+                    const x = MARGIN + k * (colWidth + stepGap);
+                    const y = currentY;
+
+                    drawCard(x, y, colWidth, rowH);
+
+                    // Circular number badge
+                    const bx = x + 7;
+                    const by = y + rowH / 2;
+                    doc.setFillColor(219, 234, 254);
+                    doc.circle(bx, by, 3.2, 'F');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...secondaryColor);
+                    doc.text(String(index + 1), bx, by + 1, { align: 'center' });
+
+                    // Step text, vertically centred
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...textDark);
+                    const textBlockH = (p.lines.length - 1) * lineH;
+                    const ty = y + rowH / 2 - textBlockH / 2 + 1;
+                    doc.text(p.lines, x + badgeSpace, ty, { lineHeightFactor: lineH / (7.5 * 0.3528) });
+                });
+
+                currentY += rowH + 4;
+            }
+
+            // ── 7. FOOTER (drawn on every page) ──────────────────────
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const totalPages = doc.getNumberOfPages();
             const disclaimer = "Disclaimer: This is a summary document only and does not constitute personal financial advice. All projections are illustrative and based on the assumptions discussed; actual returns will vary. Refer to your full Record of Advice (ROA) document for complete recommendations, assumptions, fees and disclosures.";
 
-            doc.text(doc.splitTextToSize(disclaimer, 182), 14, pageHeight - 17);
+            for (let p = 1; p <= totalPages; p++) {
+                doc.setPage(p);
+
+                doc.setDrawColor(...hairline);
+                doc.setLineWidth(0.3);
+                doc.line(MARGIN, pageHeight - 18, MARGIN + CONTENT_W, pageHeight - 18);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6.5);
+                doc.setTextColor(148, 163, 184);
+                doc.text(doc.splitTextToSize(disclaimer, 140), MARGIN, pageHeight - 13);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.setTextColor(...primaryColor);
+                doc.text('Denaro Wealth', MARGIN + CONTENT_W, pageHeight - 13, { align: 'right' });
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(...mutedText);
+                doc.text('Your Trusted Adviser', MARGIN + CONTENT_W, pageHeight - 9, { align: 'right' });
+
+                if (totalPages > 1) {
+                    doc.setFontSize(6.5);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`Page ${p} of ${totalPages}`, MARGIN + CONTENT_W, pageHeight - 5, { align: 'right' });
+                }
+            }
 
             // Save PDF
             const filename = summary.householdName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
@@ -498,30 +910,59 @@ const ReviewNattyAiSummary = () => {
         }
     };
 
+    // Required imports (adjust to your project):
+    // import {
+    //     Document, Packer, Paragraph as DocxParagraph, TextRun, Table, TableRow, TableCell,
+    //     WidthType, ShadingType, HeadingLevel, AlignmentType, Footer, PageNumber,
+    // } from 'docx';
+    // import { saveAs } from 'file-saver';
+
     const generateWordDocument = async () => {
         try {
-            const cell = (text, header = false) => new TableCell({
-                width: { size: 50, type: WidthType.PERCENTAGE },
-                shading: header ? { fill: 'EAF1F8' } : undefined,
+            // A4 with 900-twip margins -> 11906 - 1800 = 10106 twips of usable width
+            const MARGIN = 900;
+            const CONTENT_W = 11906 - MARGIN * 2;
+            const COL_WIDTHS = [3400, CONTENT_W - 3400];
+            const BRAND = '051C64';
+
+            // Show 0 as "0"; only truly empty values become a dash
+            const display = (v) => (v === null || v === undefined || String(v).trim() === '' ? '—' : String(v));
+
+            const cell = (text, width, header = false) => new TableCell({
+                width: { size: width, type: WidthType.DXA },
+                shading: header ? { type: ShadingType.CLEAR, color: 'auto', fill: 'EAF1F8' } : undefined,
+                margins: { top: 80, bottom: 80, left: 120, right: 120 },
                 children: [new DocxParagraph({
                     children: [new TextRun({
-                        text: String(text || '—'),
+                        text: display(text),
                         bold: header,
                         font: 'Arial',
                         size: 20,
                     })],
                 })],
             });
+
             const tableForRows = (rows) => new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                columnWidths: [4800, 4800],
+                width: { size: CONTENT_W, type: WidthType.DXA },
+                columnWidths: COL_WIDTHS,
                 rows: [
-                    new TableRow({ children: [cell('Item', true), cell('Details', true)] }),
+                    new TableRow({
+                        tableHeader: true,
+                        cantSplit: true,
+                        children: [cell('Item', COL_WIDTHS[0], true), cell('Details', COL_WIDTHS[1], true)],
+                    }),
                     ...rows.map(({ label, value }) => new TableRow({
-                        children: [cell(label), cell(value)],
+                        cantSplit: true,
+                        children: [cell(label, COL_WIDTHS[0]), cell(value, COL_WIDTHS[1])],
                     })),
                 ],
             });
+
+            const highlights = summary.highlights || [];
+            const sections = (summary.sections || []).filter((s) => s.rows && s.rows.length);
+            const nextSteps = summary.nextSteps || [];
+            const dateText = summary.date || '23 October 2026';
+
             const children = [
                 new DocxParagraph({
                     text: 'Review Meeting Summary',
@@ -530,7 +971,7 @@ const ReviewNattyAiSummary = () => {
                 new DocxParagraph({
                     children: [
                         new TextRun({ text: `Prepared for ${summary.householdName}`, bold: true, font: 'Arial' }),
-                        new TextRun({ text: `  |  ${summary.date}`, font: 'Arial' }),
+                        new TextRun({ text: `  |  ${dateText}`, font: 'Arial' }),
                     ],
                     spacing: { after: 280 },
                 }),
@@ -540,9 +981,9 @@ const ReviewNattyAiSummary = () => {
                 }),
             ];
 
-            if (summary.highlights.length) {
+            if (highlights.length) {
                 children.push(new DocxParagraph({ text: 'Key Outcomes', heading: HeadingLevel.HEADING_1 }));
-                children.push(tableForRows(summary.highlights));
+                children.push(tableForRows(highlights));
             } else {
                 children.push(new DocxParagraph({
                     text: 'No calculated outcomes are available yet. Complete the relevant review sections to include projections.',
@@ -550,26 +991,22 @@ const ReviewNattyAiSummary = () => {
                 }));
             }
 
-            summary.sections.forEach((section) => {
-                children.push(new DocxParagraph({
-                    text: section.title,
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 300 },
-                }));
+            sections.forEach((section) => {
+                children.push(new DocxParagraph({ text: section.title, heading: HeadingLevel.HEADING_1 }));
                 children.push(tableForRows(section.rows));
             });
 
-            children.push(new DocxParagraph({
-                text: 'Recommended Next Steps',
-                heading: HeadingLevel.HEADING_1,
-                spacing: { before: 300 },
-            }));
-            summary.nextSteps.forEach((step) => {
-                children.push(new DocxParagraph({
-                    text: step,
-                    bullet: { indent: 360 },
-                }));
-            });
+            if (nextSteps.length) {
+                children.push(new DocxParagraph({ text: 'Recommended Next Steps', heading: HeadingLevel.HEADING_1 }));
+                nextSteps.forEach((step) => {
+                    children.push(new DocxParagraph({
+                        text: step,
+                        bullet: { level: 0 },
+                        spacing: { after: 60 },
+                    }));
+                });
+            }
+
             children.push(new DocxParagraph({
                 children: [new TextRun({
                     text: 'Important: This summary is based on the data and assumptions recorded in the review. Projections are estimates, are not guaranteed, and do not replace the formal Record of Advice or personal financial product advice.',
@@ -581,17 +1018,47 @@ const ReviewNattyAiSummary = () => {
                 spacing: { before: 400 },
             }));
 
-            const document = new Document({
+            const wordDoc = new Document({
+                creator: 'Denaro Wealth',
+                title: 'Review Meeting Summary',
+                styles: {
+                    default: { document: { run: { font: 'Arial', size: 20 } } },
+                    paragraphStyles: [
+                        {
+                            id: 'Title', name: 'Title', basedOn: 'Normal', next: 'Normal',
+                            run: { font: 'Arial', size: 40, bold: true, color: BRAND },
+                            paragraph: { spacing: { after: 120 } },
+                        },
+                        {
+                            id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+                            run: { font: 'Arial', size: 26, bold: true, color: BRAND },
+                            paragraph: { spacing: { before: 320, after: 120 }, keepNext: true, keepLines: true, outlineLevel: 0 },
+                        },
+                    ],
+                },
                 sections: [{
                     properties: {
                         page: {
-                            margin: { top: 900, right: 900, bottom: 900, left: 900 },
+                            size: { width: 11906, height: 16838 }, // A4
+                            margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN },
                         },
+                    },
+                    footers: {
+                        default: new Footer({
+                            children: [new DocxParagraph({
+                                alignment: AlignmentType.RIGHT,
+                                children: [
+                                    new TextRun({ text: 'Denaro Wealth  |  Page ', font: 'Arial', size: 16, color: '64748B' }),
+                                    new TextRun({ children: [PageNumber.CURRENT], font: 'Arial', size: 16, color: '64748B' }),
+                                ],
+                            })],
+                        }),
                     },
                     children,
                 }],
             });
-            const blob = await Packer.toBlob(document);
+
+            const blob = await Packer.toBlob(wordDoc);
             const filename = summary.householdName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
             saveAs(blob, `Review_Meeting_Summary_${filename || 'Client'}.docx`);
             message.success('Word review summary downloaded successfully!');

@@ -506,10 +506,19 @@ export default function RetirementAdequacyForm({ modalData }) {
     };
 
     const extractData = (dataOf) => {
-        let superAnnuation = selectedReviewAllData?.superannuationDetails?.[dataOf] || {}
-        console.log()
-        "incomeFromBusinessTotal superAnnuationTotal riskGoal"
+        const superannuation =
+            selectedReviewAllData?.superannuationDetails?.[dataOf] || {};
+        const projectedBalance = superannuation.projectedBalance;
 
+        if (projectedBalance === undefined || projectedBalance === null || projectedBalance === "") {
+            message.warning(`No projected balance found for ${dataOf}`);
+            return;
+        }
+
+        form.setFieldValue(
+            [dataOf, "accountBasedPensionTotal"],
+            formatCurrencyValue(projectedBalance),
+        );
     }
 
 
@@ -630,25 +639,27 @@ export default function RetirementAdequacyForm({ modalData }) {
                                 marginTop: 16,
                             }}
                         >
-                            <div style={{
-                                display: "flex",
-                                justifyContent: "flex-start",
-                                gap: 12,
-                                marginTop: 16,
-                            }}>
-                                <Button disabled={editing}
-                                    onClick={() => { extractData("client") }}
-                                >
-                                    → Transfer Client from Super
-                                </Button>
+                            {selectedReviewAllData?.reviewGoalQuestions?.superProjection === "Yes" &&
+                                <div style={{
+                                    display: "flex",
+                                    justifyContent: "flex-start",
+                                    gap: 12,
+                                    marginTop: 16,
+                                }}>
+                                    <Button disabled={!editing}
+                                        onClick={() => { extractData("client") }}
+                                    >
+                                        → Transfer Client from Super
+                                    </Button>
 
-                                {showPartnerTransferButton && (
-                                    <Button disabled={editing}
-                                        onClick={() => { extractData("partner") }}
-                                    > → Transfer Partner from Super</Button>
-                                )}
+                                    {showPartnerTransferButton && (
+                                        <Button disabled={!editing}
+                                            onClick={() => { extractData("partner") }}
+                                        > → Transfer Partner from Super</Button>
+                                    )}
 
-                            </div>
+                                </div>
+                            }
 
                             <div
                                 style={{

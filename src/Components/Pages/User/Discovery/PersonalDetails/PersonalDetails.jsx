@@ -49,11 +49,7 @@ export function PersonalDetails() {
   const isCreatingClient = useAtomValue(creatingNewClientAtom);
   const discoveryQuestions = useAtomValue(discoverySectionQuestionsAtom);
   const discoveryData = useAtomValue(discoveryDataAtom);
-  const goalsQuestions = useAtomValue(goalsSectionQuestionsAtom);
-  const goalsData = useAtomValue(goalsDataAtom);
-  const riskProfileData = useAtomValue(riskProfileDataAtom);
   const selected = useAtomValue(SelectedClient);
-  const session = useAtomValue(loggedInUser);
   const [step, setStep] = useState(1);
 
   const pd = getPersonalDetailsFromDiscovery(discoveryData);

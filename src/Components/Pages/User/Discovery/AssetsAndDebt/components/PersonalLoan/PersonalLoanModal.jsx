@@ -61,6 +61,11 @@ function parseDigitsValue(value) {
   return String(value ?? "").replace(/[^0-9]/g, "");
 }
 
+function parseLoanTermYears(value) {
+  const match = String(value ?? "").match(/^(?:Year\s*)?(\d+)$/i);
+  return match ? Number(match[1]) : undefined;
+}
+
 function getChangedValue(value) {
   return value?.target?.value ?? value;
 }
@@ -152,7 +157,6 @@ export default function PersonalLoanModal({ modalData }) {
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const sectionData = discoveryData?.[modalData?.key] || {};
-  console.log("sectionData", sectionData);
 
   const lenderOptions = useMemo(() => {
     const institutions = investmentOffers?.FinancialInstitutions || [];
@@ -342,6 +346,34 @@ export default function PersonalLoanModal({ modalData }) {
         field: "LoanTermRemaining",
         type: "select",
         options: LOAN_TERM_OPTIONS,
+        dependencies: ({ record }) => [
+          [...record.formPath, "LoanTerm"],
+        ],
+        rules: ({ record, form: currentForm }) => [
+          {
+            validator: (_, value) => {
+              const remainingYears = parseLoanTermYears(value);
+              const selectedLoanTerm = currentForm.getFieldValue([
+                ...record.formPath,
+                "LoanTerm",
+              ]);
+              const loanTermYears = parseLoanTermYears(selectedLoanTerm);
+
+              if (
+                remainingYears !== undefined &&
+                loanTermYears !== undefined &&
+                remainingYears > loanTermYears
+              ) {
+                return Promise.reject(
+                  new Error(
+                    "Loan Term Remaining must be less than or equal to Loan Term",
+                  ),
+                );
+              }
+              return Promise.resolve();
+            },
+          },
+        ],
       },
       {
         title: "Action",

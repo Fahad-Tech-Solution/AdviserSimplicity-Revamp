@@ -120,7 +120,7 @@ function buildInitialPerson(person = {}) {
         nonConcessional: formatCurrencyValue(person?.nonConcessional),
         lumpSumNcc: formatCurrencyValue(person?.lumpSumNcc),
 
-        investmentReturn: formatPercentValue(person?.investmentReturn),
+        investmentReturn: person?.investmentReturn ? formatPercentValue(person?.investmentReturn) : RISK_PROFILE_RETURNS[person?.riskGoal] || "",
         salaryGrowth: formatPercentValue(person?.salaryGrowth),
         projectionPeriod: person?.projectionPeriod ?? "",
         insurancePremium: formatCurrencyValue(person?.insurancePremium),
@@ -301,7 +301,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     };
 
     const Calculator = (value, name, formPath, currentForm) => {
-        let values = currentForm.getFieldsValue();
+        const values = currentForm.getFieldsValue(true);
 
         // getting the salary and sgcPercent values for each owner
         let salary = parseCurrencyValue(values?.[formPath]?.incomeFromBusinessTotal);
@@ -320,7 +320,11 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             return;
         }
 
-        if (name === "incomeFromBusinessTotal" || name === "sgcPercent") {
+        if (
+            name === undefined ||
+            name === "incomeFromBusinessTotal" ||
+            name === "sgcPercent"
+        ) {
 
             const { sgcAmount, maxConcessional } = calculateSgcAndMaxConcessional({ sgcPercent, salary });
             currentForm.setFieldsValue({
@@ -437,6 +441,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
 
     useEffect(() => {
         (initialValues.owner || []).forEach((ownerKey) => {
+            Calculator(undefined, undefined, ownerKey, form);
             calculateProjectedBalance(undefined, undefined, ownerKey, form);
         });
     }, [
