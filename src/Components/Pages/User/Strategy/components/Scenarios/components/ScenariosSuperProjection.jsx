@@ -239,7 +239,6 @@ const ScenariosSuperProjection = () => {
     const currentMetrics = calculatedData.metrics;
     const currentChartData = calculatedData.chart;
     const currentTableData = calculatedData.table;
-
     const analysisContent = useMemo(() => {
         const {
             finalBalance,
@@ -266,6 +265,7 @@ const ScenariosSuperProjection = () => {
         const formatAnalysisMoney = (value) => `$${Math.round(Number(value) || 0).toLocaleString("en-AU")}`;
         const formatAnalysisPercent = (value) =>
             `${(Number(value) || 0).toFixed(2).replace(/\.?0+$/, "")}%`;
+
         const formatSpeechMoney = (value) => {
             const rounded = Math.round(Number(value) || 0);
             if (rounded === 0) return "zero dollars";
@@ -287,6 +287,11 @@ const ScenariosSuperProjection = () => {
             return `${sign}${absolute} dollars`;
         };
 
+        // --- NEW CALCULATIONS FOR RETIREMENT INCOME ---
+        const requiredRetirementIncome = finalBalance * 0.04; // 4% rule
+        const incomeShortfall = requiredRetirementIncome - 0; // Assuming no other income sources in this specific scenario context
+        // ----------------------------------------------
+
         const analysis = [
             `<strong>${safeName}</strong>, your projected super balance after ${years} years is <strong>${formatAnalysisMoney(finalBalance)}</strong>${endAge ? ` (at age ${endAge})` : ""}`,
         ];
@@ -301,6 +306,15 @@ const ScenariosSuperProjection = () => {
                 `Your salary sacrifice strategy adds an extra ${formatSpeechMoney(uplift)} compared to no sacrifice, a ${upliftPct.toFixed(1)} percent uplift.`,
             );
         }
+
+        // --- NEW BULLET POINT ADDED HERE ---
+        analysis.push(
+            `Your required retirement income: <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> - Sustainable (4% rule) <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> — <span style="color: #dc2626;">⚠️ Shortfall</span>`
+        );
+        speech.push(
+            `Your required retirement income is ${formatSpeechMoney(requiredRetirementIncome)} per year. Under the 4 percent rule, this is sustainable, but results in a shortfall.`
+        );
+        // -----------------------------------
 
         analysis.push(
             `Assumptions: ${formatAnalysisPercent(annualReturn)} annual return${salarySacrifice ? `, ${formatAnalysisMoney(salarySacrifice)} salary sacrifice per year` : ""}`,

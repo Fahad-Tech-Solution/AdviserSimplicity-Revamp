@@ -20,11 +20,7 @@ const TABLE_PROPS = {
     bodyFontSize: 12,
 };
 
-const SITUATION_OPTIONS = [
-    { label: "Single", value: "single" },
-    { label: "Couple", value: "couple" },
-    { label: "Couple - Separated by Illness", value: "couple - separated by illness" },
-];
+
 
 const HOME_OWNERSHIP_OPTIONS = [
     { label: "Homeowner", value: "homeowner" },
@@ -205,6 +201,16 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
     const showPartnerRows =
         selectedReviewAllData?.personalDetails?.owner?.includes("partner") ??
         false;
+
+    const SITUATION_OPTIONS = [
+        { label: "Single", value: "single" },
+        ...showPartnerRows ? [
+
+            { label: "Couple", value: "couple" },
+            { label: "Couple - Separated by Illness", value: "couple - separated by illness" },
+        ] : []
+
+    ];
 
     useEffect(() => {
         form.setFieldsValue(initialValues);

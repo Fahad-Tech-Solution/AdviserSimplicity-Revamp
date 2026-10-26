@@ -34,11 +34,6 @@ const HOME_OWNERSHIP_OPTIONS = [
     { label: "Non-Homeowner", value: "Non-Homeowner" },
 ];
 
-const RELATIONSHIP_STATUS_OPTIONS = [
-    { label: "Auto (from owners)", value: "Auto" },
-    { label: "Single", value: "Single" },
-    { label: "Couple", value: "Couple" },
-];
 
 const WITHDRAWAL_FREQUENCY_OPTIONS = [
     { label: "None", value: "None" },
@@ -167,6 +162,9 @@ export default function RetirementAdequacyForm({ modalData }) {
         Form.useWatch("agePensionProjection", form) || initialValues.agePensionProjection;
     const personalDetailsOwners = selectedReviewAllData?.personalDetails?.owner;
     const superannuationOwners = selectedReviewAllData?.superannuationDetails?.owner;
+    const showPartnerRows =
+        selectedReviewAllData?.personalDetails?.owner?.includes("partner") ??
+        false;
 
     const showPartnerTransferButton =
         Array.isArray(personalDetailsOwners) &&
@@ -175,6 +173,19 @@ export default function RetirementAdequacyForm({ modalData }) {
         superannuationOwners.includes("partner") &&
         Array.isArray(selectedOwners) &&
         selectedOwners.includes("partner");
+
+    const RELATIONSHIP_STATUS_OPTIONS = [
+        ...showPartnerRows ? [
+            { label: "Auto (from owners)", value: "Auto" },
+        ] : [],
+        
+        { label: "Single", value: "Single" },
+        ...showPartnerRows ? [
+            { label: "Couple", value: "Couple" },
+        ] : [],
+    ];
+
+
 
     useEffect(() => {
         form.setFieldsValue(initialValues);

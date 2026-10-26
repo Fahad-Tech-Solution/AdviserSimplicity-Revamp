@@ -39,6 +39,10 @@ const AGE_PENSION_RATES = {
     deemLowerRate: 0.0125,
     deemUpperRate: 0.0325,
     assetsTaperPerThousandFn: 3,
+    // LIHCC defaults — matched to HTML Rate Reference table ($811 single, $1,385 couple)
+    lihccSingleWeekly: 811,
+    lihccCoupleWeekly: 1385,
+    lihccPerChildWeekly: 43,
 };
 
 const AGE_PENSION_AGE = 67;
@@ -230,9 +234,9 @@ export function calculateAgePensionAssessment(data = {}, reviewPersonalDetails =
         - split(investmentLoans) + superClientAssessed + abpClient + split(propertyNet) + split(otherAssets);
     const partnerAssetTotal = isCouple
         ? vehiclePartner + splitPartner(contents) + splitPartner(lifestyleOther)
-            + savingsPartner + termDepositsPartner + sharesPartner + splitPartner(otherInvestments)
-            - splitPartner(investmentLoans) + superPartnerAssessed + abpPartner
-            + splitPartner(propertyNet) + splitPartner(otherAssets)
+        + savingsPartner + termDepositsPartner + sharesPartner + splitPartner(otherInvestments)
+        - splitPartner(investmentLoans) + superPartnerAssessed + abpPartner
+        + splitPartner(propertyNet) + splitPartner(otherAssets)
         : 0;
     const row = (key, item, client, partner, total, flags = {}) => ({
         key,
@@ -288,9 +292,9 @@ export function calculateAgePensionAssessment(data = {}, reviewPersonalDetails =
     );
 
     const testPensionPerPerson = (testBasis, eligible) =>
-        (eligible && testBasis > 0
-            ? testBasis / (isCouple ? 2 : 1) + personSupplement
-            : 0);
+    (eligible && testBasis > 0
+        ? testBasis / (isCouple ? 2 : 1) + personSupplement
+        : 0);
     const graphData = [
         ...(clientEligible ? [{
             person: 'Client',
@@ -322,10 +326,12 @@ export function calculateAgePensionAssessment(data = {}, reviewPersonalDetails =
             ? 'none'
             : underAssets <= underIncome ? 'assets' : 'income',
         status: combinedPension <= 0
-            ? eligibleCount === 0 ? 'Below Age Pension age' : 'No pension entitlement'
+            ? eligibleCount === 0 ? 'Not eligible' : 'No pension entitlement'
             : (actualBasis >= fullBasis - 1 ? 'Full pension' : 'Part pension'),
         clientPension,
         partnerPension,
+        clientSuperExcluded: !clientEligible && superClient > 0,
+        partnerSuperExcluded: isCouple && !partnerEligible && superPartner > 0,
         combinedPension,
         maxPension,
         pensionLost,
@@ -413,6 +419,7 @@ const ReviewAgePensionAssessment = () => {
 
         analysis.push(`Your total assessable assets: <strong>${formatCurrency(assessment.totalAssets)}</strong>.`);
         analysis.push(`Your assessable income: <strong>${formatCurrency(assessment.totalAssessableIncome)}</strong> per year.`);
+
         if (!assessment.isNoPension && assessment.pensionLost > 0) {
             analysis.push(
                 `Reduced from the full rate by <strong>${formatCurrency(assessment.pensionLost)} per year</strong> due to the ${testName}.`,
@@ -421,6 +428,42 @@ const ReviewAgePensionAssessment = () => {
                 `This is ${formatSpeechCurrency(assessment.pensionLost)} less than the full rate, due to the ${testName}.`,
             );
         }
+
+        // --- NEW LIHCC LOGIC ADDED HERE ---
+        const rateReference = RateReferenceObject; // Assuming this is imported or available
+        const lihccRates = rateReference?.lowIncomeHealthCareCard;
+
+        const baseWeeklyIncomeLimit = amount(
+            assessment.isCouple
+                ? (lihccRates?.partnerCombinedPerWeek ?? AGE_PENSION_RATES.lihccCoupleWeekly)
+                : (lihccRates?.clientPerWeek ?? AGE_PENSION_RATES.lihccSingleWeekly),
+        );
+        const hasConfiguredLihccLimit = baseWeeklyIncomeLimit > 0;
+        const dependentChildren = (
+            reviewData?.personalDetails?.children?.arrayOfChildren || []
+        ).filter((child) =>
+            ["yes", "true"].includes(String(child?.depenantChild).toLowerCase()),
+        ).length;
+        const dependentAllowancePerWeek = amount(
+            lihccRates?.perDependentChildPerWeek ?? AGE_PENSION_RATES.lihccPerChildWeekly
+        );
+        const holderUplift = assessment.lihccExistingHolder ? 1.25 : 1;
+        const weeklyIncomeLimit =
+            (baseWeeklyIncomeLimit + dependentChildren * dependentAllowancePerWeek) *
+            holderUplift;
+        const eightWeekIncomeLimit = weeklyIncomeLimit * 8;
+        const estimatedEightWeekIncome = assessment.totalAssessableIncome * (8 / 52);
+        const lihccEligible =
+            hasConfiguredLihccLimit && estimatedEightWeekIncome <= eightWeekIncomeLimit;
+
+        if (hasConfiguredLihccLimit && !lihccEligible) {
+            analysis.push(
+                `<span style="color: #dc2626;">❌ Income is also above the Low-Income Health Care Card threshold</span>`
+            );
+            speech.push("Additionally, your income is above the Low-Income Health Care Card threshold.");
+        }
+        // ----------------------------------
+
         speech.push('This is an estimate based on the information provided, not a Centrelink determination.');
 
         return {
@@ -502,14 +545,13 @@ const ReviewAgePensionAssessment = () => {
         }));
     };
 
-    const clientName =
-        selectedReviewAllData?.personalDetails?.client?.clientPreferredName ||
-        getReviewName('client');
     const lihccRates = rateReference?.lowIncomeHealthCareCard;
+
+    // ── FIXED: Use HTML's $811 / $1385 fallbacks when rateReference is missing ──
     const baseWeeklyIncomeLimit = amount(
         assessment.isCouple
-            ? lihccRates?.partnerCombinedPerWeek
-            : lihccRates?.clientPerWeek,
+            ? (lihccRates?.partnerCombinedPerWeek ?? AGE_PENSION_RATES.lihccCoupleWeekly)
+            : (lihccRates?.clientPerWeek ?? AGE_PENSION_RATES.lihccSingleWeekly),
     );
     const hasConfiguredLihccLimit = baseWeeklyIncomeLimit > 0;
     const dependentChildren = (
@@ -517,24 +559,31 @@ const ReviewAgePensionAssessment = () => {
     ).filter((child) =>
         ["yes", "true"].includes(String(child?.depenantChild).toLowerCase()),
     ).length;
-    const dependentAllowancePerWeek = amount(lihccRates?.perDependentChildPerWeek);
+    const dependentAllowancePerWeek = amount(
+        lihccRates?.perDependentChildPerWeek ?? AGE_PENSION_RATES.lihccPerChildWeekly
+    );
     const holderUplift = assessment.lihccExistingHolder ? 1.25 : 1;
     const weeklyIncomeLimit =
         (baseWeeklyIncomeLimit + dependentChildren * dependentAllowancePerWeek) *
         holderUplift;
     const eightWeekIncomeLimit = weeklyIncomeLimit * 8;
+    const baseLimit8wk = baseWeeklyIncomeLimit * 8;
     const estimatedEightWeekIncome = assessment.totalAssessableIncome * (8 / 52);
     const lihccEligible =
         hasConfiguredLihccLimit && estimatedEightWeekIncome <= eightWeekIncomeLimit;
     const lihccStatusMessage = !hasConfiguredLihccLimit
         ? 'Income limit is unavailable. Configure the Low-Income Health Care Card rate reference to assess eligibility.'
         : lihccEligible
-            ? `Estimated 8-week income is ${formatCurrency(eightWeekIncomeLimit - estimatedEightWeekIncome)} below the ${assessment.lihccExistingHolder ? 'renewal' : 'claim'} threshold.`
-            : `Estimated 8-week income is ${formatCurrency(estimatedEightWeekIncome - eightWeekIncomeLimit)} above the ${assessment.lihccExistingHolder ? 'renewal' : 'claim'} threshold.`;
+            ? `${assessment.lihccExistingHolder ? 'Continues to be eligible' : 'Likely eligible'} — ${formatCurrency(eightWeekIncomeLimit - estimatedEightWeekIncome)} below the ${assessment.lihccExistingHolder ? 'renewal (125%)' : '8-week'} threshold.`
+            : `${assessment.lihccExistingHolder ? 'Card may not be renewed' : 'Over the income limit'} — ${formatCurrency(estimatedEightWeekIncome - eightWeekIncomeLimit)} above the ${assessment.lihccExistingHolder ? 'renewal (125%)' : '8-week'} threshold.`;
     const lihccLimitNote = hasConfiguredLihccLimit
         ? `${assessment.isCouple ? 'Couple combined' : 'Single'}: ${formatCurrency(baseWeeklyIncomeLimit)} per week × 8${dependentChildren ? `, plus ${dependentChildren} dependent-child allowance(s)` : ''}${assessment.lihccExistingHolder ? ' × 1.25 renewal uplift' : ''}.`
         : 'No configured income limit is available.';
     const estimatedWeeklyIncome = estimatedEightWeekIncome / 8;
+    const excludedSuperOwners = [
+        assessment.clientSuperExcluded ? 'Client' : null,
+        assessment.partnerSuperExcluded ? 'Partner' : null,
+    ].filter(Boolean);
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -716,26 +765,24 @@ const ReviewAgePensionAssessment = () => {
                     </Title>
 
                     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                        {/* Super exclusion notice using AntD Alert */}
-                        <Alert
-                            type="warning"
-                            showIcon
-                            icon={<WarningOutlined />}
-                            style={{
-                                borderRadius: 10,
-                                backgroundColor: '#fffbeb',
-                                borderColor: '#f59e0b',
-                            }}
-                            message={
-                                <Text style={{ color: '#92400e', fontSize: 13 }}>
-                                <strong>Age eligibility not met:</strong>{' '}
-                                {clientName} is age {assessment.clientAge}
-                                {assessment.isCouple
-                                    ? ` and ${getReviewName('partner')} is age ${assessment.partnerAge}`
-                                    : ''}. Age Pension age is {AGE_PENSION_AGE}; accumulation super is excluded until age eligibility is met.
-                            </Text>
-                            }
-                        />
+                        {excludedSuperOwners.length > 0 && (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                icon={<WarningOutlined />}
+                                style={{
+                                    borderRadius: 10,
+                                    backgroundColor: '#fffbeb',
+                                    borderColor: '#f59e0b',
+                                }}
+                                message={
+                                    <Text style={{ color: '#92400e', fontSize: 13 }}>
+                                        <strong>Super excluded:</strong>{' '}
+                                        {excludedSuperOwners.join(' & ')}’s accumulation super balance is not assessed (Age Pension age is {AGE_PENSION_AGE}).
+                                    </Text>
+                                }
+                            />
+                        )}
 
                         {/* LOW-INCOME HEALTH CARE CARD ELIGIBILITY PANEL */}
                         <Card
@@ -925,7 +972,10 @@ const ReviewAgePensionAssessment = () => {
                                     <>
                                         <br />
                                         <br />
-                                        <strong>Renewal status:</strong> The threshold includes the 125% existing-holder uplift.
+                                        <strong>Renewal status:</strong>{' '}
+                                        {lihccEligible
+                                            ? `The threshold includes the 25% existing-holder uplift (${formatCurrency(baseLimit8wk)} × 1.25 = ${formatCurrency(eightWeekIncomeLimit)} over 8 weeks).`
+                                            : `Even with the 25% holder uplift, income is over the renewal threshold. The card may not be renewed at the next review unless income falls. Consider whether the Commonwealth Seniors Health Card applies (separate test for self-funded retirees 67+).`}
                                     </>
                                 ) : null}
                             </Paragraph>
@@ -1035,7 +1085,7 @@ const ReviewAgePensionAssessment = () => {
                     modalData={{ closeModal: () => setOpenModal(false) }}
                 />
             </AppModal>
-             <AnalysisModal
+            <AnalysisModal
                 content={analysisContent}
                 subtitle={analysisContent.subtitle}
                 openAnalysisModal={openAnalysisModal}

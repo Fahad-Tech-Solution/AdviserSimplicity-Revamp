@@ -504,6 +504,9 @@ const LoanSimulator = () => {
                 subtitle={analysisContent.subtitle}
                 openAnalysisModal={openAnalysisModal}
                 onClose={() => { setOpenAnalysisModal(false) }}
+                disclaimer={
+                    "The figures shown are projections and estimates based on the assumptions and inputs provided. They are <strong>not guaranteed</strong> and actual outcomes may differ materially due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This is general information only and does not constitute personal financial product advice. Past performance is not a reliable indicator of future performance. For formal advice tailored to the client's specific situation, refer to the calculator's detailed output and the Record of Advice."
+                }
             />
         </div>
     );
