@@ -37,7 +37,13 @@ const formatDifference = (value) => `${value >= 0 ? '+' : ''}${formatCurrency(va
 
 const getAgeFromDob = (dob) => {
     if (!dob) return 0;
-    const birthDate = new Date(dob);
+    let birthDate = new Date(dob);
+    if (Number.isNaN(birthDate.getTime()) && typeof dob === 'string' && dob.includes('/')) {
+        const parts = dob.trim().split('/');
+        if (parts.length === 3 && parts[2].length === 4) {
+            birthDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        }
+    }
     if (Number.isNaN(birthDate.getTime())) return 0;
 
     const today = new Date();
@@ -48,7 +54,7 @@ const getAgeFromDob = (dob) => {
     ) {
         age -= 1;
     }
-    return age;
+    return Math.max(0, age);
 };
 
 const getInsuranceIndexationRate = (value, age) => {
@@ -161,6 +167,7 @@ export const calculateProjections = (personData, currentAge) => {
     const projectedBalance = formatCurrency(finalWith);
     const balanceWithoutFormatted = formatCurrency(finalWithout);
     const realBalance = formatCurrency(finalWith / Math.pow(1 + annualInflationRate, years));
+    const endAge = currentAge > 0 ? (years > 0 ? currentAge + years : currentAge) : null;
 
     return {
         metrics: {
@@ -171,6 +178,9 @@ export const calculateProjections = (personData, currentAge) => {
             insuranceCost: formatCurrency(finalNoPremiums - finalWith),
             strategyGain: formatCurrency(finalWith - finalWithout),
             yr10Summary: `Yr ${years}: ${projectedBalance} (with) vs ${balanceWithoutFormatted} (without)`,
+            endAge,
+            currentAge,
+            years,
         },
         analysisInputs: {
             finalBalance: finalWith,
@@ -232,7 +242,11 @@ const ScenariosSuperProjection = () => {
     // Dynamic Calculation derived from Jotai Atom Data
     const calculatedData = useMemo(() => {
         const currentData = selectedReviewAllData?.superannuationDetails?.[selectedProfile] || {};
-        const currentAge = getAgeFromDob(selectedReviewAllData?.personalDetails?.[selectedProfile]?.DOB);
+        const personDetails = selectedProfile === 'partner'
+            ? selectedReviewAllData?.personalDetails?.partner
+            : selectedReviewAllData?.personalDetails?.client;
+        const dob = personDetails?.DOB || personDetails?.dob;
+        const currentAge = getAgeFromDob(dob);
         return calculateProjections(currentData, currentAge);
     }, [selectedReviewAllData, selectedProfile]);
 
@@ -289,7 +303,6 @@ const ScenariosSuperProjection = () => {
 
         // --- NEW CALCULATIONS FOR RETIREMENT INCOME ---
         const requiredRetirementIncome = finalBalance * 0.04; // 4% rule
-        const incomeShortfall = requiredRetirementIncome - 0; // Assuming no other income sources in this specific scenario context
         // ----------------------------------------------
 
         const analysis = [
@@ -396,7 +409,9 @@ const ScenariosSuperProjection = () => {
                             </Title>
                         </div>
                         <div>
-                            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>at age —</Text>
+                            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
+                                at age {currentMetrics.endAge || '—'}
+                            </Text>
                             <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.todayBalance}</Text>
                         </div>
                     </Card>
@@ -413,7 +428,7 @@ const ScenariosSuperProjection = () => {
                                 {currentMetrics.balanceWithout || '$0'}
                             </Title>
                         </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>Yr 10 — minimum SG only</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>Yr {currentMetrics.years || 10} — minimum SG only</Text>
                     </Card>
                 </Col>
 
@@ -428,7 +443,7 @@ const ScenariosSuperProjection = () => {
                                 {currentMetrics.totalContributions || '$0'}
                             </Title>
                         </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>over 10 years</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>over {currentMetrics.years || 10} years</Text>
                     </Card>
                 </Col>
 

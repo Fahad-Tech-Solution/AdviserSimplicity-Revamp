@@ -274,10 +274,6 @@ const LoanSimulator = () => {
     const loanDetails = selectedReviewAllData?.loanSimulatorDetails;
     const results = useMemo(() => calculateLoanResults(loanDetails), [loanDetails]);
     const currentTableData = results?.withExtrasScenario.rows || [];
-    const hasExtras = results?.chartData.some(
-        (row) => Math.abs(row.withExtraOffset - row.minimumOnly) > 0.01,
-    );
-
     const toggleSeries = (key) => {
         setSeriesVisibility((current) => {
             const nextVisible = !current[key];
@@ -440,14 +436,11 @@ const LoanSimulator = () => {
                                     <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} interval="preserveStartEnd" />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} tickFormatter={(value) => value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${Math.round(value / 1000)}K`} />
                                     <Tooltip formatter={(value) => formatCurrency(value)} />
-                                    {seriesVisibility.withExtraOffset && hasExtras && (
+                                    {seriesVisibility.withExtraOffset && (
                                         <Bar dataKey="withExtraOffset" name="With Extra / Offset" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={16} />
                                     )}
                                     {seriesVisibility.minimumOnly && (
                                         <Bar dataKey="minimumOnly" name="Minimum Only" fill="#2b3b5c" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                                    )}
-                                    {!hasExtras && seriesVisibility.withExtraOffset && !seriesVisibility.minimumOnly && (
-                                        <Bar dataKey="withExtraOffset" name="With Extra / Offset" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={16} />
                                     )}
                                 </BarChart>
                             </ResponsiveContainer>

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button, Col, Form, message, Row, Select, Space, Tabs, Typography } from "antd";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import useApi from "../../../../../../../../hooks/useApi.js";
-import { SelectedClient, SelectedReviewAllData } from "../../../../../../../../store/authState.js";
+import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
 import { useGetReviewName } from "../../../../../../../../hooks/useUserDashboardData.js";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
+import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
+
 const { Text } = Typography;
 
 const TABLE_PROPS = {
@@ -16,8 +18,6 @@ const TABLE_PROPS = {
     headerFontSize: 11,
     bodyFontSize: 12,
 };
-
-
 
 const INCOME_FIELDS = [
     ["salary", "Salary"],
@@ -50,6 +50,75 @@ const EMPTY_PROFILE = {
     },
 };
 
+function parseCurrencyValue(value) {
+    if (value === null || value === undefined || value === "") return undefined;
+    const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(numeric) ? numeric : undefined;
+}
+
+function formatCurrencyValue(value) {
+    const numeric = parseCurrencyValue(value);
+    return numeric !== undefined ? toCommaAndDollar(numeric) : "";
+}
+
+function parseDigitsValue(value) {
+    return String(value ?? "").replace(/[^0-9]/g, "");
+}
+
+function getChangedValue(value) {
+    return value?.target?.value ?? value;
+}
+
+function formatNumericInput(value, { currency = false } = {}) {
+    const digits = parseDigitsValue(getChangedValue(value));
+    if (!digits) return "";
+    return currency ? toCommaAndDollar(digits) : formatNumber(Number(digits));
+}
+
+function resolveFieldPath(record, column) {
+    const rowPath = Array.isArray(record?.formPath)
+        ? record.formPath
+        : record?.formPath
+            ? [record.formPath]
+            : [];
+    return [...rowPath, column.field || column.dataIndex || column.key];
+}
+
+const handleCurrencyChange = (value, record, column, currentForm) => {
+    currentForm.setFieldValue(
+        resolveFieldPath(record, column),
+        formatNumericInput(value, { currency: true }),
+    );
+};
+
+const incomeSourcesColumns = [
+    { title: "Type", dataIndex: "type", key: "type", editable: false, width: 100 },
+    ...INCOME_FIELDS.map(([key, title]) => ({
+        title,
+        dataIndex: key,
+        key,
+        field: key,
+        type: "text",
+        placeholder: "$0",
+        renderView: ({ value }) => formatCurrencyValue(value) || "--",
+        onChange: handleCurrencyChange,
+    })),
+];
+
+const deductionsColumns = [
+    { title: "Type", dataIndex: "type", key: "type", editable: false, width: 100 },
+    ...DEDUCTION_FIELDS.map(([key, title]) => ({
+        title,
+        dataIndex: key,
+        key,
+        field: key,
+        type: "text",
+        placeholder: "$0",
+        renderView: ({ value }) => formatCurrencyValue(value) || "--",
+        onChange: handleCurrencyChange,
+    })),
+];
+
 function SectionTitle({ children }) {
     return (
         <Text
@@ -69,16 +138,24 @@ function SectionTitle({ children }) {
     );
 }
 
+function formatFieldsMap(data = {}, fields = []) {
+    const formatted = { ...(data || {}) };
+    fields.forEach(([key]) => {
+        formatted[key] = formatCurrencyValue(data?.[key]);
+    });
+    return formatted;
+}
+
 function buildInitialProfile(profile = {}) {
     return {
         applySAPTO: profile?.applySAPTO ?? EMPTY_PROFILE.applySAPTO,
         incomeSources: {
-            current: { ...EMPTY_PROFILE.incomeSources.current, ...profile?.incomeSources?.current },
-            proposed: { ...EMPTY_PROFILE.incomeSources.proposed, ...profile?.incomeSources?.proposed },
+            current: formatFieldsMap(profile?.incomeSources?.current, INCOME_FIELDS),
+            proposed: formatFieldsMap(profile?.incomeSources?.proposed, INCOME_FIELDS),
         },
         deductions: {
-            current: { ...EMPTY_PROFILE.deductions.current, ...profile?.deductions?.current },
-            proposed: { ...EMPTY_PROFILE.deductions.proposed, ...profile?.deductions?.proposed },
+            current: formatFieldsMap(profile?.deductions?.current, DEDUCTION_FIELDS),
+            proposed: formatFieldsMap(profile?.deductions?.proposed, DEDUCTION_FIELDS),
         },
     };
 }
@@ -91,7 +168,6 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
     const { patch } = useApi();
     const getReviewName = useGetReviewName();
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
-    const selectedClient = useAtomValue(SelectedClient);
 
     const sectionData = useMemo(
         () => selectedReviewAllData?.taxPlanningDetails || {},
@@ -125,26 +201,7 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
     const currentProfileData = editing
         ? watchedProfileData ?? initialValues[activeProfileTab]
         : initialValues[activeProfileTab];
-    const incomeSourcesColumns = [
-        { title: "Type", dataIndex: "type", key: "type", editable: false, width: 100 },
-        ...INCOME_FIELDS.map(([key, title]) => ({
-            title,
-            dataIndex: key,
-            key,
-            field: key,
-            type: "text",
-        })),
-    ];
-    const deductionsColumns = [
-        { title: "Type", dataIndex: "type", key: "type", editable: false, width: 100 },
-        ...DEDUCTION_FIELDS.map(([key, title]) => ({
-            title,
-            dataIndex: key,
-            key,
-            field: key,
-            type: "text",
-        })),
-    ];
+
     const scenarioRows = (section) =>
         ["current", "proposed"].map((scenario) => ({
             key: scenario,
@@ -320,3 +377,4 @@ export default function ReviewsTaxPlanningForm({ modalData }) {
         </div>
     );
 }
+

@@ -13,7 +13,7 @@ const { Text } = Typography;
 const PRIMARY_GREEN = '#22c55e';
 
 const RISK_PROFILE_OPTIONS = [
-    { value: 'Cash', label: 'Cash' },
+    { value: 'Cash Management', label: 'Cash Management' },
     { value: 'Conservative', label: 'Conservative' },
     { value: 'Moderately Conservative', label: 'Moderately Conservative' },
     { value: 'Balanced', label: 'Balanced' },

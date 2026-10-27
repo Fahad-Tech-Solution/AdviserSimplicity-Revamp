@@ -20,7 +20,7 @@ const TABLE_PROPS = {
 };
 
 const RISK_PROFILE_OPTIONS = [
-    { label: "Cash", value: "Cash" },
+    { label: "Cash Management", value: "Cash Management" },
     { label: "Conservative", value: "Conservative" },
     { label: "Moderately Conservative", value: "Moderately Conservative" },
     { label: "Balanced", value: "Balanced" },
@@ -144,7 +144,7 @@ function buildInitialValues(sectionData) {
 
 // Default return rate mapping by Risk Profile
 const RISK_PROFILE_RETURNS = {
-    "Cash": 3.0,
+    "Cash Management": 3.0,
     "Conservative": 3.8,
     "Moderately Conservative": 4.5,
     "Balanced": 5.0,

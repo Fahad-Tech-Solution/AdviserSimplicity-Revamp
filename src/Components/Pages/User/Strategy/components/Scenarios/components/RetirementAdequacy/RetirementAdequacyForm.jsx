@@ -21,7 +21,7 @@ const TABLE_PROPS = {
 };
 
 const RISK_PROFILE_OPTIONS = [
-    { label: "Cash", value: "Cash" },
+    { label: "Cash Management", value: "Cash Management" },
     { label: "Conservative", value: "Conservative" },
     { label: "Moderately Conservative", value: "Moderately Conservative" },
     { label: "Balanced", value: "Balanced" },
@@ -178,7 +178,7 @@ export default function RetirementAdequacyForm({ modalData }) {
         ...showPartnerRows ? [
             { label: "Auto (from owners)", value: "Auto" },
         ] : [],
-        
+
         { label: "Single", value: "Single" },
         ...showPartnerRows ? [
             { label: "Couple", value: "Couple" },

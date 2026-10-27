@@ -87,6 +87,12 @@ function getFinancialYearStart() {
     return new Date(year, 6, 1);
 }
 
+function getProjectionFinancialYearStart(value) {
+    const date = getDate(value) || getFinancialYearStart();
+    const year = date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;
+    return new Date(year, 6, 1);
+}
+
 function getMinimumDrawdownRate(age) {
     return ABP_MIN_RATES.find(({ maxAge }) => age < maxAge)?.rate ?? 0.14;
 }
@@ -101,7 +107,7 @@ function calculatePersonProjection(person = {}, pensionStartDate, { applyAdjustm
     const returnRate = (Number.isFinite(explicitReturn)
         ? explicitReturn
         : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced) / 100;
-    const firstYearDate = getDate(pensionStartDate) || getFinancialYearStart();
+    const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const dateOfBirth = person.DOB;
     const ageAtStart = getAgeAtDate(dateOfBirth, firstYearDate);
     const initialBalance = Math.max(
@@ -135,6 +141,7 @@ function calculatePersonProjection(person = {}, pensionStartDate, { applyAdjustm
             financialYear: firstFinancialYear + year,
             age,
             openingBalance,
+            calculatedOpeningBalance: adjustedOpening,
             topUp,
             oneOffWithdrawal,
             earnings,
@@ -184,22 +191,32 @@ function buildMetrics(rows, startingBalance, nccTopUp, withdrawal, sustainedText
     };
 }
 
-function calculateProjection(person, pensionStartDate, baselinePerson = person) {
-    const adjusted = calculatePersonProjection(person, pensionStartDate);
-    const baseline = adjusted.hasAdjustments
+function calculateProjection(person, pensionStartDate, baselinePerson = person, expenseProjection = null) {
+    const adjusted = expenseProjection || calculatePersonProjection(person, pensionStartDate);
+    const baseline = !expenseProjection && adjusted.hasAdjustments
         ? calculatePersonProjection(baselinePerson, pensionStartDate, { applyAdjustments: false })
         : null;
     const rows = adjusted.rows.map((row, index) => ({
         ...row,
-        balance: row.closingBalance,
+        balance: row.calculatedOpeningBalance,
         currentBalance: baseline
-            ? baseline.rows[index]?.closingBalance ?? 0
-            : row.closingBalance,
+            ? baseline.rows[index]?.calculatedOpeningBalance ?? 0
+            : row.calculatedOpeningBalance,
         yearLabel: `Yr ${row.year}`,
+    }));
+    const chartData = rows.map((row, index) => ({
+        ...row,
+        year: row.yearLabel || `Yr ${row.year}`,
+        minimumBalance: expenseProjection
+            ? expenseProjection.minimumRows[index]?.openingBalance ?? 0
+            : row.balance,
+        calculatedBalance: row.balance,
     }));
 
     return {
         rows,
+        chartData,
+        chartMode: expenseProjection ? 'expenses' : 'standard',
         metrics: buildMetrics(
             adjusted.rows,
             adjusted.startingBalance,
@@ -220,7 +237,7 @@ function calculateAgePension(assessableAssets, financialAssets, isCouple, homeow
         : (isCouple ? rates.coupleRentLower : rates.singleRentLower);
     const assetsReduction = Math.min(
         Math.max(0, assessableAssets - lowerThreshold * indexation) / 1000
-            * rates.assetsTaperPerThousandFn * 26,
+        * rates.assetsTaperPerThousandFn * 26,
         fullPension,
     );
     const deemingThreshold = (isCouple ? rates.deemCoupleThreshold : rates.deemSingleThreshold) * indexation;
@@ -242,9 +259,223 @@ function calculateAgePension(assessableAssets, financialAssets, isCouple, homeow
     };
 }
 
+function getExtraWithdrawalFrequency(value) {
+    const frequency = String(value || '').trim().toLowerCase();
+    if (frequency === 'once' || frequency === 'one-off' || frequency === 'year 1 only') return 1;
+    if (frequency.includes('random')) return -1;
+    const everyYears = frequency.match(/every\s+(\d+)\s+years?/);
+    if (everyYears) return Math.max(1, Number(everyYears[1]));
+    const numericFrequency = Number(frequency);
+    return Number.isInteger(numericFrequency) && numericFrequency > 0 ? numericFrequency : 0;
+}
+
+function calculateExpensesDrivenProjections(people, pensionStartDate, projection = {}) {
+    const years = 30;
+    const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
+    const firstFinancialYear = firstYearDate.getFullYear();
+    const currentFinancialYear = getFinancialYearStart().getFullYear();
+    const projectionLeadYears = Math.max(0, firstFinancialYear - currentFinancialYear);
+    const withdrawalFrequency = getExtraWithdrawalFrequency(projection.withdrawalFrequency);
+    const extraWithdrawal = Math.max(0, parseNumber(projection.extraWithdrawal));
+    const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses));
+    const expensesIndexation = Math.max(0, parseNumber(projection.expensesIndexation, 2.5)) / 100;
+    const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2.5)) / 100;
+    const includeAgePension = projection.includeAgePension;
+    const homeowner = String(projection.homeOwnership || '').toLowerCase() === 'homeowner';
+    const otherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments));
+    const personalAssets = Math.max(0, parseNumber(projection.personalAssets));
+    const peopleStates = people.map((person) => {
+        const startingBalance = Math.max(0, parseNumber(person.accountBasedPensionTotal));
+        const nccTopUp = Math.max(0, parseNumber(person.nccTopUp));
+        const topUpYearValue = parseInt(String(person.nccTopUpYear || '').replace(/\D/g, ''), 10);
+        const topUpYear = Math.min(40, Math.max(1, topUpYearValue || 1));
+        const withdrawal = Math.max(0, parseNumber(person.withdrawalAmount));
+        const explicitReturn = parseNumber(person.investmentReturn, NaN);
+        const returnRate = (Number.isFinite(explicitReturn)
+            ? explicitReturn
+            : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced) / 100;
+        const ageAtStart = getAgeAtDate(person.DOB, firstYearDate);
+        const openingBalance = Math.max(
+            0,
+            startingBalance - withdrawal + (topUpYear === 1 ? nccTopUp : 0),
+        );
+
+        return {
+            person,
+            startingBalance,
+            nccTopUp,
+            topUpYear,
+            withdrawal,
+            returnRate,
+            ageAtStart,
+            balance: ageAtStart === null ? 0 : openingBalance,
+            initialOpening: ageAtStart === null ? 0 : openingBalance,
+            rows: [],
+        };
+    });
+    const isCouple = peopleStates.length > 1;
+    let otherFinancialBalance = otherFinancialInvestments;
+    let withdrawalRandomSeed = 987654321;
+
+    for (let yearIndex = 0; yearIndex < years; yearIndex += 1) {
+        const year = yearIndex + 1;
+        peopleStates.forEach((state) => {
+            if (year > 1 && year === state.topUpYear) state.balance += state.nccTopUp;
+        });
+        const activeStates = peopleStates.filter((state) => state.balance > 0);
+
+        const periodData = activeStates.map((state) => {
+            const age = state.ageAtStart === null ? null : state.ageAtStart + yearIndex;
+            const opening = state.balance;
+            const earnings = opening * state.returnRate;
+            const minimumRate = age === null ? 0 : getMinimumDrawdownRate(age);
+            const minimumPayment = opening * minimumRate;
+            return {
+                state,
+                age,
+                opening,
+                earnings,
+                minimumRate,
+                minimumPayment,
+                closingMinimum: Math.max(0, opening + earnings - minimumPayment),
+            };
+        });
+        const minimumAssets = periodData.reduce((total, row) => total + row.closingMinimum, 0);
+        const indexation = (1 + thresholdIndexation) ** yearIndex;
+        otherFinancialBalance *= 1 + AGE_PENSION_RATES.deemUpperRate;
+        const agePensionEligibleCount = periodData.reduce(
+            (total, row) => total + Number(row.age !== null && row.age >= AGE_PENSION_AGE),
+            0,
+        );
+        const agePension = calculateAgePension(
+            minimumAssets + personalAssets + otherFinancialBalance,
+            minimumAssets + otherFinancialBalance,
+            isCouple,
+            homeowner,
+            indexation,
+            agePensionEligibleCount,
+        );
+        const pensionIncome = includeAgePension ? agePension.pension : 0;
+        const expenseForYear = expenses * (1 + expensesIndexation) ** (projectionLeadYears + yearIndex);
+        const minimumDrawdown = periodData.reduce((total, row) => total + row.minimumPayment, 0);
+        const shortfall = Math.max(0, expenseForYear - minimumDrawdown - pensionIncome);
+        const availableForTopUp = periodData.reduce((total, row) => total + row.closingMinimum, 0);
+        const additionalDrawdown = Math.min(shortfall, availableForTopUp);
+        const openingTotal = periodData.reduce((total, row) => total + row.opening, 0);
+        let remainingAdditional = additionalDrawdown;
+
+        periodData.forEach((row, index) => {
+            const share = openingTotal > 0 ? row.opening / openingTotal : (index === 0 ? 1 : 0);
+            row.additionalPayment = Math.min(additionalDrawdown * share, row.closingMinimum);
+            remainingAdditional -= row.additionalPayment;
+        });
+        if (remainingAdditional > 0.005 && periodData.length) {
+            for (const row of periodData) {
+                const available = row.closingMinimum - row.additionalPayment;
+                const extra = Math.min(remainingAdditional, available);
+                row.additionalPayment += extra;
+                remainingAdditional -= extra;
+                if (remainingAdditional <= 0.005) break;
+            }
+        }
+
+        const closingAfterExpenses = periodData.map((row) => Math.max(
+            0,
+            row.closingMinimum - row.additionalPayment,
+        ));
+        let extraWithdrawalApplies = withdrawalFrequency > 0
+            && yearIndex % withdrawalFrequency === 0;
+        if (withdrawalFrequency === -1) {
+            withdrawalRandomSeed = (withdrawalRandomSeed * 1103515245 + 12345) & 0x7fffffff;
+            extraWithdrawalApplies = withdrawalRandomSeed / 0x7fffffff < 0.34;
+        }
+        const availableAfterExpenses = closingAfterExpenses.reduce((total, balance) => total + balance, 0);
+        const withdrawalTotal = extraWithdrawalApplies
+            ? Math.min(extraWithdrawal, availableAfterExpenses)
+            : 0;
+        let remainingWithdrawal = withdrawalTotal;
+
+        periodData.forEach((row, index) => {
+            const closing = closingAfterExpenses[index];
+            const share = availableAfterExpenses > 0
+                ? closing / availableAfterExpenses
+                : (index === 0 ? 1 : 0);
+            row.extraWithdrawal = Math.min(withdrawalTotal * share, closing);
+            remainingWithdrawal -= row.extraWithdrawal;
+        });
+        if (remainingWithdrawal > 0.005 && periodData.length) {
+            for (let index = 0; index < periodData.length; index += 1) {
+                const available = closingAfterExpenses[index] - periodData[index].extraWithdrawal;
+                const extra = Math.min(remainingWithdrawal, available);
+                periodData[index].extraWithdrawal += extra;
+                remainingWithdrawal -= extra;
+                if (remainingWithdrawal <= 0.005) break;
+            }
+        }
+
+        periodData.forEach((row) => {
+            const topUp = year === row.state.topUpYear ? row.state.nccTopUp : 0;
+            const oneOffWithdrawal = year === 1 ? row.state.withdrawal : 0;
+            const annualPayment = row.minimumPayment
+                + row.additionalPayment
+                + row.extraWithdrawal;
+            const closingBalance = Math.max(
+                0,
+                row.closingMinimum - row.additionalPayment - row.extraWithdrawal,
+            );
+            row.state.rows.push({
+                key: String(year),
+                year,
+                financialYear: firstFinancialYear + year,
+                age: row.age,
+                openingBalance: year === 1
+                    ? row.state.startingBalance
+                    : row.opening - topUp,
+                calculatedOpeningBalance: row.opening,
+                topUp,
+                oneOffWithdrawal,
+                earnings: row.earnings,
+                minimumRate: row.minimumRate,
+                annualPayment,
+                closingBalance,
+            });
+            row.state.balance = closingBalance;
+        });
+
+        const surplus = Math.max(
+            0,
+            minimumDrawdown + additionalDrawdown + withdrawalTotal + pensionIncome - expenseForYear,
+        );
+        otherFinancialBalance += surplus;
+    }
+
+    return peopleStates.map((state) => {
+        const minimumRows = [];
+        let balance = state.initialOpening;
+        for (let yearIndex = 0; yearIndex < years && balance > 0; yearIndex += 1) {
+            const age = state.ageAtStart === null ? null : state.ageAtStart + yearIndex;
+            const opening = balance;
+            const earnings = opening * state.returnRate;
+            const minimumRate = age === null ? 0 : getMinimumDrawdownRate(age);
+            const annualPayment = opening * minimumRate;
+            balance = Math.max(0, opening + earnings - annualPayment);
+            minimumRows.push({ openingBalance: opening, closingBalance: balance });
+        }
+
+        return {
+            rows: state.rows,
+            minimumRows,
+            startingBalance: state.startingBalance,
+            nccTopUp: state.nccTopUp,
+            withdrawal: state.withdrawal,
+            hasAdjustments: state.nccTopUp > 0 || state.withdrawal > 0,
+        };
+    });
+}
+
 function calculateCashflowProjection(people, pensionStartDate, projection = {}) {
     const maxYears = Math.max(0, ...people.map(({ rows }) => rows.length));
-    const firstYearDate = getDate(pensionStartDate) || getFinancialYearStart();
+    const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const startingAges = people.map(({ DOB }) => getAgeAtDate(DOB, firstYearDate));
     const isCouple = projection.isCouple;
     const homeowner = String(projection.homeOwnership || '').toLowerCase() === 'homeowner';
@@ -350,6 +581,10 @@ const cashflowColumns = [
 const RetirementAdequacy = () => {
     const [selectedProfile, setSelectedProfile] = useState('client');
     const [viewMode, setViewMode] = useState('Graph');
+    const [visibleChartSeries, setVisibleChartSeries] = useState({
+        minimumBalance: true,
+        calculatedBalance: true,
+    });
     const [openModal, setOpenModal] = useState(false);
     const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
@@ -363,6 +598,7 @@ const RetirementAdequacy = () => {
     const calculatedData = useMemo(() => {
         const section = selectedReviewAllData?.retirementAdequacyDetails || {};
         const startDate = section.pensionStartDate;
+        const agePensionProjection = section.agePensionProjection || {};
         const client = {
             ...section.client,
             DOB: section.client?.DOB || selectedReviewAllData?.personalDetails?.client?.DOB,
@@ -371,23 +607,54 @@ const RetirementAdequacy = () => {
             ...section.partner,
             DOB: section.partner?.DOB || selectedReviewAllData?.personalDetails?.partner?.DOB,
         };
-        const clientProjection = calculateProjection(client, startDate);
-        const partnerProjection = calculateProjection(partner, startDate);
+        const withdrawalFrequency = getExtraWithdrawalFrequency(agePensionProjection.withdrawalFrequency);
+        const extraWithdrawal = parseNumber(agePensionProjection.extraWithdrawal);
+        const expensesDriven = parseNumber(agePensionProjection.annualLivingExpenses) > 0
+            || (extraWithdrawal > 0 && withdrawalFrequency !== 0);
+        const relationshipStatus = String(agePensionProjection.relationshipStatus || 'Auto').toLowerCase();
+        const owners = section.owner || selectedReviewAllData?.personalDetails?.owner || [];
+        const isCouple = relationshipStatus.includes('couple')
+            || (relationshipStatus.includes('auto') && owners.includes('partner'));
+        const expenseOptions = {
+            ...agePensionProjection,
+            includeAgePension: section.includeAgePension
+                ?? agePensionProjection.includeAgePension
+                ?? false,
+        };
+        let clientExpenseProjection = null;
+        let partnerExpenseProjection = null;
+        if (expensesDriven) {
+            if (isCouple) {
+                [clientExpenseProjection, partnerExpenseProjection] = calculateExpensesDrivenProjections(
+                    [client, partner],
+                    startDate,
+                    expenseOptions,
+                );
+            } else {
+                [clientExpenseProjection] = calculateExpensesDrivenProjections(
+                    [client],
+                    startDate,
+                    expenseOptions,
+                );
+                [partnerExpenseProjection] = calculateExpensesDrivenProjections(
+                    [partner],
+                    startDate,
+                    expenseOptions,
+                );
+            }
+        }
+        const clientProjection = calculateProjection(client, startDate, client, clientExpenseProjection);
+        const partnerProjection = calculateProjection(partner, startDate, partner, partnerExpenseProjection);
 
         if (selectedProfile === 'partner') return partnerProjection;
         if (selectedProfile === 'cashflow') {
-            const agePensionProjection = section.agePensionProjection || {};
-            const relationshipStatus = String(agePensionProjection.relationshipStatus || 'Auto').toLowerCase();
             return calculateCashflowProjection([
                 { ...clientProjection, DOB: client.DOB, startingBalance: parseNumber(client.accountBasedPensionTotal), nccTopUp: parseNumber(client.nccTopUp), withdrawal: parseNumber(client.withdrawalAmount) },
                 { ...partnerProjection, DOB: partner.DOB, startingBalance: parseNumber(partner.accountBasedPensionTotal), nccTopUp: parseNumber(partner.nccTopUp), withdrawal: parseNumber(partner.withdrawalAmount) },
             ], startDate, {
                 ...agePensionProjection,
-                isCouple: relationshipStatus === 'couple'
-                    || (relationshipStatus !== 'single' && selectedReviewAllData?.personalDetails?.owner?.includes('partner')),
-                includeAgePension: section.includeAgePension
-                    ?? agePensionProjection.includeAgePension
-                    ?? false,
+                isCouple,
+                includeAgePension: expenseOptions.includeAgePension,
             });
         }
         return clientProjection;
@@ -395,6 +662,7 @@ const RetirementAdequacy = () => {
 
     const currentMetrics = calculatedData.metrics;
     const currentChartData = calculatedData.rows;
+    const graphData = calculatedData.chartData || currentChartData;
     const currentTableData = calculatedData.rows;
     const currentColumns = selectedProfile === 'cashflow' ? cashflowColumns : columns;
     const hasData = currentChartData.length > 0;
@@ -588,28 +856,114 @@ const RetirementAdequacy = () => {
                         </Title>
 
                         {hasData ? (
+                            <div>
                             <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
-                                    <BarChart data={currentChartData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                                    <BarChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                         <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
                                         <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
-                                        {calculatedData.hasAdjustments && (
-                                            <Legend />
+                                        {calculatedData.chartMode === 'expenses' ? (
+                                            <>
+                                                <Bar
+                                                    dataKey="minimumBalance"
+                                                    name="Minimum"
+                                                    fill="#22c55e"
+                                                    hide={!visibleChartSeries.minimumBalance}
+                                                    radius={[3, 3, 0, 0]}
+                                                    maxBarSize={24}
+                                                />
+                                                <Bar
+                                                    dataKey="calculatedBalance"
+                                                    name="Calculated Drawdown"
+                                                    fill="#2b3a5e"
+                                                    hide={!visibleChartSeries.calculatedBalance}
+                                                    radius={[3, 3, 0, 0]}
+                                                    maxBarSize={24}
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                {calculatedData.hasAdjustments && <Legend />}
+                                                {calculatedData.hasAdjustments && (
+                                                    <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                                )}
+                                                <Bar
+                                                    dataKey="balance"
+                                                    name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
+                                                    fill="#22c55e"
+                                                    radius={[3, 3, 0, 0]}
+                                                    maxBarSize={24}
+                                                />
+                                            </>
                                         )}
-                                        {calculatedData.hasAdjustments && (
-                                            <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                                        )}
-                                        <Bar
-                                            dataKey="balance"
-                                            name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
-                                            fill="#22c55e"
-                                            radius={[3, 3, 0, 0]}
-                                            maxBarSize={24}
-                                        />
                                     </BarChart>
                                 </ResponsiveContainer>
+                            </div>
+                            {calculatedData.chartMode === 'expenses' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
+                                        <Button
+                                            size="small"
+                                            aria-pressed={visibleChartSeries.minimumBalance}
+                                            onClick={() => setVisibleChartSeries((current) => ({
+                                                ...current,
+                                                minimumBalance: !current.minimumBalance,
+                                            }))}
+                                            style={{
+                                                height: 34,
+                                                padding: '0 14px',
+                                                borderRadius: 999,
+                                                borderColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
+                                                backgroundColor: visibleChartSeries.minimumBalance ? '#f0fdf4' : '#fff',
+                                                color: visibleChartSeries.minimumBalance ? '#15803d' : '#aeb6c4',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <span style={{
+                                                display: 'inline-block',
+                                                width: 10,
+                                                height: 10,
+                                                marginRight: 7,
+                                                borderRadius: 3,
+                                                backgroundColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
+                                            }} />
+                                            Minimum
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            aria-pressed={visibleChartSeries.calculatedBalance}
+                                            onClick={() => setVisibleChartSeries((current) => ({
+                                                ...current,
+                                                calculatedBalance: !current.calculatedBalance,
+                                            }))}
+                                            style={{
+                                                height: 34,
+                                                padding: '0 14px',
+                                                borderRadius: 999,
+                                                borderColor: visibleChartSeries.calculatedBalance ? '#cbd5e1' : '#e2e8f0',
+                                                backgroundColor: visibleChartSeries.calculatedBalance ? '#f8fafc' : '#fff',
+                                                color: visibleChartSeries.calculatedBalance ? '#aeb6c4' : '#cbd5e1',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <span style={{
+                                                display: 'inline-block',
+                                                width: 10,
+                                                height: 10,
+                                                marginRight: 7,
+                                                borderRadius: 3,
+                                                backgroundColor: visibleChartSeries.calculatedBalance ? '#bfc5d2' : '#e2e8f0',
+                                            }} />
+                                            Calculated Drawdown
+                                        </Button>
+                                    </div>
+                                    <Text type="secondary" style={{ color: '#94a3b8', fontSize: 11, textAlign: 'center' }}>
+                                        Comparing minimum vs nominated drawdown balance
+                                    </Text>
+                                </div>
+                            )}
                             </div>
                         ) : (
                             /* Empty state matching the reference image display */

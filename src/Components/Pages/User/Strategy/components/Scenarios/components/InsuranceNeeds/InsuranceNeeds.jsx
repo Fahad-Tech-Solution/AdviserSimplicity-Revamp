@@ -433,7 +433,7 @@ const InsuranceNeeds = () => {
         const speakParts = [`${leadName}, here's your insurance cover summary:`];
         const gapDetails = (gap) => ({
             abs: Math.abs(gap),
-            color: gap > 1000 ? "#dc2626" : gap < -1000 ? "#16a34a" : "#6b7280",
+            color: gap > 1000 ? "#dc2626" : gap < -1000 ? "#0f1e4c" : "#6b7280",
             label: gap > 1000 ? "shortfall" : gap < -1000 ? "surplus" : "covered",
         });
         const fmtRow = (label, gap, existing, suffix = "") => {
@@ -515,7 +515,7 @@ const InsuranceNeeds = () => {
                 const tileColor = (gap) => gap > 1000
                     ? "#dc2626"
                     : gap < -1000
-                        ? "#16a34a"
+                        ? "#0f1e4c"
                         : "#374151";
                 tiles.push(
                     ...COVER_META.map(({ key, label }) => ({
@@ -530,7 +530,7 @@ const InsuranceNeeds = () => {
                             : ipGap < -50
                                 ? `${formatInsuranceMoney(Math.abs(ipGap))}/mo surplus`
                                 : "Covered",
-                        color: ipGap > 50 ? "#dc2626" : ipGap < -50 ? "#16a34a" : "#374151",
+                        color: ipGap > 50 ? "#dc2626" : ipGap < -50 ? "#0f1e4c" : "#374151",
                     },
                 );
             }
