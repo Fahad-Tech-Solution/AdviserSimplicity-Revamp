@@ -312,6 +312,7 @@ export default function InsuranceNeedsForm({ modalData }) {
     );
     const mortgageAmount =
         selectedReviewAllData?.loanSimulatorDetails?.loanSetup?.homeLoanTotal;
+
     const currentCalculation = useMemo(
         () => calculateInsuranceNeeds(
             currentProfileData,
@@ -321,6 +322,16 @@ export default function InsuranceNeedsForm({ modalData }) {
         ),
         [currentProfileData, currentProfileAge, taxRatesSchema, mortgageAmount],
     );
+
+    // Automatically sync currentNetIncomeAfterTax to life, tpd, and trauma amounts when editing
+    useEffect(() => {
+        if (editing && currentCalculation?.computedFields?.currentNetIncomeAfterTax) {
+            const netIncome = currentCalculation.computedFields.currentNetIncomeAfterTax;
+            form.setFieldValue([activeProfileTab, "incomeReplacement", "lifeAmount"], netIncome);
+            form.setFieldValue([activeProfileTab, "incomeReplacement", "tpdAmount"], netIncome);
+            form.setFieldValue([activeProfileTab, "incomeReplacement", "traumaAmount"], netIncome);
+        }
+    }, [editing, currentCalculation?.computedFields?.currentNetIncomeAfterTax, activeProfileTab, form]);
 
     // Section 1: Existing Cover & Premiums
     const EXISTING_COVER_COLUMNS = [
@@ -406,9 +417,9 @@ export default function InsuranceNeedsForm({ modalData }) {
             disabled: true,
             renderEdit: () => <Text>{currentCalculation.computedFields.currentNetIncomeAfterTax}</Text>,
         },
-        { title: "Life", dataIndex: "lifeAmount", key: "lifeAmount", field: "lifeAmount", type: "text", onChange: formatCurrencyField },
+        { title: "Life", dataIndex: "lifeAmount", key: "lifeAmount", field: "lifeAmount", type: "text", },
         { title: "Years", dataIndex: "lifeYears", key: "lifeYears", field: "lifeYears", type: "select", options: YEARS_OPTIONS },
-        { title: "TPD", dataIndex: "tpdAmount", key: "tpdAmount", field: "tpdAmount", type: "text", onChange: formatCurrencyField },
+        { title: "TPD", dataIndex: "tpdAmount", key: "tpdAmount", field: "tpdAmount", type: "text", },
         { title: "Years", dataIndex: "tpdYears", key: "tpdYears", field: "tpdYears", type: "select", options: YEARS_OPTIONS },
         {
             title: "Tax TPD in Super",
@@ -425,7 +436,7 @@ export default function InsuranceNeedsForm({ modalData }) {
                 </Form.Item>
             ),
         },
-        { title: "Trauma", dataIndex: "traumaAmount", key: "traumaAmount", field: "traumaAmount", type: "text", onChange: formatCurrencyField },
+        { title: "Trauma", dataIndex: "traumaAmount", key: "traumaAmount", field: "traumaAmount", type: "text", },
         { title: "Years", dataIndex: "traumaYears", key: "traumaYears", field: "traumaYears", type: "select", options: YEARS_OPTIONS },
     ];
 

@@ -6,6 +6,8 @@ import { FaCheck } from 'react-icons/fa';
 import { useAtom, useAtomValue } from 'jotai';
 import { SelectedClient, SelectedReviewAllData } from '../../../../../../../store/authState';
 import useApi from '../../../../../../../hooks/useApi';
+import { RiArrowDropRightFill, RiArrowDropRightLine } from 'react-icons/ri';
+import { useNavigate } from 'react-router-dom';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -258,6 +260,9 @@ const WhatsChanged = () => {
     const [EmailSending, setEmailSending] = useState(false);
     const { post, patch } = useApi();
     const [form] = Form.useForm();
+    const navigate = useNavigate();
+
+
 
     // Populate existing data when state is loaded or updated
     useEffect(() => {
@@ -334,7 +339,7 @@ const WhatsChanged = () => {
     async function SendWhatsChangeEmail(obj) {
         try {
             setEmailSending(true);
-            const res = await post("reviewChange/email", obj);
+            await post("reviewChange/email", obj);
             message.success("Email Sent to \"" + obj.name + "\" Successfully");
         }
         catch (error) {
@@ -478,39 +483,58 @@ const WhatsChanged = () => {
 
                 {/* Bottom Action Buttons */}
                 <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Button
-                        icon={<MailOutlined />}
-                        size="large"
-                        style={{
-                            borderRadius: 8,
-                            fontSize: 14,
-                            borderColor: '#d9d9d9',
-                            color: '#434343'
-                        }}
-                        onClick={() => SendWhatsChangeEmail(
-                            {
-                                "scenarioFK": selectedReviewAllData?.scenario?._id || "",
-                                "name": selectedClient?.client?.clientPreferredName || "",
-                                "email": selectedClient?.client?.Email,
-                                "url": window.location.origin === "https://as.denarowealth.com.au" ?
-                                    (window.location.origin + "/whats-change-questions") :
-                                    (window.location.origin + "/AdviserSimplicity-Revamp/#/whats-change-questions")
-                            }
-                        )}
-                        loading={EmailSending}
-                    >
-                        Email Questions to Client
-                    </Button>
+                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+                        <Button
+                            icon={<MailOutlined />}
+                            size="large"
+                            style={{
+                                borderRadius: 8,
+                                fontSize: 14,
+                                borderColor: '#d9d9d9',
+                                color: '#434343'
+                            }}
+                            onClick={() => SendWhatsChangeEmail(
+                                {
+                                    "scenarioFK": selectedReviewAllData?.scenario?._id || "",
+                                    "name": selectedClient?.client?.clientPreferredName || "",
+                                    "email": selectedClient?.client?.Email,
+                                    "url": window.location.origin === "https://as.denarowealth.com.au" ?
+                                        (window.location.origin + "/whats-change-questions") :
+                                        (window.location.origin + "/AdviserSimplicity-Revamp/#/whats-change-questions")
+                                }
+                            )}
+                            loading={EmailSending}
+                        >
+                            Email Questions to Client
+                        </Button>
+                    </div>
 
-                    <Button
-                        type='primary'
-                        htmlType='submit'
-                        size="large"
-                        style={{ borderRadius: 8 }}
-                        loading={loading}
-                    >
-                        Submit
-                    </Button>
+                    <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                        <Button
+                            type='primary'
+                            htmlType='submit'
+                            size="large"
+                            key={"submit"}
+                            style={{ borderRadius: 8, minWidth: 120 }}
+                            loading={loading}
+                        >
+                            Submit
+                        </Button>
+                    </div>
+
+                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                        <Button
+                            type='primary'
+                            htmlType='next'
+                            key='next'
+                            size="large"
+                            style={{ borderRadius: 8 }}
+                            onClick={() => { navigate("/user/review-routes/client-details") }}
+
+                        >
+                            Next →
+                        </Button>
+                    </div>
                 </div>
             </Form>
         </div>

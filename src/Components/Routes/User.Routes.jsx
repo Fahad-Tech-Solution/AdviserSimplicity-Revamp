@@ -1246,21 +1246,6 @@ export const reviewRoutes = [
     condition: () => true,
   },
   {
-    key: "/user/review-routes/client-details",
-    relativePath: "client-details",
-    stepTitle: "Client Details",
-    stepIcon: "👤",
-    path: "/user/review-routes/client-details",
-    ...withSpacing({
-      icon: "👤",
-      label: "Client Details",
-      fontSize: "12px",
-      color: "#6b7280",
-    }),
-    component: <ReviewClientDetails />,
-    condition: (q) => true,
-  },
-  {
     key: "/user/review-routes/whats-changed",
     relativePath: "whats-changed",
     stepTitle: "What's Changed",
@@ -1275,6 +1260,22 @@ export const reviewRoutes = [
     component: <WhatsChanged />,
     condition: (q) => true,
   },
+  {
+    key: "/user/review-routes/client-details",
+    relativePath: "client-details",
+    stepTitle: "Client Details",
+    stepIcon: "👤",
+    path: "/user/review-routes/client-details",
+    ...withSpacing({
+      icon: "👤",
+      label: "Client Details",
+      fontSize: "12px",
+      color: "#6b7280",
+    }),
+    component: <ReviewClientDetails />,
+    condition: (q) => true,
+  },
+
   {
     key: "/user/review-routes/super-projection",
     relativePath: "super-projection",

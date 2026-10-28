@@ -1,7 +1,7 @@
 import { CheckOutlined } from "@ant-design/icons";
-import { Button, Col, Divider, Form, message, Row, Space, Spin, Typography } from "antd";
+import { Button, message, Space, Spin, Typography } from "antd";
 import { useAtom, useAtomValue } from "jotai";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { addReviewSectionsModalOpen, clientReviewQuestion, SelectedReview, SelectedReviewAllData } from "../../store/authState";
 import {
@@ -122,17 +122,14 @@ function ReviewStepper({ pathname, visibleRoutes, onNavigate }) {
 
 
 const ReviewStepsLayout = () => {
-    const [form] = Form.useForm();
     const location = useLocation();
     const navigate = useNavigate();
-    const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useAtom(addReviewSectionsModalOpen);
+    const [, setIsAddSectionModalOpen] = useAtom(addReviewSectionsModalOpen);
     const [reviewQuestion, setReviewQuestion] = useAtom(clientReviewQuestion);
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData)
 
-
     const [loading, setLoading] = useState(false)
     const selectedReview = useAtomValue(SelectedReview);
-    const formValues = form.getFieldsValue();
     let { get } = useApi();
 
     // 1. Get dynamically filtered stepper routes based on condition functions
@@ -161,13 +158,8 @@ const ReviewStepsLayout = () => {
         navigate(key);
     };
 
-    useEffect(() => {
-        if (selectedReview?._id) {
-            fetchFullData();
-        }
-    }, [selectedReview])
-
-    const fetchFullData = async () => {
+    /* eslint-disable react-hooks/exhaustive-deps -- stable setters and get are intentionally omitted */
+    const fetchFullData = useCallback(async () => {
         try {
             setLoading(true);
             let res = await get('reviewScenario/fullDetails/' + selectedReview?._id);
@@ -186,7 +178,40 @@ const ReviewStepsLayout = () => {
         finally {
             setLoading(false);
         }
-    }
+    }, [selectedReview?._id]);
+    /* eslint-enable react-hooks/exhaustive-deps */
+
+    useEffect(() => {
+        if (selectedReview?._id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchFullData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedReview?._id])
+
+
+    // Returns the navigable routes (those that appear in the stepper)
+    const navigableRoutes = useMemo(
+        () => stepperRoutes.filter((r) => !r.noReviewLayout),
+        [stepperRoutes]
+    );
+
+    // Index of the current route among navigable routes
+    const currentRouteIndex = useMemo(
+        () => navigableRoutes.findIndex((r) => pathMatchesReviewRoute(location.pathname, r)),
+        [navigableRoutes, location.pathname]
+    );
+
+    const ClickBack = () => {
+        if (currentRouteIndex <= 0) return;
+        navigate(navigableRoutes[currentRouteIndex - 1].key);
+    };
+
+    const ClickNext = () => {
+        if (currentRouteIndex < 0 || currentRouteIndex >= navigableRoutes.length - 1) return;
+        navigate(navigableRoutes[currentRouteIndex + 1].key);
+    };
+
 
 
     return (
@@ -244,8 +269,8 @@ const ReviewStepsLayout = () => {
                         onNavigate={handleStepNavigate}
                     />
                 </>
-
             )}
+
             {loading ?
                 <div style={{
                     minHeight: "70vh",
@@ -261,6 +286,21 @@ const ReviewStepsLayout = () => {
                     <Outlet />
                 </>
             }
+
+            {!["/user/review-routes/whats-changed", "/user/review-routes/scenarios"].includes(location.pathname) &&
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "65px" }}>
+                    <Button onClick={ClickBack} disabled={currentRouteIndex <= 0}>← Back</Button>
+                    <Button
+                        onClick={ClickNext}
+                        type='primary'
+                        htmlType='next'
+                        key='next'
+                        disabled={currentRouteIndex < 0 || currentRouteIndex >= navigableRoutes.length - 1}
+                    > Next →
+                    </Button>
+                </div>}
+
+
 
         </div>
     );

@@ -436,11 +436,11 @@ const LoanSimulator = () => {
                                     <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} interval="preserveStartEnd" />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} tickFormatter={(value) => value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${Math.round(value / 1000)}K`} />
                                     <Tooltip formatter={(value) => formatCurrency(value)} />
-                                    {seriesVisibility.withExtraOffset && (
-                                        <Bar dataKey="withExtraOffset" name="With Extra / Offset" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={16} />
-                                    )}
                                     {seriesVisibility.minimumOnly && (
                                         <Bar dataKey="minimumOnly" name="Minimum Only" fill="#2b3b5c" radius={[3, 3, 0, 0]} maxBarSize={16} />
+                                    )}
+                                    {seriesVisibility.withExtraOffset && (
+                                        <Bar dataKey="withExtraOffset" name="With Extra / Offset" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={16} />
                                     )}
                                 </BarChart>
                             </ResponsiveContainer>
@@ -449,10 +449,10 @@ const LoanSimulator = () => {
                             {metrics?.chartSummary}
                         </Text>
                         <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-                            <Button size="small" onClick={() => toggleSeries("withExtraOffset")} style={{ color: seriesVisibility.withExtraOffset ? "#16a34a" : "#94a3b8", borderColor: "#22c55e" }}>
+                            <Button size="small" onClick={() => toggleSeries("withExtraOffset")} style={{ borderRadius: 16, borderColor: "#22c55e", color: seriesVisibility.withExtraOffset ? "#16a34a" : "#94a3b8", fontWeight: 600 }}>
                                 ● With Extra / Offset
                             </Button>
-                            <Button size="small" onClick={() => toggleSeries("minimumOnly")} style={{ color: seriesVisibility.minimumOnly ? "#2b3b5c" : "#94a3b8", borderColor: "#2b3b5c" }}>
+                            <Button size="small" onClick={() => toggleSeries("minimumOnly")} style={{ borderRadius: 16, borderColor: "#2b3b5c", color: seriesVisibility.minimumOnly ? "#2b3b5c" : "#94a3b8", fontWeight: 600 }}>
                                 ● Minimum Only
                             </Button>
                         </div>

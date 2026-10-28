@@ -199,7 +199,8 @@ const Scenarios = () => {
                 setSelectedReviewAllData(res.data);
                 setSelectedReview(row);
                 setReviewQuestion(res?.data?.reviewGoalQuestions || {});
-                Nav("/user/review-routes/client-details");
+                // Nav("/user/review-routes/client-details");
+                Nav("/user/review-routes/whats-changed");
             }
         } catch (error) {
             message.error(
