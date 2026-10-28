@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, Button, Segmented, Row, Col, Typography, Space } from 'antd';
 import { BarChart, Bar, Cell, LabelList, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 import { useAtomValue } from 'jotai';
@@ -153,92 +153,163 @@ const ReviewsTaxPlanning = () => {
 
     const headingStyle = { fontFamily: "Georgia,serif" };
     const renderTitleBlock = useTitleBlock({ titleStyle: headingStyle });
-    const analysisContent = (() => {
-        const preferredName = String(getReviewName(selectedProfile) || '').trim();
-        const name = preferredName &&
-            !['client', 'partner'].includes(preferredName.toLowerCase())
-            ? preferredName.split(/\s+/)[0]
-            : selectedProfile === 'partner' ? 'your partner' : 'the client';
-        const scenarios = [
-            { label: 'Current', result: current },
-            { label: 'Proposed', result: proposed },
-        ].filter(({ result }) => result);
-        const subtitle = `💰 Tax Results for ${name}`;
 
-        if (!scenarios.length) {
-            const prompt = 'Enter tax information for Current or Proposed to generate the tax analysis.';
-            return { subtitle, metrics: [], analysis: [prompt], readAloud: prompt };
-        }
+    // const analysisContent = (() => {
+    //     const preferredName = String(getReviewName(selectedProfile) || '').trim();
+    //     const name = preferredName &&
+    //         !['client', 'partner'].includes(preferredName.toLowerCase())
+    //         ? preferredName.split(/\s+/)[0]
+    //         : selectedProfile === 'partner' ? 'your partner' : 'the client';
+    //     const scenarios = [
+    //         { label: 'Current', result: current },
+    //         { label: 'Proposed', result: proposed },
+    //     ].filter(({ result }) => result);
+    //     const subtitle = `💰 Tax Results for ${name}`;
 
-        const scenarioSummary = ({ label, result }) => {
-            const effectiveRate = result.assessable > 0
-                ? (result.taxBasicPayable / result.assessable) * 100
-                : 0;
-            const netTax = result.netPayable;
-            const settlement = netTax < 0
-                ? `Refund ${formatTaxMoney(Math.abs(netTax))}`
-                : netTax > 0
-                    ? `Balance owing ${formatTaxMoney(netTax)}`
-                    : 'No balance owing or refund';
-            return {
-                effectiveRate,
-                label,
-                result,
-                settlement,
-                text: `${label}: Taxable income ${formatTaxMoney(result.taxable)} · Tax + Medicare ${formatTaxMoney(result.taxBasicPayable)} · Effective ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}% · ${settlement}`,
-            };
+    //     if (!scenarios.length) {
+    //         const prompt = 'Enter tax information for Current or Proposed to generate the tax analysis.';
+    //         return { subtitle, metrics: [], analysis: [prompt], readAloud: prompt };
+    //     }
+
+    //     const scenarioSummary = ({ label, result }) => {
+    //         const effectiveRate = result.assessable > 0
+    //             ? (result.taxBasicPayable / result.assessable) * 100
+    //             : 0;
+    //         const netTax = result.netPayable;
+    //         const settlement = netTax < 0
+    //             ? `Refund ${formatTaxMoney(Math.abs(netTax))}`
+    //             : netTax > 0
+    //                 ? `Balance owing ${formatTaxMoney(netTax)}`
+    //                 : 'No balance owing or refund';
+    //         return {
+    //             effectiveRate,
+    //             label,
+    //             result,
+    //             settlement,
+    //             text: `${label}: Taxable income ${formatTaxMoney(result.taxable)} · Tax + Medicare ${formatTaxMoney(result.taxBasicPayable)} · Effective ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}% · ${settlement}`,
+    //         };
+    //     };
+    //     const summaries = scenarios.map(scenarioSummary);
+    //     const analysis = summaries.map(({ text }) => text);
+    //     const speech = [
+    //         `${name}, here's your tax analysis:`,
+    //         ...summaries.map(({ label, result, effectiveRate }) => {
+    //             const settlement = result.netPayable < 0
+    //                 ? `You may be due a refund of approximately ${formatTaxSpeechMoney(Math.abs(result.netPayable))}.`
+    //                 : result.netPayable > 0
+    //                     ? `You may have a balance owing of approximately ${formatTaxSpeechMoney(result.netPayable)}.`
+    //                     : 'There is no estimated balance owing or refund.';
+    //             return `${label} scenario: your taxable income is ${formatTaxSpeechMoney(result.taxable)}, with tax and Medicare of approximately ${formatTaxSpeechMoney(result.taxBasicPayable)} and an effective rate of ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%. ${settlement}`;
+    //         }),
+    //     ];
+
+    //     if (current && proposed) {
+    //         const savings = current.netPayable - proposed.netPayable;
+    //         const comparison = Math.abs(savings) < 0.5
+    //             ? 'The proposed scenario makes no material change to the estimated total tax payable or refund.'
+    //             : savings > 0
+    //                 ? `The proposed scenario reduces estimated total tax payable by ${formatTaxMoney(savings)} compared with Current.`
+    //                 : `The proposed scenario increases estimated total tax payable by ${formatTaxMoney(Math.abs(savings))} compared with Current.`;
+    //         analysis.push(
+    //             `<strong style="color:${savings >= 0 ? '#16a34a' : '#dc2626'}">${comparison}</strong>`,
+    //         );
+    //         speech.push(comparison);
+    //     }
+
+    //     const proposedSummary = summaries.find(({ label }) => label === 'Proposed') || summaries[0];
+    //     const taxSavings = current && proposed
+    //         ? current.netPayable - proposed.netPayable
+    //         : null;
+    //     const metrics = [
+    //         { label: 'Taxable income', value: formatTaxMoney(proposedSummary.result.taxable) },
+    //         { label: 'Tax + Medicare', value: formatTaxMoney(proposedSummary.result.taxBasicPayable) },
+    //         { label: 'Effective rate', value: `${proposedSummary.effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%` },
+    //         ...(taxSavings === null
+    //             ? []
+    //             : [{
+    //                 label: taxSavings >= 0 ? 'Tax saved' : 'Additional tax',
+    //                 value: formatTaxMoney(Math.abs(taxSavings)),
+    //                 color: taxSavings >= 0 ? '#16a34a' : '#dc2626',
+    //             }]),
+    //     ];
+
+    //     return {
+    //         subtitle,
+    //         metrics,
+    //         analysis,
+    //         readAloud: `${speech.join(' ')} Tax figures are estimates based on current Australian tax rules.`,
+    //     };
+    // })();
+
+    const analysisContent = useMemo(() => {
+        const getProfileData = (profileKey) => {
+            const profileData = selectedReviewAllData?.taxPlanningDetails?.[profileKey];
+            return calculateTaxPlanningProfile(profileData, selectedReviewAllData?.rateReference?.taxRatesSchema);
         };
-        const summaries = scenarios.map(scenarioSummary);
-        const analysis = summaries.map(({ text }) => text);
-        const speech = [
-            `${name}, here's your tax analysis:`,
-            ...summaries.map(({ label, result, effectiveRate }) => {
-                const settlement = result.netPayable < 0
-                    ? `You may be due a refund of approximately ${formatTaxSpeechMoney(Math.abs(result.netPayable))}.`
-                    : result.netPayable > 0
-                        ? `You may have a balance owing of approximately ${formatTaxSpeechMoney(result.netPayable)}.`
-                        : 'There is no estimated balance owing or refund.';
-                return `${label} scenario: your taxable income is ${formatTaxSpeechMoney(result.taxable)}, with tax and Medicare of approximately ${formatTaxSpeechMoney(result.taxBasicPayable)} and an effective rate of ${effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%. ${settlement}`;
-            }),
+
+        const clientCalc = getProfileData('client');
+        const partnerCalc = getProfileData('partner');
+        const hasPartner = Boolean(selectedReviewAllData?.personalDetails?.partner);
+
+        const getPreferredName = (profileKey) => {
+            const name = String(getReviewName(profileKey) || '').trim();
+            return name && !['client', 'partner'].includes(name.toLowerCase())
+                ? name.split(/\s+/)[0]
+                : profileKey === 'partner' ? 'Partner' : 'Client';
+        };
+
+        const clientName = getPreferredName('client');
+        const partnerName = getPreferredName('partner');
+
+        const clientCurrentTax = clientCalc.current?.netPayable ?? 0;
+        const clientProposedTax = clientCalc.proposed?.netPayable ?? 0;
+        const clientSavings = clientCalc.current && clientCalc.proposed ? clientCurrentTax - clientProposedTax : 0;
+
+        const partnerCurrentTax = partnerCalc.current?.netPayable ?? 0;
+        const partnerProposedTax = partnerCalc.proposed?.netPayable ?? 0;
+        const partnerSavings = partnerCalc.current && partnerCalc.proposed ? partnerCurrentTax - partnerProposedTax : 0;
+
+        const analysis = [
+            `<strong>${clientName}</strong>, your current net tax payable is <strong>${formatTaxMoney(clientCurrentTax)}</strong> and proposed is <strong>${formatTaxMoney(clientProposedTax)}</strong> (Tax saved: <strong>${formatTaxMoney(clientSavings)}</strong>).`,
         ];
 
-        if (current && proposed) {
-            const savings = current.netPayable - proposed.netPayable;
-            const comparison = Math.abs(savings) < 0.5
-                ? 'The proposed scenario makes no material change to the estimated total tax payable or refund.'
-                : savings > 0
-                    ? `The proposed scenario reduces estimated total tax payable by ${formatTaxMoney(savings)} compared with Current.`
-                    : `The proposed scenario increases estimated total tax payable by ${formatTaxMoney(Math.abs(savings))} compared with Current.`;
+        const speech = [
+            `${clientName}, your current net tax payable is ${formatTaxSpeechMoney(clientCurrentTax)}, with a proposed tax of ${formatTaxSpeechMoney(clientProposedTax)}.`,
+        ];
+
+        if (hasPartner) {
             analysis.push(
-                `<strong style="color:${savings >= 0 ? '#16a34a' : '#dc2626'}">${comparison}</strong>`,
+                `<strong>${partnerName}</strong>, your current net tax payable is <strong>${formatTaxMoney(partnerCurrentTax)}</strong> and proposed is <strong>${formatTaxMoney(partnerProposedTax)}</strong> (Tax saved: <strong>${formatTaxMoney(partnerSavings)}</strong>).`
             );
-            speech.push(comparison);
+            speech.push(
+                `${partnerName}, your current net tax payable is ${formatTaxSpeechMoney(partnerCurrentTax)}, with a proposed tax of ${formatTaxSpeechMoney(partnerProposedTax)}.`
+            );
         }
 
-        const proposedSummary = summaries.find(({ label }) => label === 'Proposed') || summaries[0];
-        const taxSavings = current && proposed
-            ? current.netPayable - proposed.netPayable
-            : null;
         const metrics = [
-            { label: 'Taxable income', value: formatTaxMoney(proposedSummary.result.taxable) },
-            { label: 'Tax + Medicare', value: formatTaxMoney(proposedSummary.result.taxBasicPayable) },
-            { label: 'Effective rate', value: `${proposedSummary.effectiveRate.toFixed(2).replace(/\.?0+$/, '')}%` },
-            ...(taxSavings === null
-                ? []
-                : [{
-                    label: taxSavings >= 0 ? 'Tax saved' : 'Additional tax',
-                    value: formatTaxMoney(Math.abs(taxSavings)),
-                    color: taxSavings >= 0 ? '#16a34a' : '#dc2626',
-                }]),
+            { label: `${clientName} Proposed Tax`, value: formatTaxMoney(clientProposedTax) },
+            {
+                label: `${clientName} Tax Saved`,
+                value: formatTaxMoney(Math.abs(clientSavings)),
+                color: clientSavings >= 0 ? '#16a34a' : '#dc2626'
+            },
+            ...(hasPartner ? [
+                { label: `${partnerName} Proposed Tax`, value: formatTaxMoney(partnerProposedTax) },
+                {
+                    label: `${partnerName} Tax Saved`,
+                    value: formatTaxMoney(Math.abs(partnerSavings)),
+                    color: partnerSavings >= 0 ? '#16a34a' : '#dc2626'
+                }
+            ] : [])
         ];
 
         return {
-            subtitle,
+            subtitle: `💰 Combined Tax Planning Analysis`,
             metrics,
             analysis,
             readAloud: `${speech.join(' ')} Tax figures are estimates based on current Australian tax rules.`,
         };
-    })();
+    }, [selectedReviewAllData, getReviewName]);
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>

@@ -253,100 +253,177 @@ const ScenariosSuperProjection = () => {
     const currentMetrics = calculatedData.metrics;
     const currentChartData = calculatedData.chart;
     const currentTableData = calculatedData.table;
-    const analysisContent = useMemo(() => {
-        const {
-            finalBalance,
-            balanceWithout,
-            annualReturn,
-            salarySacrifice,
-            years,
-            currentAge,
-        } = calculatedData.analysisInputs;
-        const preferredName = getReviewName(selectedProfile).trim();
-        const profileName = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
-            ? preferredName.split(/\s+/)[0]
-            : selectedProfile === "partner" ? "your partner" : "the client";
-        const uplift = finalBalance - balanceWithout;
-        const upliftPct = balanceWithout > 0 ? (uplift / balanceWithout) * 100 : 0;
-        const endAge = currentAge > 0 ? currentAge + years : null;
-        const safeName = profileName.replace(/[&<>"']/g, (character) => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-        })[character]);
-        const formatAnalysisMoney = (value) => `$${Math.round(Number(value) || 0).toLocaleString("en-AU")}`;
-        const formatAnalysisPercent = (value) =>
-            `${(Number(value) || 0).toFixed(2).replace(/\.?0+$/, "")}%`;
 
-        const formatSpeechMoney = (value) => {
-            const rounded = Math.round(Number(value) || 0);
-            if (rounded === 0) return "zero dollars";
-            const absolute = Math.abs(rounded);
-            const sign = rounded < 0 ? "negative " : "";
-            if (absolute >= 1000000) {
-                const millions = Math.round((absolute / 1000000) * 10) / 10;
-                return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
-            }
-            if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
-            if (absolute >= 10000) {
-                const thousands = Math.round(absolute / 500) * 500 / 1000;
-                return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
-            }
-            if (absolute >= 1000) {
-                const thousands = Math.round(absolute / 100) * 100 / 1000;
-                return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
-            }
-            return `${sign}${absolute} dollars`;
+    // const analysisContent = useMemo(() => {
+    //     const {
+    //         finalBalance,
+    //         balanceWithout,
+    //         annualReturn,
+    //         salarySacrifice,
+    //         years,
+    //         currentAge,
+    //     } = calculatedData.analysisInputs;
+    //     const preferredName = getReviewName(selectedProfile).trim();
+    //     const profileName = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
+    //         ? preferredName.split(/\s+/)[0]
+    //         : selectedProfile === "partner" ? "your partner" : "the client";
+    //     const uplift = finalBalance - balanceWithout;
+    //     const upliftPct = balanceWithout > 0 ? (uplift / balanceWithout) * 100 : 0;
+    //     const endAge = currentAge > 0 ? currentAge + years : null;
+    //     const safeName = profileName.replace(/[&<>"']/g, (character) => ({
+    //         "&": "&amp;",
+    //         "<": "&lt;",
+    //         ">": "&gt;",
+    //         '"': "&quot;",
+    //         "'": "&#39;",
+    //     })[character]);
+    //     const formatAnalysisMoney = (value) => `$${Math.round(Number(value) || 0).toLocaleString("en-AU")}`;
+    //     const formatAnalysisPercent = (value) =>
+    //         `${(Number(value) || 0).toFixed(2).replace(/\.?0+$/, "")}%`;
+
+    //     const formatSpeechMoney = (value) => {
+    //         const rounded = Math.round(Number(value) || 0);
+    //         if (rounded === 0) return "zero dollars";
+    //         const absolute = Math.abs(rounded);
+    //         const sign = rounded < 0 ? "negative " : "";
+    //         if (absolute >= 1000000) {
+    //             const millions = Math.round((absolute / 1000000) * 10) / 10;
+    //             return `${sign}${Number.isInteger(millions) ? millions : millions.toFixed(1)} million dollars`;
+    //         }
+    //         if (absolute >= 100000) return `${sign}${Math.round(absolute / 1000)} thousand dollars`;
+    //         if (absolute >= 10000) {
+    //             const thousands = Math.round(absolute / 500) * 500 / 1000;
+    //             return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    //         }
+    //         if (absolute >= 1000) {
+    //             const thousands = Math.round(absolute / 100) * 100 / 1000;
+    //             return `${sign}${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)} thousand dollars`;
+    //         }
+    //         return `${sign}${absolute} dollars`;
+    //     };
+
+    //     // --- NEW CALCULATIONS FOR RETIREMENT INCOME ---
+    //     const requiredRetirementIncome = finalBalance * 0.04; // 4% rule
+    //     // ----------------------------------------------
+
+    //     const analysis = [
+    //         `<strong>${safeName}</strong>, your projected super balance after ${years} years is <strong>${formatAnalysisMoney(finalBalance)}</strong>${endAge ? ` (at age ${endAge})` : ""}`,
+    //     ];
+    //     const speech = [`${profileName}, based on our projections:`];
+    //     speech.push(`After ${years} years, your projected super balance is ${formatSpeechMoney(finalBalance)}${endAge ? `, reaching that at age ${endAge}` : ""}.`);
+
+    //     if (salarySacrifice > 0 && uplift > 100) {
+    //         analysis.push(
+    //             `Your salary sacrifice strategy adds <strong>${formatAnalysisMoney(uplift)}</strong> over no strategy (<strong>${upliftPct.toFixed(1)}% uplift</strong>)`,
+    //         );
+    //         speech.push(
+    //             `Your salary sacrifice strategy adds an extra ${formatSpeechMoney(uplift)} compared to no sacrifice, a ${upliftPct.toFixed(1)} percent uplift.`,
+    //         );
+    //     }
+
+    //     // --- NEW BULLET POINT ADDED HERE ---
+    //     analysis.push(
+    //         `Your required retirement income: <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> - Sustainable (4% rule) <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> — <span style="color: #dc2626;">⚠️ Shortfall</span>`
+    //     );
+    //     speech.push(
+    //         `Your required retirement income is ${formatSpeechMoney(requiredRetirementIncome)} per year. Under the 4 percent rule, this is sustainable, but results in a shortfall.`
+    //     );
+    //     // -----------------------------------
+
+    //     analysis.push(
+    //         `Assumptions: ${formatAnalysisPercent(annualReturn)} annual return${salarySacrifice ? `, ${formatAnalysisMoney(salarySacrifice)} salary sacrifice per year` : ""}`,
+    //     );
+    //     speech.push("Please note these are projections only based on the assumptions provided, and are not guaranteed. Actual outcomes may differ.");
+
+    //     return {
+    //         subtitle: `💼 Super Results for ${profileName}`,
+    //         metrics: [
+    //             { label: "Final balance", value: formatAnalysisMoney(finalBalance) },
+    //             { label: "Years projected", value: String(years) },
+    //             ...(salarySacrifice > 0
+    //                 ? [{ label: "Strategy uplift", value: formatAnalysisMoney(uplift), color: "#16a34a" }]
+    //                 : []),
+    //         ],
+    //         analysis,
+    //         readAloud: speech.join(" "),
+    //     };
+    // }, [calculatedData, getReviewName, selectedProfile]);
+
+    const analysisContent = useMemo(() => {
+        // Helper calculation runner for any profile
+        const getProfileData = (profileKey) => {
+            const currentData = selectedReviewAllData?.superannuationDetails?.[profileKey] || {};
+            const personDetails = profileKey === 'partner'
+                ? selectedReviewAllData?.personalDetails?.partner
+                : selectedReviewAllData?.personalDetails?.client;
+            const dob = personDetails?.DOB || personDetails?.dob;
+            const currentAge = getAgeFromDob(dob);
+            return calculateProjections(currentData, currentAge);
         };
 
-        // --- NEW CALCULATIONS FOR RETIREMENT INCOME ---
-        const requiredRetirementIncome = finalBalance * 0.04; // 4% rule
-        // ----------------------------------------------
+        const clientCalc = getProfileData('client');
+        const partnerCalc = getProfileData('partner');
+        const hasPartner = Boolean(selectedReviewAllData?.personalDetails?.partner);
+
+        const clientName = getReviewName('client').trim();
+        const safeClientName = clientName && !["client", "partner"].includes(clientName.toLowerCase())
+            ? clientName.split(/\s+/)[0]
+            : "Client";
+
+        const partnerName = getReviewName('partner').trim();
+        const safePartnerName = partnerName && !["client", "partner"].includes(partnerName.toLowerCase())
+            ? partnerName.split(/\s+/)[0]
+            : "Partner";
+
+        const formatAnalysisMoney = (value) => `$${Math.round(Number(value) || 0).toLocaleString("en-AU")}`;
+        const formatAnalysisPercent = (value) => `${(Number(value) || 0).toFixed(2).replace(/\.?0+$/, "")}%`;
+
+        // Client metrics
+        const clientFinal = clientCalc.analysisInputs.finalBalance;
+        const clientYears = clientCalc.analysisInputs.years;
+        const clientUplift = clientFinal - clientCalc.analysisInputs.balanceWithout;
+        const clientReqInc = clientFinal * 0.04;
+
+        // Partner metrics
+        const partnerFinal = partnerCalc.analysisInputs.finalBalance;
+        const partnerYears = partnerCalc.analysisInputs.years;
+        const partnerUplift = partnerFinal - partnerCalc.analysisInputs.balanceWithout;
+        const partnerReqInc = partnerFinal * 0.04;
 
         const analysis = [
-            `<strong>${safeName}</strong>, your projected super balance after ${years} years is <strong>${formatAnalysisMoney(finalBalance)}</strong>${endAge ? ` (at age ${endAge})` : ""}`,
+            `<strong>${safeClientName}</strong>, your projected super balance after ${clientYears} years is <strong>${formatAnalysisMoney(clientFinal)}</strong>`,
+            `Your required retirement income: <strong>${formatAnalysisMoney(clientReqInc)}/yr</strong> - Sustainable (4% rule) <strong>${formatAnalysisMoney(clientReqInc)}/yr</strong> — <span style="color: #dc2626;">⚠️ Shortfall</span>`,
         ];
-        const speech = [`${profileName}, based on our projections:`];
-        speech.push(`After ${years} years, your projected super balance is ${formatSpeechMoney(finalBalance)}${endAge ? `, reaching that at age ${endAge}` : ""}.`);
 
-        if (salarySacrifice > 0 && uplift > 100) {
+        const speech = [
+            `${safeClientName}, after ${clientYears} years your projected super balance is ${formatAnalysisMoney(clientFinal)}.`,
+        ];
+
+        if (hasPartner) {
             analysis.push(
-                `Your salary sacrifice strategy adds <strong>${formatAnalysisMoney(uplift)}</strong> over no strategy (<strong>${upliftPct.toFixed(1)}% uplift</strong>)`,
+                `<strong>${safePartnerName}</strong>, your projected super balance after ${partnerYears} years is <strong>${formatAnalysisMoney(partnerFinal)}</strong>`,
+                `Partner required retirement income: <strong>${formatAnalysisMoney(partnerReqInc)}/yr</strong> - Sustainable (4% rule) <strong>${formatAnalysisMoney(partnerReqInc)}/yr</strong> — <span style="color: #dc2626;">⚠️ Shortfall</span>`
             );
             speech.push(
-                `Your salary sacrifice strategy adds an extra ${formatSpeechMoney(uplift)} compared to no sacrifice, a ${upliftPct.toFixed(1)} percent uplift.`,
+                `${safePartnerName}, after ${partnerYears} years your projected super balance is ${formatAnalysisMoney(partnerFinal)}.`
             );
         }
 
-        // --- NEW BULLET POINT ADDED HERE ---
-        analysis.push(
-            `Your required retirement income: <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> - Sustainable (4% rule) <strong>${formatAnalysisMoney(requiredRetirementIncome)}/yr</strong> — <span style="color: #dc2626;">⚠️ Shortfall</span>`
-        );
-        speech.push(
-            `Your required retirement income is ${formatSpeechMoney(requiredRetirementIncome)} per year. Under the 4 percent rule, this is sustainable, but results in a shortfall.`
-        );
-        // -----------------------------------
-
-        analysis.push(
-            `Assumptions: ${formatAnalysisPercent(annualReturn)} annual return${salarySacrifice ? `, ${formatAnalysisMoney(salarySacrifice)} salary sacrifice per year` : ""}`,
-        );
-        speech.push("Please note these are projections only based on the assumptions provided, and are not guaranteed. Actual outcomes may differ.");
-
         return {
-            subtitle: `💼 Super Results for ${profileName}`,
+            subtitle: `💼 Combined Superannuation Analysis`,
             metrics: [
-                { label: "Final balance", value: formatAnalysisMoney(finalBalance) },
-                { label: "Years projected", value: String(years) },
-                ...(salarySacrifice > 0
-                    ? [{ label: "Strategy uplift", value: formatAnalysisMoney(uplift), color: "#16a34a" }]
-                    : []),
+                { label: `${safeClientName} Balance`, value: formatAnalysisMoney(clientFinal) },
+                { label: `${safeClientName} Uplift`, value: formatAnalysisMoney(clientUplift), color: "#16a34a" },
+                ...(hasPartner ? [
+                    { label: `${safePartnerName} Balance`, value: formatAnalysisMoney(partnerFinal) },
+                    { label: `${safePartnerName} Uplift`, value: formatAnalysisMoney(partnerUplift), color: "#16a34a" }
+                ] : [])
             ],
             analysis,
             readAloud: speech.join(" "),
         };
-    }, [calculatedData, getReviewName, selectedProfile]);
+    }, [selectedReviewAllData, getReviewName]);
+
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>

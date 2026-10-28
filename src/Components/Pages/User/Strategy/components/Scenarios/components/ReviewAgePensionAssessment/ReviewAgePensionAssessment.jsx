@@ -367,124 +367,180 @@ const ReviewAgePensionAssessment = () => {
         actualPension: true,
         maxPension: true,
     });
+
+    // const analysisContent = useMemo(() => {
+    //     const reviewData = selectedReviewAllData || {};
+    //     const firstName = (role) => {
+    //         const preferredName = reviewData.personalDetails?.[role]?.preferredName || getReviewName(role);
+    //         const name = String(preferredName || '').trim();
+    //         if (!name || ['client', 'partner'].includes(name.toLowerCase())) {
+    //             return role === 'partner' ? 'your partner' : 'you';
+    //         }
+    //         return name.split(/\s+/)[0];
+    //     };
+    //     const clientName = firstName('client');
+    //     const partnerName = firstName('partner');
+    //     const who = assessment.isCouple ? `${clientName} and ${partnerName}` : clientName;
+    //     const pronoun = assessment.isCouple ? 'you both' : 'you';
+    //     const status = assessment.isNoPension
+    //         ? 'No pension entitlement'
+    //         : assessment.isFullPension ? 'Full Age Pension' : 'Part Age Pension';
+    //     const testName = assessment.determiningTest === 'none'
+    //         ? 'means tests'
+    //         : `${assessment.determiningTest} test`;
+    //     const analysis = [];
+    //     const speech = [`${who}, based on the Age Pension assessment:`];
+
+    //     if (assessment.isNoPension) {
+    //         const ageIneligible = assessment.eligibleCount === 0;
+    //         analysis.push(
+    //             `<strong>${who}</strong> — <strong>${status}</strong>${ageIneligible
+    //                 ? ' because the Age Pension age requirement has not been met.'
+    //                 : ` based on the ${testName}.`}`,
+    //         );
+    //         speech.push(ageIneligible
+    //             ? `The Age Pension age requirement has not been met, so ${pronoun} are not currently entitled to the Age Pension.`
+    //             : `Unfortunately, based on the ${testName}, ${pronoun} are not currently entitled to the Age Pension.`);
+    //     } else {
+    //         analysis.push(
+    //             `<strong>${who}</strong> — <strong>${status}</strong>${assessment.isFullPension
+    //                 ? '.'
+    //                 : `, limited by the ${testName}.`}`,
+    //         );
+    //         speech.push(assessment.isFullPension
+    //             ? `Good news — ${pronoun} qualify for the full Age Pension.`
+    //             : `${pronoun.charAt(0).toUpperCase()}${pronoun.slice(1)} qualify for a part Age Pension, limited by the ${testName}.`);
+    //         analysis.push(
+    //             `Total pension: <strong>${formatCurrency(assessment.combinedPension)} per year</strong> (<strong>${formatCurrency(assessment.combinedPension / 26)} per fortnight</strong>).`,
+    //         );
+    //         speech.push(
+    //             `Your total pension is ${formatSpeechCurrency(assessment.combinedPension)} per year, or ${formatSpeechCurrency(assessment.combinedPension / 26)} per fortnight.`,
+    //         );
+    //     }
+
+    //     analysis.push(`Your total assessable assets: <strong>${formatCurrency(assessment.totalAssets)}</strong>.`);
+    //     analysis.push(`Your assessable income: <strong>${formatCurrency(assessment.totalAssessableIncome)}</strong> per year.`);
+
+    //     if (!assessment.isNoPension && assessment.pensionLost > 0) {
+    //         analysis.push(
+    //             `Reduced from the full rate by <strong>${formatCurrency(assessment.pensionLost)} per year</strong> due to the ${testName}.`,
+    //         );
+    //         speech.push(
+    //             `This is ${formatSpeechCurrency(assessment.pensionLost)} less than the full rate, due to the ${testName}.`,
+    //         );
+    //     }
+
+    //     // --- NEW LIHCC LOGIC ADDED HERE ---
+    //     const rateReference = RateReferenceObject; // Assuming this is imported or available
+    //     const lihccRates = rateReference?.lowIncomeHealthCareCard;
+
+    //     const baseWeeklyIncomeLimit = amount(
+    //         assessment.isCouple
+    //             ? (lihccRates?.partnerCombinedPerWeek ?? AGE_PENSION_RATES.lihccCoupleWeekly)
+    //             : (lihccRates?.clientPerWeek ?? AGE_PENSION_RATES.lihccSingleWeekly),
+    //     );
+    //     const hasConfiguredLihccLimit = baseWeeklyIncomeLimit > 0;
+    //     const dependentChildren = (
+    //         reviewData?.personalDetails?.children?.arrayOfChildren || []
+    //     ).filter((child) =>
+    //         ["yes", "true"].includes(String(child?.depenantChild).toLowerCase()),
+    //     ).length;
+    //     const dependentAllowancePerWeek = amount(
+    //         lihccRates?.perDependentChildPerWeek ?? AGE_PENSION_RATES.lihccPerChildWeekly
+    //     );
+    //     const holderUplift = assessment.lihccExistingHolder ? 1.25 : 1;
+    //     const weeklyIncomeLimit =
+    //         (baseWeeklyIncomeLimit + dependentChildren * dependentAllowancePerWeek) *
+    //         holderUplift;
+    //     const eightWeekIncomeLimit = weeklyIncomeLimit * 8;
+    //     const estimatedEightWeekIncome = assessment.totalAssessableIncome * (8 / 52);
+    //     const lihccEligible =
+    //         hasConfiguredLihccLimit && estimatedEightWeekIncome <= eightWeekIncomeLimit;
+
+    //     if (hasConfiguredLihccLimit && !lihccEligible) {
+    //         analysis.push(
+    //             `<span style="color: #dc2626;">❌ Income is also above the Low-Income Health Care Card threshold</span>`
+    //         );
+    //         speech.push("Additionally, your income is above the Low-Income Health Care Card threshold.");
+    //     }
+    //     // ----------------------------------
+
+    //     speech.push('This is an estimate based on the information provided, not a Centrelink determination.');
+
+    //     return {
+    //         subtitle: `🏛️ Age Pension Results for ${who}`,
+    //         metrics: [
+    //             {
+    //                 label: 'Entitlement',
+    //                 value: status,
+    //                 color: assessment.isNoPension
+    //                     ? '#dc2626'
+    //                     : assessment.isFullPension ? '#16a34a' : '#d97706',
+    //             },
+    //             ...(!assessment.isNoPension
+    //                 ? [
+    //                     { label: 'Per year', value: formatCurrency(assessment.combinedPension) },
+    //                     { label: 'Per fortnight', value: formatCurrency(assessment.combinedPension / 26) },
+    //                 ]
+    //                 : []),
+    //         ],
+    //         analysis,
+    //         readAloud: speech.join(' '),
+    //     };
+    // }, [assessment, getReviewName, selectedReviewAllData]);
+
     const analysisContent = useMemo(() => {
         const reviewData = selectedReviewAllData || {};
         const firstName = (role) => {
             const preferredName = reviewData.personalDetails?.[role]?.preferredName || getReviewName(role);
             const name = String(preferredName || '').trim();
             if (!name || ['client', 'partner'].includes(name.toLowerCase())) {
-                return role === 'partner' ? 'your partner' : 'you';
+                return role === 'partner' ? 'Partner' : 'Client';
             }
             return name.split(/\s+/)[0];
         };
         const clientName = firstName('client');
         const partnerName = firstName('partner');
-        const who = assessment.isCouple ? `${clientName} and ${partnerName}` : clientName;
-        const pronoun = assessment.isCouple ? 'you both' : 'you';
-        const status = assessment.isNoPension
-            ? 'No pension entitlement'
-            : assessment.isFullPension ? 'Full Age Pension' : 'Part Age Pension';
-        const testName = assessment.determiningTest === 'none'
-            ? 'means tests'
-            : `${assessment.determiningTest} test`;
-        const analysis = [];
-        const speech = [`${who}, based on the Age Pension assessment:`];
+        const hasPartner = assessment.isCouple;
 
-        if (assessment.isNoPension) {
-            const ageIneligible = assessment.eligibleCount === 0;
+        const clientPension = assessment.clientPension;
+        const partnerPension = assessment.partnerPension;
+        const combinedPension = assessment.combinedPension;
+
+        const analysis = [
+            `<strong>${clientName}</strong>: Pension entitlement is <strong>${formatCurrency(clientPension)}/yr</strong> (${formatCurrency(clientPension / 26)}/fn)`,
+        ];
+        const speech = [
+            `${clientName}, your Age Pension entitlement is ${formatSpeechCurrency(clientPension)} per year.`,
+        ];
+
+        if (hasPartner) {
             analysis.push(
-                `<strong>${who}</strong> — <strong>${status}</strong>${ageIneligible
-                    ? ' because the Age Pension age requirement has not been met.'
-                    : ` based on the ${testName}.`}`,
-            );
-            speech.push(ageIneligible
-                ? `The Age Pension age requirement has not been met, so ${pronoun} are not currently entitled to the Age Pension.`
-                : `Unfortunately, based on the ${testName}, ${pronoun} are not currently entitled to the Age Pension.`);
-        } else {
-            analysis.push(
-                `<strong>${who}</strong> — <strong>${status}</strong>${assessment.isFullPension
-                    ? '.'
-                    : `, limited by the ${testName}.`}`,
-            );
-            speech.push(assessment.isFullPension
-                ? `Good news — ${pronoun} qualify for the full Age Pension.`
-                : `${pronoun.charAt(0).toUpperCase()}${pronoun.slice(1)} qualify for a part Age Pension, limited by the ${testName}.`);
-            analysis.push(
-                `Total pension: <strong>${formatCurrency(assessment.combinedPension)} per year</strong> (<strong>${formatCurrency(assessment.combinedPension / 26)} per fortnight</strong>).`,
+                `<strong>${partnerName}</strong>: Pension entitlement is <strong>${formatCurrency(partnerPension)}/yr</strong> (${formatCurrency(partnerPension / 26)}/fn)`
             );
             speech.push(
-                `Your total pension is ${formatSpeechCurrency(assessment.combinedPension)} per year, or ${formatSpeechCurrency(assessment.combinedPension / 26)} per fortnight.`,
+                `${partnerName}, your Age Pension entitlement is ${formatSpeechCurrency(partnerPension)} per year.`
             );
         }
 
-        analysis.push(`Your total assessable assets: <strong>${formatCurrency(assessment.totalAssets)}</strong>.`);
-        analysis.push(`Your assessable income: <strong>${formatCurrency(assessment.totalAssessableIncome)}</strong> per year.`);
-
-        if (!assessment.isNoPension && assessment.pensionLost > 0) {
-            analysis.push(
-                `Reduced from the full rate by <strong>${formatCurrency(assessment.pensionLost)} per year</strong> due to the ${testName}.`,
-            );
-            speech.push(
-                `This is ${formatSpeechCurrency(assessment.pensionLost)} less than the full rate, due to the ${testName}.`,
-            );
-        }
-
-        // --- NEW LIHCC LOGIC ADDED HERE ---
-        const rateReference = RateReferenceObject; // Assuming this is imported or available
-        const lihccRates = rateReference?.lowIncomeHealthCareCard;
-
-        const baseWeeklyIncomeLimit = amount(
-            assessment.isCouple
-                ? (lihccRates?.partnerCombinedPerWeek ?? AGE_PENSION_RATES.lihccCoupleWeekly)
-                : (lihccRates?.clientPerWeek ?? AGE_PENSION_RATES.lihccSingleWeekly),
+        analysis.push(
+            `Combined Total: <strong>${formatCurrency(combinedPension)}/yr</strong> · Total Assessable Assets: <strong>${formatCurrency(assessment.totalAssets)}</strong> · Assessable Income: <strong>${formatCurrency(assessment.totalAssessableIncome)}/yr</strong>`
         );
-        const hasConfiguredLihccLimit = baseWeeklyIncomeLimit > 0;
-        const dependentChildren = (
-            reviewData?.personalDetails?.children?.arrayOfChildren || []
-        ).filter((child) =>
-            ["yes", "true"].includes(String(child?.depenantChild).toLowerCase()),
-        ).length;
-        const dependentAllowancePerWeek = amount(
-            lihccRates?.perDependentChildPerWeek ?? AGE_PENSION_RATES.lihccPerChildWeekly
-        );
-        const holderUplift = assessment.lihccExistingHolder ? 1.25 : 1;
-        const weeklyIncomeLimit =
-            (baseWeeklyIncomeLimit + dependentChildren * dependentAllowancePerWeek) *
-            holderUplift;
-        const eightWeekIncomeLimit = weeklyIncomeLimit * 8;
-        const estimatedEightWeekIncome = assessment.totalAssessableIncome * (8 / 52);
-        const lihccEligible =
-            hasConfiguredLihccLimit && estimatedEightWeekIncome <= eightWeekIncomeLimit;
 
-        if (hasConfiguredLihccLimit && !lihccEligible) {
-            analysis.push(
-                `<span style="color: #dc2626;">❌ Income is also above the Low-Income Health Care Card threshold</span>`
-            );
-            speech.push("Additionally, your income is above the Low-Income Health Care Card threshold.");
-        }
-        // ----------------------------------
-
-        speech.push('This is an estimate based on the information provided, not a Centrelink determination.');
+        const metrics = [
+            { label: `${clientName} Pension`, value: formatCurrency(clientPension) },
+            { label: `${clientName} Fortnightly`, value: formatCurrency(clientPension / 26) },
+            ...(hasPartner ? [
+                { label: `${partnerName} Pension`, value: formatCurrency(partnerPension) },
+                { label: `${partnerName} Fortnightly`, value: formatCurrency(partnerPension / 26) },
+            ] : []),
+        ];
 
         return {
-            subtitle: `🏛️ Age Pension Results for ${who}`,
-            metrics: [
-                {
-                    label: 'Entitlement',
-                    value: status,
-                    color: assessment.isNoPension
-                        ? '#dc2626'
-                        : assessment.isFullPension ? '#16a34a' : '#d97706',
-                },
-                ...(!assessment.isNoPension
-                    ? [
-                        { label: 'Per year', value: formatCurrency(assessment.combinedPension) },
-                        { label: 'Per fortnight', value: formatCurrency(assessment.combinedPension / 26) },
-                    ]
-                    : []),
-            ],
+            subtitle: `🏛️ Combined Age Pension Analysis`,
+            metrics,
             analysis,
-            readAloud: speech.join(' '),
+            readAloud: `${speech.join(' ')} This is an estimate based on the information provided, not a Centrelink determination.`,
         };
     }, [assessment, getReviewName, selectedReviewAllData]);
 

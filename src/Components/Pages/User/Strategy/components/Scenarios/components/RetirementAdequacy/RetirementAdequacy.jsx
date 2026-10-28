@@ -667,69 +667,141 @@ const RetirementAdequacy = () => {
     const currentColumns = selectedProfile === 'cashflow' ? cashflowColumns : columns;
     const hasData = currentChartData.length > 0;
 
+    // const analysisContent = useMemo(() => {
+    //     const section = selectedReviewAllData?.retirementAdequacyDetails || {};
+    //     const isHousehold = selectedProfile === 'cashflow';
+    //     const person = section[selectedProfile] || {};
+    //     const storedName = person.preferredName || getReviewName(selectedProfile);
+    //     const normalizedName = String(storedName || '').trim();
+    //     const personName = normalizedName && !['client', 'partner'].includes(normalizedName.toLowerCase())
+    //         ? normalizedName.split(/\s+/)[0]
+    //         : selectedProfile === 'partner' ? 'your partner' : 'you';
+    //     const years = currentChartData.length;
+    //     const finalBalance = currentChartData.at(-1)?.closingBalance ?? 0;
+    //     const sustainable = years >= 40 && finalBalance > 0;
+    //     const duration = sustainable
+    //         ? 'over 40 years (still funded at the projection limit)'
+    //         : `about ${years} ${years === 1 ? 'year' : 'years'}`;
+    //     const annualPayment = parseNumber(currentChartData[0]?.annualPayment);
+    //     const analysis = [];
+    //     const readAloud = [];
+
+    //     if (!years) {
+    //         analysis.push('Enter a pension balance and date of birth to generate a retirement income projection.');
+    //         readAloud.push('Enter a pension balance and date of birth to generate a retirement income projection.');
+    //     } else if (isHousehold) {
+    //         analysis.push(
+    //             `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. The projection is funded for ${duration}, ending with ${formatCurrency(finalBalance)}.`,
+    //         );
+    //         readAloud.push(
+    //             `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. It is projected to last ${duration}, with a final balance of ${formatCurrency(finalBalance)}.`,
+    //         );
+    //     } else {
+    //         const explicitReturn = parseNumber(person.investmentReturn, NaN);
+    //         const returnRate = Number.isFinite(explicitReturn)
+    //             ? explicitReturn
+    //             : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced;
+    //         const returnLabel = `${Number(returnRate.toFixed(1))}%`;
+    //         analysis.push(
+    //             `${personName}: ${currentMetrics.startingBalance} at ${returnLabel} annual return · first-year minimum annual pension ${formatCurrency(annualPayment)} · projected to last ${duration}.`,
+    //         );
+    //         readAloud.push(
+    //             `${personName}, your account-based pension of ${currentMetrics.startingBalance}, at a ${returnLabel} annual return and drawing a minimum of ${formatCurrency(annualPayment)} in the first year, is projected to last ${duration}.`,
+    //         );
+    //     }
+
+    //     const durationColor = sustainable || years >= 25
+    //         ? '#16a34a'
+    //         : years >= 15 ? '#d97706' : '#dc2626';
+
+    //     return {
+    //         subtitle: isHousehold
+    //             ? '🏦 Household Account-Based Pension Results'
+    //             : `🏦 Account-Based Pension Results for ${personName}`,
+    //         metrics: years
+    //             ? [
+    //                 { label: isHousehold ? 'Combined balance' : 'Starting balance', value: currentMetrics.startingBalance },
+    //                 { label: 'First-year pension', value: formatCurrency(annualPayment) },
+    //                 { label: 'Years sustained', value: sustainable ? '40+ yrs' : `${years} yrs`, color: durationColor },
+    //                 { label: 'Final balance', value: formatCurrency(finalBalance) },
+    //             ]
+    //             : [],
+    //         analysis,
+    //         readAloud: readAloud.join(' '),
+    //     };
+    // }, [currentChartData, currentMetrics, getReviewName, selectedProfile, selectedReviewAllData]);
+
     const analysisContent = useMemo(() => {
         const section = selectedReviewAllData?.retirementAdequacyDetails || {};
-        const isHousehold = selectedProfile === 'cashflow';
-        const person = section[selectedProfile] || {};
-        const storedName = person.preferredName || getReviewName(selectedProfile);
-        const normalizedName = String(storedName || '').trim();
-        const personName = normalizedName && !['client', 'partner'].includes(normalizedName.toLowerCase())
-            ? normalizedName.split(/\s+/)[0]
-            : selectedProfile === 'partner' ? 'your partner' : 'you';
-        const years = currentChartData.length;
-        const finalBalance = currentChartData.at(-1)?.closingBalance ?? 0;
-        const sustainable = years >= 40 && finalBalance > 0;
-        const duration = sustainable
-            ? 'over 40 years (still funded at the projection limit)'
-            : `about ${years} ${years === 1 ? 'year' : 'years'}`;
-        const annualPayment = parseNumber(currentChartData[0]?.annualPayment);
-        const analysis = [];
-        const readAloud = [];
+        const startDate = section.pensionStartDate;
+        const owners = section.owner || selectedReviewAllData?.personalDetails?.owner || [];
+        const hasPartner = owners.includes("partner") || Boolean(section.partner);
 
-        if (!years) {
-            analysis.push('Enter a pension balance and date of birth to generate a retirement income projection.');
-            readAloud.push('Enter a pension balance and date of birth to generate a retirement income projection.');
-        } else if (isHousehold) {
+        const clientData = {
+            ...section.client,
+            DOB: section.client?.DOB || selectedReviewAllData?.personalDetails?.client?.DOB,
+        };
+        const partnerData = {
+            ...section.partner,
+            DOB: section.partner?.DOB || selectedReviewAllData?.personalDetails?.partner?.DOB,
+        };
+
+        const clientProjection = calculateProjection(clientData, startDate, clientData, null);
+        const partnerProjection = hasPartner ? calculateProjection(partnerData, startDate, partnerData, null) : null;
+
+        const getPreferredName = (profileKey) => {
+            const person = section[profileKey] || {};
+            const name = String(person.preferredName || getReviewName(profileKey) || '').trim();
+            return name && !['client', 'partner'].includes(name.toLowerCase())
+                ? name.split(/\s+/)[0]
+                : profileKey === 'partner' ? 'Partner' : 'Client';
+        };
+
+        const clientName = getPreferredName('client');
+        const partnerName = getPreferredName('partner');
+
+        const clientYears = clientProjection.rows.length;
+        const clientFinalBal = clientProjection.rows.at(-1)?.closingBalance ?? parseNumber(clientData.accountBasedPensionTotal);
+        const clientStartBal = parseNumber(clientData.accountBasedPensionTotal);
+        const clientFirstDrawdown = parseNumber(clientProjection.rows[0]?.annualPayment);
+
+        const partnerYears = partnerProjection ? partnerProjection.rows.length : 0;
+        const partnerFinalBal = partnerProjection ? (partnerProjection.rows.at(-1)?.closingBalance ?? parseNumber(partnerData.accountBasedPensionTotal)) : 0;
+        const partnerStartBal = parseNumber(partnerData.accountBasedPensionTotal);
+        const partnerFirstDrawdown = partnerProjection ? parseNumber(partnerProjection.rows[0]?.annualPayment) : 0;
+
+        const analysis = [
+            `<strong>${clientName}</strong>: Starting balance <strong>${formatCurrency(clientStartBal)}</strong> · First-year pension <strong>${formatCurrency(clientFirstDrawdown)}</strong> · Projected to last <strong>${clientYears} yrs</strong> (Final: <strong>${formatCurrency(clientFinalBal)}</strong>)`,
+        ];
+        const speech = [
+            `${clientName}, your account-based pension starts at ${formatCurrency(clientStartBal)} with a first-year payment of ${formatCurrency(clientFirstDrawdown)}, projected to last ${clientYears} years.`,
+        ];
+
+        if (hasPartner) {
             analysis.push(
-                `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. The projection is funded for ${duration}, ending with ${formatCurrency(finalBalance)}.`,
+                `<strong>${partnerName}</strong>: Starting balance <strong>${formatCurrency(partnerStartBal)}</strong> · First-year pension <strong>${formatCurrency(partnerFirstDrawdown)}</strong> · Projected to last <strong>${partnerYears} yrs</strong> (Final: <strong>${formatCurrency(partnerFinalBal)}</strong>)`
             );
-            readAloud.push(
-                `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. It is projected to last ${duration}, with a final balance of ${formatCurrency(finalBalance)}.`,
-            );
-        } else {
-            const explicitReturn = parseNumber(person.investmentReturn, NaN);
-            const returnRate = Number.isFinite(explicitReturn)
-                ? explicitReturn
-                : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced;
-            const returnLabel = `${Number(returnRate.toFixed(1))}%`;
-            analysis.push(
-                `${personName}: ${currentMetrics.startingBalance} at ${returnLabel} annual return · first-year minimum annual pension ${formatCurrency(annualPayment)} · projected to last ${duration}.`,
-            );
-            readAloud.push(
-                `${personName}, your account-based pension of ${currentMetrics.startingBalance}, at a ${returnLabel} annual return and drawing a minimum of ${formatCurrency(annualPayment)} in the first year, is projected to last ${duration}.`,
+            speech.push(
+                `${partnerName}, your account-based pension starts at ${formatCurrency(partnerStartBal)} with a first-year payment of ${formatCurrency(partnerFirstDrawdown)}, projected to last ${partnerYears} years.`
             );
         }
 
-        const durationColor = sustainable || years >= 25
-            ? '#16a34a'
-            : years >= 15 ? '#d97706' : '#dc2626';
+        const metrics = [
+            { label: `${clientName} Balance`, value: formatCurrency(clientStartBal) },
+            { label: `${clientName} Drawdown`, value: formatCurrency(clientFirstDrawdown) },
+            ...(hasPartner ? [
+                { label: `${partnerName} Balance`, value: formatCurrency(partnerStartBal) },
+                { label: `${partnerName} Drawdown`, value: formatCurrency(partnerFirstDrawdown) },
+            ] : []),
+        ];
 
         return {
-            subtitle: isHousehold
-                ? '🏦 Household Account-Based Pension Results'
-                : `🏦 Account-Based Pension Results for ${personName}`,
-            metrics: years
-                ? [
-                    { label: isHousehold ? 'Combined balance' : 'Starting balance', value: currentMetrics.startingBalance },
-                    { label: 'First-year pension', value: formatCurrency(annualPayment) },
-                    { label: 'Years sustained', value: sustainable ? '40+ yrs' : `${years} yrs`, color: durationColor },
-                    { label: 'Final balance', value: formatCurrency(finalBalance) },
-                ]
-                : [],
+            subtitle: `🏦 Combined Retirement Adequacy Analysis`,
+            metrics,
             analysis,
-            readAloud: readAloud.join(' '),
+            readAloud: speech.join(' '),
         };
-    }, [currentChartData, currentMetrics, getReviewName, selectedProfile, selectedReviewAllData]);
+    }, [selectedReviewAllData, getReviewName]);
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -857,113 +929,113 @@ const RetirementAdequacy = () => {
 
                         {hasData ? (
                             <div>
-                            <div style={{ width: '100%', height: 300 }}>
-                                <ResponsiveContainer>
-                                    <BarChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
-                                        <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
-                                        {calculatedData.chartMode === 'expenses' ? (
-                                            <>
-                                                <Bar
-                                                    dataKey="minimumBalance"
-                                                    name="Minimum"
-                                                    fill="#22c55e"
-                                                    hide={!visibleChartSeries.minimumBalance}
-                                                    radius={[3, 3, 0, 0]}
-                                                    maxBarSize={24}
-                                                />
-                                                <Bar
-                                                    dataKey="calculatedBalance"
-                                                    name="Calculated Drawdown"
-                                                    fill="#2b3a5e"
-                                                    hide={!visibleChartSeries.calculatedBalance}
-                                                    radius={[3, 3, 0, 0]}
-                                                    maxBarSize={24}
-                                                />
-                                            </>
-                                        ) : (
-                                            <>
-                                                {calculatedData.hasAdjustments && <Legend />}
-                                                {calculatedData.hasAdjustments && (
-                                                    <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                                                )}
-                                                <Bar
-                                                    dataKey="balance"
-                                                    name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
-                                                    fill="#22c55e"
-                                                    radius={[3, 3, 0, 0]}
-                                                    maxBarSize={24}
-                                                />
-                                            </>
-                                        )}
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                            {calculatedData.chartMode === 'expenses' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
-                                        <Button
-                                            size="small"
-                                            aria-pressed={visibleChartSeries.minimumBalance}
-                                            onClick={() => setVisibleChartSeries((current) => ({
-                                                ...current,
-                                                minimumBalance: !current.minimumBalance,
-                                            }))}
-                                            style={{
-                                                height: 34,
-                                                padding: '0 14px',
-                                                borderRadius: 999,
-                                                borderColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
-                                                backgroundColor: visibleChartSeries.minimumBalance ? '#f0fdf4' : '#fff',
-                                                color: visibleChartSeries.minimumBalance ? '#15803d' : '#aeb6c4',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            <span style={{
-                                                display: 'inline-block',
-                                                width: 10,
-                                                height: 10,
-                                                marginRight: 7,
-                                                borderRadius: 3,
-                                                backgroundColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
-                                            }} />
-                                            Minimum
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            aria-pressed={visibleChartSeries.calculatedBalance}
-                                            onClick={() => setVisibleChartSeries((current) => ({
-                                                ...current,
-                                                calculatedBalance: !current.calculatedBalance,
-                                            }))}
-                                            style={{
-                                                height: 34,
-                                                padding: '0 14px',
-                                                borderRadius: 999,
-                                                borderColor: visibleChartSeries.calculatedBalance ? '#cbd5e1' : '#e2e8f0',
-                                                backgroundColor: visibleChartSeries.calculatedBalance ? '#f8fafc' : '#fff',
-                                                color: visibleChartSeries.calculatedBalance ? '#aeb6c4' : '#cbd5e1',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            <span style={{
-                                                display: 'inline-block',
-                                                width: 10,
-                                                height: 10,
-                                                marginRight: 7,
-                                                borderRadius: 3,
-                                                backgroundColor: visibleChartSeries.calculatedBalance ? '#bfc5d2' : '#e2e8f0',
-                                            }} />
-                                            Calculated Drawdown
-                                        </Button>
-                                    </div>
-                                    <Text type="secondary" style={{ color: '#94a3b8', fontSize: 11, textAlign: 'center' }}>
-                                        Comparing minimum vs nominated drawdown balance
-                                    </Text>
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <BarChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
+                                            <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
+                                            {calculatedData.chartMode === 'expenses' ? (
+                                                <>
+                                                    <Bar
+                                                        dataKey="minimumBalance"
+                                                        name="Minimum"
+                                                        fill="#22c55e"
+                                                        hide={!visibleChartSeries.minimumBalance}
+                                                        radius={[3, 3, 0, 0]}
+                                                        maxBarSize={24}
+                                                    />
+                                                    <Bar
+                                                        dataKey="calculatedBalance"
+                                                        name="Calculated Drawdown"
+                                                        fill="#2b3a5e"
+                                                        hide={!visibleChartSeries.calculatedBalance}
+                                                        radius={[3, 3, 0, 0]}
+                                                        maxBarSize={24}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {calculatedData.hasAdjustments && <Legend />}
+                                                    {calculatedData.hasAdjustments && (
+                                                        <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                                    )}
+                                                    <Bar
+                                                        dataKey="balance"
+                                                        name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
+                                                        fill="#22c55e"
+                                                        radius={[3, 3, 0, 0]}
+                                                        maxBarSize={24}
+                                                    />
+                                                </>
+                                            )}
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
-                            )}
+                                {calculatedData.chartMode === 'expenses' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
+                                            <Button
+                                                size="small"
+                                                aria-pressed={visibleChartSeries.minimumBalance}
+                                                onClick={() => setVisibleChartSeries((current) => ({
+                                                    ...current,
+                                                    minimumBalance: !current.minimumBalance,
+                                                }))}
+                                                style={{
+                                                    height: 34,
+                                                    padding: '0 14px',
+                                                    borderRadius: 999,
+                                                    borderColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
+                                                    backgroundColor: visibleChartSeries.minimumBalance ? '#f0fdf4' : '#fff',
+                                                    color: visibleChartSeries.minimumBalance ? '#15803d' : '#aeb6c4',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: 10,
+                                                    height: 10,
+                                                    marginRight: 7,
+                                                    borderRadius: 3,
+                                                    backgroundColor: visibleChartSeries.minimumBalance ? '#22c55e' : '#cbd5e1',
+                                                }} />
+                                                Minimum
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                aria-pressed={visibleChartSeries.calculatedBalance}
+                                                onClick={() => setVisibleChartSeries((current) => ({
+                                                    ...current,
+                                                    calculatedBalance: !current.calculatedBalance,
+                                                }))}
+                                                style={{
+                                                    height: 34,
+                                                    padding: '0 14px',
+                                                    borderRadius: 999,
+                                                    borderColor: visibleChartSeries.calculatedBalance ? '#cbd5e1' : '#e2e8f0',
+                                                    backgroundColor: visibleChartSeries.calculatedBalance ? '#f8fafc' : '#fff',
+                                                    color: visibleChartSeries.calculatedBalance ? '#aeb6c4' : '#cbd5e1',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: 10,
+                                                    height: 10,
+                                                    marginRight: 7,
+                                                    borderRadius: 3,
+                                                    backgroundColor: visibleChartSeries.calculatedBalance ? '#bfc5d2' : '#e2e8f0',
+                                                }} />
+                                                Calculated Drawdown
+                                            </Button>
+                                        </div>
+                                        <Text type="secondary" style={{ color: '#94a3b8', fontSize: 11, textAlign: 'center' }}>
+                                            Comparing minimum vs nominated drawdown balance
+                                        </Text>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             /* Empty state matching the reference image display */

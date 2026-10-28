@@ -300,6 +300,84 @@ const LoanSimulator = () => {
         }
         : null;
 
+    // const analysisContent = useMemo(() => {
+    //     const loanSetup = loanDetails?.loanSetup || {};
+    //     const strategy = loanDetails?.extrasAndOffsets || {};
+    //     const amount = toNumber(loanSetup.homeLoanTotal);
+    //     const rate = toNumber(loanSetup.interestRate);
+    //     const termYears = Math.floor(toNumber(loanSetup.termYears));
+    //     const frequencyLabel = results?.frequencyLabel || loanSetup.paymentFrequency || "payment period";
+    //     const extraRepayments = toNumber(strategy.extraRepayments);
+    //     const offsetBalance = toNumber(strategy.offsetAccountBalance);
+    //     const surplusCash = toNumber(strategy.surplusCash);
+    //     const hasStrategy = extraRepayments > 0 || offsetBalance > 0 || surplusCash > 0;
+    //     const preferredName = String(getReviewName("client") || "").trim();
+    //     const name = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
+    //         ? preferredName.split(/\s+/)[0]
+    //         : "you";
+
+    //     if (!results) {
+    //         const prompt = "Enter a valid loan amount, interest rate, and loan term to generate the loan analysis.";
+    //         return {
+    //             subtitle: "🏠 Loan Results",
+    //             metrics: [],
+    //             analysis: [prompt],
+    //             readAloud: prompt,
+    //         };
+    //     }
+
+    //     const minimumRepayment = results.minimumScenario.minimumRepayment;
+    //     const strategyBits = [];
+    //     if (extraRepayments > 0) {
+    //         strategyBits.push(`${formatCurrency(extraRepayments)} extra per ${frequencyLabel.toLowerCase()}`);
+    //     }
+    //     if (offsetBalance > 0) strategyBits.push(`${formatCurrency(offsetBalance)} in offset`);
+    //     if (surplusCash > 0) {
+    //         strategyBits.push(`${formatCurrency(surplusCash)} surplus per ${frequencyLabel.toLowerCase()}`);
+    //     }
+
+    //     const analysis = [
+    //         `<strong>${name}</strong>, your loan of <strong>${formatCurrency(amount)}</strong> over <strong>${termYears} years</strong> at <strong>${rate}%</strong>.`,
+    //         `Minimum repayment: <strong>${formatCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}</strong>.`,
+    //     ];
+    //     const speech = [
+    //         `${name}, based on your loan details:`,
+    //         `Your ${formatSpeechCurrency(amount)} loan over ${termYears} years at ${rate}% has a minimum repayment of ${formatSpeechCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}.`,
+    //     ];
+
+    //     if (hasStrategy) {
+    //         analysis.push(`Your strategy: ${strategyBits.join(" · ")}.`);
+    //         if (results.termSaved > 0.05) {
+    //             const yearsSaved = formatAnalysisYears(results.termSaved);
+    //             analysis.push(`<strong style="color:#16a34a">✓ You’ll pay off ${yearsSaved} years sooner.</strong>`);
+    //             speech.push(`${name}, with this strategy you’ll pay off the loan ${yearsSaved} years sooner than the minimum schedule.`);
+    //         }
+    //         if (results.interestSaved > 1000) {
+    //             analysis.push(`<strong style="color:#16a34a">✓ Interest saved: ${formatCurrency(results.interestSaved)}.</strong>`);
+    //             speech.push(`You’ll save approximately ${formatSpeechCurrency(results.interestSaved)} in interest.`);
+    //         }
+    //     } else {
+    //         speech.push(`${name}, currently no additional strategy is applied — the loan follows the minimum repayment schedule.`);
+    //     }
+
+    //     return {
+    //         subtitle: `🏠 Loan Results for ${name}`,
+    //         metrics: [
+    //             { label: "Loan amount", value: formatCurrency(amount) },
+    //             { label: "Min repayment", value: formatCurrency(minimumRepayment) },
+    //             ...(results.termSaved > 0.05
+    //                 ? [{ label: "Years saved", value: `${formatAnalysisYears(results.termSaved)} yrs`, color: "#16a34a" }]
+    //                 : []),
+    //             ...(results.interestSaved > 1000
+    //                 ? [{ label: "Interest saved", value: formatCurrency(results.interestSaved), color: "#16a34a" }]
+    //                 : []),
+    //         ],
+    //         analysis,
+    //         readAloud: speech.join(" "),
+    //     };
+    // }, [getReviewName, loanDetails, results]);
+
+
     const analysisContent = useMemo(() => {
         const loanSetup = loanDetails?.loanSetup || {};
         const strategy = loanDetails?.extrasAndOffsets || {};
@@ -311,10 +389,19 @@ const LoanSimulator = () => {
         const offsetBalance = toNumber(strategy.offsetAccountBalance);
         const surplusCash = toNumber(strategy.surplusCash);
         const hasStrategy = extraRepayments > 0 || offsetBalance > 0 || surplusCash > 0;
-        const preferredName = String(getReviewName("client") || "").trim();
-        const name = preferredName && !["client", "partner"].includes(preferredName.toLowerCase())
-            ? preferredName.split(/\s+/)[0]
-            : "you";
+
+        const owners = loanDetails?.owner || selectedReviewAllData?.personalDetails?.owner || [];
+        const hasPartner = owners.includes("partner") || Boolean(selectedReviewAllData?.personalDetails?.partner);
+
+        const getPreferredName = (profileKey) => {
+            const name = String(getReviewName(profileKey) || "").trim();
+            return name && !["client", "partner"].includes(name.toLowerCase())
+                ? name.split(/\s+/)[0]
+                : profileKey === "partner" ? "Partner" : "Client";
+        };
+
+        const clientName = getPreferredName("client");
+        const partnerName = getPreferredName("partner");
 
         if (!results) {
             const prompt = "Enter a valid loan amount, interest rate, and loan term to generate the loan analysis.";
@@ -337,45 +424,54 @@ const LoanSimulator = () => {
         }
 
         const analysis = [
-            `<strong>${name}</strong>, your loan of <strong>${formatCurrency(amount)}</strong> over <strong>${termYears} years</strong> at <strong>${rate}%</strong>.`,
-            `Minimum repayment: <strong>${formatCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}</strong>.`,
+            `<strong>${clientName}</strong>, your loan of <strong>${formatCurrency(amount)}</strong> over <strong>${termYears} years</strong> at <strong>${rate}%</strong>. Minimum repayment: <strong>${formatCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}</strong>.`,
         ];
         const speech = [
-            `${name}, based on your loan details:`,
-            `Your ${formatSpeechCurrency(amount)} loan over ${termYears} years at ${rate}% has a minimum repayment of ${formatSpeechCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}.`,
+            `${clientName}, based on your loan details: your ${formatSpeechCurrency(amount)} loan over ${termYears} years at ${rate}% has a minimum repayment of ${formatSpeechCurrency(minimumRepayment)} per ${frequencyLabel.toLowerCase()}.`,
         ];
+
+        if (hasPartner) {
+            analysis.push(
+                `<strong>${partnerName}</strong>: Shared mortgage liability of <strong>${formatCurrency(amount)}</strong>.`
+            );
+            speech.push(
+                `${partnerName}, you share the mortgage liability of ${formatSpeechCurrency(amount)}.`
+            );
+        }
 
         if (hasStrategy) {
             analysis.push(`Your strategy: ${strategyBits.join(" · ")}.`);
             if (results.termSaved > 0.05) {
                 const yearsSaved = formatAnalysisYears(results.termSaved);
                 analysis.push(`<strong style="color:#16a34a">✓ You’ll pay off ${yearsSaved} years sooner.</strong>`);
-                speech.push(`${name}, with this strategy you’ll pay off the loan ${yearsSaved} years sooner than the minimum schedule.`);
+                speech.push(`With this strategy you’ll pay off the loan ${yearsSaved} years sooner than the minimum schedule.`);
             }
             if (results.interestSaved > 1000) {
                 analysis.push(`<strong style="color:#16a34a">✓ Interest saved: ${formatCurrency(results.interestSaved)}.</strong>`);
                 speech.push(`You’ll save approximately ${formatSpeechCurrency(results.interestSaved)} in interest.`);
             }
         } else {
-            speech.push(`${name}, currently no additional strategy is applied — the loan follows the minimum repayment schedule.`);
+            speech.push(`Currently no additional strategy is applied — the loan follows the minimum repayment schedule.`);
         }
 
+        const metrics = [
+            { label: `${clientName} Loan`, value: formatCurrency(amount) },
+            { label: "Min Repayment", value: formatCurrency(minimumRepayment) },
+            ...(results.termSaved > 0.05
+                ? [{ label: "Years Saved", value: `${formatAnalysisYears(results.termSaved)} yrs`, color: "#16a34a" }]
+                : []),
+            ...(results.interestSaved > 1000
+                ? [{ label: "Interest Saved", value: formatCurrency(results.interestSaved), color: "#16a34a" }]
+                : []),
+        ];
+
         return {
-            subtitle: `🏠 Loan Results for ${name}`,
-            metrics: [
-                { label: "Loan amount", value: formatCurrency(amount) },
-                { label: "Min repayment", value: formatCurrency(minimumRepayment) },
-                ...(results.termSaved > 0.05
-                    ? [{ label: "Years saved", value: `${formatAnalysisYears(results.termSaved)} yrs`, color: "#16a34a" }]
-                    : []),
-                ...(results.interestSaved > 1000
-                    ? [{ label: "Interest saved", value: formatCurrency(results.interestSaved), color: "#16a34a" }]
-                    : []),
-            ],
+            subtitle: `🏠 Combined Loan Simulator Analysis`,
+            metrics,
             analysis,
             readAloud: speech.join(" "),
         };
-    }, [getReviewName, loanDetails, results]);
+    }, [getReviewName, loanDetails, results, selectedReviewAllData]);
 
     return (
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: 20, fontFamily: "sans-serif" }}>
