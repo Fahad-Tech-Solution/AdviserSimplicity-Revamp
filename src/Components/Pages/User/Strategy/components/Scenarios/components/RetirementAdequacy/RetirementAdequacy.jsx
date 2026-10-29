@@ -1,6 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { Card, Button, Segmented, Row, Col, Typography, Space } from 'antd';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    CartesianGrid,
+    Legend,
+    ComposedChart,
+    Line,
+} from 'recharts';
 import { useAtom } from 'jotai';
 import DynamicDataTable from '../../../../../../../Common/DynamicDataTable';
 import AppModal from '../../../../../../../Common/AppModal';
@@ -478,14 +489,18 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const startingAges = people.map(({ DOB }) => getAgeAtDate(DOB, firstYearDate));
     const isCouple = projection.isCouple;
-    const homeowner = String(projection.homeOwnership || '').toLowerCase() === 'homeowner';
-    const personalAssets = Math.max(0, parseNumber(projection.personalAssets));
-    const initialOtherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments));
+    const homeowner = String(projection.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
+    const personalAssets = Math.max(0, parseNumber(projection.personalAssets, 100));
+    const initialOtherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments, 100));
     const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2.5)) / 100;
-    const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses));
+    const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses, 100));
     const expensesIndexation = Math.max(0, parseNumber(projection.expensesIndexation, 2.5)) / 100;
     const includeAgePension = projection.includeAgePension;
     let otherFinancialInvestments = initialOtherFinancialInvestments;
+
+    let totalPensionSum = 0;
+    let firstYearPension = null;
+
     const rows = Array.from({ length: maxYears }, (_, index) => {
         const client = people[0]?.rows[index];
         const partner = people[1]?.rows[index];
@@ -514,6 +529,11 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
         const totalIncome = annualDrawdown + pension;
         const surplus = expenses > 0 ? totalIncome - expenseForYear : null;
 
+        totalPensionSum += pension;
+        if (firstYearPension === null && eligibleCount > 0) {
+            firstYearPension = pension;
+        }
+
         return {
             key: String(index + 1),
             year: index + 1,
@@ -527,7 +547,8 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
             totalIncome,
             surplus,
             balance: closingBalance,
-            yearLabel: `Yr ${index + 1}`,
+            yearLabel: client?.financialYear ?? `Yr ${index + 1}`,
+            livingExpenses: expenseForYear,
         };
     });
 
@@ -540,15 +561,27 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
         return sum + (row ? Math.max(0, row.openingBalance + row.topUp - row.oneOffWithdrawal) : 0);
     }, 0);
 
+    const firstRowPosition = rows[0]?.surplus ?? 0;
+
     return {
         rows,
         metrics: {
             ...buildMetrics(rows, totalStarting, totalTopUp, totalWithdrawal, 'projection complete'),
-            startingBalance: formatCurrency(totalAdjustedStarting),
-            startingSubtext: 'combined client and partner balances',
-            drawdownSubtext: 'first-year combined payment',
-            yearsSustained: rows.length ? String(rows.length) : '—',
-            totalDrawn: formatCurrency(rows.reduce((sum, row) => sum + row.annualPayment, 0)),
+            firstYearPension: firstYearPension !== null ? formatCurrency(firstYearPension) : '—',
+            firstYearPensionSubtext: 'once Age Pension age',
+            totalPension: formatCurrency(totalPensionSum),
+            totalPensionSubtext: 'across projection',
+            expensesMet: 'full projection',
+            expensesMetSubtext: 'income covers expenses',
+            firstYearPosition: formatCurrency(firstRowPosition),
+            positionSubtext: 'surplus / (shortfall)',
+            isCouple,
+            homeowner,
+            personalAssets,
+            otherFinancialInvestments: initialOtherFinancialInvestments,
+            expenses,
+            thresholdIndexation: thresholdIndexation * 100,
+            expensesIndexation: expensesIndexation * 100,
         },
         hasAdjustments: people.some((person) => person.hasAdjustments),
     };
@@ -584,6 +617,11 @@ const RetirementAdequacy = () => {
     const [visibleChartSeries, setVisibleChartSeries] = useState({
         minimumBalance: true,
         calculatedBalance: true,
+    });
+    const [cashflowChartSeries, setCashflowChartSeries] = useState({
+        abpDrawdown: true,
+        agePension: true,
+        livingExpenses: true,
     });
     const [openModal, setOpenModal] = useState(false);
     const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
@@ -667,69 +705,15 @@ const RetirementAdequacy = () => {
     const currentColumns = selectedProfile === 'cashflow' ? cashflowColumns : columns;
     const hasData = currentChartData.length > 0;
 
-    // const analysisContent = useMemo(() => {
-    //     const section = selectedReviewAllData?.retirementAdequacyDetails || {};
-    //     const isHousehold = selectedProfile === 'cashflow';
-    //     const person = section[selectedProfile] || {};
-    //     const storedName = person.preferredName || getReviewName(selectedProfile);
-    //     const normalizedName = String(storedName || '').trim();
-    //     const personName = normalizedName && !['client', 'partner'].includes(normalizedName.toLowerCase())
-    //         ? normalizedName.split(/\s+/)[0]
-    //         : selectedProfile === 'partner' ? 'your partner' : 'you';
-    //     const years = currentChartData.length;
-    //     const finalBalance = currentChartData.at(-1)?.closingBalance ?? 0;
-    //     const sustainable = years >= 40 && finalBalance > 0;
-    //     const duration = sustainable
-    //         ? 'over 40 years (still funded at the projection limit)'
-    //         : `about ${years} ${years === 1 ? 'year' : 'years'}`;
-    //     const annualPayment = parseNumber(currentChartData[0]?.annualPayment);
-    //     const analysis = [];
-    //     const readAloud = [];
-
-    //     if (!years) {
-    //         analysis.push('Enter a pension balance and date of birth to generate a retirement income projection.');
-    //         readAloud.push('Enter a pension balance and date of birth to generate a retirement income projection.');
-    //     } else if (isHousehold) {
-    //         analysis.push(
-    //             `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. The projection is funded for ${duration}, ending with ${formatCurrency(finalBalance)}.`,
-    //         );
-    //         readAloud.push(
-    //             `The combined account-based pension starts at ${currentMetrics.startingBalance}, with a first-year minimum payment of ${formatCurrency(annualPayment)}. It is projected to last ${duration}, with a final balance of ${formatCurrency(finalBalance)}.`,
-    //         );
-    //     } else {
-    //         const explicitReturn = parseNumber(person.investmentReturn, NaN);
-    //         const returnRate = Number.isFinite(explicitReturn)
-    //             ? explicitReturn
-    //             : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced;
-    //         const returnLabel = `${Number(returnRate.toFixed(1))}%`;
-    //         analysis.push(
-    //             `${personName}: ${currentMetrics.startingBalance} at ${returnLabel} annual return · first-year minimum annual pension ${formatCurrency(annualPayment)} · projected to last ${duration}.`,
-    //         );
-    //         readAloud.push(
-    //             `${personName}, your account-based pension of ${currentMetrics.startingBalance}, at a ${returnLabel} annual return and drawing a minimum of ${formatCurrency(annualPayment)} in the first year, is projected to last ${duration}.`,
-    //         );
-    //     }
-
-    //     const durationColor = sustainable || years >= 25
-    //         ? '#16a34a'
-    //         : years >= 15 ? '#d97706' : '#dc2626';
-
-    //     return {
-    //         subtitle: isHousehold
-    //             ? '🏦 Household Account-Based Pension Results'
-    //             : `🏦 Account-Based Pension Results for ${personName}`,
-    //         metrics: years
-    //             ? [
-    //                 { label: isHousehold ? 'Combined balance' : 'Starting balance', value: currentMetrics.startingBalance },
-    //                 { label: 'First-year pension', value: formatCurrency(annualPayment) },
-    //                 { label: 'Years sustained', value: sustainable ? '40+ yrs' : `${years} yrs`, color: durationColor },
-    //                 { label: 'Final balance', value: formatCurrency(finalBalance) },
-    //             ]
-    //             : [],
-    //         analysis,
-    //         readAloud: readAloud.join(' '),
-    //     };
-    // }, [currentChartData, currentMetrics, getReviewName, selectedProfile, selectedReviewAllData]);
+    // Standard Client/Partner status note evaluation
+    const standardStatusNote = useMemo(() => {
+        if (!currentChartData.length) return '';
+        const lastRow = currentChartData.at(-1);
+        const exhausted = (lastRow?.closingBalance ?? lastRow?.balance ?? 0) <= 0;
+        const age = lastRow?.age ?? '—';
+        const closingAmt = formatCurrency(lastRow?.closingBalance ?? lastRow?.balance ?? 0);
+        return exhausted ? `⚠️ Exhausted at age ${age}` : `Remaining ${closingAmt} at age ${age}`;
+    }, [currentChartData]);
 
     const analysisContent = useMemo(() => {
         const section = selectedReviewAllData?.retirementAdequacyDetails || {};
@@ -808,7 +792,7 @@ const RetirementAdequacy = () => {
 
             {/* Top Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                {/* Profile Selector (Client, Partner, Cashflow) matching image styling */}
+                {/* Profile Selector */}
                 <Segmented
                     value={selectedProfile}
                     onChange={(val) => setSelectedProfile(val)}
@@ -854,69 +838,131 @@ const RetirementAdequacy = () => {
 
             {/* KPI Cards Grid */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24, display: 'flex' }}>
-                {/* Card 1: Starting Balance */}
-                <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                        style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
-                    >
-                        <div>
-                            <Text type="secondary" style={{ fontSize: 13 }}>Starting Balance</Text>
-                            <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {currentMetrics.startingBalance}
-                            </Title>
-                        </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.startingSubtext}</Text>
-                    </Card>
-                </Col>
+                {selectedProfile === 'cashflow' ? (
+                    <>
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>First-Year Pension</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.firstYearPension}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.firstYearPensionSubtext}</Text>
+                            </Card>
+                        </Col>
 
-                {/* Card 2: Annual Drawdown */}
-                <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                        style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
-                    >
-                        <div>
-                            <Text type="secondary" style={{ fontSize: 13 }}>Annual Drawdown</Text>
-                            <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {currentMetrics.annualDrawdown}
-                            </Title>
-                        </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.drawdownSubtext}</Text>
-                    </Card>
-                </Col>
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Total Pension</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.totalPension}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.totalPensionSubtext}</Text>
+                            </Card>
+                        </Col>
 
-                {/* Card 3: Years Sustained */}
-                <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                        style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
-                    >
-                        <div>
-                            <Text type="secondary" style={{ fontSize: 13 }}>Years Sustained</Text>
-                            <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
-                                {currentMetrics.yearsSustained}
-                            </Title>
-                        </div>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.sustainedSubtext}</Text>
-                    </Card>
-                </Col>
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#bfdbfe', backgroundColor: '#eff6ff', height: '100%' }}
+                            >
+                                <div>
+                                    <Text style={{ fontSize: 13, color: '#2563eb' }}>Expenses Met</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#2563eb' }}>
+                                        {currentMetrics.expensesMet}
+                                    </Title>
+                                </div>
+                                <Text style={{ fontSize: 11, color: '#3b82f6' }}>{currentMetrics.expensesMetSubtext}</Text>
+                            </Card>
+                        </Col>
 
-                {/* Card 4: Total Drawn (Green Highlighted Border & Text matching UI) */}
-                <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Card
-                        bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-                        style={{ borderRadius: 12, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', height: '100%' }}
-                    >
-                        <div>
-                            <Text style={{ fontSize: 13, color: '#16a34a' }}>Total Drawn</Text>
-                            <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#16a34a' }}>
-                                {currentMetrics.totalDrawn}
-                            </Title>
-                        </div>
-                        <Text style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>{currentMetrics.drawnSubtext}</Text>
-                    </Card>
-                </Col>
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>First-Year Position</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.firstYearPosition}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.positionSubtext}</Text>
+                            </Card>
+                        </Col>
+                    </>
+                ) : (
+                    <>
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Starting Balance</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.startingBalance}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.startingSubtext}</Text>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Annual Drawdown</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.annualDrawdown}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.drawdownSubtext}</Text>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#e8e8e8', height: '100%' }}
+                            >
+                                <div>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Years Sustained</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#1f2937' }}>
+                                        {currentMetrics.yearsSustained}
+                                    </Title>
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 11 }}>{currentMetrics.sustainedSubtext}</Text>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Card
+                                bodyStyle={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                                style={{ borderRadius: 12, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', height: '100%' }}
+                            >
+                                <div>
+                                    <Text style={{ fontSize: 13, color: '#16a34a' }}>Total Drawn</Text>
+                                    <Title level={3} style={{ margin: '4px 0', fontWeight: 600, color: '#16a34a' }}>
+                                        {currentMetrics.totalDrawn}
+                                    </Title>
+                                </div>
+                                <Text style={{ fontSize: 11, color: '#15803d', fontWeight: 600 }}>{currentMetrics.drawnSubtext}</Text>
+                            </Card>
+                        </Col>
+                    </>
+                )}
             </Row>
 
             {/* Graph vs Table Main Container */}
@@ -931,50 +977,161 @@ const RetirementAdequacy = () => {
                             <div>
                                 <div style={{ width: '100%', height: 300 }}>
                                     <ResponsiveContainer>
-                                        <BarChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
-                                            <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
-                                            {calculatedData.chartMode === 'expenses' ? (
-                                                <>
-                                                    <Bar
-                                                        dataKey="minimumBalance"
-                                                        name="Minimum"
-                                                        fill="#22c55e"
-                                                        hide={!visibleChartSeries.minimumBalance}
-                                                        radius={[3, 3, 0, 0]}
-                                                        maxBarSize={24}
-                                                    />
-                                                    <Bar
-                                                        dataKey="calculatedBalance"
-                                                        name="Calculated Drawdown"
-                                                        fill="#2b3a5e"
-                                                        hide={!visibleChartSeries.calculatedBalance}
-                                                        radius={[3, 3, 0, 0]}
-                                                        maxBarSize={24}
-                                                    />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {calculatedData.hasAdjustments && <Legend />}
-                                                    {calculatedData.hasAdjustments && (
-                                                        <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                                                    )}
-                                                    <Bar
-                                                        dataKey="balance"
-                                                        name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
-                                                        fill="#22c55e"
-                                                        radius={[3, 3, 0, 0]}
-                                                        maxBarSize={24}
-                                                    />
-                                                </>
-                                            )}
-                                        </BarChart>
+                                        {selectedProfile === 'cashflow' ? (
+                                            <ComposedChart data={graphData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="yearLabel" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
+                                                <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
+                                                <Bar dataKey="annualPayment" name="ABP Drawdown" fill="#2563eb" stackId="a" hide={!cashflowChartSeries.abpDrawdown} radius={[0, 0, 0, 0]} maxBarSize={24} />
+                                                <Bar dataKey="agePension" name="Age Pension" fill="#22c55e" stackId="a" hide={!cashflowChartSeries.agePension} radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                                <Line type="monotone" dataKey="livingExpenses" name="Living Expenses" stroke="#dc2626" strokeDasharray="4 4" strokeWidth={2} hide={!cashflowChartSeries.livingExpenses} dot={false} />
+                                            </ComposedChart>
+                                        ) : (
+                                            <BarChart data={graphData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(val) => formatCurrency(val)} />
+                                                <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
+                                                {calculatedData.chartMode === 'expenses' ? (
+                                                    <>
+                                                        <Bar
+                                                            dataKey="minimumBalance"
+                                                            name="Minimum"
+                                                            fill="#22c55e"
+                                                            hide={!visibleChartSeries.minimumBalance}
+                                                            radius={[3, 3, 0, 0]}
+                                                            maxBarSize={24}
+                                                        />
+                                                        <Bar
+                                                            dataKey="calculatedBalance"
+                                                            name="Calculated Drawdown"
+                                                            fill="#2b3a5e"
+                                                            hide={!visibleChartSeries.calculatedBalance}
+                                                            radius={[3, 3, 0, 0]}
+                                                            maxBarSize={24}
+                                                        />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {calculatedData.hasAdjustments && <Legend />}
+                                                        {calculatedData.hasAdjustments && (
+                                                            <Bar dataKey="currentBalance" name="Current Balance" fill="#2b3a5e" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                                                        )}
+                                                        <Bar
+                                                            dataKey="balance"
+                                                            name={calculatedData.hasAdjustments ? 'Adjusted Balance' : 'Pension Balance'}
+                                                            fill="#22c55e"
+                                                            radius={[3, 3, 0, 0]}
+                                                            maxBarSize={24}
+                                                        />
+                                                    </>
+                                                )}
+                                            </BarChart>
+                                        )}
                                     </ResponsiveContainer>
                                 </div>
-                                {calculatedData.chartMode === 'expenses' && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2 }}>
+
+                                {/* Clickable Legend Toggle Buttons for Cashflow */}
+                                {selectedProfile === 'cashflow' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
+                                            <Button
+                                                size="small"
+                                                aria-pressed={cashflowChartSeries.abpDrawdown}
+                                                onClick={() => setCashflowChartSeries((current) => ({
+                                                    ...current,
+                                                    abpDrawdown: !current.abpDrawdown,
+                                                }))}
+                                                style={{
+                                                    height: 34,
+                                                    padding: '0 14px',
+                                                    borderRadius: 999,
+                                                    borderColor: cashflowChartSeries.abpDrawdown ? '#2563eb' : '#cbd5e1',
+                                                    backgroundColor: cashflowChartSeries.abpDrawdown ? '#eff6ff' : '#fff',
+                                                    color: cashflowChartSeries.abpDrawdown ? '#1d4ed8' : '#aeb6c4',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: 10,
+                                                    height: 10,
+                                                    marginRight: 7,
+                                                    borderRadius: 3,
+                                                    backgroundColor: cashflowChartSeries.abpDrawdown ? '#2563eb' : '#cbd5e1',
+                                                }} />
+                                                ABP Drawdown
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                aria-pressed={cashflowChartSeries.agePension}
+                                                onClick={() => setCashflowChartSeries((current) => ({
+                                                    ...current,
+                                                    agePension: !current.agePension,
+                                                }))}
+                                                style={{
+                                                    height: 34,
+                                                    padding: '0 14px',
+                                                    borderRadius: 999,
+                                                    borderColor: cashflowChartSeries.agePension ? '#22c55e' : '#cbd5e1',
+                                                    backgroundColor: cashflowChartSeries.agePension ? '#f0fdf4' : '#fff',
+                                                    color: cashflowChartSeries.agePension ? '#15803d' : '#aeb6c4',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: 10,
+                                                    height: 10,
+                                                    marginRight: 7,
+                                                    borderRadius: 3,
+                                                    backgroundColor: cashflowChartSeries.agePension ? '#22c55e' : '#cbd5e1',
+                                                }} />
+                                                Age Pension
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                aria-pressed={cashflowChartSeries.livingExpenses}
+                                                onClick={() => setCashflowChartSeries((current) => ({
+                                                    ...current,
+                                                    livingExpenses: !current.livingExpenses,
+                                                }))}
+                                                style={{
+                                                    height: 34,
+                                                    padding: '0 14px',
+                                                    borderRadius: 999,
+                                                    borderColor: cashflowChartSeries.livingExpenses ? '#dc2626' : '#cbd5e1',
+                                                    backgroundColor: cashflowChartSeries.livingExpenses ? '#fef2f2' : '#fff',
+                                                    color: cashflowChartSeries.livingExpenses ? '#b91c1c' : '#aeb6c4',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: 10,
+                                                    height: 10,
+                                                    marginRight: 7,
+                                                    borderRadius: 3,
+                                                    backgroundColor: cashflowChartSeries.livingExpenses ? '#dc2626' : '#cbd5e1',
+                                                }} />
+                                                Living Expenses
+                                            </Button>
+                                        </div>
+                                        <Text type="secondary" style={{ color: '#94a3b8', fontSize: 11, textAlign: 'center' }}>
+                                            Click legend items to toggle series visibility
+                                        </Text>
+                                    </div>
+                                )}
+
+                                {/* Standard Client/Partner Status Note & Toggle Buttons */}
+                                {calculatedData.chartMode === 'expenses' && selectedProfile !== 'cashflow' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                        {standardStatusNote && (
+                                            <Text style={{ fontSize: 12, fontWeight: 600, color: standardStatusNote.includes('⚠️') ? '#dc2626' : '#15803d', marginBottom: 2 }}>
+                                                {standardStatusNote}
+                                            </Text>
+                                        )}
                                         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
                                             <Button
                                                 size="small"
@@ -1038,7 +1195,6 @@ const RetirementAdequacy = () => {
                                 )}
                             </div>
                         ) : (
-                            /* Empty state matching the reference image display */
                             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
                                 <Text style={{ color: '#94a3b8', fontSize: 15, fontWeight: 600 }}>
                                     Enter pension details to see projection
@@ -1068,6 +1224,15 @@ const RetirementAdequacy = () => {
                             tableStyle={{ borderRadius: 12 }}
                         />
                     </>
+                )}
+
+                {/* Cashflow Footer Note */}
+                {selectedProfile === 'cashflow' && (
+                    <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+                        <Text type="secondary" style={{ fontSize: 11, color: '#94a3b8', lineHeight: '1.5', display: 'block' }}>
+                            Assessed as a <strong>{currentMetrics.isCouple ? 'couple' : 'single'}</strong>, <strong>{currentMetrics.homeowner ? 'homeowner' : 'non-homeowner'}</strong>. Payment rates & means-test thresholds from the 2025/26 Rate Reference, indexed {currentMetrics.thresholdIndexation || 2.5}% p.a. Assessable assets = closing ABP + personal assets ({formatCurrency(currentMetrics.personalAssets)}) + other financial investments ({formatCurrency(currentMetrics.otherFinancialInvestments)}). Other financial investments grow at the upper deeming rate and, once the ABP is exhausted, are drawn down to help meet the shortfall (counted in total income). The income test deems the ABP and other financial investments only. Indicative estimate — not a Centrelink determination. ABP payments start at the minimum, then top up (highlighted, allocated by ABP balance) to meet living expenses of {formatCurrency(currentMetrics.expenses)} p.a. in today's dollars, indexed {currentMetrics.expensesIndexation || 2.5}%. Age Pension is assessed on the balance under minimum drawdown; top-ups reduce the closing balance shown. Expenses are met across the projection.
+                        </Text>
+                    </div>
                 )}
             </Card>
 

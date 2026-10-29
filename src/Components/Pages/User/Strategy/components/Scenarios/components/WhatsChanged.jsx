@@ -524,11 +524,12 @@ const WhatsChanged = () => {
 
                     <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
                         <Button
-                            type='primary'
+                            color="green"
+                            variant="outlined"
                             htmlType='next'
                             key='next'
                             size="large"
-                            style={{ borderRadius: 8 }}
+                            style={{ borderRadius: 8, }}
                             onClick={() => { navigate("/user/review-routes/client-details") }}
 
                         >

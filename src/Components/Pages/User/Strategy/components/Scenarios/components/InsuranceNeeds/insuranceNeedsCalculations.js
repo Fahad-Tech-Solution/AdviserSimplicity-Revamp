@@ -228,18 +228,28 @@ export function calculateInsuranceNeeds(
   const coverRequiredByType = {};
   const shortfallByType = {};
   const recommendedByType = {};
+
+  // const getLumpSumValue = (key, field) => {
+  //   const configuredValue = profile.lumpSumNeeds?.[key]?.[field];
+  //   const value =
+  //     configuredValue === undefined || configuredValue === null
+  //       ? toInsuranceNumber(DEFAULT_LUMP_SUM_NEEDS[key]?.[field])
+  //       : toInsuranceNumber(configuredValue);
+  //   return field === "homeMortgage" &&
+  //     value === 0 &&
+  //     (key === "life" || key === "tpd")
+  //     ? mortgageAmount
+  //     : value;
+  // };
+
   const getLumpSumValue = (key, field) => {
     const configuredValue = profile.lumpSumNeeds?.[key]?.[field];
-    const value =
-      configuredValue === undefined || configuredValue === null
+    return configuredValue === undefined || configuredValue === null || configuredValue === ""
         ? toInsuranceNumber(DEFAULT_LUMP_SUM_NEEDS[key]?.[field])
         : toInsuranceNumber(configuredValue);
-    return field === "homeMortgage" &&
-      value === 0 &&
-      (key === "life" || key === "tpd")
-      ? mortgageAmount
-      : value;
-  };
+};
+
+
   const rows = LUMP_SUM_FIELDS.map(([field, label]) => {
     const row = { label };
     COVER_TYPES.forEach(({ key }) => {

@@ -290,14 +290,16 @@ const ReviewStepsLayout = () => {
             {!["/user/review-routes/whats-changed", "/user/review-routes/scenarios"].includes(location.pathname) &&
                 <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "65px" }}>
                     <Button onClick={ClickBack} disabled={currentRouteIndex <= 0}>← Back</Button>
-                    <Button
-                        onClick={ClickNext}
-                        type='primary'
-                        htmlType='next'
-                        key='next'
-                        disabled={currentRouteIndex < 0 || currentRouteIndex >= navigableRoutes.length - 1}
-                    > Next →
-                    </Button>
+                    {!["/user/review-routes/summary"].includes(location.pathname) &&
+                        <Button
+                            onClick={ClickNext}
+                            type='primary'
+                            htmlType='next'
+                            key='next'
+                            disabled={currentRouteIndex < 0 || currentRouteIndex >= navigableRoutes.length - 1}
+                        > Next →
+                        </Button>
+                    }
                 </div>}
 
 
