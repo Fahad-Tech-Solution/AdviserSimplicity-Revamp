@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, App as AntdApp, Button, Form, Input, Typography } from "antd";
+import { Alert, App as AntdApp, Button, Form, Input, Space, Typography } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
+import { ClockCircleOutlined } from "@ant-design/icons";
 import useApi from "../../hooks/useApi";
 
 const { Title, Text } = Typography;
@@ -15,6 +16,12 @@ function formatRemainingTime(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+};
+
 export default function ForgetPasswordForm() {
   const { message } = AntdApp.useApp();
   const navigate = useNavigate();
@@ -25,6 +32,8 @@ export default function ForgetPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
   const [error, setError] = useState("");
+  const [loginAttemptsFailed, setLoginAttemptsFailed] = useState(0);
+
 
   const heading = useMemo(() => {
     if (step === 2) return "Verify OTP";
@@ -56,6 +65,17 @@ export default function ForgetPasswordForm() {
     return () => window.clearInterval(timer);
   }, [step, timeLeft]);
 
+  // Timer effect counting down every 1 second (1000ms)
+  useEffect(() => {
+    if (loginAttemptsFailed > 0) {
+      const timer = setInterval(() => {
+        setLoginAttemptsFailed((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000); // 1000ms = 1 second
+
+      return () => clearInterval(timer);
+    }
+  }, [loginAttemptsFailed]);
+
   const handleSendOtp = async (values) => {
     try {
       setSubmitting(true);
@@ -68,6 +88,9 @@ export default function ForgetPasswordForm() {
     } catch (err) {
       message.error(err?.response?.data?.message || "Failed to send OTP.");
       setError(err?.response?.data?.message || "Failed to send OTP.");
+
+      setLoginAttemptsFailed(err?.response?.data?.retryAfter || 900)
+
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +155,17 @@ export default function ForgetPasswordForm() {
             showIcon
             style={{ marginTop: 16, marginBottom: 16 }}
             message={error || "Too many failed login attempts"}
-            // description={error}
+            description={
+              loginAttemptsFailed > 0 ? (
+                <Space size="small" style={{ marginTop: 4 }}>
+                  <ClockCircleOutlined />
+                  <span>Remaining cooling time:</span>
+                  <Text type="danger" strong>
+                    {formatTime(loginAttemptsFailed)}
+                  </Text>
+                </Space>
+              ) : null
+            }
           />
         }
 
