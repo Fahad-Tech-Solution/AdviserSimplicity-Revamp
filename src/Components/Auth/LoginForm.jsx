@@ -88,11 +88,9 @@ export default function LoginForm() {
         setError(msg);
         setLoginAttemptsFailed(err?.response?.data?.retryAfter)
 
-      }
-      else {
+      } else {
         message.error(err?.response?.status === 401 ? "Invalid email or password" : msg);
         setError(err?.response?.status === 401 ? "Invalid email or password" : msg);
-
       }
 
     } finally {

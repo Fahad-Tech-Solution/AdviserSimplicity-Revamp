@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { App as AntdApp, Button, Form, Input, Typography } from "antd";
+import { Alert, App as AntdApp, Button, Form, Input, Typography } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/svg/Enter OTP-pana.svg";
 import useApi from "../../hooks/useApi";
@@ -24,6 +24,7 @@ export default function ForgetPasswordForm() {
   const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
+  const [error, setError] = useState("");
 
   const heading = useMemo(() => {
     if (step === 2) return "Verify OTP";
@@ -66,6 +67,7 @@ export default function ForgetPasswordForm() {
       message.success("OTP sent to your email.");
     } catch (err) {
       message.error(err?.response?.data?.message || "Failed to send OTP.");
+      setError(err?.response?.data?.message || "Failed to send OTP.");
     } finally {
       setSubmitting(false);
     }
@@ -123,6 +125,16 @@ export default function ForgetPasswordForm() {
         <Text type="secondary" className="text-center w-100">
           {subtitle}
         </Text>
+
+        {error !== "" && error !== undefined && error !== null &&
+          <Alert
+            type="error"
+            showIcon
+            style={{ marginTop: 16, marginBottom: 16 }}
+            message={error || "Too many failed login attempts"}
+            // description={error}
+          />
+        }
 
         {step === 1 && (
           <Form

@@ -93,11 +93,13 @@ export default function VerifyOtpForm() {
       message.success("OTP verified. Login successful.");
       navigate(redirectTo, { replace: true });
     } catch (err) {
+
       setError(
         err?.response?.data?.message ||
         err?.message ||
         "OTP verification failed.",
       );
+      
     } finally {
       setSubmitting(false);
     }
