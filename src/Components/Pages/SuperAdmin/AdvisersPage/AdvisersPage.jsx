@@ -78,9 +78,9 @@ function hexToRgb(hex) {
   const value =
     normalized.length === 3
       ? normalized
-          .split("")
-          .map((c) => c + c)
-          .join("")
+        .split("")
+        .map((c) => c + c)
+        .join("")
       : normalized;
   const num = Number.parseInt(value, 16);
   return {
@@ -218,8 +218,49 @@ function PlanBadge({ plan, index }) {
   );
 }
 
+let allStatus = {
+  "active": {
+    Title: "Active",
+    backgroundColor: "#f0fdf4",
+    borderColor: "1px solid rgb(187, 247, 208)",
+    color: "rgb(22, 163, 74)",
+    Dot: <ActiveDot size={7} marginRight={0} />
+  },
+  "disabled": {
+    Title: "Disabled",
+    backgroundColor: "#fef2f2",
+    borderColor: "1px solid rgb(254, 202, 202)",
+    color: "rgb(220, 38, 38)",
+    Dot: <span
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: "rgb(239, 68, 68)",
+        flexShrink: 0,
+      }}
+    />
+  },
+  "blocked": {
+    Title: "Blocked",
+    backgroundColor: "#fefdf2",
+    borderColor: "1px solid rgb(220, 193, 38)",
+    color: "rgb(220, 193, 38)",
+    Dot: <span
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: "rgb(239, 199, 68)",
+        flexShrink: 0,
+      }}
+    />
+  }
+}
+
+
 function AdviserStatusTag({ status }) {
-  const isActive = status === "active";
+  const isActive = allStatus?.[status];
   return (
     <span
       style={{
@@ -230,27 +271,13 @@ function AdviserStatusTag({ status }) {
         borderRadius: 15,
         fontSize: 11,
         fontWeight: 600,
-        background: isActive ? "#f0fdf4" : "#fef2f2",
-        border: isActive
-          ? "1px solid rgb(187, 247, 208)"
-          : "1px solid rgb(254, 202, 202)",
-        color: isActive ? "rgb(22, 163, 74)" : "rgb(220, 38, 38)",
+        background: isActive?.backgroundColor,
+        border: isActive?.borderColor,
+        color: isActive?.color,
       }}
     >
-      {isActive ? (
-        <ActiveDot size={7} marginRight={0} />
-      ) : (
-        <span
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: "rgb(239, 68, 68)",
-            flexShrink: 0,
-          }}
-        />
-      )}
-      {isActive ? "Active" : "Disabled"}
+      {isActive?.Dot}
+      {isActive?.Title}
     </span>
   );
 }
@@ -363,10 +390,11 @@ const AdvisersPage = () => {
     const total = advisers.length;
     const active = advisers.filter((a) => a.isActive === true).length;
     const disabled = advisers.filter((a) => a.isActive === false).length;
+    const blocked = advisers.filter((a) => a.isLoginSecurityDisabled === true).length;
     const newest = advisers.filter((a) =>
       isWithinLast30Days(a.createdAt),
     ).length;
-    return { total, active, disabled, newest };
+    return { total, active, disabled, blocked, newest };
   }, [advisers]);
 
   const filteredAdvisers = useMemo(() => {
@@ -378,9 +406,11 @@ const AdvisersPage = () => {
           ? true
           : activeTab === "active"
             ? adviser.isActive === true
-            : activeTab === "disabled"
-              ? adviser.isActive === false
-              : isWithinLast30Days(adviser.createdAt);
+            : activeTab === "blocked"
+              ? adviser.isLoginSecurityDisabled === true
+              : activeTab === "disabled"
+                ? adviser.isActive === false
+                : isWithinLast30Days(adviser.createdAt);
 
       if (!matchesTab) return false;
       if (!normalizedSearch) return true;
@@ -457,9 +487,11 @@ const AdvisersPage = () => {
       ? "ALL ADVISERS"
       : activeTab === "active"
         ? "ACTIVE ADVISERS"
-        : activeTab === "disabled"
-          ? "DISABLED ADVISERS"
-          : "NEW ADVISERS";
+        : activeTab === "blocked"
+          ? "BLOCKED ADVISERS"
+          : activeTab === "disabled"
+            ? "DISABLED ADVISERS"
+            : "NEW ADVISERS";
 
   const enableDisableAdviser = useCallback(
     (id, action) => {
@@ -469,12 +501,10 @@ const AdvisersPage = () => {
       const isEnabling = action === "enable";
 
       confirm({
-        title: `Are you sure you want to ${
-          isEnabling ? "enable" : "disable"
-        } this Adviser?`,
-        content: `This action will ${
-          isEnabling ? "enable" : "disable"
-        } the adviser.`,
+        title: `Are you sure you want to ${isEnabling ? "enable" : "disable"
+          } this Adviser?`,
+        content: `This action will ${isEnabling ? "enable" : "disable"
+          } the adviser.`,
         okText: `Yes, ${isEnabling ? "Enable" : "Disable"}`,
         okType: isEnabling ? "primary" : "danger",
         cancelText: "Cancel",
@@ -496,10 +526,58 @@ const AdvisersPage = () => {
           } catch (error) {
             message.error(
               error?.response?.data?.message ||
-                error?.message ||
-                `An error occurred while ${
-                  isEnabling ? "enabling" : "disabling"
-                } the adviser.`,
+              error?.message ||
+              `An error occurred while ${isEnabling ? "enabling" : "disabling"
+              } the adviser.`,
+            );
+          } finally {
+            setStatusBusy(false);
+          }
+        },
+      });
+    },
+    [confirm, message, patch, setAdvisers],
+  );
+
+  const toggleBlockAdviser = useCallback(
+    (id, action) => {
+      const adviserId = id?._id ?? id;
+      if (!adviserId) return;
+
+      // action represents whether we are blocking (true) or unblocking (false)
+      const isBlocking = action !== true;
+
+      confirm({
+        title: `Are you sure you want to ${isBlocking ? "block" : "unblock"} this adviser?`,
+        content: `This action will ${isBlocking ? "block" : "unblock"} the adviser's login security.`,
+        okText: `Yes, ${isBlocking ? "Block" : "Unblock"}`,
+        okType: isBlocking ? "danger" : "primary",
+        cancelText: "Cancel",
+        centered: true,
+        onOk: async () => {
+          setStatusBusy(true);
+          try {
+            // Send the updated status to the backend (adjust payload keys if your backend requires specific fields)
+            // /api/auth/enableLogin/:userId
+            await patch("/user/enableLogin/" + adviserId);
+
+            // Update local state with the new isLoginSecurityDisabled value
+            setAdvisers((prev) =>
+              (prev || []).map((item) =>
+                (item._id ?? item.id) === adviserId
+                  ? { ...item, isLoginSecurityDisabled: isBlocking }
+                  : item,
+              ),
+            );
+
+            message.success(
+              `Adviser ${isBlocking ? "blocked" : "unblocked"} successfully.`,
+            );
+          } catch (error) {
+            message.error(
+              error?.response?.data?.message ||
+              error?.message ||
+              `An error occurred while ${isBlocking ? "blocking" : "unblocking"} the adviser.`,
             );
           } finally {
             setStatusBusy(false);
@@ -580,7 +658,7 @@ const AdvisersPage = () => {
         key: "status",
         width: 120,
         render: (_, row) => (
-          <AdviserStatusTag status={row.isActive ? "active" : "disabled"} />
+          <AdviserStatusTag status={(activeTab == "blocked" && row.isLoginSecurityDisabled == true) ? "blocked" : (row.isActive ? "active" : "disabled")} />
         ),
       },
       {
@@ -621,24 +699,47 @@ const AdvisersPage = () => {
                 onClick={() => openEditAdviserModal(row)}
               />
             </Tooltip>
-            <Tooltip title={row.isActive ? "Disable" : "Enable"}>
-              <Button
-                type="text"
-                size="small"
-                disabled={statusBusy}
-                icon={
-                  <PoweroffOutlined
-                    style={{ color: "#9ca3af", fontSize: 10 }}
-                  />
-                }
-                onClick={() =>
-                  enableDisableAdviser(
-                    row._id ?? row.id,
-                    row.isActive ? "disable" : "enable",
-                  )
-                }
-              />
-            </Tooltip>
+
+            {row?.isLoginSecurityDisabled == true ?
+              <Tooltip title={"Unblocked"}>
+                <Button
+                  type="text"
+                  size="small"
+                  disabled={statusBusy}
+                  icon={
+                    <PoweroffOutlined
+                      style={{ color: "#9ca3af", fontSize: 10 }}
+                    />
+                  }
+                  onClick={() =>
+                    toggleBlockAdviser(
+                      row._id ?? row.id,
+                      row.isLoginSecurityDisabled,
+                    )
+                  }
+                />
+              </Tooltip>
+              :
+              <Tooltip title={row.isActive ? "Disable" : "Enable"}>
+                <Button
+                  type="text"
+                  size="small"
+                  disabled={statusBusy}
+                  icon={
+                    <PoweroffOutlined
+                      style={{ color: "#9ca3af", fontSize: 10 }}
+                    />
+                  }
+                  onClick={() =>
+                    enableDisableAdviser(
+                      row._id ?? row.id,
+                      row.isActive ? "disable" : "enable",
+                    )
+                  }
+                />
+              </Tooltip>
+            }
+
           </Space>
         ),
       },
@@ -806,6 +907,12 @@ const AdvisersPage = () => {
           count={counts.active}
           active={activeTab === "active"}
           onClick={() => setActiveTab("active")}
+        />
+        <FilterPill
+          label="Blocked"
+          count={counts.blocked}
+          active={activeTab === "blocked"}
+          onClick={() => setActiveTab("blocked")}
         />
         <FilterPill
           label="Disabled"
