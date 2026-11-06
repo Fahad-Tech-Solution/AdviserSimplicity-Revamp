@@ -754,8 +754,12 @@ const RetirementAdequacy = () => {
         const partnerStartBal = parseNumber(partnerData.accountBasedPensionTotal);
         const partnerFirstDrawdown = partnerProjection ? parseNumber(partnerProjection.rows[0]?.annualPayment) : 0;
 
+
+        // qwds: $5,000 at 6.5% · annual pension $146,508 · lasts about 1 years
+        // aysha: $40,000 at 6% · annual pension $1,600 · lasts over 50+ years (sustainable)
+
         const analysis = [
-            `<strong>${clientName}</strong>: Starting balance <strong>${formatCurrency(clientStartBal)}</strong> · First-year pension <strong>${formatCurrency(clientFirstDrawdown)}</strong> · Projected to last <strong>${clientYears} yrs</strong> (Final: <strong>${formatCurrency(clientFinalBal)}</strong>)`,
+            `<strong>${clientName}</strong>: <strong>${formatCurrency(clientStartBal)}</strong> at  ${clientData.investmentReturn}· annual pension <strong>${formatCurrency(clientFirstDrawdown)}</strong> · last  ${clientYears > 50 ? `over <strong>50+ yrs` : `about <strong>${clientYears} yrs`}</strong>`,
         ];
         const speech = [
             `${clientName}, your account-based pension starts at ${formatCurrency(clientStartBal)} with a first-year payment of ${formatCurrency(clientFirstDrawdown)}, projected to last ${clientYears} years.`,
@@ -763,7 +767,7 @@ const RetirementAdequacy = () => {
 
         if (hasPartner) {
             analysis.push(
-                `<strong>${partnerName}</strong>: Starting balance <strong>${formatCurrency(partnerStartBal)}</strong> · First-year pension <strong>${formatCurrency(partnerFirstDrawdown)}</strong> · Projected to last <strong>${partnerYears} yrs</strong> (Final: <strong>${formatCurrency(partnerFinalBal)}</strong>)`
+                `<strong>${partnerName}</strong>: <strong>${formatCurrency(partnerStartBal)}</strong> at  ${partnerData.investmentReturn}· annual pension <strong>${formatCurrency(partnerFirstDrawdown)}</strong> · last  ${partnerYears > 50 ? `over <strong>50+ yrs` : `about <strong>${partnerYears} yrs`}</strong>`
             );
             speech.push(
                 `${partnerName}, your account-based pension starts at ${formatCurrency(partnerStartBal)} with a first-year payment of ${formatCurrency(partnerFirstDrawdown)}, projected to last ${partnerYears} years.`
@@ -771,16 +775,18 @@ const RetirementAdequacy = () => {
         }
 
         const metrics = [
-            { label: `${clientName} Balance`, value: formatCurrency(clientStartBal) },
-            { label: `${clientName} Drawdown`, value: formatCurrency(clientFirstDrawdown) },
+            { label: `${clientName}'s ABP`, value: formatCurrency(clientStartBal) },
+            { label: `${clientName}s pension`, value: formatCurrency(clientFirstDrawdown) + `/yr` },
+            { label: `${clientName} lasts`, value: `${clientYears} yrs` },
             ...(hasPartner ? [
-                { label: `${partnerName} Balance`, value: formatCurrency(partnerStartBal) },
-                { label: `${partnerName} Drawdown`, value: formatCurrency(partnerFirstDrawdown) },
+                { label: `${partnerName}'s ABP`, value: formatCurrency(partnerStartBal) },
+                { label: `${partnerName}s pension`, value: formatCurrency(partnerFirstDrawdown) + `/yr` },
+                { label: `${partnerName} lasts`, value: `${partnerYears} yrs` },
             ] : []),
         ];
 
         return {
-            subtitle: `🏦 Combined Retirement Adequacy Analysis`,
+            subtitle: `🏦 Account based pension for ${clientName} ${hasPartner ? `and ${partnerName}` : ''}`,
             metrics,
             analysis,
             readAloud: speech.join(' '),

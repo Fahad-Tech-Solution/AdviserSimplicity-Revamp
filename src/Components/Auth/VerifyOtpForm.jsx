@@ -12,6 +12,7 @@ import {
 import logo from "../../assets/svg/Enter OTP-pana.svg";
 import useApi from "../../hooks/useApi";
 import useAuthSession from "../../hooks/useAuthSession";
+import QrCodeDisplay from "./QrCodeDisplay";
 
 const { Title, Text } = Typography;
 const OTP_EXPIRY_SECONDS = 10 * 60;
@@ -31,6 +32,7 @@ export default function VerifyOtpForm() {
   const { message } = AntdApp.useApp();
   const { saveSessionFromAuthResponse } = useAuthSession();
   const [submitting, setSubmitting] = useState(false);
+  const [authenticationAppIntegrations, setAuthenticationAppIntegrations] = useState(true);
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
 
@@ -99,11 +101,112 @@ export default function VerifyOtpForm() {
         err?.message ||
         "OTP verification failed.",
       );
-      
+
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (authenticationAppIntegrations) {
+    return (
+      <div className="row g-0 h-100">
+        <div className="col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-center">
+          <Title
+            level={3}
+            style={{ marginBottom: 4, fontFamily: "Georgia,serif" }}
+            className="text-center"
+          >
+            Authentication App Integrations
+          </Title>
+          <Text type="secondary">
+            Enter the OTP your authentication app generated to complete login.
+          </Text>
+
+          {error ? (
+            <Alert
+              type="error"
+              message={error}
+              showIcon
+              style={{ marginTop: 16, marginBottom: 6 }}
+            />
+          ) : null}
+
+          {isOtpExpired ? (
+            <Alert
+              type="warning"
+              message="OTP expired"
+              description="Your 10-minute OTP window has expired. Please go back to login and request a new OTP."
+              showIcon
+              style={{ marginTop: 16, marginBottom: 6 }}
+            />
+          ) : null}
+
+          <Form
+            layout="vertical"
+            onFinish={handleVerifyOtp}
+            requiredMark={false}
+            style={{ marginTop: 18 }}
+            styles={{
+              label: {
+                fontWeight: 600,
+                fontSize: 13,
+                color: "rgb(55, 65, 81)",
+                fontFamily: "Arial,serif",
+              },
+            }}
+          >
+            <Form.Item
+              name="otp"
+              label="OTP"
+              rules={[
+                { required: true, message: "OTP is required" },
+                { len: 6, message: "OTP must be 6 digits" },
+                { pattern: /^\d{6}$/, message: "OTP must contain numbers only" },
+              ]}
+              className="mb-0"
+             
+            >
+              <Input.OTP
+                length={6}
+                size="large"
+                inputMode="numeric"
+                formatter={(value) => value.replace(/\D/g, "")}
+              />
+            </Form.Item>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              size="large"
+              loading={submitting}
+              disabled={isOtpExpired}
+              style={{ marginTop: 14 }}
+            >
+              Verify OTP
+            </Button>
+          </Form>
+
+          <div style={{ marginTop: 14, textAlign: "center" }}>
+            <Link
+              to="/auth/login"
+              replace
+              style={{ color: "#22c55e" }}
+              onClick={() => setError("")}
+            >
+              Back to login
+            </Link>
+          </div>
+        </div>
+
+        <div className="col-md-6 d-none d-md-flex align-items-center justify-content-center bg-light">
+          {/* show QR Code */}
+          {/* <QrCodeDisplay backendUrl={authenticationAppUrl} /> */}
+          <QrCodeDisplay backendUrl={`https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR81bNIEaGCzdwl2QV5sIrD4JXpsyk1smkr4psQ6MhDvA8lGy5_6Y4sEyk&s=10`} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="row g-0 h-100">

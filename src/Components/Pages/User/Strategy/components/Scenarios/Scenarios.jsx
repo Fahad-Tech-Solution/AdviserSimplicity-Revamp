@@ -176,7 +176,7 @@ const Scenarios = () => {
             // Update local state by setting softDelete to true instead of filtering out
             setReviews((prevReviews) =>
                 prevReviews.map((item) =>
-                    item._id === row._id ? { ...item, softDelete: true } : item
+                    item._id === row._id ? { ...item, softDelete: !row.softDelete } : item
                 )
             );
 

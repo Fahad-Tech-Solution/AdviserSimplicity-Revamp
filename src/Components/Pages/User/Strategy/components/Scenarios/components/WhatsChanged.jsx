@@ -526,7 +526,7 @@ const WhatsChanged = () => {
                         <Button
                             color="green"
                             variant="outlined"
-                            htmlType='next'
+                            htmlType='button'
                             key='next'
                             size="large"
                             style={{ borderRadius: 8, }}

@@ -21,7 +21,7 @@ import FamilyHome from "../Pages/User/Discovery/AssetsAndDebt/components/FamilyH
 import AssetInfoModal from "../Pages/User/Discovery/AssetsAndDebt/components/AssetInfoSection/AssetInfoModal.jsx";
 import PersonalLoanModal from "../Pages/User/Discovery/AssetsAndDebt/components/PersonalLoan/PersonalLoanModal.jsx";
 import CreditCardModal from "../Pages/User/Discovery/AssetsAndDebt/components/CreditCard/CreditCardModal.jsx";
-import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx";
+import FinancialInvestments from "../Pages/User/Discovery/FinancialInvestments/FinancialInvestments.jsx"; 
 import MiddleWare from "../Pages/User/Discovery/MiddleWare/MiddleWare.jsx";
 import InvestmentLoanModal from "../Pages/User/Discovery/FinancialInvestments/components/InvestmentLoanSection/InvestmentLoanModal.jsx";
 import InvestmentLoanModalSMSF from "../Pages/User/Discovery/SMSF/components/InvestmentLoanSection/InvestmentLoanModal.jsx";

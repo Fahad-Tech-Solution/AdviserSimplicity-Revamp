@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Checkbox, Col, Form, Input, message, Row, Space, Tabs, Typography } from "antd";
 import { useAtom, useAtomValue } from "jotai";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
@@ -324,13 +324,39 @@ export default function InsuranceNeedsForm({ modalData }) {
     );
 
     // Automatically sync currentNetIncomeAfterTax to life, tpd, and trauma amounts when editing
+    // useEffect(() => {
+    //     if (editing && currentCalculation?.computedFields?.currentNetIncomeAfterTax) {
+    //         const netIncome = currentCalculation.computedFields.currentNetIncomeAfterTax;
+    //         form.setFieldValue([activeProfileTab, "incomeReplacement", "lifeAmount"], netIncome);
+    //         form.setFieldValue([activeProfileTab, "incomeReplacement", "tpdAmount"], netIncome);
+    //         form.setFieldValue([activeProfileTab, "incomeReplacement", "traumaAmount"], netIncome);
+    //     }
+    // }, [editing, currentCalculation?.computedFields?.currentNetIncomeAfterTax, activeProfileTab, form]);
+
+    const prevNetIncomeRef = useRef({});
+
     useEffect(() => {
-        if (editing && currentCalculation?.computedFields?.currentNetIncomeAfterTax) {
-            const netIncome = currentCalculation.computedFields.currentNetIncomeAfterTax;
-            form.setFieldValue([activeProfileTab, "incomeReplacement", "lifeAmount"], netIncome);
-            form.setFieldValue([activeProfileTab, "incomeReplacement", "tpdAmount"], netIncome);
-            form.setFieldValue([activeProfileTab, "incomeReplacement", "traumaAmount"], netIncome);
-        }
+        const netIncome = currentCalculation?.computedFields?.currentNetIncomeAfterTax || "";
+        const prevNetIncome = prevNetIncomeRef.current[activeProfileTab];
+
+        // always keep the baseline up to date (even in view mode)
+        prevNetIncomeRef.current[activeProfileTab] = netIncome;
+
+        if (!editing || !netIncome) return;
+
+        // true only when gross income changed after the baseline was recorded
+        const netIncomeChanged = prevNetIncome !== undefined && prevNetIncome !== netIncome;
+
+        ["lifeAmount", "tpdAmount", "traumaAmount"].forEach((field) => {
+            const path = [activeProfileTab, "incomeReplacement", field];
+            const existing = form.getFieldValue(path);
+            const isEmpty = existing === "" || existing === null || existing === undefined;
+
+            // fill if empty, or refresh if gross income was changed
+            if (isEmpty || netIncomeChanged) {
+                form.setFieldValue(path, netIncome);
+            }
+        });
     }, [editing, currentCalculation?.computedFields?.currentNetIncomeAfterTax, activeProfileTab, form]);
 
     // Section 1: Existing Cover & Premiums

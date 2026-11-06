@@ -20,7 +20,6 @@ const TABLE_PROPS = {
 const FREQUENCY_OPTIONS = [
   { value: "Fortnightly", label: "Fortnightly" },
   { value: "Monthly", label: "Monthly" },
-
 ];
 
 const FREQUENCY_MULTIPLIERS = {

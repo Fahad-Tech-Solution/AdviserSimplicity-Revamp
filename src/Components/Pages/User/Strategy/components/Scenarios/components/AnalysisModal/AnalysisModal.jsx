@@ -7,7 +7,7 @@ import parse from "html-react-parser";
 const { Text } = Typography;
 
 const DEFAULT_DISCLAIMER =
-    "Projections and estimates are based on the assumptions and inputs provided and are <strong>not guaranteed</strong>. Actual outcomes may differ due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This information is general in nature and is not personal financial product advice.";
+    "The figures shown are projections and estimates based on the assumptions and inputs provided. They are <strong>not guaranteed</strong> and actual outcomes may differ materially due to investment returns, legislative changes, taxation rules, inflation, contribution caps, market volatility, or personal circumstances. This is general information only and does not constitute personal financial product advice. Past performance is not a reliable indicator of future performance. For formal advice tailored to the client's specific situation, refer to the calculator's detailed output and the Record of Advice.";
 
 function getAnalysisText(item) {
     if (typeof item === "string" || typeof item === "number") return String(item);
