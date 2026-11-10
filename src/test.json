@@ -1,51 +1,140 @@
 {
-    "_id": "6ab3b9e43cef4de6ec9d5670",
-    "scenarioFK": "6ab3b9e33cef4de6ec9d562f",
-    "client": {
-        "preferredName": "Zack",
-        "incomeFromBusinessTotal": "$10,000",
-        "superAnnuationTotal": "$30,000",
-        "riskGoal": "Balanced",
-        "contributionType": "",
-        "sgcPercent": "",
-        "sgcAmount": "",
-        "maxConcessional": "",
-        "ssPersonalConcessional": "",
-        "nonConcessional": "",
-        "lumpSumNcc": "",
-        "investmentReturn": "",
-        "salaryGrowth": "",
-        "projectionPeriod": "",
-        "insurancePremium": "",
-        "premiumIndexation": "",
-        "premiumYears": "",
-        "projectedBalance": ""
+    "_id": "6acddbc6cfc6a9450f93d89b",
+    "rateReference": {
+        "fullPensionComponents": {
+            "basisPayment": {
+                "client": "$1100.36",
+                "partner": "$829.46"
+            },
+            "pharmaceuticalBenefit": {
+                "client": "$86.50",
+                "partner": "$65.20"
+            },
+            "cleanEnergySupplement": {
+                "client": "$14.12",
+                "partner": "$10.60"
+            }
+        },
+        "assetsTestHomeowner": {
+            "client": {
+                "lower": "$333,000",
+                "upper": "$733,500"
+            },
+            "partner": {
+                "lower": "$499,000",
+                "upper": "$1,102,500"
+            }
+        },
+        "assetsTestNonHomeowner": {
+            "client": {
+                "lower": "$600,000",
+                "upper": "$1,000,500"
+            },
+            "partner": {
+                "lower": "$766,000",
+                "upper": "$1,369,500"
+            }
+        },
+        "illnessSeparatedAssetCutOff": {
+            "homeownerUpper": "$1,300,000",
+            "nonHomeownerUpper": "$1,567,000"
+        },
+        "incomeTestFreeAreas": {
+            "client": "$226",
+            "partner": "$396"
+        },
+        "incomeTestCutOffPoints": {
+            "client": "$2627.80",
+            "partner": "$4016.80",
+            "illnessSeparatedCombined": "$5199.60"
+        },
+        "deemingRates": {
+            "clientThreshold": "$66,800",
+            "partnerThreshold": "$110,600",
+            "lowerRate": "1.25%",
+            "upperRate": "3.25%"
+        },
+        "assetsTaper": {
+            "reductionRate": "$3"
+        },
+        "contributionCaps": {
+            "concessionalCap": "$32,500",
+            "nonConcessionalCap": "$130,000"
+        },
+        "lowIncomeHealthCareCard": {
+            "clientPerWeek": "$811",
+            "partnerCombinedPerWeek": "$1,385",
+            "perDependentChildPerWeek": "$43"
+        }
     },
-    "partner": {
-        "preferredName": "",
-        "incomeFromBusinessTotal": "",
-        "superAnnuationTotal": "",
-        "riskGoal": "",
-        "contributionType": "",
-        "sgcPercent": "",
-        "sgcAmount": "",
-        "maxConcessional": "",
-        "ssPersonalConcessional": "",
-        "nonConcessional": "",
-        "lumpSumNcc": "",
-        "investmentReturn": "",
-        "salaryGrowth": "",
-        "projectionPeriod": "",
-        "insurancePremium": "",
-        "premiumIndexation": "",
-        "premiumYears": "",
-        "projectedBalance": ""
+    "taxRatesSchema": {
+        "incomeTaxBrackets": [
+            {
+                "min": "$0",
+                "max": "$18,200",
+                "rate": "0",
+                "baseTax": "$0"
+            },
+            {
+                "min": "$18,201",
+                "max": "$45,000",
+                "rate": "0.16",
+                "baseTax": "$0"
+            },
+            {
+                "min": "$45,001",
+                "max": "$135,000",
+                "rate": "0.3",
+                "baseTax": "$4,288"
+            },
+            {
+                "min": "$135,001",
+                "max": "$190,000",
+                "rate": "0.37",
+                "baseTax": "$31,288"
+            },
+            {
+                "min": "$190,001",
+                "max": "$0",
+                "rate": "0.45",
+                "baseTax": "$51,638"
+            }
+        ],
+        "medicareLevy": {
+            "exemptBelow": "$23,365",
+            "fullRateAbove": "$290,206",
+            "shadeInRate": "0.1",
+            "fullRate": "0.02"
+        },
+        "lowIncomeTaxOffset": {
+            "maxOffset": "$700",
+            "fullAtOrBelow": "$37,500",
+            "band1EndsAt": "$45,000",
+            "band1Taper": "0.05",
+            "phasesOutAt": "$66,667",
+            "band2Taper": "0.015"
+        },
+        "saptoSingle": {
+            "maxOffset": "$2,230",
+            "fullBelow": "$32,279",
+            "nilAbove": "$50,119"
+        },
+        "saptoCouple": {
+            "maxOffset": "$1,602",
+            "fullBelow": "$28,974",
+            "nilAbove": "$41,790",
+            "taperRate": "0.125"
+        }
     },
-    "owner": [
-        "client",
-        "partner"
-    ],
-    "createdAt": "2026-09-23T11:37:08.079Z",
-    "updatedAt": "2026-09-30T11:46:35.927Z",
+    "expectedReturn": {
+        "Cash": "3.0",
+        "Conservative": "3.8",
+        "ModeratelyConservative": "4.5",
+        "Balanced": "5.0",
+        "Growth": "6.0",
+        "HighGrowth": "6.5"
+    },
+    "createdAt": "2026-10-13T07:20:38.307Z",
+    "updatedAt": "2026-11-09T12:57:58.089Z",
     "__v": 0
 }

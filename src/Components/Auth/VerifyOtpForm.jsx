@@ -32,7 +32,7 @@ export default function VerifyOtpForm() {
   const { message } = AntdApp.useApp();
   const { saveSessionFromAuthResponse } = useAuthSession();
   const [submitting, setSubmitting] = useState(false);
-  const [authenticationAppIntegrations, setAuthenticationAppIntegrations] = useState(true);
+  const [authenticationAppIntegrations, setAuthenticationAppIntegrations] = useState(false);
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
 

@@ -11,6 +11,8 @@ import { useGetReviewName, useReviewOptions } from "../../../../../../../../hook
 
 const { Text } = Typography;
 
+const EMPTY_EXPECTED_RETURN = {};
+
 const TABLE_PROPS = {
     showCount: false,
     noPagination: true,
@@ -28,6 +30,15 @@ const RISK_PROFILE_OPTIONS = [
     { label: "Growth", value: "Growth" },
     { label: "High Growth", value: "High Growth" },
 ];
+
+const RISK_PROFILE_RETURNS_Values_Switch = {
+    "Cash Management": "Cash",
+    Conservative: "Conservative",
+    "Moderately Conservative": "ModeratelyConservative",
+    Balanced: "Balanced",
+    Growth: "Growth",
+    "High Growth": "HighGrowth",
+};
 
 const HOME_OWNERSHIP_OPTIONS = [
     { label: "Homeowner", value: "Homeowner" },
@@ -100,7 +111,16 @@ function SectionTitle({ children, extra }) {
     );
 }
 
-function buildInitialPerson(person = {}) {
+function getExpectedReturn(expectedReturn, riskGoal) {
+    const expectedRate = expectedReturn?.[RISK_PROFILE_RETURNS_Values_Switch[riskGoal]];
+    return expectedRate !== undefined && expectedRate !== null && expectedRate !== ""
+        ? formatPercentValue(expectedRate)
+        : "";
+}
+
+function buildInitialPerson(person = {}, expectedReturn) {
+    const riskGoal = person?.riskGoal || "Balanced";
+
     return {
         preferredName: person?.preferredName || "",
         DOB: person?.DOB ? dayjs(person.DOB) : null,
@@ -108,12 +128,16 @@ function buildInitialPerson(person = {}) {
         nccTopUp: formatCurrencyValue(person?.nccTopUp),
         nccTopUpYear: person?.nccTopUpYear || "Year 1",
         withdrawalAmount: formatCurrencyValue(person?.withdrawalAmount),
-        riskGoal: person?.riskGoal || "Balanced",
-        investmentReturn: person?.investmentReturn ?? "",
+        riskGoal,
+        investmentReturn: person?.investmentReturn !== undefined &&
+            person?.investmentReturn !== null &&
+            person?.investmentReturn !== ""
+            ? formatPercentValue(person.investmentReturn)
+            : getExpectedReturn(expectedReturn, riskGoal),
     };
 }
 
-function buildInitialValues(sectionData) {
+function buildInitialValues(sectionData, expectedReturn) {
     const rawOwner = Array.isArray(sectionData?.owner) && sectionData.owner.length > 0
         ? sectionData.owner
         : ["client", "partner"];
@@ -124,8 +148,8 @@ function buildInitialValues(sectionData) {
         owner: rawOwner,
         pensionStartDate: sectionData?.pensionStartDate ? dayjs(sectionData.pensionStartDate) : null,
         includeAgePension: sectionData?.includeAgePension ? "Yes" : "No",
-        client: buildInitialPerson(sectionData?.client),
-        partner: buildInitialPerson(sectionData?.partner),
+        client: buildInitialPerson(sectionData?.client, expectedReturn),
+        partner: buildInitialPerson(sectionData?.partner, expectedReturn),
         agePensionProjection: {
             relationshipStatus: agePension?.relationshipStatus || "Auto (from owners)",
             homeOwnership: agePension?.homeOwnership || "Non-Homeowner",
@@ -150,10 +174,12 @@ export default function RetirementAdequacyForm({ modalData }) {
 
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
     const initialData = selectedReviewAllData?.retirementAdequacyDetails || {};
+    const expectedReturn =
+        selectedReviewAllData?.reviewRateReference?.expectedReturn || EMPTY_EXPECTED_RETURN;
 
     const initialValues = useMemo(
-        () => buildInitialValues(initialData),
-        [initialData]
+        () => buildInitialValues(initialData, expectedReturn),
+        [initialData, expectedReturn]
     );
 
     const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
@@ -262,6 +288,12 @@ export default function RetirementAdequacyForm({ modalData }) {
             type: "select",
             options: RISK_PROFILE_OPTIONS,
             width: 140,
+            onChange: (value, record, _column, currentForm) => {
+                currentForm.setFieldValue(
+                    [record.formPath, "investmentReturn"],
+                    getExpectedReturn(expectedReturn, value),
+                );
+            },
         },
         {
             title: "Investment Return (%)",

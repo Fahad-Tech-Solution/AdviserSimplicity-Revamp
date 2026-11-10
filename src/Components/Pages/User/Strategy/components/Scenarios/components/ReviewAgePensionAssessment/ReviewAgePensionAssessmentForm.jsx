@@ -216,8 +216,10 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
         form.setFieldsValue(initialValues);
     }, [form, initialValues]);
 
-    // Table 1: Personal Details Columns
-    const PERSONAL_DETAILS_COLUMNS = [
+
+    const isSingle = personalDetails?.situation === 'single';
+
+    const PERSONAL_DETAILS_COLUMNS = useMemo(() => [
         {
             title: "Situation",
             dataIndex: "situation",
@@ -245,7 +247,8 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                 setFormattedField(value, record, column, currentForm, { currency: false });
             },
         },
-        {
+        // Fixed conditional column using a safe ternary spread
+        ...(isSingle ? [] : [{
             title: "Partner Age",
             dataIndex: "partnerAge",
             key: "partnerAge",
@@ -255,7 +258,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             onChange: (value, record, column, currentForm) => {
                 setFormattedField(value, record, column, currentForm, { currency: false });
             },
-        },
+        }]),
         {
             title: "LIHCC existing holder?",
             dataIndex: "lihccExistingHolder",
@@ -265,8 +268,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
             valuePropName: "checked",
             renderView: ({ value }) => <Checkbox checked={Boolean(value)} disabled />,
         },
-
-    ];
+    ], [isSingle]); // Re-computes columns whenever 'isSingle' changes
 
     // Table 2: Lifestyle & Personal Assets Columns
     const LIFESTYLE_COLUMNS = [
@@ -576,7 +578,7 @@ export default function ReviewAgePensionAssessmentForm({ modalData }) {
                     situation: values.personalDetails.situation,
                     homeOwnership: values.personalDetails.homeOwnership,
                     clientAge: toAge(values.personalDetails.clientAge),
-                    partnerAge: toAge(values.personalDetails.partnerAge),
+                    partnerAge: toAge(values?.personalDetails?.partnerAge) ,
                     lihccExistingHolder: Boolean(values.personalDetails.lihccExistingHolder),
                 },
                 lifestyleAssets: {

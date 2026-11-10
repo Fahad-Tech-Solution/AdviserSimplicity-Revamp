@@ -34,7 +34,7 @@ const ABP_MIN_RATES = [
 ];
 
 const DEFAULT_RISK_RETURNS = {
-    Cash: 3,
+    'Cash Management': 3,
     Conservative: 3.8,
     'Moderately Conservative': 4.5,
     Balanced: 5,
@@ -42,7 +42,6 @@ const DEFAULT_RISK_RETURNS = {
     'High Growth': 6.5,
 };
 
-const AGE_PENSION_AGE = 67;
 const AGE_PENSION_RATES = {
     singleBaseFn: 1100.3,
     singlePharmFn: 86.5,
@@ -62,12 +61,116 @@ const AGE_PENSION_RATES = {
     deemUpperRate: 0.0325,
     assetsTaperPerThousandFn: 3,
 };
+const AGE_PENSION_AGE = 67;
+
+const DEFAULT_CALCULATION_RATES = {
+    riskReturns: DEFAULT_RISK_RETURNS,
+    agePension: AGE_PENSION_RATES,
+};
 
 const parseNumber = (value, fallback = 0) => {
     if (value === null || value === undefined || value === '') return fallback;
     const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
     return Number.isFinite(parsed) ? parsed : fallback;
 };
+
+function getCalculationRates(reviewRateReference) {
+    const reference = reviewRateReference?.rateReference || {};
+    const expectedReturn = reviewRateReference?.expectedReturn || {};
+    const fullPensionComponents = reference.fullPensionComponents || {};
+    const homeownerAssets = reference.assetsTestHomeowner || {};
+    const nonHomeownerAssets = reference.assetsTestNonHomeowner || {};
+    const incomeFreeAreas = reference.incomeTestFreeAreas || {};
+    const deemingRates = reference.deemingRates || {};
+    const defaultAgePension = AGE_PENSION_RATES;
+
+    return {
+        riskReturns: {
+            'Cash Management': parseNumber(
+                expectedReturn.Cash,
+                DEFAULT_RISK_RETURNS['Cash Management'],
+            ),
+            Conservative: parseNumber(expectedReturn.Conservative, DEFAULT_RISK_RETURNS.Conservative),
+            'Moderately Conservative': parseNumber(
+                expectedReturn.ModeratelyConservative,
+                DEFAULT_RISK_RETURNS['Moderately Conservative'],
+            ),
+            Balanced: parseNumber(expectedReturn.Balanced, DEFAULT_RISK_RETURNS.Balanced),
+            Growth: parseNumber(expectedReturn.Growth, DEFAULT_RISK_RETURNS.Growth),
+            'High Growth': parseNumber(expectedReturn.HighGrowth, DEFAULT_RISK_RETURNS['High Growth']),
+        },
+        agePension: {
+            singleBaseFn: parseNumber(
+                fullPensionComponents.basisPayment?.client,
+                defaultAgePension.singleBaseFn,
+            ),
+            singlePharmFn: parseNumber(
+                fullPensionComponents.pharmaceuticalBenefit?.client,
+                defaultAgePension.singlePharmFn,
+            ),
+            singleCleanFn: parseNumber(
+                fullPensionComponents.cleanEnergySupplement?.client,
+                defaultAgePension.singleCleanFn,
+            ),
+            coupleBaseFn: parseNumber(
+                fullPensionComponents.basisPayment?.partner,
+                defaultAgePension.coupleBaseFn,
+            ),
+            couplePharmFn: parseNumber(
+                fullPensionComponents.pharmaceuticalBenefit?.partner,
+                defaultAgePension.couplePharmFn,
+            ),
+            coupleCleanFn: parseNumber(
+                fullPensionComponents.cleanEnergySupplement?.partner,
+                defaultAgePension.coupleCleanFn,
+            ),
+            singleHomeLower: parseNumber(
+                homeownerAssets.client?.lower,
+                defaultAgePension.singleHomeLower,
+            ),
+            coupleHomeLower: parseNumber(
+                homeownerAssets.partner?.lower,
+                defaultAgePension.coupleHomeLower,
+            ),
+            singleRentLower: parseNumber(
+                nonHomeownerAssets.client?.lower,
+                defaultAgePension.singleRentLower,
+            ),
+            coupleRentLower: parseNumber(
+                nonHomeownerAssets.partner?.lower,
+                defaultAgePension.coupleRentLower,
+            ),
+            incomeFreeSingleFn: parseNumber(
+                incomeFreeAreas.client,
+                defaultAgePension.incomeFreeSingleFn,
+            ),
+            incomeFreeCoupleFn: parseNumber(
+                incomeFreeAreas.partner,
+                defaultAgePension.incomeFreeCoupleFn,
+            ),
+            deemSingleThreshold: parseNumber(
+                deemingRates.clientThreshold,
+                defaultAgePension.deemSingleThreshold,
+            ),
+            deemCoupleThreshold: parseNumber(
+                deemingRates.partnerThreshold,
+                defaultAgePension.deemCoupleThreshold,
+            ),
+            deemLowerRate: parseNumber(
+                deemingRates.lowerRate,
+                defaultAgePension.deemLowerRate * 100,
+            ) / 100,
+            deemUpperRate: parseNumber(
+                deemingRates.upperRate,
+                defaultAgePension.deemUpperRate * 100,
+            ) / 100,
+            assetsTaperPerThousandFn: parseNumber(
+                reference.assetsTaper?.reductionRate,
+                defaultAgePension.assetsTaperPerThousandFn,
+            ),
+        },
+    };
+}
 
 const formatCurrency = (value) =>
     `$${Math.round(value || 0).toLocaleString('en-AU')}`;
@@ -108,7 +211,11 @@ function getMinimumDrawdownRate(age) {
     return ABP_MIN_RATES.find(({ maxAge }) => age < maxAge)?.rate ?? 0.14;
 }
 
-function calculatePersonProjection(person = {}, pensionStartDate, { applyAdjustments = true } = {}) {
+function calculatePersonProjection(
+    person = {},
+    pensionStartDate,
+    { applyAdjustments = true, riskReturns = DEFAULT_RISK_RETURNS } = {},
+) {
     const startingBalance = Math.max(0, parseNumber(person.accountBasedPensionTotal));
     const nccTopUp = applyAdjustments ? Math.max(0, parseNumber(person.nccTopUp)) : 0;
     const topUpYearValue = parseInt(String(person.nccTopUpYear || '').replace(/\D/g, ''), 10);
@@ -117,7 +224,7 @@ function calculatePersonProjection(person = {}, pensionStartDate, { applyAdjustm
     const explicitReturn = parseNumber(person.investmentReturn, NaN);
     const returnRate = (Number.isFinite(explicitReturn)
         ? explicitReturn
-        : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced) / 100;
+        : riskReturns[person.riskGoal] ?? riskReturns.Balanced) / 100;
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const dateOfBirth = person.DOB;
     const ageAtStart = getAgeAtDate(dateOfBirth, firstYearDate);
@@ -202,10 +309,21 @@ function buildMetrics(rows, startingBalance, nccTopUp, withdrawal, sustainedText
     };
 }
 
-function calculateProjection(person, pensionStartDate, baselinePerson = person, expenseProjection = null) {
-    const adjusted = expenseProjection || calculatePersonProjection(person, pensionStartDate);
+function calculateProjection(
+    person,
+    pensionStartDate,
+    baselinePerson = person,
+    expenseProjection = null,
+    calculationRates = DEFAULT_CALCULATION_RATES,
+) {
+    const adjusted = expenseProjection || calculatePersonProjection(person, pensionStartDate, {
+        riskReturns: calculationRates.riskReturns,
+    });
     const baseline = !expenseProjection && adjusted.hasAdjustments
-        ? calculatePersonProjection(baselinePerson, pensionStartDate, { applyAdjustments: false })
+        ? calculatePersonProjection(baselinePerson, pensionStartDate, {
+            applyAdjustments: false,
+            riskReturns: calculationRates.riskReturns,
+        })
         : null;
     const rows = adjusted.rows.map((row, index) => ({
         ...row,
@@ -238,8 +356,15 @@ function calculateProjection(person, pensionStartDate, baselinePerson = person, 
     };
 }
 
-function calculateAgePension(assessableAssets, financialAssets, isCouple, homeowner, indexation, eligibleCount) {
-    const rates = AGE_PENSION_RATES;
+function calculateAgePension(
+    assessableAssets,
+    financialAssets,
+    isCouple,
+    homeowner,
+    indexation,
+    eligibleCount,
+    rates = AGE_PENSION_RATES,
+) {
     const fullSingle = rates.singleBaseFn * 26 * indexation;
     const fullCoupleEach = rates.coupleBaseFn * 26 * indexation;
     const fullPension = isCouple ? fullCoupleEach * 2 : fullSingle;
@@ -280,7 +405,12 @@ function getExtraWithdrawalFrequency(value) {
     return Number.isInteger(numericFrequency) && numericFrequency > 0 ? numericFrequency : 0;
 }
 
-function calculateExpensesDrivenProjections(people, pensionStartDate, projection = {}) {
+function calculateExpensesDrivenProjections(
+    people,
+    pensionStartDate,
+    projection = {},
+    calculationRates = DEFAULT_CALCULATION_RATES,
+) {
     const years = 30;
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const firstFinancialYear = firstYearDate.getFullYear();
@@ -304,7 +434,8 @@ function calculateExpensesDrivenProjections(people, pensionStartDate, projection
         const explicitReturn = parseNumber(person.investmentReturn, NaN);
         const returnRate = (Number.isFinite(explicitReturn)
             ? explicitReturn
-            : DEFAULT_RISK_RETURNS[person.riskGoal] ?? DEFAULT_RISK_RETURNS.Balanced) / 100;
+            : calculationRates.riskReturns[person.riskGoal]
+                ?? calculationRates.riskReturns.Balanced) / 100;
         const ageAtStart = getAgeAtDate(person.DOB, firstYearDate);
         const openingBalance = Math.max(
             0,
@@ -353,7 +484,7 @@ function calculateExpensesDrivenProjections(people, pensionStartDate, projection
         });
         const minimumAssets = periodData.reduce((total, row) => total + row.closingMinimum, 0);
         const indexation = (1 + thresholdIndexation) ** yearIndex;
-        otherFinancialBalance *= 1 + AGE_PENSION_RATES.deemUpperRate;
+        otherFinancialBalance *= 1 + calculationRates.agePension.deemUpperRate;
         const agePensionEligibleCount = periodData.reduce(
             (total, row) => total + Number(row.age !== null && row.age >= AGE_PENSION_AGE),
             0,
@@ -365,6 +496,7 @@ function calculateExpensesDrivenProjections(people, pensionStartDate, projection
             homeowner,
             indexation,
             agePensionEligibleCount,
+            calculationRates.agePension,
         );
         const pensionIncome = includeAgePension ? agePension.pension : 0;
         const expenseForYear = expenses * (1 + expensesIndexation) ** (projectionLeadYears + yearIndex);
@@ -484,7 +616,12 @@ function calculateExpensesDrivenProjections(people, pensionStartDate, projection
     });
 }
 
-function calculateCashflowProjection(people, pensionStartDate, projection = {}) {
+function calculateCashflowProjection(
+    people,
+    pensionStartDate,
+    projection = {},
+    calculationRates = DEFAULT_CALCULATION_RATES,
+) {
     const maxYears = Math.max(0, ...people.map(({ rows }) => rows.length));
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const startingAges = people.map(({ DOB }) => getAgeAtDate(DOB, firstYearDate));
@@ -511,7 +648,7 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
         const closingBalance = combined('closingBalance');
         const indexation = (1 + thresholdIndexation) ** index;
         const expenseForYear = expenses * (1 + expensesIndexation) ** index;
-        otherFinancialInvestments *= 1 + AGE_PENSION_RATES.deemUpperRate;
+        otherFinancialInvestments *= 1 + calculationRates.agePension.deemUpperRate;
         const assessableAssets = closingBalance + personalAssets + otherFinancialInvestments;
         const financialAssets = closingBalance + otherFinancialInvestments;
         const eligibleCount = Number(clientAge !== null && clientAge >= AGE_PENSION_AGE)
@@ -523,6 +660,7 @@ function calculateCashflowProjection(people, pensionStartDate, projection = {}) 
             homeowner,
             indexation,
             eligibleCount,
+            calculationRates.agePension,
         );
         const pension = includeAgePension ? agePension.pension : 0;
         const annualDrawdown = combined('annualPayment');
@@ -627,6 +765,10 @@ const RetirementAdequacy = () => {
     const [openAnalysisModal, setOpenAnalysisModal] = useState(false);
     const [selectedReviewAllData] = useAtom(SelectedReviewAllData);
     const getReviewName = useGetReviewName();
+    const calculationRates = useMemo(
+        () => getCalculationRates(selectedReviewAllData?.reviewRateReference),
+        [selectedReviewAllData?.reviewRateReference],
+    );
 
     const headingStyle = { fontFamily: "Georgia, serif" };
     const renderTitleBlock = useTitleBlock({
@@ -667,22 +809,37 @@ const RetirementAdequacy = () => {
                     [client, partner],
                     startDate,
                     expenseOptions,
+                    calculationRates,
                 );
             } else {
                 [clientExpenseProjection] = calculateExpensesDrivenProjections(
                     [client],
                     startDate,
                     expenseOptions,
+                    calculationRates,
                 );
                 [partnerExpenseProjection] = calculateExpensesDrivenProjections(
                     [partner],
                     startDate,
                     expenseOptions,
+                    calculationRates,
                 );
             }
         }
-        const clientProjection = calculateProjection(client, startDate, client, clientExpenseProjection);
-        const partnerProjection = calculateProjection(partner, startDate, partner, partnerExpenseProjection);
+        const clientProjection = calculateProjection(
+            client,
+            startDate,
+            client,
+            clientExpenseProjection,
+            calculationRates,
+        );
+        const partnerProjection = calculateProjection(
+            partner,
+            startDate,
+            partner,
+            partnerExpenseProjection,
+            calculationRates,
+        );
 
         if (selectedProfile === 'partner') return partnerProjection;
         if (selectedProfile === 'cashflow') {
@@ -693,10 +850,10 @@ const RetirementAdequacy = () => {
                 ...agePensionProjection,
                 isCouple,
                 includeAgePension: expenseOptions.includeAgePension,
-            });
+            }, calculationRates);
         }
         return clientProjection;
-    }, [selectedProfile, selectedReviewAllData]);
+    }, [calculationRates, selectedProfile, selectedReviewAllData]);
 
     const currentMetrics = calculatedData.metrics;
     const currentChartData = calculatedData.rows;
@@ -730,8 +887,16 @@ const RetirementAdequacy = () => {
             DOB: section.partner?.DOB || selectedReviewAllData?.personalDetails?.partner?.DOB,
         };
 
-        const clientProjection = calculateProjection(clientData, startDate, clientData, null);
-        const partnerProjection = hasPartner ? calculateProjection(partnerData, startDate, partnerData, null) : null;
+        const clientProjection = calculateProjection(
+            clientData,
+            startDate,
+            clientData,
+            null,
+            calculationRates,
+        );
+        const partnerProjection = hasPartner
+            ? calculateProjection(partnerData, startDate, partnerData, null, calculationRates)
+            : null;
 
         const getPreferredName = (profileKey) => {
             const person = section[profileKey] || {};
@@ -791,7 +956,7 @@ const RetirementAdequacy = () => {
             analysis,
             readAloud: speech.join(' '),
         };
-    }, [selectedReviewAllData, getReviewName]);
+    }, [calculationRates, selectedReviewAllData, getReviewName]);
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>

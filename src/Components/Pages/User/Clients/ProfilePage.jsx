@@ -11,7 +11,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { EditOutlined, LogoutOutlined } from "@ant-design/icons";
+import { CopyOutlined, EditOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useAtomValue } from "jotai";
 import { loggedInUser } from "../../../../store/authState";
 import profileBanner from "../../../../assets/image/Adviser-Simplicity-Profile-Green-Banner.png";
@@ -23,6 +23,7 @@ import { IoSearchOutline } from "react-icons/io5";
 import AppModal from "../../../Common/AppModal";
 import { useState } from "react";
 import ConnectAsana from "./components/ConnectAsana";
+import TwoFactorAuth from "./components/TwoFactorAuth";
 
 const { Title, Text } = Typography;
 
@@ -149,6 +150,8 @@ export default function ProfilePage() {
   const roleLabel = getRoleLabel(user);
   const email = session?.email || user?.email || "No email available";
   let baseRoute = window.location.origin;
+  const [isMfaEnabled, setIsMfaEnabled] = useState(false);
+
 
   const profileLink = baseRoute === "https://as.denarowealth.com.au" ?
     "https://cdf.denarowealth.com.au/?referralId=" + user?.referralID + "&build=Prod1" :
@@ -156,9 +159,11 @@ export default function ProfilePage() {
   // "No profile link available";
 
   const [open, setOpen] = useState(false);
+  const [modalDetails, setModalDetails] = useState({ key: "" });
 
   const OpenModal = () => {
     setOpen(true);
+    setModalDetails({ key: "connectAsana", title: "Connect your Asana", subtitle: "Connect your Asana account to get started" });
   };
 
   return (
@@ -166,12 +171,12 @@ export default function ProfilePage() {
       <AppModal
         open={open}
         onClose={() => setOpen(false)}
-        title="Connect your Asana"
-        subtitle="Connect your Asana account to get started"
+        title={modalDetails.title || "Modal Title"}
+        subtitle={modalDetails.subtitle || "Modal Subtitle"}
         width={800}
         destroyOnClose
       >
-        <ConnectAsana />
+        {modalDetails.key === "connectAsana" ? <ConnectAsana /> : <TwoFactorAuth />}
       </AppModal>
 
       <div
@@ -293,6 +298,7 @@ export default function ProfilePage() {
               borderRadius: 18,
               border: "1px solid rgba(15, 23, 42, 0.08)",
               boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+              marginBottom: "10px",
             }}
           >
             <div style={{ marginBottom: 20 }}>
@@ -353,6 +359,68 @@ export default function ProfilePage() {
                 />
               </Col>
             </Row>
+          </Card>
+
+          <Card
+            style={{
+              borderRadius: 18,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+
+                <Text
+                  type="secondary"
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    letterSpacing: 2.5,
+                    color: "#22c55e",
+                    fontWeight: 700,
+                    marginBottom: 8,
+                  }}
+                >
+                  Account Security
+                </Text>
+                {isMfaEnabled ? (
+                  <Tag color="success" icon={<CheckOutlined />}>
+                    Active
+                  </Tag>
+                ) : (
+                  <Tag color="default">
+                    Disabled
+                  </Tag>
+                )}        </div>
+
+              <Title level={5} style={{ ...pageHeadingStyle, margin: 0 }}>
+                Authenticator App (2FA)
+              </Title>
+              <Text
+                type="secondary"
+                style={{
+                  display: "block",
+                  marginTop: 6,
+                  lineHeight: 1.6,
+                  fontSize: 12,
+                }}
+              >
+                Protect your financial portal with TOTP apps like Google Authenticator or Authy.
+              </Text>
+            </div>
+            <Button type="primary" style={{ width: "100%" }} onClick={() => {
+              setModalDetails({
+                key: "twoFactorAuth",
+                title: "Enable Two-Factor Authentication",
+                subtitle: "Add an extra layer of security to your account by enabling two-factor authentication (2FA).",
+              });
+              setOpen(true)
+            }}
+              icon={<SafetyCertificateOutlined />}
+            >
+              Set Up Authenticator
+            </Button>
           </Card>
         </Col>
 

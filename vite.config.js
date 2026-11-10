@@ -19,7 +19,8 @@ export default defineConfig({
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
         target:
           process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        // target: "http://192.168.18.11:7000",
+        // target: "http://192.168.18.99:7000",
+        // target: "http://192.168.0.100:7000",
         changeOrigin: true,
         secure: false,
         ws: true,
@@ -29,7 +30,8 @@ export default defineConfig({
         // target: process.env.VITE_API_BASE_URL || "http://192.168.18.128:7000",
         target:
           process.env.VITE_API_BASE_URL || "https://as.denarowealth.com.au",
-        // target: "http://192.168.18.11:7000",
+        // target: "http://192.168.18.99:7000",
+        // target: "http://192.168.0.100:7000",
         changeOrigin: true,
         secure: false,
         ws: true,
@@ -37,6 +39,6 @@ export default defineConfig({
       },
     },
   },
-  base: "/AdviserSimplicity-Revamp/",
-  // base: "/",
+  // base: "/AdviserSimplicity-Revamp/",
+  base: "/",
 });

@@ -105,7 +105,7 @@ function SectionTitle({ children }) {
     );
 }
 
-function buildInitialPerson(person = {}) {
+function buildInitialPerson(person = {}, expectedReturn) {
     return {
         preferredName: person?.preferredName || "",
         incomeFromBusinessTotal: formatCurrencyValue(person?.incomeFromBusinessTotal),
@@ -120,7 +120,7 @@ function buildInitialPerson(person = {}) {
         nonConcessional: formatCurrencyValue(person?.nonConcessional),
         lumpSumNcc: formatCurrencyValue(person?.lumpSumNcc),
 
-        investmentReturn: person?.investmentReturn ? formatPercentValue(person?.investmentReturn) : RISK_PROFILE_RETURNS[person?.riskGoal] || "",
+        investmentReturn: person?.investmentReturn ? formatPercentValue(person?.investmentReturn) : expectedReturn?.[RISK_PROFILE_RETURNS_Values_Switch[person?.riskGoal]] || "",
         salaryGrowth: formatPercentValue(person?.salaryGrowth),
         projectionPeriod: person?.projectionPeriod ?? "",
         insurancePremium: formatCurrencyValue(person?.insurancePremium),
@@ -130,15 +130,15 @@ function buildInitialPerson(person = {}) {
     };
 }
 
-function buildInitialValues(sectionData) {
+function buildInitialValues(sectionData, expectedReturn) {
     const rawOwner = Array.isArray(sectionData?.owner) && sectionData.owner.length > 0
         ? sectionData.owner
         : ["client", "partner"];
 
     return {
         owner: rawOwner,
-        client: buildInitialPerson(sectionData?.client),
-        partner: buildInitialPerson(sectionData?.partner),
+        client: buildInitialPerson(sectionData?.client, expectedReturn),
+        partner: buildInitialPerson(sectionData?.partner, expectedReturn),
     };
 }
 
@@ -152,7 +152,18 @@ const RISK_PROFILE_RETURNS = {
     "High Growth": 6.5,
 };
 
-const CONCESSIONAL_CAP = 32500;
+const RISK_PROFILE_RETURNS_Values_Switch = {
+
+    "Cash Management": "Cash",
+    "Conservative": "Conservative",
+    "Moderately Conservative": "ModeratelyConservative",
+    "Balanced": "Balanced",
+    "Growth": "Growth",
+    "High Growth": "HighGrowth",
+};
+
+
+const CONCESSIONAL_CAP_Default = 32500;
 const CONTRIBUTION_TAX_RATE = 0.15;
 const INSURANCE_TAX_REBATE_NET = 0.85;
 
@@ -193,7 +204,7 @@ function getPremiumIndexationRate(value, age) {
 /**
  * Calculates the final projected balance matching the exact guide HTML calculation model
  */
-const calculateProjectedBalanceEnd = (data) => {
+const calculateProjectedBalanceEnd = (data, CONCESSIONAL_CAP) => {
     const {
         superBalance = 0,
         investmentReturn,
@@ -274,15 +285,19 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
     const { patch } = useApi();
     const getReviewName = useGetReviewName();
 
-
     const [selectedReviewAllData, setSelectedReviewAllData] = useAtom(SelectedReviewAllData);
+
+    const expectedReturn = selectedReviewAllData?.reviewRateReference?.expectedReturn || {};
+    const CONCESSIONAL_CAP = selectedReviewAllData?.reviewRateReference?.contributionCaps?.concessionalCap || CONCESSIONAL_CAP_Default;
+    // const expectedReturn = selectedReviewAllData?.reviewRateReference?.expectedReturn || {};
+
     const initialData = useMemo(
         () => selectedReviewAllData?.superannuationDetails || {},
         [selectedReviewAllData?.superannuationDetails],
     );
 
     const initialValues = useMemo(
-        () => buildInitialValues(initialData),
+        () => buildInitialValues(initialData, expectedReturn),
         [initialData]
     );
 
@@ -367,8 +382,8 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
         switch (name) {
             case "riskGoal":
                 riskProfile = value;
-                if (RISK_PROFILE_RETURNS[value] !== undefined) {
-                    investmentReturn = RISK_PROFILE_RETURNS[value];
+                if (RISK_PROFILE_RETURNS_Values_Switch[value] !== undefined) {
+                    investmentReturn = parseFloat(expectedReturn?.[RISK_PROFILE_RETURNS_Values_Switch[value]]);
                 }
                 break;
             case "investmentReturn":
@@ -425,7 +440,7 @@ export default function ScenariosSuperProjectionForm({ modalData }) {
             premiumIndexationPercent: isNaN(premiumIndexationPercent) ? 0 : premiumIndexationPercent,
             premiumYears: isNaN(premiumYears) ? 0 : premiumYears,
             currentAge: currentAge ?? 0,
-        });
+        }, CONCESSIONAL_CAP);
 
         // Update form fields with correct column keys
         currentForm.setFieldsValue({

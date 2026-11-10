@@ -16,9 +16,9 @@ const formatCurrencyInput = (value) => {
 
 const formatPercentageInput = (value) => {
     if (value === null || value === undefined || value === '') return '';
-    const percentage = Number(value) * 100;
+    const percentage = Number(value);
     return Number.isFinite(percentage)
-        ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(percentage)}%`
+        ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 4 }).format(percentage)}%`
         : '';
 };
 
@@ -28,7 +28,7 @@ const parsePercentageInput = (value) => {
     const rawValue = value?.replace(/[%,\s]/g, '');
     if (!rawValue) return '';
     const numericValue = Number(rawValue);
-    return Number.isFinite(numericValue) ? numericValue / 100 : '';
+    return Number.isFinite(numericValue) ? numericValue  : '';
 };
 
 const currencyInputProps = {
@@ -62,6 +62,8 @@ const mapInitialValues = (initial) => {
         rate: parseNumber(b.rate),
         baseTax: parseNumber(b.baseTax),
     })) || [];
+
+    console.log("Parsed medicare levy shade-in rate:", parseNumber(initial.lowIncomeTaxOffset?.band2Taper));
 
     return {
         brackets,
