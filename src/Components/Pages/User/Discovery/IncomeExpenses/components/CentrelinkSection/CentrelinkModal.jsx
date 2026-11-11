@@ -10,6 +10,7 @@ import {
 } from "../../../../../../../hooks/helpers.js";
 import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
+import ErrorSummaryAlert from "../../../../../../Common/ErrorSummaryAlert.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -118,6 +119,7 @@ export default function CentrelinkModal({ modalData }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { post, patch } = useApi();
+  const [errorMessages, setErrorMessages] = useState({});
 
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
@@ -341,11 +343,21 @@ export default function CentrelinkModal({ modalData }) {
       );
       modalData?.closeModal?.();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        `Failed to update ${modalData?.title || "Centrelink"}`,
-      );
+      if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
+        setErrorMessages(error?.response?.data?.message || {})
+        message.error(
+          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+        );
+      }
+      else {
+        message.error(
+          error?.response?.data?.message ||
+          error?.message ||
+          `Failed to update ${modalData?.title || "Centrelink"}`,
+        );
+
+      }
+
     } finally {
       setSaving(false);
     }
@@ -389,6 +401,14 @@ export default function CentrelinkModal({ modalData }) {
               />
             </Form.Item>
           </Col>
+
+
+          {/* 2. Call the reusable alert component cleanly here */}
+          <ErrorSummaryAlert
+            errorMessages={errorMessages}
+            ownerOptions={availableOwnerOptions}
+          />
+
 
           <Col xs={24}>
             <EditableDynamicTable

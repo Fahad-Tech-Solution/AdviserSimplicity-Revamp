@@ -668,6 +668,16 @@ const HouseholdTable = ({ onAction, searchText = "", viewMode = false }) => {
               ...prevData,
               clients: prevData.clients.filter((client) => client._id !== row?._id),
             }));
+
+            if (selectedClient?._id === row?._id) {
+              setDiscoverySectionQuestions({});
+              setDiscoveryData({});
+              setSelectedClient(null);
+              setSelectedReview(null);
+              setSelectedReviewAllData(null);
+              setSelectedClientsReview([]);
+            }
+
             message.success({
               content: `Client ${row.client.clientPreferredName} (${row.client.Email}) is deleted successfully.`,
               key: loadingKey,

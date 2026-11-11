@@ -514,12 +514,13 @@ const ReviewAgePensionAssessment = () => {
                 <Text style={{ fontWeight: record.isTotal ? 700 : 400 }}>{text}</Text>
             ),
         },
+        ...agePensionData?.personalDetails?.situation?.toLowerCase().includes('couple') ? [
         {
             title: 'Partner',
             dataIndex: 'partner',
             key: 'partner',
             align: 'right',
-        },
+        },] : [],
         {
             title: 'Total',
             dataIndex: 'total',

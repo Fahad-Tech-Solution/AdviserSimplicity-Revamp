@@ -26,6 +26,7 @@ const IncomeExpenses = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
+
   const renderTitleBlock = useTitleBlock({
     titleStyle: headingStyle,
   });
@@ -86,11 +87,18 @@ const IncomeExpenses = () => {
         message.error("Failed to update regular living expenses");
       }
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to submit regular living expenses",
-      );
+      if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
+        message.error(
+          `Failed to regular living expenses. Please check the error messages below.`,
+        );
+      }
+      else {
+        message.error(
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to submit regular living expenses",
+        );
+      }
       console.error(error);
     }
   };
@@ -157,6 +165,7 @@ const IncomeExpenses = () => {
                       closeModal: () => setModalOpen(false),
                     });
                   }}
+
                 />
               </Col>
             );

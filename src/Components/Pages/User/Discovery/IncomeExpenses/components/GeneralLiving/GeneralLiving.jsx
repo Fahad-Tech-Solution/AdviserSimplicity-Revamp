@@ -15,6 +15,8 @@ import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.
 import { discoveryDataAtom } from "../../../../../../../store/authState";
 import { toCommaAndDollar } from "../../../../../../../hooks/helpers";
 import useApi from "../../../../../../../hooks/useApi.js";
+import ErrorSummaryAlert from "../../../../../../Common/ErrorSummaryAlert.jsx";
+import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 
 const { Title } = Typography;
 
@@ -212,6 +214,9 @@ export default function GeneralLiving({ modalData }) {
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
   const { post, patch } = useApi();
+  const [errorMessages, setErrorMessages] = useState({});
+  const ownerOptions = useOwnerOptions();
+
 
   const sectionData = discoveryData?.[SECTION_KEY] || {};
   const initialValues = useMemo(
@@ -347,11 +352,19 @@ export default function GeneralLiving({ modalData }) {
       );
       modalData?.closeModal?.();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        `Failed to update ${modalData?.title || "General Living"}`,
-      );
+      if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
+        setErrorMessages(error?.response?.data?.message || {})
+        message.error(
+          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+        );
+      }
+      else {
+        message.error(
+          error?.response?.data?.message ||
+          error?.message ||
+          `Failed to update ${modalData?.title || "General Living"}`,
+        );
+      }
     } finally {
       setSaving(false);
     }
@@ -390,6 +403,15 @@ export default function GeneralLiving({ modalData }) {
               </div>
             </Title>
           </Col>
+
+
+          {/* 2. Call the reusable alert component cleanly here */}
+          <ErrorSummaryAlert
+            errorMessages={errorMessages}
+            ownerOptions={ownerOptions}
+            extractFrom={"general"}
+          />
+
 
           <Col xs={24}>
             <Collapse

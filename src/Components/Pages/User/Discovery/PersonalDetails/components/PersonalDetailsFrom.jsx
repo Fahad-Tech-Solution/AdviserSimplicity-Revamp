@@ -1027,6 +1027,12 @@ export default function PersonalDetailsFrom({
           }
           setCreatingNewClient(false);
         }
+        else {
+          const row = mergeNewClientRowForTable(saved);
+          if (row) {
+            setSelectedClient(row);
+          }
+        }
 
         await onSave?.(saved ?? payload);
         message.success(

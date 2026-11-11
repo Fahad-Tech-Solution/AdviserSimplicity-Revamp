@@ -7,6 +7,7 @@ import { discoveryDataAtom } from "../../../../../../../store/authState.js";
 import { formatNumber, toCommaAndDollar } from "../../../../../../../hooks/helpers.js";
 import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData.js";
 import useApi from "../../../../../../../hooks/useApi.js";
+import ErrorSummaryAlert from "../../../../../../Common/ErrorSummaryAlert.jsx";
 
 const TABLE_PROPS = {
   showCount: false,
@@ -99,6 +100,7 @@ export default function OverseasPensionModal({ modalData }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { post, patch } = useApi();
+  const [errorMessages, setErrorMessages] = useState({});
 
   const discoveryData = useAtomValue(discoveryDataAtom);
   const setDiscoveryData = useSetAtom(discoveryDataAtom);
@@ -119,16 +121,16 @@ export default function OverseasPensionModal({ modalData }) {
     () =>
       Array.isArray(modalData?.optionsFrequency) && modalData.optionsFrequency.length
         ? modalData.optionsFrequency.map((option) =>
-            typeof option === "string"
-              ? { value: option, label: option }
-              : option,
-          )
+          typeof option === "string"
+            ? { value: option, label: option }
+            : option,
+        )
         : FREQUENCY_OPTIONS,
     [modalData?.optionsFrequency],
   );
 
   const OVERSEAS_PENSION_COLUMNS = [
-    { title: "Owner", key: "owner", kind: "owner", width: 80},
+    { title: "Owner", key: "owner", kind: "owner", width: 80 },
     {
       title: "Country",
       dataIndex: "country",
@@ -185,10 +187,10 @@ export default function OverseasPensionModal({ modalData }) {
       OVERSEAS_PENSION_COLUMNS.map((column) =>
         column.kind === "owner"
           ? {
-              ...column,
-              dataIndex: "ownerLabel",
-              editable: false,
-            }
+            ...column,
+            dataIndex: "ownerLabel",
+            editable: false,
+          }
           : column,
       ),
     [OVERSEAS_PENSION_COLUMNS],
@@ -254,21 +256,21 @@ export default function OverseasPensionModal({ modalData }) {
         undefined,
       client: clientSelected
         ? {
-            ...(sectionData?.client || {}),
-            country: sourceValues?.client?.country || "",
-            frequency: sourceValues?.client?.frequency || "",
-            regularPayment: formatCurrencyValue(sourceValues?.client?.regularPayment),
-            annualPayment: formatCurrencyValue(sourceValues?.client?.annualPayment),
-          }
+          ...(sectionData?.client || {}),
+          country: sourceValues?.client?.country || "",
+          frequency: sourceValues?.client?.frequency || "",
+          regularPayment: formatCurrencyValue(sourceValues?.client?.regularPayment),
+          annualPayment: formatCurrencyValue(sourceValues?.client?.annualPayment),
+        }
         : {},
       partner: partnerSelected
         ? {
-            ...(sectionData?.partner || {}),
-            country: sourceValues?.partner?.country || "",
-            frequency: sourceValues?.partner?.frequency || "",
-            regularPayment: formatCurrencyValue(sourceValues?.partner?.regularPayment),
-            annualPayment: formatCurrencyValue(sourceValues?.partner?.annualPayment),
-          }
+          ...(sectionData?.partner || {}),
+          country: sourceValues?.partner?.country || "",
+          frequency: sourceValues?.partner?.frequency || "",
+          regularPayment: formatCurrencyValue(sourceValues?.partner?.regularPayment),
+          annualPayment: formatCurrencyValue(sourceValues?.partner?.annualPayment),
+        }
         : {},
       clientTotal: clientSelected
         ? formatCurrencyValue(sourceValues?.client?.annualPayment)
@@ -295,11 +297,19 @@ export default function OverseasPensionModal({ modalData }) {
       );
       modalData?.closeModal?.();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
+      if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
+        setErrorMessages(error?.response?.data?.message || {})
+        message.error(
+          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+        );
+      }
+      else {
+        message.error(
+          error?.response?.data?.message ||
           error?.message ||
           `Failed to update ${modalData?.title || "Overseas Pension"}`,
-      );
+        );
+      }
     } finally {
       setSaving(false);
     }
@@ -343,6 +353,12 @@ export default function OverseasPensionModal({ modalData }) {
               />
             </Form.Item>
           </Col>
+
+          {/* 2. Call the reusable alert component cleanly here */}
+          <ErrorSummaryAlert
+            errorMessages={errorMessages}
+            ownerOptions={availableOwnerOptions}
+          />
 
           <Col xs={24}>
             <EditableDynamicTable

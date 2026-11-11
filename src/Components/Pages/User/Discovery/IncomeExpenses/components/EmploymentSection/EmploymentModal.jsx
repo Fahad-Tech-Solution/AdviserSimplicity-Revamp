@@ -1,4 +1,4 @@
-import { Button, Col, Form, message, Row, Select, Space } from "antd";
+import { Alert, Button, Col, Form, List, message, Row, Select, Space, Typography } from "antd";
 import dayjs from "dayjs";
 import { useAtomValue, useSetAtom } from "jotai";
 import React, { useEffect, useMemo, useState } from "react";
@@ -7,15 +7,16 @@ import {
   formatNumber,
   toCommaAndDollar,
 } from "../../../../../../../hooks/helpers";
-import { useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData";
+import { getOwnerDisplayName, useOwnerOptions } from "../../../../../../../hooks/useUserDashboardData";
 import useApi from "../../../../../../../hooks/useApi.js";
 import EditableDynamicTable from "../../../../../../Common/EditableDynamicTable.jsx";
-import { RiEdit2Fill } from "react-icons/ri";
+import { RiEdit2Fill, RiErrorWarningLine, RiInformationLine } from "react-icons/ri";
 import AppModal from "../../../../../../Common/AppModal.jsx";
 import LeaveEntitlements from "./LeaveEntitlements.jsx";
 import SalaryDetail from "./SalaryDetail.jsx";
 import SalaryPackageModal from "./SalaryPackageModal.jsx";
 import { renderModalContent } from "../../../../../../Common/renderModalContent.jsx";
+import ErrorSummaryAlert from "../../../../../../Common/ErrorSummaryAlert.jsx";
 
 const OWNER_SELECT_CLASS = "employment-owner-select";
 const EMPLOYMENT_STATUS_OPTIONS = [
@@ -25,6 +26,8 @@ const EMPLOYMENT_STATUS_OPTIONS = [
   "On Leave",
   "Part Time",
 ];
+
+const { Paragraph, Title, Text } = Typography;
 
 const TABLE_PROPS = {
   showCount: false,
@@ -128,6 +131,7 @@ export default function EmploymentModal({ modalData }) {
   const [saving, setSaving] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [openModalData, setOpenModalData] = useState(null);
+  const [errorMessages, setErrorMessages] = useState({});
   const { post, patch } = useApi();
 
   const discoveryData = useAtomValue(discoveryDataAtom);
@@ -549,11 +553,19 @@ export default function EmploymentModal({ modalData }) {
       );
       modalData?.closeModal?.();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        `Failed to update ${modalData?.title || "Employment"}`,
-      );
+      if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
+        setErrorMessages(error?.response?.data?.message || {})
+        message.error(
+          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+        );
+      }
+      else {
+        message.error(
+          error?.response?.data?.message ||
+          error?.message ||
+          `Failed to update ${modalData?.title || "Employment"}`,
+        );
+      }
     } finally {
       setSaving(false);
     }
@@ -607,6 +619,15 @@ export default function EmploymentModal({ modalData }) {
               />
             </Form.Item>
           </Col>
+
+          {/* 2. Call the reusable alert component cleanly here */}
+          <ErrorSummaryAlert
+            errorMessages={errorMessages}
+            ownerOptions={availableOwnerOptions}
+            generalParagraphText={`Please ensure that you have completed the <strong>Salary Detail</strong>,
+                            <strong>Salary Packaging</strong>, and <strong>Leave Entitlements</strong> sections for each
+                            owner. These sections are crucial for accurate financial reporting and analysis.`}
+          />
 
           <Col xs={24}>
             <EditableDynamicTable
