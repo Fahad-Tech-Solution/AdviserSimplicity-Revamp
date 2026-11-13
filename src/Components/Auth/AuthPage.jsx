@@ -8,6 +8,10 @@ import VerifyOtpForm from "./VerifyOtpForm";
 import ChangePasswordForm from "./ChangePasswordForm";
 import PricingTable from "./PricingTable";
 import StripeRedirect from "./StripeRedirect";
+import ChooseMethodForm from "./ChooseMethodForm";
+import AuthAppPromptForm from "./AuthAppPromptForm";
+import AuthAppSetupForm from "./AuthAppSetupForm";
+import AuthAppVerifyForm from "./AuthAppVerifyForm";
 
 export default function AuthPage() {
   const location = useLocation();
@@ -62,6 +66,8 @@ export default function AuthPage() {
               "/auth/forget-password",
               "/auth/otp-validation",
               "/auth/admin-login",
+              "/auth/choose-method",
+              "/auth/auth-app-prompt",
             ].includes(location.pathname)
               ? 350 :
               430,
@@ -76,6 +82,11 @@ export default function AuthPage() {
               <Route path="register" element={<RegisterForm />} />
               <Route path="forget-password" element={<ForgetPasswordForm />} />
               <Route path="change-password" element={<ChangePasswordForm />} />
+              {/* New 2FA flow screens */}
+              <Route path="choose-method" element={<ChooseMethodForm />} />
+              <Route path="auth-app-prompt" element={<AuthAppPromptForm />} />
+              <Route path="auth-app-setup" element={<AuthAppSetupForm />} />
+              <Route path="auth-app-verify" element={<AuthAppVerifyForm />} />
             </Routes>
           </div>
         </motion.div>

@@ -55,9 +55,9 @@ const IncomeExpenses = () => {
       return;
     }
 
+    const existing = discoveryData.retirementLivingExpenses;
+    const isUpdate = existing && typeof existing === "object" && existing._id;
     try {
-      const existing = discoveryData.retirementLivingExpenses;
-      const isUpdate = existing && typeof existing === "object" && existing._id;
 
       const payload = {
         _id: isUpdate ? existing._id : undefined,
@@ -89,7 +89,7 @@ const IncomeExpenses = () => {
     } catch (error) {
       if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
         message.error(
-          `Failed to regular living expenses. Please check the error messages below.`,
+          `Failed to ${isUpdate ? "update" : "save"} regular living expenses. ${(error?.response?.data?.message?.general?.[0])}`,
         );
       }
       else {
@@ -99,7 +99,8 @@ const IncomeExpenses = () => {
           "Failed to submit regular living expenses",
         );
       }
-      console.error(error);
+
+      throw error; // Rethrow the error to be caught in the calling function
     }
   };
 

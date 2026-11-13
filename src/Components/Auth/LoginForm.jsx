@@ -6,7 +6,7 @@ import logo from "../../assets/svg/Mobile login-pana.svg";
 import adminLogo from "../../assets/svg/Telecommuting-pana.svg";
 import useApi from "../../hooks/useApi";
 import useAuthSession from "../../hooks/useAuthSession";
-import Paragraph from "antd/es/skeleton/Paragraph";
+import { AUTH_ROUTES } from "./authFlow";
 
 const { Title, Text } = Typography;
 
@@ -15,7 +15,6 @@ const formatTime = (seconds) => {
   const secs = seconds % 60;
   return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 };
-
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -37,7 +36,7 @@ export default function LoginForm() {
     if (loginAttemptsFailed > 0) {
       const timer = setInterval(() => {
         setLoginAttemptsFailed((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000); // 1000ms = 1 second
+      }, 1000);
 
       return () => clearInterval(timer);
     }
@@ -48,28 +47,39 @@ export default function LoginForm() {
       setSubmitting(true);
       setError("");
 
+      const email = values.email.toLowerCase().trim();
       const payload = {
-        email: values.email.toLowerCase().trim(),
+        email,
         passwordHash: values.passwordHash.trim(),
         roleName: isAdminLogin ? "superAdmin" : "Adviser",
       };
 
-      let res = await api.post("/auth/login-v2", payload);
+      const res = await api.post("/auth/login-v2", payload);
 
-      if (res?.requiresOtp) {
+      if (res?.authAppIntegrated === true) {
+        // Credentials valid + auth app already integrated -> let the user choose
+        // between Email OTP and Authenticator App OTP.
+        navigate(AUTH_ROUTES.CHOOSE_METHOD, {
+          replace: true,
+          state: { email, isAdminLogin },
+        });
+      } else if (res?.requiresOtp) {
+        // Credentials valid + no auth app -> OTP was sent to email.
         message.success(res?.message);
-        navigate("/auth/otp-validation", {
+        navigate(AUTH_ROUTES.OTP, {
           replace: true,
           state: {
-            email: values.email.toLowerCase().trim(),
-            isAdminLogin: isAdminLogin,
+            email,
+            isAdminLogin,
+            authAppIntegrated: false,
           },
         });
       } else {
+        // Existing behaviour kept as fallback.
         saveSessionFromAuthResponse(res, values.email);
 
         if (res?.action === "pricing table") {
-          navigate("/auth/pricing-table", { replace: true });
+          navigate(AUTH_ROUTES.PRICING, { replace: true });
           message.success(res?.subscription?.message);
         } else {
           if (isAdminLogin) {
@@ -81,23 +91,20 @@ export default function LoginForm() {
         }
       }
     } catch (err) {
-      let msg = err?.response?.data?.message || err?.message || "Login failed.";
+      const msg = err?.response?.data?.message || err?.message || "Login failed.";
       if (err?.response?.status === 429) {
-
         message.error(msg);
         setError(msg);
-        setLoginAttemptsFailed(err?.response?.data?.retryAfter)
-
+        setLoginAttemptsFailed(err?.response?.data?.retryAfter);
       } else {
-        message.error(err?.response?.status === 401 ? "Invalid email or password" : msg);
-        setError(err?.response?.status === 401 ? "Invalid email or password" : msg);
+        const text = err?.response?.status === 401 ? "Invalid email or password" : msg;
+        message.error(text);
+        setError(text);
       }
-
     } finally {
       setSubmitting(false);
     }
   };
-
 
   return (
     <div className="row g-0 h-100">

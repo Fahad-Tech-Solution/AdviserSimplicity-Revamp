@@ -151,7 +151,8 @@ function FormField({ name, value, callBackFunction }) {
             try {
               await callBackFunction(inputValue);
             } catch (error) {
-              console.error(error);
+              console.error(error, "Error in FormField callback function");
+              setInputValue(value); // Reset input value to the original value on error
             } finally {
               setLoading(false);
               setIsEditing(false);
@@ -192,8 +193,8 @@ function DiscoveryTotalsCard({
   secondTotal,
   showPartner = false,
   secondisFormInput = false,
-  callBackFunction = () => {},
-  OpenModal = () => {},
+  callBackFunction = () => { },
+  OpenModal = () => { },
   onOpenModal,
   modalPayload,
   firstPlaceholder = "$0",
@@ -209,7 +210,7 @@ function DiscoveryTotalsCard({
   };
 
   return (
-    <Card style={CARD_STYLE} styles={{ body: {...CARD_BODY_STYLE, height: cardHeight} }}>
+    <Card style={CARD_STYLE} styles={{ body: { ...CARD_BODY_STYLE, height: cardHeight } }}>
       <h6 style={TITLE_STYLE} >{title}</h6>
       <p style={ICON_WRAPPER_STYLE}>{renderIcon(icon)}</p>
       <div style={CONTENT_STYLE}>
