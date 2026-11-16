@@ -27,6 +27,7 @@ export default function ChooseMethodForm() {
 
   const email = location.state?.email ?? "";
   const isAdminLogin = location.state?.isAdminLogin ?? false;
+  const mfaToken = location.state?.mfaToken ?? false;
 
   if (!email) return <Navigate to={AUTH_ROUTES.LOGIN} replace />;
 
@@ -41,7 +42,7 @@ export default function ChooseMethodForm() {
       message.success(res?.message || "OTP sent to your email.");
       navigate(AUTH_ROUTES.OTP, {
         replace: true,
-        state: { email, isAdminLogin, authAppIntegrated: true },
+        state: { email, isAdminLogin, authAppIntegrated: true, mfaToken },
       });
     } catch (err) {
       setError(
@@ -55,7 +56,7 @@ export default function ChooseMethodForm() {
   const handleAuthApp = () => {
     navigate(AUTH_ROUTES.AUTH_APP_VERIFY, {
       replace: true,
-      state: { email, isAdminLogin },
+      state: { email, isAdminLogin, mfaToken },
     });
   };
 

@@ -26,6 +26,7 @@ export default function AuthAppVerifyForm() {
 
   const email = location.state?.email ?? "";
   const isAdminLogin = location.state?.isAdminLogin ?? false;
+  const mfaToken = location.state?.mfaToken ?? false;
 
   if (!email) return <Navigate to={AUTH_ROUTES.LOGIN} replace />;
 
@@ -33,12 +34,14 @@ export default function AuthAppVerifyForm() {
     try {
       setSubmitting(true);
       setError("");
-      const otp = String(values.otp ?? "").replace(/\D/g, "");
-      const res = await api.post(AUTH_ENDPOINTS.AUTH_APP_VERIFY, {
+      const token = String(values.otp ?? "").replace(/\D/g, "");
+      const res = await api.post(AUTH_ENDPOINTS.AUTH_APP_VERIFY_ACCOUNT, {
         email,
-        otp,
+        token,
         roleName: getRoleName(isAdminLogin),
-      });
+      },
+        mfaToken ? { headers: { Authorization: `Bearer ${mfaToken}` } } : {}
+      );
       finishLogin(res, email, isAdminLogin, "Verified. Login successful.");
     } catch (err) {
       setError(

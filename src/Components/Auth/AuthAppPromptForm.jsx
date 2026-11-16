@@ -62,13 +62,13 @@ export default function AuthAppPromptForm() {
         >
           Yes, set it up
         </Button>
-        <Button
+        {/* <Button
           block
           size="large"
           onClick={handleSkip}
         >
           <IoPlaySkipForwardOutline />  Skip for now
-        </Button>
+        </Button> */}
       </Space>
     </AuthSplit>
   );

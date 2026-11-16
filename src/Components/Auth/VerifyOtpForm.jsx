@@ -40,6 +40,7 @@ export default function VerifyOtpForm() {
   // true  -> user already has an auth app (came from the multi-choice screen)
   // false -> user has no auth app yet (offer auth app registration after OTP)
   const authAppIntegrated = location.state?.authAppIntegrated ?? false;
+  const mfaToken = location.state?.mfaToken ?? false;
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -70,16 +71,25 @@ export default function VerifyOtpForm() {
       setError("");
 
       const cleanedOtp = String(values.otp ?? "").replace(/\D/g, "");
-      const res = await api.post("/auth/login-verify-otp", {
-        email,
-        otp: cleanedOtp,
-        roleName: isAdminLogin ? "superAdmin" : "Adviser",
-      });
+      const res = await api.post(
+        authAppIntegrated ?
+          "/auth/login-verify-email-otp"
+          :
+          "/auth/login-verify-otp",
+        {
+          email,
+          otp: cleanedOtp,
+          roleName: isAdminLogin ? "superAdmin" : "Adviser",
+        },
+        authAppIntegrated ? { headers: { Authorization: `Bearer ${mfaToken}` } } : {}
+      );
 
       // Email OTP is valid. For users WITHOUT an auth app, ask whether they want
       // to integrate one. Session is NOT saved yet; it is saved once the auth
       // app is validated (or skipped -> login again, per flow).
-      if (!authAppIntegrated) {
+      // Backend signals this with action "registerAuthenticator" and an
+      // enrollmentToken (kept inside `res`, forwarded via authResponse).
+      if (res?.action === "registerAuthenticator" || !authAppIntegrated) {
         message.success("OTP verified.");
         navigate(AUTH_ROUTES.AUTH_APP_PROMPT, {
           replace: true,

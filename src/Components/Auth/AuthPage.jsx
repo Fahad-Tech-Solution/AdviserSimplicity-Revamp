@@ -68,6 +68,8 @@ export default function AuthPage() {
               "/auth/admin-login",
               "/auth/choose-method",
               "/auth/auth-app-prompt",
+              "/auth/auth-app-setup",
+              "/auth/auth-app-verify",
             ].includes(location.pathname)
               ? 350 :
               430,

@@ -4,12 +4,14 @@
 //
 // TODO: confirm these paths and payloads with your backend. They are placeholders.
 export const AUTH_ENDPOINTS = {
-  SEND_EMAIL_OTP: "/auth/send-email-otp", // body: { email, roleName }
-  AUTH_APP_SETUP: "/auth/auth-app/setup", // body: { email, roleName } -> { qrCodeUrl }
-  AUTH_APP_VERIFY: "/auth/auth-app/verify", // body: { email, otp, roleName } -> auth response
+  SEND_EMAIL_OTP: "/auth/login-request-email-otp", // body: { email, roleName }
+  AUTH_APP_SETUP: "/auth/authenticator/setup", // body: { email, roleName } -> { qrCodeUrl }
+  AUTH_APP_VERIFY: "/auth/authenticator/verify-setup", // body: { email, token, roleName } -> auth response
+  AUTH_APP_VERIFY_ACCOUNT: "/auth/login-verify-authenticator", // body: { email, token, roleName } -> auth response
 };
 
-export const getRoleName = (isAdminLogin) => (isAdminLogin ? "superAdmin" : "Adviser");
+export const getRoleName = (isAdminLogin) =>
+  isAdminLogin ? "superAdmin" : "Adviser";
 
 export const AUTH_ROUTES = {
   LOGIN: "/auth/login",

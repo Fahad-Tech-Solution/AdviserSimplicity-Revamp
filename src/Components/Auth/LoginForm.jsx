@@ -56,12 +56,20 @@ export default function LoginForm() {
 
       const res = await api.post("/auth/login-v2", payload);
 
-      if (res?.authAppIntegrated === true) {
-        // Credentials valid + auth app already integrated -> let the user choose
-        // between Email OTP and Authenticator App OTP.
+      if (res?.action === "MFAScreen") {
+        // Auth app already registered -> let the user choose between
+        // Email OTP and Authenticator App OTP. mfaToken is carried forward.
+        message.success(res?.message);
         navigate(AUTH_ROUTES.CHOOSE_METHOD, {
           replace: true,
-          state: { email, isAdminLogin },
+          state: { email, isAdminLogin, mfaToken: res?.mfaToken },
+        });
+      } else if (res?.action === "OTPScreen") {
+        // No auth app yet -> email OTP was sent to register the authenticator.
+        message.success(res?.message);
+        navigate(AUTH_ROUTES.OTP, {
+          replace: true,
+          state: { email, isAdminLogin, authAppIntegrated: false },
         });
       } else if (res?.requiresOtp) {
         // Credentials valid + no auth app -> OTP was sent to email.
