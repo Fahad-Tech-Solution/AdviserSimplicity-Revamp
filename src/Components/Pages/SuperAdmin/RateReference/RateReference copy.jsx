@@ -43,6 +43,29 @@ const RateReference = () => {
     const [investmentReturns, setInvestmentReturns] = useState(initialExpectedReturns);
     const [isSavingReturns, setIsSavingReturns] = useState(false);
 
+    // Extract dynamic data references safely
+    const ref = rateReference?.rateReference || {};
+    const tax = rateReference?.taxRatesSchema || {};
+    const brackets = tax.incomeTaxBrackets || [];
+    const medicare = tax.medicareLevy || {};
+    const lito = tax.lowIncomeTaxOffset || {};
+    const saptoS = tax.saptoSingle || {};
+    const saptoC = tax.saptoCouple || {};
+
+    const parseVal = (val) => parseFloat(String(val || '').replace(/[^0-9.-]+/g, "")) || 0;
+
+    // Computed Pension Values
+    const singleBasis = parseVal(ref.fullPensionComponents?.basisPayment?.client);
+    const singlePharm = parseVal(ref.fullPensionComponents?.pharmaceuticalBenefit?.client);
+    const singleClean = parseVal(ref.fullPensionComponents?.cleanEnergySupplement?.client);
+    const singleFortnightlyNum = singleBasis + singlePharm + singleClean;
+
+    const coupleEachBasis = parseVal(ref.fullPensionComponents?.basisPayment?.partner);
+    const coupleEachPharm = parseVal(ref.fullPensionComponents?.pharmaceuticalBenefit?.partner);
+    const coupleEachClean = parseVal(ref.fullPensionComponents?.cleanEnergySupplement?.partner);
+    const coupleEachFortnightlyNum = coupleEachBasis + coupleEachPharm + coupleEachClean;
+    const coupleCombinedFortnightlyNum = coupleEachFortnightlyNum * 2;
+
     const renderTitleBlock = useTitleBlock({
         titleStyle: { fontFamily: 'Georgia, serif' },
     });
@@ -115,7 +138,6 @@ const RateReference = () => {
     }, [get, setRateReference]);
 
     const RateReferenceSave = async (updateValues) => {
-        // setIsLoading(true);
         try {
             const response = await patch(`/reviewRateReference/Update`, {
                 ...rateReference,
@@ -124,7 +146,6 @@ const RateReference = () => {
                 }
             });
             if (response && response.data) {
-                console.log('Patch all details:', response.data);
                 setRateReference(prev => ({
                     ...prev,
                     rateReference: {
@@ -132,19 +153,14 @@ const RateReference = () => {
                     }
                 }));
                 setModalOpen(false);
-
             }
         } catch (error) {
             console.error('Error patching rate reference:', error);
             message.error('Failed to update rate reference. Please try again later.');
         }
-        finally {
-            // setIsLoading(false);
-        }
     };
 
     const TaxRateSave = async (updateValues) => {
-        // setIsLoading(true);
         try {
             const response = await patch(`/reviewRateReference/Update`, {
                 ...rateReference,
@@ -153,7 +169,6 @@ const RateReference = () => {
                 }
             });
             if (response && response.data) {
-                console.log('Patch all details:', response.data);
                 setRateReference(prev => ({
                     ...prev,
                     taxRatesSchema: {
@@ -161,14 +176,10 @@ const RateReference = () => {
                     }
                 }));
                 setModalOpen(false);
-
             }
         } catch (error) {
             console.error('Error patching rate reference:', error);
             message.error('Failed to update rate reference. Please try again later. ');
-        }
-        finally {
-            // setIsLoading(false);
         }
     };
 
@@ -179,8 +190,6 @@ const RateReference = () => {
             Key: key
         });
     }
-
-
 
     if (isLoading) {
         return (
@@ -218,8 +227,6 @@ const RateReference = () => {
                 )}
             </AppModal>
 
-
-
             {/* ── TOP HEADER SUBTITLE ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                 <span style={{ backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: 13, color: '#334155' }}>
@@ -237,7 +244,6 @@ const RateReference = () => {
                 style={{ borderRadius: 12, marginBottom: 24, borderColor: '#e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
                 bodyStyle={{ padding: '20px 24px' }}
             >
-                {/* Card Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         📋
@@ -252,57 +258,81 @@ const RateReference = () => {
 
                 {/* --- FULL AGE PENSION --- */}
                 <SectionHeader title="FULL AGE PENSION (PER FORTNIGHT)" />
-                <RowItem label="Single" rightContent={<GreenHighlight fortnightly="$1,200.90" annual="$31,223 p.a." />} />
-                <RowItem label="Each of Couple" rightContent={<GreenHighlight fortnightly="$905.20" annual="$23,535 p.a." />} />
-                <RowItem label="Couple Combined" rightContent={<GreenHighlight fortnightly="$1,810.40" annual="$47,070 p.a." />} />
+                <RowItem 
+                    label="Single" 
+                    rightContent={
+                        <GreenHighlight 
+                            fortnightly={`$${singleFortnightlyNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            annual={`$${Math.round(singleFortnightlyNum * 26).toLocaleString()} p.a.`} 
+                        />
+                    } 
+                />
+                <RowItem 
+                    label="Each of Couple" 
+                    rightContent={
+                        <GreenHighlight 
+                            fortnightly={`$${coupleEachFortnightlyNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            annual={`$${Math.round(coupleEachFortnightlyNum * 26).toLocaleString()} p.a.`} 
+                        />
+                    } 
+                />
+                <RowItem 
+                    label="Couple Combined" 
+                    rightContent={
+                        <GreenHighlight 
+                            fortnightly={`$${coupleCombinedFortnightlyNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            annual={`$${Math.round(coupleCombinedFortnightlyNum * 26).toLocaleString()} p.a.`} 
+                        />
+                    } 
+                />
 
                 {/* --- ASSETS TEST THRESHOLDS (HOMEOWNER) --- */}
                 <SectionHeader title="ASSETS TEST THRESHOLDS (HOMEOWNER)" />
-                <RowItem label="Single — Lower / Upper" value="$333,000 / $733,500" />
-                <RowItem label="Couple — Lower / Upper" value="$499,000 / $1,102,500" />
+                <RowItem label="Single — Lower / Upper" value={`${ref.assetsTestHomeowner?.client?.lower || ''} / ${ref.assetsTestHomeowner?.client?.upper || ''}`} />
+                <RowItem label="Couple — Lower / Upper" value={`${ref.assetsTestHomeowner?.partner?.lower || ''} / ${ref.assetsTestHomeowner?.partner?.upper || ''}`} />
 
                 {/* --- ASSETS TEST THRESHOLDS (NON-HOMEOWNER) --- */}
                 <SectionHeader title="ASSETS TEST THRESHOLDS (NON-HOMEOWNER)" />
-                <RowItem label="Single — Lower / Upper" value="$600,000 / $1,000,500" />
-                <RowItem label="Couple — Lower / Upper" value="$766,000 / $1,369,500" />
+                <RowItem label="Single — Lower / Upper" value={`${ref.assetsTestNonHomeowner?.client?.lower || ''} / ${ref.assetsTestNonHomeowner?.client?.upper || ''}`} />
+                <RowItem label="Couple — Lower / Upper" value={`${ref.assetsTestNonHomeowner?.partner?.lower || ''} / ${ref.assetsTestNonHomeowner?.partner?.upper || ''}`} />
 
                 {/* --- ILLNESS-SEPARATED COUPLE --- */}
                 <SectionHeader title="ILLNESS-SEPARATED COUPLE — ASSETS TEST" />
                 <RowItem label="Payment rate" value="Single rate — each partner" />
-                <RowItem label="Free area (homeowner / non-homeowner)" value="$499,000 / $766,000" />
-                <RowItem label="Cut-off (homeowner / non-homeowner)" value="$1,300,000 / $1,567,000" />
+                <RowItem label="Free area (homeowner / non-homeowner)" value={`${ref.assetsTestHomeowner?.partner?.lower || ''} / ${ref.assetsTestNonHomeowner?.partner?.lower || ''}`} />
+                <RowItem label="Cut-off (homeowner / non-homeowner)" value={`${ref.illnessSeparatedAssetCutOff?.homeownerUpper || ''} / ${ref.illnessSeparatedAssetCutOff?.nonHomeownerUpper || ''}`} />
 
                 {/* --- INCOME TEST FREE AREAS --- */}
                 <SectionHeader title="INCOME TEST FREE AREAS (PER FORTNIGHT)" />
-                <RowItem label="Single" value="$226 / fn ($5,876 p.a.)" />
-                <RowItem label="Couple (combined)" value="$396 / fn ($10,296 p.a.)" />
+                <RowItem label="Single" value={`${ref.incomeTestFreeAreas?.client || ''} / fn ($${(parseVal(ref.incomeTestFreeAreas?.client) * 26).toLocaleString()} p.a.)`} />
+                <RowItem label="Couple (combined)" value={`${ref.incomeTestFreeAreas?.partner || ''} / fn ($${(parseVal(ref.incomeTestFreeAreas?.partner) * 26).toLocaleString()} p.a.)`} />
 
                 {/* --- INCOME TEST CUT-OFF POINT --- */}
                 <SectionHeader title="INCOME TEST — FORTNIGHTLY CUT-OFF POINT (PENSION REDUCES TO $0)" />
-                <RowItem label="Single" value="$2,627.80 / fn ($68,323 p.a.)" />
-                <RowItem label="A couple living together (combined)" value="$4,016.80 / fn ($104,437 p.a.)" />
-                <RowItem label="A couple living apart due to ill health (combined)" value="$5,199.60 / fn ($135,190 p.a.)" />
+                <RowItem label="Single" value={`${ref.incomeTestCutOffPoints?.client || ''} / fn ($${(parseVal(ref.incomeTestCutOffPoints?.client) * 26).toLocaleString()} p.a.)`} />
+                <RowItem label="A couple living together (combined)" value={`${ref.incomeTestCutOffPoints?.partner || ''} / fn ($${(parseVal(ref.incomeTestCutOffPoints?.partner) * 26).toLocaleString()} p.a.)`} />
+                <RowItem label="A couple living apart due to ill health (combined)" value={`${ref.incomeTestCutOffPoints?.illnessSeparatedCombined || ''} / fn ($${(parseVal(ref.incomeTestCutOffPoints?.illnessSeparatedCombined) * 26).toLocaleString()} p.a.)`} />
 
                 {/* --- DEEMING RATES --- */}
                 <SectionHeader title="DEEMING RATES" />
-                <RowItem label="Lower rate (first $66,800 single / $110,600 couple)" value="1.25%" />
-                <RowItem label="Balance rate (above threshold)" value="3.25%" />
+                <RowItem label={`Lower rate (first ${ref.deemingRates?.clientThreshold || ''} single / ${ref.deemingRates?.partnerThreshold || ''} couple)`} value={ref.deemingRates?.lowerRate || ''} />
+                <RowItem label="Balance rate (above threshold)" value={ref.deemingRates?.upperRate || ''} />
 
                 {/* --- ASSETS TAPER --- */}
                 <SectionHeader title="ASSETS TAPER" />
-                <RowItem label="Reduction rate" value="$3.00 / fn per $1,000 over lower ($78 p.a.)" />
+                <RowItem label="Reduction rate" value={`${ref.assetsTaper?.reductionRate || ''}.00 / fn per $1,000 over lower ($${(parseVal(ref.assetsTaper?.reductionRate) * 26).toLocaleString()} p.a.)`} />
 
                 {/* --- LOW-INCOME HEALTH CARE CARD --- */}
                 <SectionHeader title="💳 LOW-INCOME HEALTH CARE CARD (8-WEEK INCOME TEST)" color="#0284c7" />
-                <RowItem label="Single (per week)" value="$811 / wk ($6,488 over 8wk)" />
-                <RowItem label="Couple combined (per week)" value="$1,385 / wk ($11,080 over 8wk)" />
-                <RowItem label="+ per dependent child" value="$43 / wk ($344 over 8wk)" />
+                <RowItem label="Single (per week)" value={`${ref.lowIncomeHealthCareCard?.clientPerWeek || ''} / wk ($${(parseVal(ref.lowIncomeHealthCareCard?.clientPerWeek) * 8).toLocaleString()} over 8wk)`} />
+                <RowItem label="Couple combined (per week)" value={`${ref.lowIncomeHealthCareCard?.partnerCombinedPerWeek || ''} / wk ($${(parseVal(ref.lowIncomeHealthCareCard?.partnerCombinedPerWeek) * 8).toLocaleString()} over 8wk)`} />
+                <RowItem label="+ per dependent child" value={`${ref.lowIncomeHealthCareCard?.perDependentChildPerWeek || ''} / wk ($${(parseVal(ref.lowIncomeHealthCareCard?.perDependentChildPerWeek) * 8).toLocaleString()} over 8wk)`} />
 
                 {/* --- CONTRIBUTION CAPS --- */}
                 <SectionHeader title="💼 CONTRIBUTION CAPS (ANNUAL, PER MEMBER)" color="#475569" />
-                <RowItem label="Concessional cap" value="$32,500 p.a." />
-                <RowItem label="Non-concessional cap" value="$130,000 p.a." />
-                <RowItem label="NCC bring-forward (3 yr)" value="$390,000" />
+                <RowItem label="Concessional cap" value={`${ref.contributionCaps?.concessionalCap || ''} p.a.`} />
+                <RowItem label="Non-concessional cap" value={`${ref.contributionCaps?.nonConcessionalCap || ''} p.a.`} />
+                <RowItem label="NCC bring-forward (3 yr)" value={`$${(parseVal(ref.contributionCaps?.nonConcessionalCap) * 3).toLocaleString()}`} />
             </Card>
 
             {/* ─────────────────────────────────────────────────────────────
@@ -326,24 +356,24 @@ const RateReference = () => {
 
                 {/* --- INCOME TAX BRACKETS --- */}
                 <SectionHeader title="INCOME TAX BRACKETS (2024–25)" />
-                <RowItem label="$0 – $18,200" value="Tax-free threshold" />
-                <RowItem label="$18,201 – $45,000" value="16% of excess over $18,200" />
-                <RowItem label="$45,001 – $135,000" value="30% of excess over $45,000 + $4,288 base" />
-                <RowItem label="$135,001 – $190,000" value="37% of excess over $135,000 + $31,288 base" />
-                <RowItem label="$190,001 – $0" value="45% of excess over $190,000 + $51,638 base" />
+                {brackets[0] && <RowItem label={`${brackets[0].min} – ${brackets[0].max}`} value="Tax-free threshold" />}
+                {brackets[1] && <RowItem label={`${brackets[1].min} – ${brackets[1].max}`} value={`${Number(brackets[1].rate) * 100}% of excess over ${brackets[1].min}`} />}
+                {brackets[2] && <RowItem label={`${brackets[2].min} – ${brackets[2].max}`} value={`${Number(brackets[2].rate) * 100}% of excess over ${brackets[2].min} + $${brackets[2].baseTax} base`} />}
+                {brackets[3] && <RowItem label={`${brackets[3].min} – ${brackets[3].max}`} value={`${Number(brackets[3].rate) * 100}% of excess over ${brackets[3].min} + $${brackets[3].baseTax} base`} />}
+                {brackets[4] && <RowItem label={`${brackets[4].min} – ${brackets[4].max === '$0' ? 'above' : brackets[4].max}`} value={`${Number(brackets[4].rate) * 100}% of excess over ${brackets[4].min} + $${brackets[4].baseTax} base`} />}
 
                 {/* --- MEDICARE LEVY --- */}
                 <SectionHeader title="MEDICARE LEVY" />
-                <RowItem label="All taxpayers" value="Exempt ≤ $23,365 · Shade-in to $29,206 · 2% above" />
+                <RowItem label="All taxpayers" value={`Exempt ≤ ${medicare.exemptBelow || ''} · Shade-in to ${medicare.fullRateAbove || ''} · ${(Number(medicare.fullRate || 0.02) * 100)}% above`} />
 
                 {/* --- LITO --- */}
                 <SectionHeader title="LOW INCOME TAX OFFSET (LITO)" />
-                <RowItem label="All taxpayers" value="Max $700 ≤ $37,500 · 5%/ $1 to $45,000 · 1.5%/ $1 to nil at $66,667" />
+                <RowItem label="All taxpayers" value={`Max ${lito.maxOffset || ''} ≤ ${lito.fullAtOrBelow || ''} · ${(Number(lito.band1Taper || 0.05) * 100)}%/$1 to ${lito.band1EndsAt || ''} · ${(Number(lito.band2Taper || 0.015) * 100)}%/$1 to nil at ${lito.phasesOutAt || ''}`} />
 
                 {/* --- SAPTO --- */}
                 <SectionHeader title="SAPTO (SENIOR AUSTRALIANS & PENSIONERS TAX OFFSET)" />
-                <RowItem label="Single" value="Max $2,230 ≤ $32,279, nil ≥ $50,119" />
-                <RowItem label="Couple (each)" value="Max $1,602 ≤ $28,974, nil ≥ $41,790 (each)" />
+                <RowItem label="Single" value={`Max ${saptoS.maxOffset || ''} ≤ ${saptoS.fullBelow || ''}, nil ≥ ${saptoS.nilAbove || ''}`} />
+                <RowItem label="Couple (each)" value={`Max ${saptoC.maxOffset || ''} ≤ ${saptoC.fullBelow || ''}, nil ≥ ${saptoC.nilAbove || ''} (each)`} />
             </Card>
 
             {/* ─────────────────────────────────────────────────────────────
@@ -433,7 +463,6 @@ const RateReference = () => {
     HELPER SUB-COMPONENTS
    ───────────────────────────────────────────────────────────── */
 
-// Section Sub-header
 const SectionHeader = ({ title, color = '#64748b' }) => (
     <div style={{
         backgroundColor: '#f8fafc',
@@ -450,7 +479,6 @@ const SectionHeader = ({ title, color = '#64748b' }) => (
     </div>
 );
 
-// Standard Key-Value Row
 const RowItem = ({ label, value, rightContent }) => (
     <div style={{
         display: 'flex',
@@ -465,7 +493,6 @@ const RowItem = ({ label, value, rightContent }) => (
     </div>
 );
 
-// Green Highlight for Age Pension
 const GreenHighlight = ({ fortnightly, annual }) => (
     <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
         <span style={{ color: '#16a34a', fontWeight: 600 }}>{fortnightly}</span>
@@ -473,7 +500,6 @@ const GreenHighlight = ({ fortnightly, annual }) => (
     </div>
 );
 
-// Editable Input Row for Investment Returns
 const EditableRow = ({ label, defaultValue, value, onChange }) => (
     <div style={{
         display: 'flex',

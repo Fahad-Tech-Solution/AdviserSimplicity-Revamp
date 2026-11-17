@@ -300,14 +300,14 @@ export default function OverseasPensionModal({ modalData }) {
       if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
         setErrorMessages(error?.response?.data?.message || {})
         message.error(
-          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+          `Failed to ${sectionData?.clientFK ? "update" : "save"} ${modalData?.title || "Overseas Pension"}. Please check the error messages below.`,
         );
       }
       else {
         message.error(
           error?.response?.data?.message ||
           error?.message ||
-          `Failed to update ${modalData?.title || "Overseas Pension"}`,
+          `Failed to ${sectionData?.clientFK ? "update" : "save"} ${modalData?.title || "Overseas Pension"}`,
         );
       }
     } finally {

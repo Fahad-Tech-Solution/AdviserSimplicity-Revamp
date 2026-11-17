@@ -165,7 +165,7 @@ export default function SoleTraderModal({ modalData }) {
     () => buildInitialValues(sectionData, allowPartner),
     [allowPartner, sectionData],
   );
- 
+
   const selectedOwners = Form.useWatch("owner", form) || initialValues.owner;
   const tableColumns = useMemo(
     () =>
@@ -180,7 +180,7 @@ export default function SoleTraderModal({ modalData }) {
       ),
     [],
   );
-  
+
   const rows = useMemo(
     () =>
       (selectedOwners || [])
@@ -295,14 +295,14 @@ export default function SoleTraderModal({ modalData }) {
       if (typeof error?.response?.data?.message === "object" && Object.keys(error?.response?.data?.message).length > 0) {
         setErrorMessages(error?.response?.data?.message || {})
         message.error(
-          `Failed to update ${modalData?.title || "Employment"}. Please check the error messages below.`,
+          `Failed to ${sectionData?._id ? "update" : "save"} ${modalData?.title || "Employment"}. Please check the error messages below.`,
         );
       }
       else {
         message.error(
           error?.response?.data?.message ||
           error?.message ||
-          `Failed to update ${modalData?.title || "Sole Trader"}`,
+          `Failed to ${sectionData?._id ? "update" : "save"} ${modalData?.title || "Sole Trader"}`,
         );
       }
 
