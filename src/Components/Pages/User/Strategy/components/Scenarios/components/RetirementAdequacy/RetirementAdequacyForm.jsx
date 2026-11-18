@@ -710,36 +710,34 @@ export default function RetirementAdequacyForm({ modalData }) {
                                     justifyContent: "flex-end",
                                     gap: 12,
                                     marginTop: 16,
-
+                                    width: "100%"
                                 }}
                             >
-                                <Space>
-                                    <Button onClick={() => modalData?.closeModal?.()}>
-                                        Close
+                                <Button onClick={() => modalData?.closeModal?.()}>
+                                    Close
+                                </Button>
+                                {!editing ? (
+                                    <Button
+                                        type="primary"
+                                        htmlType="button"
+                                        key="edit"
+                                        style={{ backgroundColor: "#22c55e" }}
+                                        onClick={() => setEditing(true)}
+                                    >
+                                        Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
                                     </Button>
-                                    {!editing ? (
-                                        <Button
-                                            type="primary"
-                                            htmlType="button"
-                                            key="edit"
-                                            style={{ backgroundColor: "#22c55e" }}
-                                            onClick={() => setEditing(true)}
-                                        >
-                                            Edit <RiEdit2Fill style={{ marginLeft: 4 }} />
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            type="primary"
-                                            key="submit"
-                                            htmlType="submit"
-                                            style={{ backgroundColor: "#22c55e" }}
-                                            loading={saving}
-                                            disabled={saving}
-                                        >
-                                            Save
-                                        </Button>
-                                    )}
-                                </Space>
+                                ) : (
+                                    <Button
+                                        type="primary"
+                                        key="submit"
+                                        htmlType="submit"
+                                        style={{ backgroundColor: "#22c55e" }}
+                                        loading={saving}
+                                        disabled={saving}
+                                    >
+                                        Save
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </Col>

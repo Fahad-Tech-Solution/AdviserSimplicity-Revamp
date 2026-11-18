@@ -12,7 +12,6 @@ import {
   riskProfileDataAtom,
   SelectedClient,
 } from "../../../../../store/authState";
-import { loggedInUser } from "../../../../../store/authState.js";
 import { getNextDiscoveryNavKey } from "../../../../Routes/User.Routes.jsx";
 import { PRIMARY_GREEN, ProfileCard } from "./components/ProfileCard.jsx";
 import PersonalDetailsFrom from "./components/PersonalDetailsFrom.jsx";

@@ -5,14 +5,15 @@ import {
   Col,
   Divider,
   Input,
+  message,
   Row,
   Space,
   Tag,
   Tooltip,
   Typography,
 } from "antd";
-import { CopyOutlined, EditOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
-import { useAtomValue } from "jotai";
+import { CheckOutlined, CopyOutlined, EditOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { useAtomValue, useSetAtom } from "jotai";
 import { loggedInUser } from "../../../../store/authState";
 import profileBanner from "../../../../assets/image/Adviser-Simplicity-Profile-Green-Banner.png";
 import { Link } from "react-router-dom";
@@ -21,9 +22,12 @@ import useAuthSession from "../../../../hooks/useAuthSession";
 import { MdOutlineInfo } from "react-icons/md";
 import { IoSearchOutline } from "react-icons/io5";
 import AppModal from "../../../Common/AppModal";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ConnectAsana from "./components/ConnectAsana";
 import TwoFactorAuth from "./components/TwoFactorAuth";
+import { FaXmark } from "react-icons/fa6";
+import { FaTrash } from "react-icons/fa";
+import useApi from "../../../../hooks/useApi";
 
 const { Title, Text } = Typography;
 
@@ -143,6 +147,7 @@ function SummaryMetric({ label, value }) {
 
 export default function ProfilePage() {
   const session = useAtomValue(loggedInUser);
+  const setSession = useSetAtom(loggedInUser);
   const { logout } = useAuthSession();
   const user = session?.user || {};
   const permissions = user?.roleID?.permissions ?? session?.permissions ?? [];
@@ -150,7 +155,14 @@ export default function ProfilePage() {
   const roleLabel = getRoleLabel(user);
   const email = session?.email || user?.email || "No email available";
   let baseRoute = window.location.origin;
-  const [isMfaEnabled, setIsMfaEnabled] = useState(false);
+
+  const { post, patch } = useApi()
+
+  const isMfaEnabled = useMemo(() => {
+    return user?.isAuthenticatorEnabled || false
+  }, [user, session, setSession])
+
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const profileLink = baseRoute === "https://as.denarowealth.com.au" ?
@@ -166,6 +178,37 @@ export default function ProfilePage() {
     setModalDetails({ key: "connectAsana", title: "Connect your Asana", subtitle: "Connect your Asana account to get started" });
   };
 
+  const RemoveAuthApp = async () => {
+    try {
+      setIsLoading(true);
+
+      // Add 'await' here so it waits for the API response
+      const res = await patch("/auth/recover-authenticator");
+
+      if (res) {
+        // Update isAuthenticatorEnabled inside the nested 'user' object
+        setSession(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            isAuthenticatorEnabled: false,
+          },
+        }));
+        message.success(res?.message || "removed Auth App");
+      }
+    } catch (error) {
+      console.log(error);
+      message.error(
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to process your request",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <AppModal
@@ -176,7 +219,16 @@ export default function ProfilePage() {
         width={800}
         destroyOnClose
       >
-        {modalDetails.key === "connectAsana" ? <ConnectAsana /> : <TwoFactorAuth />}
+        {modalDetails.key === "connectAsana" ? <ConnectAsana /> : <TwoFactorAuth onComplete={() => {
+          setSession(prev => ({
+            ...prev,
+            user: {
+              ...prev.user,
+              isAuthenticatorEnabled: true,
+            },
+          }));
+          setOpen(false)
+        }} userEmail={user?.email} user={user} />}
       </AppModal>
 
       <div
@@ -386,13 +438,14 @@ export default function ProfilePage() {
                 </Text>
                 {isMfaEnabled ? (
                   <Tag color="success" icon={<CheckOutlined />}>
-                    Active
+                    Protected
                   </Tag>
                 ) : (
                   <Tag color="default">
-                    Disabled
+                    Unprotected
                   </Tag>
-                )}        </div>
+                )}
+              </div>
 
               <Title level={5} style={{ ...pageHeadingStyle, margin: 0 }}>
                 Authenticator App (2FA)
@@ -409,18 +462,27 @@ export default function ProfilePage() {
                 Protect your financial portal with TOTP apps like Google Authenticator or Authy.
               </Text>
             </div>
-            <Button type="primary" style={{ width: "100%" }} onClick={() => {
-              setModalDetails({
-                key: "twoFactorAuth",
-                title: "Enable Two-Factor Authentication",
-                subtitle: "Add an extra layer of security to your account by enabling two-factor authentication (2FA).",
-              });
-              setOpen(true)
-            }}
-              icon={<SafetyCertificateOutlined />}
-            >
-              Set Up Authenticator
-            </Button>
+            {isMfaEnabled ?
+              <Button color="danger" variant="solid" style={{ width: "100%" }} onClick={RemoveAuthApp}
+                isLoading={isLoading}
+                icon={<FaTrash />}
+              >
+                Remove Authenticator app
+              </Button>
+              :
+              <Button type="primary" style={{ width: "100%" }} onClick={() => {
+                setModalDetails({
+                  key: "twoFactorAuth",
+                  title: "Enable Two-Factor Authentication",
+                  subtitle: "Add an extra layer of security to your account by enabling two-factor authentication (2FA).",
+                });
+                setOpen(true)
+              }}
+                icon={<SafetyCertificateOutlined />}
+              >
+                Set Up Authenticator
+              </Button>
+            }
           </Card>
         </Col>
 

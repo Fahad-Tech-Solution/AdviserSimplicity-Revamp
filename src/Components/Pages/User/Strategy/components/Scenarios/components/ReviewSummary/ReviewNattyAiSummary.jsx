@@ -26,7 +26,7 @@ import {
 import { saveAs } from 'file-saver';
 import { RateReferenceObject, SelectedClient, SelectedReviewAllData } from '../../../../../../../../store/authState.js';
 import { buildReviewSummaryData, formatMoney } from './reviewSummaryDocuments.js';
-
+import { buildPlainSummaryLines } from './PlainSummary.js';
 
 const { Text, Paragraph } = Typography;
 
@@ -73,14 +73,18 @@ const ReviewNattyAiSummary = () => {
 
     const recognitionRef = useRef(null);
 
-    const summaryNarrative = useMemo(() => {
-        const lines = [
-            `Annual review summary for ${summary.householdName}, prepared ${summary.date}.`,
-            ...summary.highlights.map(({ label, value }) => `${label}: ${value}.`),
-            ...summary.nextSteps.map((step, index) => `Next step ${index + 1}: ${step}`),
-        ];
-        return lines.join(' ');
-    }, [summary]);
+    const summaryLines = useMemo(() => buildPlainSummaryLines(summary), [summary]);
+    // Spoken/copied text: same lines, emoji stripped
+    const summaryNarrative = useMemo(
+        () => summaryLines.map((l) => l.replace(/\p{Extended_Pictographic}\uFE0F?\s*/gu, '').trim()).join(' '),
+        [summaryLines],
+    );
+
+    const handleEmail = () => {
+        const subject = encodeURIComponent(`Review summary – ${summary.householdName}`);
+        const body = encodeURIComponent(summaryLines.map((l) => l.replace(/\p{Extended_Pictographic}\uFE0F?\s*/gu, '')).join('\n\n'));
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    };
 
     // 1. Initialize Speech Synthesis Voices
     useEffect(() => {
@@ -864,7 +868,7 @@ const ReviewNattyAiSummary = () => {
                             <div style={{ fontWeight: 700, fontSize: 18, color: '#111827', lineHeight: '1.2' }}>
                                 NattyAI {(isSpeaking || isListening) && <span style={{ fontSize: 12, color: '#52c41a', marginLeft: 6 }}>{isSpeaking ? '🔊 Speaking' : '🎙 Listening'}</span>}
                             </div>
-                            <Text type="secondary" style={{ fontSize: 13 }}>Summary ready — replay any time</Text>
+                            <Text type="secondary" style={{ fontSize: 13, fontWeight: 600 }}>{isSpeaking ? 'Speaking to client...' : 'Summary ready — replay any time'}</Text>
                         </div>
                     </div>
 
@@ -928,44 +932,11 @@ const ReviewNattyAiSummary = () => {
 
                 {/* ── TAB CONTENT RENDERING ── */}
 
-                <div style={{ padding: '8px 4px', fontSize: 14, color: '#1f2937', lineHeight: '1.7' }}>
-                    <Paragraph style={{ marginBottom: 20 }}>
-                        Annual review summary for <strong>{summary.householdName}</strong>, prepared {summary.date}.
-                    </Paragraph>
-
-                    <Space direction="vertical" size={16} style={{ width: '100%', marginBottom: 24 }}>
-                        {summary.highlights.length > 0 ? summary.highlights.map(({ label, value }) => (
-                            <div key={label}><strong>{label}:</strong> {value}</div>
-                        )) : (
-                            <div>Complete review sections to see calculated outcomes here.</div>
-                        )}
-                        {summary.sections.map((section) => (
-                            <div key={section.title} style={{ width: '100%' }}>
-                                <strong>{section.title}</strong>
-                                <ul style={{ margin: '4px 0 0', paddingLeft: 24 }}>
-                                    {section.rows.map(({ label, value }) => (
-                                        <li key={label}>{label}: {value}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                        <div>
-                            <strong>Recommended next steps</strong>
-                            <ol style={{ margin: '4px 0 0', paddingLeft: 24 }}>
-                                {summary.nextSteps.map((step) => <li key={step}>{step}</li>)}
-                            </ol>
-                        </div>
-                    </Space>
-
-                    <Paragraph style={{ color: '#374151', marginBottom: 28 }}>
-                        Projections are estimates based on the data recorded in the review and should be considered with the formal Record of Advice.
-                    </Paragraph>
+                <div style={{ padding: '8px 4px', fontSize: 13, color: '#1f2937', lineHeight: '1.6', borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                    {summaryLines.map((line, i) => (
+                        <p key={i} style={{ margin: '0 0 18px' }}>{line}</p>
+                    ))}
                 </div>
-
-
-
-
-
 
                 {/* ── BOTTOM ACTIONS BAR ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, paddingTop: 12 }}>
@@ -983,17 +954,17 @@ const ReviewNattyAiSummary = () => {
                             fontWeight: 600
                         }}
                     >
-                        {isSpeaking ? 'Stop Speaking' : 'Speak to client'}
+                        {isSpeaking ? 'Stop speaking' : 'Speak to client'}
                     </Button>
 
                     <Button
                         type="primary"
-                        icon={<AudioOutlined />}
+                        icon={<MailOutlined />}
                         size="large"
-                        onClick={startVciSetup}
-                        style={{ background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)', borderColor: '#096dd9', borderRadius: 8, height: 42, fontSize: 13, fontWeight: 600 }}
+                        onClick={handleEmail}
+                        style={{ background: 'linear-gradient(135deg, #46c455 0%, #2a8d35 100%)', borderColor: '#2e7d32', borderRadius: 8, height: 42, fontSize: 13, fontWeight: 600 }}
                     >
-                        Voice Guided Setup
+                        Email to client
                     </Button>
 
                     <Button
@@ -1002,7 +973,7 @@ const ReviewNattyAiSummary = () => {
                         onClick={handleCopy}
                         style={{ borderRadius: 8, height: 42, fontSize: 13, fontWeight: 500 }}
                     >
-                        Copy Summary
+                        Copy
                     </Button>
 
                     <Button
@@ -1011,7 +982,7 @@ const ReviewNattyAiSummary = () => {
                         onClick={() => setIsSettingsOpen(true)}
                         style={{ borderRadius: 8, height: 42, fontSize: 13, fontWeight: 500 }}
                     >
-                        Voice Settings
+                        Voice settings &amp; advanced
                     </Button>
                 </div>
             </Card>
@@ -1123,6 +1094,9 @@ const ReviewNattyAiSummary = () => {
                         </div>
                         <Switch checked={autoSpeak} onChange={checked => setAutoSpeak(checked)} />
                     </div>
+                    <Button icon={<AudioOutlined />} onClick={() => { setIsSettingsOpen(false); startVciSetup(); }}>
+                        Voice Guided Setup
+                    </Button>
                 </Space>
             </Modal>
         </>
