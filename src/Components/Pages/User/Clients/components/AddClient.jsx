@@ -62,7 +62,6 @@ export default function AddClient({ open, onClose, onSuccess }) {
   }, [open, form]);
 
   const handleFinish = async (values) => {
-    console.log("values", values);
     const payload = buildPayload(values);
     setSubmitting(true);
     try {

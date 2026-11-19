@@ -35,7 +35,6 @@ export function useOwnerOptions() {
 
 export function getOwnerDisplayName(owner) {
   const discoveryData = useAtomValue(discoveryDataAtom);
-  console.log(owner, "owner");
 
   return owner.trim === "Joint" || owner === "joint"
     ? (discoveryData.personalDetails?.client?.clientPreferredName || "Client") +

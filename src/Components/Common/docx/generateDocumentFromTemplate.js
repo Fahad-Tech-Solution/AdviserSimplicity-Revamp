@@ -4,7 +4,7 @@ export async function generateDocumentFromTemplate(
   templateFileName = "template.docx",
   downloadFileName = "document.docx",
 ) {
-  console.log("payload", payload);
+  // console.log("payload", payload);
   if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) {
     throw new Error("Payload is required and cannot be empty");
   }

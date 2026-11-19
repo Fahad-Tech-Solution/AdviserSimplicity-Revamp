@@ -274,7 +274,6 @@ const WhatsChanged = () => {
     const handleSubmit = async (values) => {
         try {
             setLoading(true)
-            console.log(selectedReviewAllData)
             const existingId = selectedReviewAllData?.whatChanges?._id;
 
             const payload = {

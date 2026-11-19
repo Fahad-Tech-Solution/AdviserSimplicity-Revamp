@@ -50,7 +50,6 @@ const RiskProfileSteps = ({ currentStep, steps, lockedStepKeys = [], conflicts =
               key={step.key}
               role="button"
               onClick={() => {
-                console.log(step.route, conflicts.length);
                 if (step.route ==="cards" && conflicts.length > 0) {
                   message.warning("Please review the inconsistencies before proceeding to the results step.");
                   return;

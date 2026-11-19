@@ -215,7 +215,7 @@ const RateReferenceEditForm = ({ initialValue, onClose, onSave }) => {
 
                 {/* Full Pension Component Breakdown */}
                 <div>
-                    <Title onClick={() => { console.log(initialValue) }} level={5} style={{ color: '#006d77', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px', marginBottom: '12px' }}>
+                    <Title level={5} style={{ color: '#006d77', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px', marginBottom: '12px' }}>
                         Full Pension (per fortnight) — Component Breakdown
                     </Title>
                     <Row gutter={[12, 12]} align="middle">

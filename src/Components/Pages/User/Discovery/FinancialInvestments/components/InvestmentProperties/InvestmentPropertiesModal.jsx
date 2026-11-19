@@ -341,8 +341,6 @@ export default function InvestmentPropertiesModal({ modalData }) {
             : null;
       if (rowIndex === null) return;
 
-      console.log("record", currentForm?.getFieldValue?.(true));
-
       setActiveRowIndex(rowIndex);
       setDetailModalOpen(true);
       setDetailModalData({

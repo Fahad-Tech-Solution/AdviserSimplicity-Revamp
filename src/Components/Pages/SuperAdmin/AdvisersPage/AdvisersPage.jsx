@@ -443,7 +443,6 @@ const AdvisersPage = () => {
     try {
       setAdvisersLoading(true);
       const response = await get("/user/Advisers");
-      // console.log(response, "response, advisers");
       setAdvisers(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error(error);

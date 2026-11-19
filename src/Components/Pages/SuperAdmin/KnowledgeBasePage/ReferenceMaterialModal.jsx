@@ -169,7 +169,6 @@ export default function ReferenceMaterialModal({
 
   useEffect(() => {
     if (!open) return;
-    console.log("Filtered Entries:", entry, isEdit);
     setActiveTab(initialTab);
     setManageSearch("");
     setPdfFileList([]);
@@ -227,7 +226,6 @@ export default function ReferenceMaterialModal({
   };
 
   const handleAddEntry = async (values) => {
-    console.log("Submitting knowledge entry with values:", values);
     setSubmitting(true);
 
     // 1. Map values directly to match your required API payload structure

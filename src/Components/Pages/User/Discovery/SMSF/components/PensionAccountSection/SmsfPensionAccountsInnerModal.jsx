@@ -254,11 +254,6 @@ export default function SmsfPensionAccountsInnerModal({ modalData }) {
   const handleConfirmAndExit = async () => {
     const values = form.getFieldsValue(true);
     const nextCount = Number(values?.NumberOfMap) || 0;
-    console.log("nextCount", nextCount);
-    // if (!nextCount) {
-    //   message.warning("Select how many pension accounts apply");
-    //   return;
-    // }
 
     const accounts = buildPensionAccountEntries(
       nextCount,

@@ -394,7 +394,6 @@ const Scenarios = () => {
                             fontWeight: 500,
                             fontSize: 28,
                         }}
-                        onClick={() => { console.log(selectedClient) }}
                     >
                         Review
                     </Title>

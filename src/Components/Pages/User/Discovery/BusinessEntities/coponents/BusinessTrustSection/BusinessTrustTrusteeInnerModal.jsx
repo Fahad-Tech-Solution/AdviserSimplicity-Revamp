@@ -38,7 +38,6 @@ function buildDirectorRows(count, entries = []) {
 export default function BusinessTrustTrusteeInnerModal({ modalData }) {
 
   const renderTitleBlock = useTitleBlock();
-  // console.log("modalData", modalData);
   const {
     title = "Trustee / Directors",
     countLabel = countLabel ,
@@ -61,7 +60,6 @@ export default function BusinessTrustTrusteeInnerModal({ modalData }) {
       innerCount: count,
       directorRows: buildDirectorRows(Number(count) || 0, list),
     };
-    // console.log("initialValues", initialValues);
   }, [valueArray]);
 
   const innerCount = Form.useWatch("innerCount", form);

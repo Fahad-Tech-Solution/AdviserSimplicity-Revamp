@@ -49,7 +49,6 @@ const AdviserKnowledgeBase = () => {
   const fetchKnowledgeEntries = async () => {
     try {
       const res = await get("/knowledgeBase/getAll");
-      console.log("Fetched knowledge entries:", res.data);
       const data = res?.data || [];
       setEntries(Array.isArray(data) && data.length ? data : []);
     } catch (err) {

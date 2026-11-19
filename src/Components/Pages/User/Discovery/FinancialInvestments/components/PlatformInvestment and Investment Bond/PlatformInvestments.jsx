@@ -222,8 +222,6 @@ export default function PlatformInvestments({ modalData }) {
   const hasHydratedInitialValues = React.useRef(false);
   const renderTitleBlock = useTitleBlock();
 
-  // console.log(modalData?.sectionKey, "modalData?.sectionKey");
-
   const ownerArray =
     modalData?.parentForm?.getFieldValue?.([
       modalData?.ownerKey,
@@ -588,7 +586,6 @@ export default function PlatformInvestments({ modalData }) {
   };
 
   const handleScanComplete = (extractedJson) => {
-    console.log("Extracted Platform Data:", extractedJson);
 
     // Set form fields with extracted platform data
     form.setFieldsValue(extractedJson);

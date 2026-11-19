@@ -82,7 +82,7 @@ export default function SuperFund({ form, editMode }) {
   ];
 
   const onFinish = (values) => {
-    console.log("form values", values);
+    
   };
 
   return (

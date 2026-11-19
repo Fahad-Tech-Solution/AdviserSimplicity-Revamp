@@ -179,7 +179,6 @@ function buildLoanPayload(source, existing = {}, isMarginLoan) {
 }
 
 export default function InvestmentLoanModal({ modalData }) {
-  // console.log("modalData",modalData);
   const [form] = Form.useForm();
   const investmentOffers = useAtomValue(InvestmentOffersData);
   const [editing, setEditing] = useState(false);

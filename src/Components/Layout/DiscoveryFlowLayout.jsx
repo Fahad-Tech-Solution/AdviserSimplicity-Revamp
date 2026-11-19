@@ -239,7 +239,6 @@ export default function DiscoveryFlowLayout() {
             fontSize: 28,
             color: "#111827",
           }}
-          onClick={() => console.log(discoveryQuestions, discoveryData)}
         >
           {pageTitle}
         </Title>
@@ -265,7 +264,6 @@ export default function DiscoveryFlowLayout() {
               shape="circle"
               onClick={() => {
                 setModalOpen(true);
-                console.log(stepperRoutes, CurrentRoute);
               }}
               style={DISCOVERY_ADD_BUTTON_STYLE}
             >

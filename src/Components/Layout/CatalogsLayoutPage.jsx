@@ -128,7 +128,7 @@ export default function CatalogsLayoutPage() {
     try {
       setLoading(true);
       const res = await get("/investmentoffer");
-      console.log(res, "res");
+      // console.log(res, "res");
       setCatalogsData(normalizeCatalogsData(res));
     } catch (error) {
       console.log(error, "error");

@@ -544,7 +544,6 @@ function OwnerTabContent({
   );
 
   const handleScanComplete = (extractedJson) => {
-    console.log("Extracted Personal Insurance JSON:", extractedJson);
 
     // Set form fields with extracted insurance data
     form.setFieldsValue(extractedJson);
@@ -776,9 +775,6 @@ export default function PersonalInsuranceModal({ modalData }) {
           partnerHasPersonalInsurance: pi.partnerHasPersonalInsurance,
         }),
     };
-
-    // console.log("payload", payload);
-    // return false;
 
     try {
       setSaving(true);

@@ -335,9 +335,6 @@ function PlanCard({
       >
         <ActiveDot size={7} marginRight={0} />
         <span
-          onClick={() => {
-            console.log(activeUsers, plan);
-          }}
         >
           {/* {subscriberCount !== null
             ? `${subscriberCount} active subscriber${subscriberCount === 1 ? "" : "s"}`

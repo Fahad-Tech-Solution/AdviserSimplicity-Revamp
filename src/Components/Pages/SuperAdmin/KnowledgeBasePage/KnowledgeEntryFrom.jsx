@@ -146,8 +146,6 @@ const KnowledgeEntryForm = ({
                 // 3. Hit your new Express backend API
                 const response = await post("/ai/extractData", formData)
 
-                console.log(response)
-
                 // Your original string
                 const rawString = response.data?.["stat boxes"];
 
@@ -266,9 +264,7 @@ const KnowledgeEntryForm = ({
                             <Button
                                 style={{ marginTop: 8, width: '100%' }}
                                 onClick={() => {
-                                    console.log('Parsed values from PDF:', extractedText);
                                     const values = parsePdfIntoFormValues(extractedText);
-                                    console.log('Parsed values from PDF:', values);
                                     form.setFieldsValue(values);
                                     message.success('Form fields populated from PDF — please review before saving.');
                                 }}

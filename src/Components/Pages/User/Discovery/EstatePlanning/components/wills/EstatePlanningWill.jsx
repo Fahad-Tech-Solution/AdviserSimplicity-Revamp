@@ -54,7 +54,6 @@ function buildOwnerOptions(discoveryData, allowPartner) {
 
 function buildWillPerson(person = {}) {
   const executor = Array.isArray(person?.executor) ? person.executor : [];
-  console.log("person", person);
   return {
     yearSetUp: person?.yearSetUp || "",
     willsCurrent: person?.willsCurrent || "",

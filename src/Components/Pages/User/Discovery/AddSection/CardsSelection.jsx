@@ -38,10 +38,8 @@ const CardsSelection = ({ Cards, setModalOpen }) => {
           `/questions/Update/${discoveryQuestions.clientFK}`,
           payload,
         );
-        console.log(response);
       } else {
         const response = await post("/questions/Add", payload);
-        console.log(response);
       }
 
       setDiscoveryQuestions(payload);

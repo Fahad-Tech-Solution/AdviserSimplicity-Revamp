@@ -253,7 +253,6 @@ export default function GoalsFromModal({ modalData }) {
             <NattyAiSpeechToText
               editing={editing}
               onTranscript={(transcript) => {
-                // console.log("Transcript received:", transcript);
                 // 1. Update the Ant Design form instance
                 form.setFieldValue("description", transcript);
 

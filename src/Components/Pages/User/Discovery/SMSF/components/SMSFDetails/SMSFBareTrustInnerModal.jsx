@@ -78,7 +78,6 @@ export default function SMSFBareTrustInnerModal({ modalData }) {
 
   const directorOptions = useMemo(
     () => {
-      console.log(modalData?.directorOptions, "modalData?.directorOptions, in Bare Trust Inner Modal");
       return (Array.isArray(modalData?.directorOptions)
         ? modalData.directorOptions
         : []

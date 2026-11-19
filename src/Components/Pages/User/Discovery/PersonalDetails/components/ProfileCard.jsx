@@ -66,15 +66,15 @@ function phoneLine(person = {}, role = "client") {
   const raw =
     role === "client"
       ? person.clientMobile ||
-        person.clientWorkPhone ||
-        person.clientPhone ||
-        person.clientHomePhone ||
-        person.phone
+      person.clientWorkPhone ||
+      person.clientPhone ||
+      person.clientHomePhone ||
+      person.phone
       : person.partnerMobile ||
-        person.partnerWorkPhone ||
-        person.partnerPhone ||
-        person.partnerHomePhone ||
-        person.phone;
+      person.partnerWorkPhone ||
+      person.partnerPhone ||
+      person.partnerHomePhone ||
+      person.phone;
   const s = raw != null ? String(raw).trim() : "";
   return s || "N/A";
 }
@@ -257,9 +257,7 @@ export function ProfileCard({ person, role, imageUrl, personalDetailsId }) {
             lineHeight: 1.35,
             textTransform: "none",
           }}
-          onClick={() => {
-            console.log(DiscoveryData, "DiscoveryData");
-          }}
+
         >
           {formal}
         </div>

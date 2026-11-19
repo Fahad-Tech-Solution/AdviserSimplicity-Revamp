@@ -78,7 +78,6 @@ export default function KnowledgeBasePage() {
   const fetchKnowledgeEntries = async () => {
     try {
       const res = await get("/knowledgeBase/getAll");
-      console.log("Fetched knowledge entries:", res.data);
       setEntries(res.data || []); // Handle your specific envelope array structure
     } catch (err) {
       console.error("Failed to fetch library indices", err);

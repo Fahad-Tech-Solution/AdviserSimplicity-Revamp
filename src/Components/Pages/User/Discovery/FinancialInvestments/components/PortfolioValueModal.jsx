@@ -54,7 +54,6 @@ function buildPortfolioEntries(count, entries = []) {
 
 function buildOfferOptions(platform, entries = []) {
   const offers = platform?.arrayOfOffers || [];
-  console.log(platform)
   const ParentStatus = platform?.softDelete || false;
   const options = offers.filter((item) => !item?.softDelete).map((offer) => ({
     value: String(offer?._id ?? offer?.value ?? ""),

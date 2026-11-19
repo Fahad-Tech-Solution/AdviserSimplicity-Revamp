@@ -113,7 +113,6 @@ function buildInitialValues(sectionData, allowPartner) {
 }
 
 export default function PartnershipModal({ modalData }) {
-  console.log("modalData", modalData);
   const [form] = Form.useForm();
   const ownerOptions = useOwnerOptions();
   const [editing, setEditing] = useState(false);

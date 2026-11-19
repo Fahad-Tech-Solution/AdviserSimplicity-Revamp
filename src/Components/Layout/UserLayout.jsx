@@ -243,7 +243,6 @@ export default function UserLayout() {
                 gap: "10px",
                 cursor: "pointer",
               }}
-              onClick={() => console.log("Profile clicked", session)}
             >
               <Avatar
                 size={35}

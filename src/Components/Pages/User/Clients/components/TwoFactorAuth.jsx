@@ -14,15 +14,11 @@ import {
 import { FaQrcode } from 'react-icons/fa';
 import { HiMiniKey } from 'react-icons/hi2';
 import { AiOutlineLock } from 'react-icons/ai';
-import { IoCopyOutline } from 'react-icons/io5';
 import { MdOutlineEmail } from 'react-icons/md';
 import useApi from '../../../../../hooks/useApi';
-import { ClockCircleOutlined, EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { ClockCircleOutlined } from "@ant-design/icons";
 
 const { Text, Title, Paragraph } = Typography;
-
-// Mock Secret (Replace with your backend payload)
-const MOCK_SECRET_KEY = 'JBSWY3DPEHPK3PXP';
 
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
@@ -98,7 +94,7 @@ const TwoFactorAuth = ({ onComplete, userEmail = 'user@example.com', user }) => 
       const errorMsg = error?.response?.data?.message || 'Invalid password or verification failed.';
       message.error(errorMsg);
 
-      if (error?.response?.data?.code === "OTP_RESEND_COOLDOWN") {
+      if (error?.response?.status === 429) {
         setErrorAlert(error?.response?.data)
       }
     }
@@ -203,7 +199,7 @@ const TwoFactorAuth = ({ onComplete, userEmail = 'user@example.com', user }) => 
       setLoading(false);
       message.success('2FA is now registered successfully!');
       if (onComplete) onComplete();
-      
+
     } catch (error) {
       setLoading(false);
       const errorMsg = error?.response?.data?.message || 'Invalid authenticator code. Please try again.';
@@ -228,14 +224,14 @@ const TwoFactorAuth = ({ onComplete, userEmail = 'user@example.com', user }) => 
           type="error"
           showIcon
           style={{ marginTop: 16, marginBottom: 16 }}
-          message={error || "Too many failed login attempts"}
+          message={ErrorAlert?.message || "Too many failed login attempts"}
           description={
-            loginAttemptsFailed > 0 ? (
+            ErrorAlert?.retryAfter > 0 ? (
               <Space size="small" style={{ marginTop: 4 }}>
                 <ClockCircleOutlined />
-                <span>Remaining cooling time:</span>
+                <span onClick={() => { console.log(ErrorAlert) }}>Remaining cooling time:</span>
                 <Text type="danger" strong>
-                  {formatTime(loginAttemptsFailed)}
+                  {formatTime(ErrorAlert?.retryAfter)}
                 </Text>
               </Space>
             ) : null
@@ -256,17 +252,25 @@ const TwoFactorAuth = ({ onComplete, userEmail = 'user@example.com', user }) => 
               size="large"
               placeholder="Enter your password"
               value={password}
+              status={password && password.length < 8 ? 'error' : ''}
               onChange={(e) => setPassword(e.target.value)}
-              onPressEnter={handleVerifyPassword}
+              onPressEnter={() => {
+                if (password.length >= 8) handleVerifyPassword();
+              }}
               autoFocus
             />
+            {password && password.length < 8 && (
+              <Text type="danger" style={{ display: 'block', marginTop: 6, textAlign: 'left' }}>
+                Minimum 8 characters
+              </Text>
+            )}
           </div>
 
           <div style={{ marginTop: 16, textAlign: 'right' }}>
             <Button
               type="primary"
               loading={passwordLoading}
-              disabled={!password}
+              disabled={!password || password.length < 8}
               onClick={handleVerifyPassword}
             >
               Verify Password & Continue
@@ -332,7 +336,7 @@ const TwoFactorAuth = ({ onComplete, userEmail = 'user@example.com', user }) => 
       {/* STEP 2: Scan QR Code */}
       {currentStep === 2 && (
         <div style={{ textAlign: 'center' }}>
-          <Paragraph type="secondary" style={{ marginBottom: 16 }} onClick={() => console.log(verifiedOtpRes)}>
+          <Paragraph type="secondary" style={{ marginBottom: 16 }} >
             Open your authenticator app (e.g., Google Authenticator, Authy) and scan the QR code below.
           </Paragraph>
 

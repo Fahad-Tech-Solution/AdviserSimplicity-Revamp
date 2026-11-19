@@ -204,7 +204,6 @@ const ReviewAddQuestions = () => {
 
             const response = await post("whatChange/external/Add", payload);
             const resData = response?.data || response;
-            console.log(resData)
             // Check if already filled
             if (resData?.alreadyFilled) {
                 setAlreadyFilled(true);

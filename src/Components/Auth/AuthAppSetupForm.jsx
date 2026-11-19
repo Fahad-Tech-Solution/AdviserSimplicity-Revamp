@@ -39,7 +39,7 @@ export default function AuthAppSetupForm() {
     (async () => {
       try {
 
-        console.log("authResponse in AuthAppSetupForm:", authResponse);
+        // console.log("authResponse in AuthAppSetupForm:", authResponse);
         const res = await api.post(AUTH_ENDPOINTS.AUTH_APP_SETUP, {
           email,
           roleName,

@@ -755,7 +755,6 @@ export default function Annuities({ modalData }) {
 
 
   const handleScanComplete = (extractedJson) => {
-    console.log("Extracted Annuities JSON:", extractedJson);
 
     // Set form fields with extracted annuity data
     form.setFieldsValue(extractedJson);

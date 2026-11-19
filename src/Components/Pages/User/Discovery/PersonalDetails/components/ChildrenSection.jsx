@@ -45,12 +45,6 @@ const CHILDREN_EDIT_CONFIG = [
     type: "date",
     rules: [requiredRule("Child DOB required")],
     onChange: (value, record, form) => {
-      console.log(
-        childAgeFromDob(value),
-        "children.arrayOfChildren." + record.key + ".age",
-        form.getFieldsValue(),
-      );
-
       form.setFieldValue(
         ["children", "arrayOfChildren", record.name, "age"],
         childAgeFromDob(value),
@@ -319,7 +313,6 @@ function ChildrenSection({
       <Title
         level={5}
         style={SECTION_TITLE_STYLE}
-        onClick={() => console.log(form.getFieldValue("children"))}
       >
         CHILDREN DETAILS
       </Title>

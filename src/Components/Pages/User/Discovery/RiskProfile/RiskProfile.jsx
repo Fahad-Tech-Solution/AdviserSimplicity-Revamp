@@ -646,10 +646,6 @@ export default function RiskProfile() {
   const riskProfileData = useAtomValue(riskProfileDataAtom);
   const setRiskProfileData = useSetAtom(riskProfileDataAtom);
 
-
-  // console.log("discoveryData", discoveryData);
-  // console.log("riskProfileData", riskProfileData);
-
   const { get, post, patch } = useApi();
 
   const showPartner = !["Single", "Widowed"].includes(
@@ -670,9 +666,6 @@ export default function RiskProfile() {
   const [loading, setLoading] = useState(() => !hasPreloadedRiskProfile);
   const [submitting, setSubmitting] = useState(false);
   const [recordId, setRecordId] = useState(() => riskProfileData?._id || "");
-
-
-  // console.log("showPartner", showPartner);
 
   useEffect(() => {
     if (!hasRiskProfileData(riskProfileData)) {
@@ -726,8 +719,6 @@ export default function RiskProfile() {
     if (!showPartner && values.joinedProfile !== "Yes") {
       setValues((prev) => ({ ...prev, joinedProfile: "Yes" }));
     }
-    // console.log("showPartner", showPartner);
-    console.log("values.joinedProfile", values.joinedProfile);
   }, [showPartner, values.joinedProfile]);
 
   const includePartner = showPartner && values.joinedProfile === "No";
@@ -850,8 +841,6 @@ export default function RiskProfile() {
   };
 
   const handleNext = () => {
-    // console.log("joinedProfile", values.joinedProfile);
-
     if (!validateQuestionStep()) {
       return;
     }
@@ -943,9 +932,6 @@ export default function RiskProfile() {
   };
 
   const handleDownload = () => {
-    console.log("values", values);
-    // return
-
     const personalDetails = discoveryData?.personalDetails || {};
 
     generateRiskProfileDocument({

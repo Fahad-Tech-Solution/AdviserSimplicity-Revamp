@@ -103,7 +103,6 @@ function resolveSorterKey(sorter) {
 async function fetchShareQuote(code) {
   const normalizedCode = normalizeAsxCode(code);
   if (!isValidAsxCode(normalizedCode)) return null;
-  console.log("normalizedCode", normalizedCode);
 
   const settings = {
     headers: {
@@ -559,11 +558,7 @@ export default function AustralianShare({ modalData }) {
                       justifyContent: "space-between",
                     }}
                   >
-                    <span
-                      onClick={() => {
-                        console.log("All values", form.getFieldsValue());
-                      }}
-                    >
+                    <span>
                       Please press this button to update share price
                     </span>
                     <Button

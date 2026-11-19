@@ -49,9 +49,6 @@ const GoalsObjectivesQuestionsModal = ({ modalData }) => {
   const { post, patch } = useApi();
   const cards = modalData?.cards || [];
 
-  // console.log("cards", cards);
-  // console.log("goalsQuestions", goalsQuestions);
-
   const initialValues = {
     ...goalsQuestions,
   };

@@ -611,7 +611,6 @@ export default function SuperFunds({ modalData }) {
 
   // Handle scanned data populating the parent form directly
   const handleScanComplete = (extractedJson) => {
-    console.log("Full Nested Extracted JSON:", extractedJson);
 
     // 1. Prepare formatted entries array
     const scannedFundEntries = buildSuperFundEntries(1, [extractedJson]);

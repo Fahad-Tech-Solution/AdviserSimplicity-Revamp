@@ -519,7 +519,6 @@ export default function AccountBasedPension({ modalData }) {
   };
 
   const handleScanComplete = (extractedJson) => {
-    console.log("Account Based Pension JSON:", extractedJson);
 
     // Set form fields with extracted pension data
     form.setFieldsValue(extractedJson);

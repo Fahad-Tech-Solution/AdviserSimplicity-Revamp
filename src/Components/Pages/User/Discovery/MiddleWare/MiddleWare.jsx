@@ -212,7 +212,6 @@ function mergeBranch(formValues, values, key) {
 
 function buildInitialValues(sectionData = {}, noJoint = false, config = {}) {
   const customKeys = getCustomKeys(config);
-  // console.log(sectionData, "sectionData");
   if (customKeys.enabled) {
     return {
       [customKeys.valueKey]: {
@@ -514,8 +513,6 @@ const MiddleWare = ({ modalData }) => {
     let rows = [];
 
     if (customKeys.enabled) {
-      // console.log(initialValues?.[customKeys.valueKey], "initialValues");
-      // console.log(customKeys.valueKey, "customKeys.valueKey");
       rows = [
         {
           key: customKeys.displayKey,

@@ -16,16 +16,6 @@ const IntroStep = ({
     <div style={{ paddingTop: 56 }}>
       <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
         <h2
-          onClick={() =>
-            console.log(
-              "values",
-              values,
-              "showPartner",
-              showPartner,
-              "joinedProfile",
-              joinedProfile,
-            )
-          }
           style={{
             marginBottom: 28,
             fontFamily: "Arial, sans-serif",

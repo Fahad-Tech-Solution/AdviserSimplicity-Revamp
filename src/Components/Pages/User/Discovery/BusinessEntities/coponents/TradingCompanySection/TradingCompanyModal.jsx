@@ -77,7 +77,6 @@ function buildEmptyCompany() {
 }
 
 function normalizeCompany(entry = {}) {
-    // console.log("entry", entry);
     return {
         businessName: entry?.businessName || "",
         aBNACN: entry?.aBNACN || "",
@@ -126,7 +125,6 @@ function buildInitialValues(sectionData = {},) {
         ? sectionData?.currentBalanceArray?.map(normalizeCompany)
         : [];
 
-    // console.log("sectionData", sectionData);
 
     return {
         NumberOfMap: companies.length || undefined,
@@ -145,8 +143,7 @@ export default function TradingCompanyModal({ modalData }) {
     const [saving, setSaving] = useState(false);
 
     const sectionData = modalData.parentForm.getFieldValue(modalData?.ownerKey) || {};
-    // console.log("sectionData", sectionData);
-    // console.log("key",);
+
     const initialValues = useMemo(
         () => buildInitialValues(sectionData, modalData?.ownerKey),
         [sectionData?.clientFK, sectionData?.client],
@@ -343,25 +340,6 @@ export default function TradingCompanyModal({ modalData }) {
         );
 
     };
-
-
-    // const handleConfirmAndExit = async () => {
-    //     const values = await form.validateFields();
-    //     const countValue = Number(values?.NumberOfMap) || 0;
-    //     console.log("values", values);
-    //     // return;
-    //     const savedEntries = buildEntries(countValue, values?.tradingCompanies || []);
-
-    //     console.log("savedEntries", savedEntries);
-    //     syncParentValues(savedEntries);
-
-
-    //     return;
-
-    //     setEditing(false);
-    //     modalData?.closeModal?.();
-    //   };
-
 
     const handleConfirmAndExit = async () => {
         const values = await form.validateFields();

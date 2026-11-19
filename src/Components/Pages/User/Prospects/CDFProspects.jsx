@@ -547,10 +547,6 @@ export default function CDFProspects() {
               fontWeight: 500,
               fontSize: 28,
             }}
-            onClick={() => {
-              console.log(filteredData, "filteredData");
-              console.log(prospects, "prospects");
-            }}
           >
             CDF Prospects
           </Title>

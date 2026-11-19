@@ -73,8 +73,6 @@ const IncomeExpenses = () => {
         response = await post(`/retirementLivingExpenses/Add`, payload);
       }
 
-      // console.log(response);
-
       if (response) {
         setDiscoveryData((prev) => {
           return {

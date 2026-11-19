@@ -256,7 +256,6 @@ const HouseholdTable = ({ onAction, searchText = "", viewMode = false }) => {
 
   const getClientDetails = async (row, action) => {
     const rowId = row?._id ?? row?.key;
-    // console.log("row", row);
     let yesNoQuestionsRes = [];
     let fullDetailsRes = {};
     let goalsYesNoQuestionsRes = [];

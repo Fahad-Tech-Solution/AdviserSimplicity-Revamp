@@ -439,7 +439,6 @@ export default function PersonalLoanModal({ modalData }) {
       ),
 
     };
-    console.log("payload", payload);
     try {
       setSaving(true);
       const saved = sectionData?.clientFK

@@ -63,7 +63,6 @@ const mapInitialValues = (initial) => {
         baseTax: parseNumber(b.baseTax),
     })) || [];
 
-    console.log("Parsed medicare levy shade-in rate:", parseNumber(initial.lowIncomeTaxOffset?.band2Taper));
 
     return {
         brackets,
