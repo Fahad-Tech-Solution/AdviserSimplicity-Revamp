@@ -623,7 +623,7 @@ export default function RetirementAdequacyForm({ modalData }) {
                             style={{ marginBottom: 12, width: 350 }}
                         >
                             <DatePicker
-                                format="MM/DD/YYYY"
+                                format="DD/MM/YYYY"
                                 style={{ width: "100%", backgroundColor: "#f0fdf4" }}
                                 disabled={!editing}
                             />

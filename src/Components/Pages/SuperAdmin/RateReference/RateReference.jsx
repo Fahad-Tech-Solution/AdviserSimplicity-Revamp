@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, Select, Spin, message } from 'antd';
+import { Button, Form, Input, Select, Spin, Typography, message } from 'antd';
 import {
-    BankOutlined,
     CalculatorOutlined,
     DollarOutlined,
     EditOutlined,
@@ -14,9 +13,6 @@ import { RateReferenceObject } from '../../../../store/authState';
 import { useAtom } from 'jotai';
 import RateReferenceEditableTable from './RateReferenceEditableTable';
 import RateReferenceSection from './RateReferenceSection';
-import { FaPercent } from 'react-icons/fa';
-import { GoDatabase } from 'react-icons/go';
-import { FaArrowTrendUp } from 'react-icons/fa6';
 
 const DEFAULT_EXPECTED_RETURNS = {
     Cash: '3.0',
@@ -26,6 +22,7 @@ const DEFAULT_EXPECTED_RETURNS = {
     Growth: '6.0',
     HighGrowth: '6.5',
 };
+const { Text, Title } = Typography;
 
 const getExpectedReturns = (expectedReturn = {}) =>
     Object.fromEntries(
@@ -36,6 +33,13 @@ const getExpectedReturns = (expectedReturn = {}) =>
     );
 
 const parseVal = (value) => parseFloat(String(value || '').replace(/[^0-9.-]+/g, '')) || 0;
+
+// Live form value helpers: `pick` returns the stored value until the form has one,
+// `liveNum` does the same but always returns a number (cleared input counts as 0).
+const pick = (formValue, stored) => (formValue === undefined ? stored : formValue);
+const liveNum = (formValue, stored) => (formValue === undefined ? stored : parseVal(formValue));
+const over8Weeks = (value) =>
+    value === null || value === undefined || value === '' ? '' : parseVal(value) * 8;
 
 const formatIncomeNumber = (value) => {
     const numeric = Number(value || 0);
@@ -58,6 +62,83 @@ const renderIncomeThreshold = (value) => {
         </span>
     );
 };
+
+
+function CatalogCategoryCard({ route, active, onClick, count }) {
+    const icon = route.icon ?? "📁";
+    const title = route.catalogTitle ?? route.label ?? "Section";
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                padding: "14px 6px 12px",
+                borderRadius: 11,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                border: "none",
+                flex: "1 1 0",
+                minWidth: 0,
+                background: active ? "#f0fdf4" : "#fff",
+            }}
+        >
+            <span
+                style={{
+                    fontSize: 16,
+                    lineHeight: 1,
+                    background: active ? "#22c55e" : "#f3f4f6",
+                    color: active ? "#6b7280" : "#fff",
+                    boxShadow: active ? "0 3px 10px rgba(34, 197, 94, .35)" : "none",
+                    borderRadius: 50,
+                    padding: "4px 8px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 36,
+                    height: 36,
+                }}
+                aria-hidden
+            >
+                {icon}
+            </span>
+            <Text
+                style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: active ? "#16a34a" : "#6b7280",
+                    textAlign: "center",
+                    lineHeight: 1.35,
+                    minHeight: 30,
+                    maxWidth: 100,
+                    fontFamily: "Arial, sans-serif",
+                }}
+            >
+                {title}
+            </Text>
+            <span
+                style={{
+                    minWidth: 28,
+                    height: 22,
+                    padding: "0 8px",
+                    borderRadius: 999,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: active ? "#22c55e" : "#f3f4f6",
+                    color: active ? "#fff" : "#6b7280",
+                }}
+            >
+                {count}
+            </span>
+        </button>
+    );
+}
 
 const RateReference = () => {
     const [rateReference, setRateReference] = useAtom(RateReferenceObject);
@@ -84,6 +165,9 @@ const RateReference = () => {
     const [investmentForm] = Form.useForm();
     const [superForm] = Form.useForm();
     const { get, patch } = useApi();
+    // Live values of the editable inputs, used to calculate dependent fields while editing
+    const centrelinkValues = Form.useWatch([], centrelinkForm);
+    const superValues = Form.useWatch([], superForm);
 
     const ref = rateReference?.rateReference || {};
     const tax = rateReference?.taxRatesSchema || {};
@@ -103,6 +187,26 @@ const RateReference = () => {
         parseVal(ref.fullPensionComponents?.pharmaceuticalBenefit?.partner) +
         parseVal(ref.fullPensionComponents?.cleanEnergySupplement?.partner);
     const coupleCombinedFortnightlyNum = coupleEachFortnightlyNum * 2;
+
+    // ---- Calculated values (driven by the editable inputs) ----
+    const cl = centrelinkValues || {};
+    const lihcc = ref.lowIncomeHealthCareCard || {};
+    // Full Age Pension: couple combined = each x 2, annual = fortnightly x 26
+    const liveSingleFortnightly = liveNum(cl.single?.fortnightly, singleFortnightlyNum);
+    const liveCoupleEachFortnightly = liveNum(cl.eachCouple?.fortnightly, coupleEachFortnightlyNum);
+    const liveCoupleCombinedFortnightly = liveCoupleEachFortnightly * 2;
+    // Assets taper: annual equivalent = reduction rate x 26
+    const liveReductionRate = liveNum(cl.assetsTaper?.value, parseVal(ref.assetsTaper?.reductionRate));
+    // LIHCC: over 8 weeks = per week x 8
+    const liveLihccSingle = pick(cl.single?.perWeek, lihcc.clientPerWeek);
+    const liveLihccCouple = pick(cl.coupleCombined?.perWeek, lihcc.partnerCombinedPerWeek);
+    const liveLihccChild = pick(cl.perChild?.perWeek, lihcc.perDependentChildPerWeek);
+    // "Couple living apart due to ill health" shares the couple-together lower thresholds / free area
+    const liveCoupleHomeownerLower = pick(cl.coupleTogether?.homeownerLower, ref.assetsTestHomeowner?.partner?.lower);
+    const liveCoupleNonHomeownerLower = pick(cl.coupleTogether?.nonHomeownerLower, ref.assetsTestNonHomeowner?.partner?.lower);
+    const liveCoupleFreeArea = pick(cl.coupleTogether?.fullPension, ref.incomeTestFreeAreas?.partner);
+    // Super: NCC bring-forward = non-concessional cap x 3
+    const liveNcc = liveNum(superValues?.nonConcessional?.amount, parseVal(ref.contributionCaps?.nonConcessionalCap));
 
     const annualValue = (value) => Math.round(Number(value || 0) * 26).toLocaleString('en-AU');
     const moneyText = (value) => {
@@ -165,9 +269,7 @@ const RateReference = () => {
     const handleSaveContributionCaps = async () => {
         try {
             const values = await superForm.validateFields();
-            const nonConcessionalCapAmount = superForm.isFieldTouched(['bringForward', 'amount'])
-                ? Number(values.bringForward.amount) / 3
-                : Number(values.nonConcessional.amount);
+            const nonConcessionalCapAmount = Number(values.nonConcessional.amount);
             const contributionCaps = {
                 ...ref.contributionCaps,
                 concessionalCap: `$${Number(values.concessional.amount).toLocaleString('en-AU')}`,
@@ -218,11 +320,11 @@ const RateReference = () => {
 
     const centrelinkFullAgeRows = useMemo(
         () => [
-            { key: 'single', formPath: 'single', rate: 'Single', fortnightly: singleFortnightlyNum, annual: singleFortnightlyNum * 26 },
-            { key: 'each-couple', formPath: 'eachCouple', rate: 'Each in a couple', fortnightly: coupleEachFortnightlyNum, annual: coupleEachFortnightlyNum * 26 },
-            { key: 'combined', formPath: 'combined', rate: 'Couple combined', fortnightly: coupleCombinedFortnightlyNum, annual: coupleCombinedFortnightlyNum * 26 },
+            { key: 'single', formPath: 'single', rate: 'Single', fortnightly: liveSingleFortnightly, annual: liveSingleFortnightly * 26 },
+            { key: 'each-couple', formPath: 'eachCouple', rate: 'Each in a couple', fortnightly: liveCoupleEachFortnightly, annual: liveCoupleEachFortnightly * 26 },
+            { key: 'combined', formPath: 'combined', rate: 'Couple combined', fortnightly: liveCoupleCombinedFortnightly, annual: liveCoupleCombinedFortnightly * 26, editable: false },
         ],
-        [singleFortnightlyNum, coupleEachFortnightlyNum, coupleCombinedFortnightlyNum]
+        [liveSingleFortnightly, liveCoupleEachFortnightly, liveCoupleCombinedFortnightly]
     );
 
     const centrelinkAssetRows = useMemo(
@@ -249,13 +351,13 @@ const RateReference = () => {
                 key: 'couple-ill-health',
                 formPath: 'coupleIllHealth',
                 household: 'A couple living apart due to ill health (combined)',
-                homeownerLower: ref.assetsTestHomeowner?.partner?.lower,
+                homeownerLower: liveCoupleHomeownerLower,
                 homeownerUpper: ref.illnessSeparatedAssetCutOff?.homeownerUpper,
-                nonHomeownerLower: ref.assetsTestNonHomeowner?.partner?.lower,
+                nonHomeownerLower: liveCoupleNonHomeownerLower,
                 nonHomeownerUpper: ref.illnessSeparatedAssetCutOff?.nonHomeownerUpper,
             },
         ],
-        [ref]
+        [ref, liveCoupleHomeownerLower, liveCoupleNonHomeownerLower]
     );
 
     const centrelinkIncomeRows = useMemo(
@@ -280,12 +382,12 @@ const RateReference = () => {
                 key: 'couple-ill-health',
                 formPath: 'coupleIllHealth',
                 situation: 'A couple living apart due to ill health (combined)',
-                fullPension: ref.incomeTestFreeAreas?.partner,
+                fullPension: liveCoupleFreeArea,
                 partPension: ref.incomeTestCutOffPoints?.illnessSeparatedCombined,
                 reduction: 0.5,
             },
         ],
-        [ref]
+        [ref, liveCoupleFreeArea]
     );
 
     const centrelinkDeemingRows = useMemo(
@@ -309,21 +411,21 @@ const RateReference = () => {
                 key: 'annual-equivalent',
                 formPath: 'assetsTaperAnnual',
                 item: 'Annual equivalent',
-                value: parseVal(ref.assetsTaper?.reductionRate) * 26,
+                value: liveReductionRate * 26,
                 isAnnual: true,
                 editable: false,
             },
         ],
-        [ref]
+        [ref, liveReductionRate]
     );
 
     const centrelinkLihccRows = useMemo(
         () => [
-            { key: 'single', formPath: 'single', rate: 'Single', perWeek: ref.lowIncomeHealthCareCard?.clientPerWeek, over8Weeks: ref.lowIncomeHealthCareCard?.clientPerWeek === null || ref.lowIncomeHealthCareCard?.clientPerWeek === undefined || ref.lowIncomeHealthCareCard.clientPerWeek === '' ? '' : parseVal(ref.lowIncomeHealthCareCard.clientPerWeek) * 8 },
-            { key: 'couple-combined', formPath: 'coupleCombined', rate: 'Couple (combined)', perWeek: ref.lowIncomeHealthCareCard?.partnerCombinedPerWeek, over8Weeks: ref.lowIncomeHealthCareCard?.partnerCombinedPerWeek === null || ref.lowIncomeHealthCareCard?.partnerCombinedPerWeek === undefined || ref.lowIncomeHealthCareCard.partnerCombinedPerWeek === '' ? '' : parseVal(ref.lowIncomeHealthCareCard.partnerCombinedPerWeek) * 8 },
-            { key: 'child', formPath: 'perChild', rate: '+ per dependent child', perWeek: ref.lowIncomeHealthCareCard?.perDependentChildPerWeek, over8Weeks: ref.lowIncomeHealthCareCard?.perDependentChildPerWeek === null || ref.lowIncomeHealthCareCard?.perDependentChildPerWeek === undefined || ref.lowIncomeHealthCareCard.perDependentChildPerWeek === '' ? '' : parseVal(ref.lowIncomeHealthCareCard.perDependentChildPerWeek) * 8 },
+            { key: 'single', formPath: 'single', rate: 'Single', perWeek: lihcc.clientPerWeek, over8Weeks: over8Weeks(liveLihccSingle) },
+            { key: 'couple-combined', formPath: 'coupleCombined', rate: 'Couple (combined)', perWeek: lihcc.partnerCombinedPerWeek, over8Weeks: over8Weeks(liveLihccCouple) },
+            { key: 'child', formPath: 'perChild', rate: '+ per dependent child', perWeek: lihcc.perDependentChildPerWeek, over8Weeks: over8Weeks(liveLihccChild) },
         ],
-        [ref]
+        [ref, liveLihccSingle, liveLihccCouple, liveLihccChild]
     );
 
     const investmentRows = useMemo(
@@ -358,10 +460,11 @@ const RateReference = () => {
                 key: 'bringForward',
                 formPath: 'bringForward',
                 label: 'NCC bring-forward (3 yr)',
-                amount: parseVal(ref.contributionCaps?.nonConcessionalCap) * 3,
+                amount: liveNcc * 3,
+                editable: false,
             },
         ],
-        [ref]
+        [ref, liveNcc]
     );
 
     const contributionCapColumns = useMemo(
@@ -399,13 +502,45 @@ const RateReference = () => {
         });
     }, [centrelinkForm, singleFortnightlyNum, coupleEachFortnightlyNum, coupleCombinedFortnightlyNum]);
 
+    // Keep calculated (read-only) fields in the form in sync with the editable inputs
+    useEffect(() => {
+        centrelinkForm.setFieldsValue({
+            single: {
+                annual: liveSingleFortnightly * 26,
+                over8Weeks: over8Weeks(liveLihccSingle),
+            },
+            eachCouple: { annual: liveCoupleEachFortnightly * 26 },
+            combined: {
+                fortnightly: liveCoupleCombinedFortnightly,
+                annual: liveCoupleCombinedFortnightly * 26,
+            },
+            coupleCombined: { over8Weeks: over8Weeks(liveLihccCouple) },
+            perChild: { over8Weeks: over8Weeks(liveLihccChild) },
+            assetsTaperAnnual: { value: liveReductionRate * 26 },
+        });
+    }, [
+        centrelinkForm,
+        liveSingleFortnightly,
+        liveCoupleEachFortnightly,
+        liveCoupleCombinedFortnightly,
+        liveReductionRate,
+        liveLihccSingle,
+        liveLihccCouple,
+        liveLihccChild,
+    ]);
+
+    // Load stored caps into the form (only when the stored data changes, so edits are not overwritten)
     useEffect(() => {
         superForm.setFieldsValue({
-            concessional: { amount: contributionCapRows[0].amount },
-            nonConcessional: { amount: contributionCapRows[1].amount },
-            bringForward: { amount: contributionCapRows[2].amount },
+            concessional: { amount: parseVal(ref.contributionCaps?.concessionalCap) },
+            nonConcessional: { amount: parseVal(ref.contributionCaps?.nonConcessionalCap) },
         });
-    }, [superForm, contributionCapRows]);
+    }, [superForm, ref.contributionCaps]);
+
+    // Bring-forward is always 3 x the non-concessional cap
+    useEffect(() => {
+        superForm.setFieldsValue({ bringForward: { amount: liveNcc * 3 } });
+    }, [superForm, liveNcc]);
 
     useEffect(() => {
         investmentForm.setFieldsValue(
@@ -423,6 +558,7 @@ const RateReference = () => {
                 dataIndex: 'fortnightly',
                 key: 'fortnightly',
                 width: 170,
+                editable: (record) => record.editable !== false,
                 type: 'number',
                 fieldProps: {
                     min: 0,
@@ -448,9 +584,9 @@ const RateReference = () => {
     const assetColumns = useMemo(
         () => [
             { title: 'Household', dataIndex: 'household', key: 'household', width: 260, editable: false },
-            { title: 'Lower', dataIndex: 'homeownerLower', key: 'homeownerLower', width: 120, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
+            { title: 'Lower', dataIndex: 'homeownerLower', key: 'homeownerLower', width: 120, type: 'number', editable: (record) => record.key !== 'couple-ill-health', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
             { title: 'Upper', dataIndex: 'homeownerUpper', key: 'homeownerUpper', width: 120, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
-            { title: 'Lower', dataIndex: 'nonHomeownerLower', key: 'nonHomeownerLower', width: 120, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
+            { title: 'Lower', dataIndex: 'nonHomeownerLower', key: 'nonHomeownerLower', width: 120, type: 'number', editable: (record) => record.key !== 'couple-ill-health', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
             { title: 'Upper', dataIndex: 'nonHomeownerUpper', key: 'nonHomeownerUpper', width: 120, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => <span>{value ? moneyText(value) : ''}</span> },
         ],
         []
@@ -459,7 +595,7 @@ const RateReference = () => {
     const incomeColumns = useMemo(
         () => [
             { title: 'Situation', dataIndex: 'situation', key: 'situation', width: 220, editable: false },
-            { title: 'Full pension', dataIndex: 'fullPension', key: 'fullPension', width: 200, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 2 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => renderIncomeThreshold(value) },
+            { title: 'Full pension', dataIndex: 'fullPension', key: 'fullPension', width: 200, type: 'number', editable: (record) => record.key !== 'couple-ill-health', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 2 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => renderIncomeThreshold(value) },
             { title: 'Part pension', dataIndex: 'partPension', key: 'partPension', width: 200, type: 'number', fieldProps: { formatter: (value) => (value === null || value === undefined || value === '' ? '' : `$${Number(value).toLocaleString('en-AU', { maximumFractionDigits: 2 })}`), parser: (value) => value?.replace(/[$,\s]/g, '') ?? '' }, renderView: ({ value }) => renderIncomeThreshold(value) },
             { title: 'Reduction', dataIndex: 'reduction', key: 'reduction', width: 120, type: 'number', fieldProps: { min: 0, step: 0.1, precision: 1 }, renderView: ({ value }) => <span>{value ?? 0}</span> },
         ],
@@ -565,17 +701,6 @@ const RateReference = () => {
                         {badgeText}
                     </span>
                 ) : null}
-                {/* {shouldSearch ? (
-                    <div style={{ position: 'relative' }}>
-                        <SearchOutlined style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8a97a0' }} />
-                        <Input
-                            placeholder="Search…"
-                            value={searchQueries[activeTab]}
-                            onChange={(e) => setSearchQueries((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-                            style={{ width: 220, borderRadius: 9, paddingLeft: 34 }}
-                        />
-                    </div>
-                ) : null} */}
             </div>
         </div>
     );
@@ -635,6 +760,15 @@ const RateReference = () => {
                 .rate-ref-page .ant-table {
                     border-collapse: collapse !important;
                 }
+                /* Consistent left alignment for every table column */
+                .rate-ref-page .ant-table-thead > tr > th,
+                .rate-ref-page .ant-table-tbody > tr > td,
+                .rate-ref-page .ant-table-cell {
+                    text-align: left !important;
+                }
+                .rate-ref-page .ant-input-number-input {
+                    text-align: left !important;
+                }
                 .rate-ref-panel {
                     background: #fff;
                 }
@@ -684,63 +818,67 @@ const RateReference = () => {
                 }
                 .rate-ref-nav {
                     background: #fff;
-                    border: 1px solid #e4e8ea;
-                    border-radius: 14px;
-                    box-shadow: 0 1px 2px rgba(16,24,32,.05);
-                    padding: 10px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 20px;
+                    box-shadow: 0 8px 28px rgba(15,23,42,.07);
+                    padding: 12px;
                     display: flex;
                     gap: 6px;
                     margin: 22px 0;
                 }
                 .rate-ref-nav-item {
                     flex: 1;
+                    min-width: 0;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 8px;
-                    padding: 16px 10px 14px;
-                    border-radius: 11px;
+                    gap: 10px;
+                    padding: 10px 10px 10px;
+                    border-radius: 14px;
                     cursor: pointer;
                     border: 1px solid transparent;
                     text-align: center;
-                    transition: all .15s ease;
+                    transition: background .15s ease;
                 }
-                .rate-ref-nav-item.active {
-                    background: #eef7ee;
-                    border-color: #cfe7cf;
+                .rate-ref-nav-item:hover { background: #f8fafb; }
+                .rate-ref-nav-item.active,
+                .rate-ref-nav-item.active:hover {
+                    background: #effcf3;
                 }
                 .rate-ref-nav-icon {
-                    width: 44px;
-                    height: 44px;
+                    width: 36px;
+                    height: 36px;
                     border-radius: 50%;
                     display: grid;
                     place-items: center;
-                    background: #eff2f3;
-                    color: #9aa6ae;
-                    font-size: 18px;
+                    background: #f3f4f6;
+                    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+                    font-size: 17px;
+                    line-height: 1;
                 }
                 .rate-ref-nav-item.active .rate-ref-nav-icon {
-                    background: #5cb85c;
-                    color: #fff;
-                    box-shadow: 0 3px 10px rgba(76,161,76,.35);
+                    background: #22c55e;
                 }
                 .rate-ref-nav-label {
-                    font-size: 13.5px;
-                    font-weight: 600;
-                    color: #55636d;
-                }
-                .rate-ref-nav-item.active .rate-ref-nav-label { color: #3f8f3f; }
-                .rate-ref-nav-count {
-                    background: #eef1f3;
-                    color: #8a97a0;
-                    border-radius: 999px;
-                    font-size: 11.5px;
+                    min-height: 34px;
+                    font-size: 12.5px;
+                    line-height: 1.35;
                     font-weight: 700;
-                    padding: 2px 11px;
-                    min-width: 24px;
+                    color: #6b7280;
+                }
+                .rate-ref-nav-item.active .rate-ref-nav-label { color: #16a34a; }
+                .rate-ref-nav-count {
+                    background: #f3f4f6;
+                    color: #6b7280;
+                    border-radius: 999px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    line-height: 1;
+                    padding: 6px 11px;
+                    min-width: 28px;
                     text-align: center;
                 }
-                .rate-ref-nav-item.active .rate-ref-nav-count { background: #5cb85c; color: #fff; }
+                .rate-ref-nav-item.active .rate-ref-nav-count { background: #22c55e; color: #fff; }
             `}</style>
 
             <div className="rate-ref-page">
@@ -756,18 +894,16 @@ const RateReference = () => {
                             <div style={{ position: 'relative', display: 'inline-flex' }}>
                                 <Select
                                     value={financialYear}
-                                    onChange={(e) => {
-                                        setFinancialYear(e.target.value);
+                                    onChange={(value) => {
+                                        setFinancialYear(value);
                                         try {
-                                            localStorage.setItem('rateRefFY', e.target.value);
+                                            localStorage.setItem('rateRefFY', value);
                                         } catch {
                                             // no-op
                                         }
                                     }}
-                                    style={{}}
-                                >
-                                    {fyOptions.map((fy) => <option key={fy} value={fy}>{fy}</option>)}
-                                </Select>
+                                    options={fyOptions.map((fy) => ({ value: fy, label: fy }))}
+                                />
                             </div>
                         </div>
                         {isEditing &&
@@ -788,16 +924,18 @@ const RateReference = () => {
 
                 <div className="rate-ref-nav">
                     {[
-                        { key: 'centrelink', label: 'Centrelink', count: 6, icon: <BankOutlined /> },
-                        { key: 'tax', label: 'Tax', count: 2, icon: <FaPercent /> },
-                        { key: 'super', label: 'Super', count: 1, icon: <GoDatabase /> },
-                        { key: 'investment', label: 'Investment', count: 1, icon: <FaArrowTrendUp /> },
+                        { key: 'centrelink', label: 'Centrelink', count: 6, icon: '🏛️' },
+                        { key: 'tax', label: 'Tax', count: 2, icon: '🧾' },
+                        { key: 'super', label: 'Super', count: 1, icon: '💰' },
+                        { key: 'investment', label: 'Investment', count: 1, icon: '📈' },
                     ].map((tab) => (
-                        <div key={tab.key} className={`rate-ref-nav-item ${activeTab === tab.key ? 'active' : ''}`} onClick={() => setActiveTab(tab.key)}>
-                            <div className="rate-ref-nav-icon">{tab.icon}</div>
-                            <div className="rate-ref-nav-label">{tab.label}</div>
-                            <div className="rate-ref-nav-count">{tab.count}</div>
-                        </div>
+                        <CatalogCategoryCard
+                            count={tab.count}
+                            key={tab.key}
+                            route={tab}
+                            active={activeTab === tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                        />
                     ))}
                 </div>
 
@@ -831,14 +969,14 @@ const RateReference = () => {
                                         <thead>
                                             <tr style={{ background: '#5cb85c', color: '#fff' }}>
                                                 <th style={{ textAlign: 'left', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Taxable income</th>
-                                                <th style={{ textAlign: 'right', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Tax on this income</th>
+                                                <th style={{ textAlign: 'left', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Tax on this income</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {brackets.map((bracket, index) => (
                                                 <tr key={index}>
                                                     <td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>{bracket.min} – {bracket.max}</td>
-                                                    <td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'right', color: '#55636d', fontWeight: 500 }}>
+                                                    <td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'left', color: '#55636d', fontWeight: 500 }}>
                                                         {index === 0 ? 'Nil (tax-free threshold)' : `${Number(bracket.rate) * 100}% of excess over ${bracket.min}`}
                                                     </td>
                                                 </tr>
@@ -854,14 +992,14 @@ const RateReference = () => {
                                         <thead>
                                             <tr style={{ background: '#5cb85c', color: '#fff' }}>
                                                 <th style={{ textAlign: 'left', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Item</th>
-                                                <th style={{ textAlign: 'right', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Detail</th>
+                                                <th style={{ textAlign: 'left', padding: '10px 14px', letterSpacing: '.07em', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase' }}>Detail</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>Medicare levy</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'right', color: '#55636d', fontWeight: 500 }}>Exempt &lt; {medicare.exemptBelow || ''} · phase-in to {medicare.fullRateAbove || ''} · {Number(medicare.fullRate || 0.02) * 100}% above</td></tr>
-                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>Low income tax offset (LITO)</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'right', color: '#55636d', fontWeight: 500 }}>Max {lito.maxOffset || ''} &lt; {lito.fullAtOrBelow || ''} · nil at {lito.phasesOutAt || ''}</td></tr>
-                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>SAPTO — single</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'right', color: '#55636d', fontWeight: 500 }}>Max {saptoS.maxOffset || ''} &lt; {saptoS.fullBelow || ''} · nil at {saptoS.nilAbove || ''}</td></tr>
-                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>SAPTO — couple (each)</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'right', color: '#55636d', fontWeight: 500 }}>Max {saptoC.maxOffset || ''} &lt; {saptoC.fullBelow || ''} · nil at {saptoC.nilAbove || ''} each</td></tr>
+                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>Medicare levy</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'left', color: '#55636d', fontWeight: 500 }}>Exempt &lt; {medicare.exemptBelow || ''} · phase-in to {medicare.fullRateAbove || ''} · {Number(medicare.fullRate || 0.02) * 100}% above</td></tr>
+                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>Low income tax offset (LITO)</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'left', color: '#55636d', fontWeight: 500 }}>Max {lito.maxOffset || ''} &lt; {lito.fullAtOrBelow || ''} · nil at {lito.phasesOutAt || ''}</td></tr>
+                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>SAPTO — single</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'left', color: '#55636d', fontWeight: 500 }}>Max {saptoS.maxOffset || ''} &lt; {saptoS.fullBelow || ''} · nil at {saptoS.nilAbove || ''}</td></tr>
+                                            <tr><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', fontWeight: 500 }}>SAPTO — couple (each)</td><td style={{ padding: '10px 14px', borderTop: '1px solid #eef1f2', textAlign: 'left', color: '#55636d', fontWeight: 500 }}>Max {saptoC.maxOffset || ''} &lt; {saptoC.fullBelow || ''} · nil at {saptoC.nilAbove || ''} each</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -902,13 +1040,6 @@ const RateReference = () => {
                                         <p style={{ marginTop: 14, color: '#8a97a0', fontSize: 12 }}>
                                             Used as the default return assumptions across projections. Edit a value to override, or <strong>Reset to defaults</strong> to restore.
                                         </p>
-                                        {/* <div style={{ marginTop: 12 }}>
-                                            {!hasExpectedReturnChanges ? (
-                                                <Button icon={<ReloadOutlined />} onClick={handleResetDefaults} style={{ fontSize: 12, borderRadius: 6, color: '#475569' }}>Reset to defaults</Button>
-                                            ) : (
-                                                <Button type="primary" loading={isSavingReturns} disabled={hasInvalidExpectedReturn} onClick={handleSaveExpectedReturns} style={{ background: '#5cb85c', borderColor: '#5cb85c' }}>Submit</Button>
-                                            )}
-                                        </div> */}
                                     </>
                                 }
                             >

@@ -302,9 +302,9 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
                     preferredName: ownerInput.name || '',
                     DOB: ownerInput.dob ? dayjs(ownerInput.dob).toISOString() : null,
                     plannedRetirementAge: plannedRetirementAge || 65,
-                    incomeFromBusinessTotal: (ownerInput.salary) ?? '',
-                    superAnnuationTotal: (ownerInput.superBalance) ?? '',
-                    accountBasedPensionTotal: (ownerInput.abpBalance) ?? '',
+                    incomeFromBusinessTotal: ownerInput?.salary || '$0',
+                    superAnnuationTotal: ownerInput?.superBalance || '$0',
+                    accountBasedPensionTotal: ownerInput?.abpBalance || '$0',
                     riskGoal: ownerInput.riskProfile || '',
                 };
             };
@@ -314,7 +314,7 @@ export default function ReviewClientDetailsEditFrom({ modalData, initialData }) 
 
             const payload = {
                 ...initialData,
-                homeLoanTotal: (values?.sharedHomeLoan) ?? '',
+                homeLoanTotal: values?.sharedHomeLoan || '$0',
                 owner: activeOwners,
                 client: clientSelected ? buildPayloadForOwner('client') : initialData?.client,
                 partner: partnerSelected ? buildPayloadForOwner('partner') : initialData?.partner,

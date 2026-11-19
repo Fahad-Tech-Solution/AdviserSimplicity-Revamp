@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import { CheckOutlined, CopyOutlined, EditOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { CheckOutlined, CopyOutlined, EditOutlined, KeyOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useAtomValue, useSetAtom } from "jotai";
 import { loggedInUser } from "../../../../store/authState";
 import profileBanner from "../../../../assets/image/Adviser-Simplicity-Profile-Green-Banner.png";
@@ -25,9 +25,9 @@ import AppModal from "../../../Common/AppModal";
 import { useMemo, useState } from "react";
 import ConnectAsana from "./components/ConnectAsana";
 import TwoFactorAuth from "./components/TwoFactorAuth";
-import { FaXmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import useApi from "../../../../hooks/useApi";
+import PasswordUpdate from "./components/PasswordUpdate";
 
 const { Title, Text } = Typography;
 
@@ -219,16 +219,29 @@ export default function ProfilePage() {
         width={800}
         destroyOnClose
       >
-        {modalDetails.key === "connectAsana" ? <ConnectAsana /> : <TwoFactorAuth onComplete={() => {
-          setSession(prev => ({
-            ...prev,
-            user: {
-              ...prev.user,
-              isAuthenticatorEnabled: true,
-            },
-          }));
-          setOpen(false)
-        }} userEmail={user?.email} user={user} />}
+        {modalDetails.key === "connectAsana" ? <ConnectAsana /> : modalDetails.key === "updatePassword" ?
+          <PasswordUpdate
+            onComplete={() => {
+              setSession(prev => ({
+                ...prev,
+                user: {
+                  ...prev.user,
+                  isAuthenticatorEnabled: true,
+                },
+              }));
+              setOpen(false)
+            }} userEmail={user?.email} user={user}
+          />
+          : <TwoFactorAuth onComplete={() => {
+            setSession(prev => ({
+              ...prev,
+              user: {
+                ...prev.user,
+                isAuthenticatorEnabled: true,
+              },
+            }));
+            setOpen(false)
+          }} userEmail={user?.email} user={user} />}
       </AppModal>
 
       <div
@@ -420,69 +433,183 @@ export default function ProfilePage() {
               boxShadow: "0 10px 30px rgba(0, 0, 0, 0.05)",
             }}
           >
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-
-                <Text
-                  type="secondary"
-                  style={{
-                    display: "block",
-                    fontSize: 11,
-                    letterSpacing: 2.5,
-                    color: "#22c55e",
-                    fontWeight: 700,
-                    marginBottom: 8,
-                  }}
-                >
-                  Account Security
-                </Text>
-                {isMfaEnabled ? (
-                  <Tag color="success" icon={<CheckOutlined />}>
-                    Protected
-                  </Tag>
-                ) : (
-                  <Tag color="default">
-                    Unprotected
-                  </Tag>
-                )}
-              </div>
-
-              <Title level={5} style={{ ...pageHeadingStyle, margin: 0 }}>
-                Authenticator App (2FA)
+            {/* Card Header */}
+            <div style={{ marginBottom: 18 }}>
+              <Text
+                type="secondary"
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  letterSpacing: 2.5,
+                  color: "#22c55e",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                }}
+              >
+                Account Security
+              </Text>
+              <Title level={4} style={{ ...pageHeadingStyle, margin: 0 }}>
+                Sign-in & Authentication
               </Title>
               <Text
                 type="secondary"
                 style={{
                   display: "block",
-                  marginTop: 6,
-                  lineHeight: 1.6,
+                  marginTop: 4,
+                  lineHeight: 1.5,
                   fontSize: 12,
                 }}
               >
-                Protect your financial portal with TOTP apps like Google Authenticator or Authy.
+                Manage your two-factor authentication and account password.
               </Text>
             </div>
-            {isMfaEnabled ?
-              <Button color="danger" variant="solid" style={{ width: "100%" }} onClick={RemoveAuthApp}
-                isLoading={isLoading}
-                icon={<FaTrash />}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Section 2: Update Password */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 14,
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                }}
               >
-                Remove Authenticator app
-              </Button>
-              :
-              <Button type="primary" style={{ width: "100%" }} onClick={() => {
-                setModalDetails({
-                  key: "twoFactorAuth",
-                  title: "Enable Two-Factor Authentication",
-                  subtitle: "Add an extra layer of security to your account by enabling two-factor authentication (2FA).",
-                });
-                setOpen(true)
-              }}
-                icon={<SafetyCertificateOutlined />}
+                <div style={{ marginBottom: 14 }}>
+                  <Title level={5} style={{ ...pageHeadingStyle, margin: 0, fontSize: 15 }}>
+                    Password
+                  </Title>
+                  <Text
+                    type="secondary"
+                    style={{
+                      display: "block",
+                      marginTop: 4,
+                      lineHeight: 1.5,
+                      fontSize: 12,
+                    }}
+                  >
+                    Update your password regularly to keep your account credentials secure.
+                  </Text>
+                </div>
+
+                <Button
+                  style={{
+                    width: "100%",
+                    borderRadius: 8,
+                    height: 38,
+                    fontWeight: 500,
+                    borderColor: "rgba(15, 23, 42, 0.16)",
+                  }}
+                  icon={<KeyOutlined />}
+                  onClick={() => {
+                    setModalDetails({
+                      key: "updatePassword",
+                      title: "Update Password",
+                      subtitle:
+                        "Enter your current password and choose a strong new password.",
+                    });
+                    setOpen(true);
+                  }}
+                >
+                  Update Password
+                </Button>
+              </div>
+
+              {/* Section 1: Authenticator App (2FA) */}
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 14,
+                  backgroundColor: isMfaEnabled ? "rgba(34, 197, 94, 0.04)" : "#f8fafc",
+                  border: isMfaEnabled
+                    ? "1px solid rgba(34, 197, 94, 0.22)"
+                    : "1px solid rgba(15, 23, 42, 0.08)",
+                }}
               >
-                Set Up Authenticator
-              </Button>
-            }
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    marginBottom: 14,
+                  }}
+                >
+                  <div>
+                    <Title level={5} style={{ ...pageHeadingStyle, margin: 0, fontSize: 15 }}>
+                      Authenticator App (2FA)
+                    </Title>
+                    <Text
+                      type="secondary"
+                      style={{
+                        display: "block",
+                        marginTop: 4,
+                        lineHeight: 1.5,
+                        fontSize: 12,
+                      }}
+                    >
+                      Protect your financial portal with TOTP apps like Google Authenticator or Authy.
+                    </Text>
+                  </div>
+
+                  {isMfaEnabled ? (
+                    <Tag
+                      color="success"
+                      icon={<CheckOutlined />}
+                      style={{ margin: 0, borderRadius: 6 }}
+                    >
+                      Protected
+                    </Tag>
+                  ) : (
+                    <Tag color="default" style={{ margin: 0, borderRadius: 6 }}>
+                      Unprotected
+                    </Tag>
+                  )}
+                </div>
+
+
+
+                {isMfaEnabled ? (
+                  <Button
+                    color="danger"
+                    variant="solid"
+                    style={{ width: "100%", borderRadius: 8, height: 38, fontWeight: 500 }}
+                    onClick={RemoveAuthApp}
+                    loading={isLoading}
+                    icon={<FaTrash />}
+                  >
+                    Remove Authenticator app
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    style={{
+                      width: "100%",
+                      borderRadius: 8,
+                      height: 38,
+                      fontWeight: 500,
+                      backgroundColor: "#22c55e",
+                      borderColor: "#22c55e",
+                    }}
+                    onClick={() => {
+                      setModalDetails({
+                        key: "twoFactorAuth",
+                        title: "Enable Two-Factor Authentication",
+                        subtitle:
+                          "Add an extra layer of security to your account by enabling two-factor authentication (2FA).",
+                      });
+                      setOpen(true);
+                    }}
+                    icon={<SafetyCertificateOutlined />}
+                  >
+                    Set Up Authenticator
+                  </Button>
+                )}
+              </div>
+
+
+            </div>
           </Card>
         </Col>
 
