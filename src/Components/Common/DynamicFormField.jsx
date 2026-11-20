@@ -26,6 +26,7 @@ const DATE_PARSE_FORMATS = [
   "D/M/YYYY",
   "DD-MM-YYYY",
   "D-M-YYYY",
+  "DDMMYYYY",
   "YYYY-MM-DD",
 ];
 
@@ -97,7 +98,7 @@ function focusNextField(event) {
   }
 }
 
-function EnhancedDatePicker({
+export function EnhancedDatePicker({
   value,
   onChange,
   onBlur,

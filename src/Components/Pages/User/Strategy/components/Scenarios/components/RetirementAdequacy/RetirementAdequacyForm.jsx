@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Col, DatePicker, Form, message, Row, Select, Segmented, Space, Typography } from "antd";
+import { Button, Col, Form, message, Row, Select, Segmented, Space, Typography } from "antd";
 import { useAtom } from "jotai";
 import { RiEdit2Fill } from "react-icons/ri";
 import EditableDynamicTable from "../../../../../../../Common/EditableDynamicTable.jsx";
+import { EnhancedDatePicker } from "../../../../../../../Common/DynamicFormField.jsx";
 import dayjs from "dayjs";
 import { SelectedReviewAllData } from "../../../../../../../../store/authState.js";
 import useApi from "../../../../../../../../hooks/useApi.js";
-import { formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
+import { formatAustralianDate, formatNumber, toCommaAndDollar } from "../../../../../../../../hooks/helpers.js";
 import { useGetReviewName, useReviewOptions } from "../../../../../../../../hooks/useUserDashboardData.js";
 
 const { Text } = Typography;
@@ -229,6 +230,18 @@ export default function RetirementAdequacyForm({ modalData }) {
             renderView: ({ record }) => (
                 <span style={{ fontWeight: 600 }}>{record?.preferredName}</span>
             ),
+        },
+        {
+            title: "Date Of Birth",
+            key: "DOB",
+            dataIndex: "DOB",
+            field: 'dob',
+            type: 'date',
+            placeholder: 'DD/MM/YYYY or DDMMYYYY',
+            renderView: ({ record }) => {
+                const rawDob = form.getFieldValue([record.formPath, 'dob']) || (record.ownerRole === 'Client' ? initialData?.client?.DOB : initialData?.partner?.DOB);
+                return rawDob ? formatAustralianDate(rawDob) : '--';
+            }
         },
         {
             title: "Balance ($)",
@@ -622,8 +635,8 @@ export default function RetirementAdequacyForm({ modalData }) {
                             extra="applies to both Client & Partner"
                             style={{ marginBottom: 12, width: 350 }}
                         >
-                            <DatePicker
-                                format="DD/MM/YYYY"
+                            <EnhancedDatePicker
+                                placeholder="DD/MM/YYYY or DDMMYYYY"
                                 style={{ width: "100%", backgroundColor: "#f0fdf4" }}
                                 disabled={!editing}
                             />

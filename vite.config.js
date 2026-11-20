@@ -39,6 +39,6 @@ export default defineConfig({
       },
     },
   },
-  base: "/AdviserSimplicity-Revamp/",
-  // base: "/",
+  // base: "/AdviserSimplicity-Revamp/",
+  base: "/",
 });

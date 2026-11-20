@@ -201,10 +201,15 @@ function getFinancialYearStart() {
     return new Date(year, 6, 1);
 }
 
+// Projection anchor = the pension start date itself (mirrors the HTML engine's
+// `fy` input: fyYear = start date's calendar year, first projection row = fyYear + 1).
 function getProjectionFinancialYearStart(value) {
-    const date = getDate(value) || getFinancialYearStart();
-    const year = date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;
-    return new Date(year, 6, 1);
+    return getDate(value) || getFinancialYearStart();
+}
+
+// Age is taken AT the projection start date (not at the following 30 June).
+function getAgeAtFinancialYearEnd(dateOfBirth, projectionStart) {
+    return getAgeAtDate(dateOfBirth, projectionStart);
 }
 
 function getMinimumDrawdownRate(age) {
@@ -227,7 +232,7 @@ function calculatePersonProjection(
         : riskReturns[person.riskGoal] ?? riskReturns.Balanced) / 100;
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
     const dateOfBirth = person.DOB;
-    const ageAtStart = getAgeAtDate(dateOfBirth, firstYearDate);
+    const ageAtStart = getAgeAtFinancialYearEnd(dateOfBirth, firstYearDate);
     const initialBalance = Math.max(
         0,
         startingBalance - withdrawal + (topUpYear === 1 ? nccTopUp : 0),
@@ -420,9 +425,9 @@ function calculateExpensesDrivenProjections(
     const extraWithdrawal = Math.max(0, parseNumber(projection.extraWithdrawal));
     const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses));
     const expensesIndexation = Math.max(0, parseNumber(projection.expensesIndexation, 2.5)) / 100;
-    const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2.5)) / 100;
+    const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2)) / 100;
     const includeAgePension = projection.includeAgePension;
-    const homeowner = String(projection.homeOwnership || '').toLowerCase() === 'homeowner';
+    const homeowner = String(projection.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
     const otherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments));
     const personalAssets = Math.max(0, parseNumber(projection.personalAssets));
     const peopleStates = people.map((person) => {
@@ -435,8 +440,8 @@ function calculateExpensesDrivenProjections(
         const returnRate = (Number.isFinite(explicitReturn)
             ? explicitReturn
             : calculationRates.riskReturns[person.riskGoal]
-                ?? calculationRates.riskReturns.Balanced) / 100;
-        const ageAtStart = getAgeAtDate(person.DOB, firstYearDate);
+            ?? calculationRates.riskReturns.Balanced) / 100;
+        const ageAtStart = getAgeAtFinancialYearEnd(person.DOB, firstYearDate);
         const openingBalance = Math.max(
             0,
             startingBalance - withdrawal + (topUpYear === 1 ? nccTopUp : 0),
@@ -622,96 +627,347 @@ function calculateCashflowProjection(
     projection = {},
     calculationRates = DEFAULT_CALCULATION_RATES,
 ) {
-    const maxYears = Math.max(0, ...people.map(({ rows }) => rows.length));
     const firstYearDate = getProjectionFinancialYearStart(pensionStartDate);
-    const startingAges = people.map(({ DOB }) => getAgeAtDate(DOB, firstYearDate));
-    const isCouple = projection.isCouple;
+    const firstFinancialYear = firstYearDate.getFullYear();
+    const currentFinancialYear = getFinancialYearStart().getFullYear();
+    const isCouple = Boolean(projection.isCouple);
     const homeowner = String(projection.homeOwnership || 'homeowner').toLowerCase() === 'homeowner';
-    const personalAssets = Math.max(0, parseNumber(projection.personalAssets, 100));
-    const initialOtherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments, 100));
-    const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2.5)) / 100;
-    const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses, 100));
+    const personalAssets = Math.max(0, parseNumber(projection.personalAssets));
+    const initialOtherFinancialInvestments = Math.max(0, parseNumber(projection.otherFinancialInvestments));
+    const thresholdIndexation = Math.max(0, parseNumber(projection.thresholdIndexation, 2)) / 100;
+    const expenses = Math.max(0, parseNumber(projection.annualLivingExpenses));
     const expensesIndexation = Math.max(0, parseNumber(projection.expensesIndexation, 2.5)) / 100;
-    const includeAgePension = projection.includeAgePension;
-    let otherFinancialInvestments = initialOtherFinancialInvestments;
-
-    let totalPensionSum = 0;
-    let firstYearPension = null;
-
-    const rows = Array.from({ length: maxYears }, (_, index) => {
-        const client = people[0]?.rows[index];
-        const partner = people[1]?.rows[index];
-        const combined = (field) => (client?.[field] || 0) + (partner?.[field] || 0);
-        const age = (startingAge) => startingAge === null ? '—' : startingAge + index;
-        const clientAge = startingAges[0] === null ? null : startingAges[0] + index;
-        const partnerAge = startingAges[1] === null ? null : startingAges[1] + index;
-        const closingBalance = combined('closingBalance');
-        const indexation = (1 + thresholdIndexation) ** index;
-        const expenseForYear = expenses * (1 + expensesIndexation) ** index;
-        otherFinancialInvestments *= 1 + calculationRates.agePension.deemUpperRate;
-        const assessableAssets = closingBalance + personalAssets + otherFinancialInvestments;
-        const financialAssets = closingBalance + otherFinancialInvestments;
-        const eligibleCount = Number(clientAge !== null && clientAge >= AGE_PENSION_AGE)
-            + Number(isCouple && partnerAge !== null && partnerAge >= AGE_PENSION_AGE);
-        const agePension = calculateAgePension(
-            assessableAssets,
-            financialAssets,
-            isCouple,
-            homeowner,
-            indexation,
-            eligibleCount,
-            calculationRates.agePension,
+    const includeAgePension = Boolean(projection.includeAgePension);
+    const withdrawalFrequency = getExtraWithdrawalFrequency(projection.withdrawalFrequency);
+    const extraWithdrawal = Math.max(0, parseNumber(projection.extraWithdrawal));
+    const projectionLeadYears = Math.max(0, firstFinancialYear - currentFinancialYear);
+    const states = people.map((person) => {
+        const startingBalance = Math.max(0, parseNumber(person.accountBasedPensionTotal));
+        const nccTopUp = Math.max(0, parseNumber(person.nccTopUp));
+        const topUpYearValue = parseInt(String(person.nccTopUpYear || '').replace(/\D/g, ''), 10);
+        const topUpYear = Math.min(40, Math.max(1, topUpYearValue || 1));
+        const withdrawal = Math.max(0, parseNumber(person.withdrawalAmount));
+        const explicitReturn = parseNumber(person.investmentReturn, NaN);
+        const returnRate = (Number.isFinite(explicitReturn)
+            ? explicitReturn
+            : calculationRates.riskReturns[person.riskGoal]
+            ?? calculationRates.riskReturns.Balanced) / 100;
+        const ageAtStart = getAgeAtFinancialYearEnd(person.DOB, firstYearDate);
+        const initialOpening = Math.max(
+            0,
+            startingBalance - withdrawal + (topUpYear === 1 ? nccTopUp : 0),
         );
-        const pension = includeAgePension ? agePension.pension : 0;
-        const annualDrawdown = combined('annualPayment');
-        const totalIncome = annualDrawdown + pension;
-        const surplus = expenses > 0 ? totalIncome - expenseForYear : null;
-
-        totalPensionSum += pension;
-        if (firstYearPension === null && eligibleCount > 0) {
-            firstYearPension = pension;
-        }
 
         return {
-            key: String(index + 1),
-            year: index + 1,
-            financialYear: client?.financialYear ?? partner?.financialYear,
-            age: `${age(startingAges[0])} / ${age(startingAges[1])}`,
-            closingBalance,
-            assessableAssets,
-            deemedIncome: agePension.deemedIncome,
-            agePension: eligibleCount ? pension : null,
-            annualPayment: annualDrawdown,
-            totalIncome,
-            surplus,
-            balance: closingBalance,
-            yearLabel: client?.financialYear ?? `Yr ${index + 1}`,
-            livingExpenses: expenseForYear,
+            startingBalance,
+            nccTopUp,
+            topUpYear,
+            withdrawal,
+            returnRate,
+            ageAtStart,
+            initialOpening,
+            balance: ageAtStart === null ? 0 : initialOpening,
+            rows: [],
         };
     });
+    const totalStartingBalance = states.reduce((total, state) => total + state.startingBalance, 0);
+    const totalTopUp = states.reduce((total, state) => total + state.nccTopUp, 0);
+    const totalWithdrawal = states.reduce((total, state) => total + state.withdrawal, 0);
+    const hasProjection = states.some((state) => state.ageAtStart !== null && state.initialOpening > 0);
+    const hasAdjustments = states.some((state) => state.nccTopUp > 0 || state.withdrawal > 0);
+    const rows = [];
+    let otherFinancialInvestments = initialOtherFinancialInvestments;
+    let withdrawalRandomSeed = 987654321;
 
-    const total = (field) => people.reduce((sum, person) => sum + (person[field] || 0), 0);
-    const totalTopUp = people.reduce((sum, person) => sum + (person.nccTopUp || 0), 0);
-    const totalWithdrawal = people.reduce((sum, person) => sum + (person.withdrawal || 0), 0);
-    const totalStarting = total('startingBalance');
-    const totalAdjustedStarting = people.reduce((sum, person) => {
-        const row = person.rows[0];
-        return sum + (row ? Math.max(0, row.openingBalance + row.topUp - row.oneOffWithdrawal) : 0);
-    }, 0);
+    if (hasProjection) {
+        for (let yearIndex = 0; yearIndex < 30; yearIndex += 1) {
+            const year = yearIndex + 1;
+            states.forEach((state) => {
+                if (year > 1 && year === state.topUpYear) {
+                    state.balance += state.nccTopUp;
+                }
+            });
 
-    const firstRowPosition = rows[0]?.surplus ?? 0;
+            const periodData = states
+                .filter((state) => state.ageAtStart !== null && state.balance > 0)
+                .map((state) => {
+                    const age = state.ageAtStart + yearIndex;
+                    const opening = state.balance;
+                    const earnings = opening * state.returnRate;
+                    const minimumRate = getMinimumDrawdownRate(age);
+                    const minimumPayment = opening * minimumRate;
+                    return {
+                        state,
+                        age,
+                        opening,
+                        earnings,
+                        minimumRate,
+                        minimumPayment,
+                        closingMinimum: Math.max(0, opening + earnings - minimumPayment),
+                        additionalPayment: 0,
+                        extraWithdrawal: 0,
+                    };
+                });
+            const minimumAssets = periodData.reduce((total, row) => total + row.closingMinimum, 0);
+            const indexation = (1 + thresholdIndexation) ** yearIndex;
+            otherFinancialInvestments *= 1 + calculationRates.agePension.deemUpperRate;
+            const otherFinancialInvestmentsGrown = otherFinancialInvestments;
+            const eligibleCount = states.reduce(
+                (total, state) => total + Number(
+                    state.ageAtStart !== null && state.ageAtStart + yearIndex >= AGE_PENSION_AGE,
+                ),
+                0,
+            );
+            const expenseForYear = expenses
+                * (1 + expensesIndexation) ** (projectionLeadYears + yearIndex);
+
+            let agePensionResult = calculateAgePension(
+                minimumAssets + personalAssets + otherFinancialInvestmentsGrown,
+                minimumAssets + otherFinancialInvestmentsGrown,
+                isCouple,
+                homeowner,
+                indexation,
+                eligibleCount,
+                calculationRates.agePension,
+            );
+            let agePension = includeAgePension ? agePensionResult.pension : 0;
+            let closingAccountBasedPensions = minimumAssets;
+            let totalDrawdown = periodData.reduce((total, row) => total + row.minimumPayment, 0);
+            let financialInvestmentDrawdown = 0;
+            let financialInvestmentEnd = otherFinancialInvestmentsGrown;
+            let totalIncome = totalDrawdown + agePension;
+            let surplus = 0;
+            let extraWithdrawalApplies = withdrawalFrequency > 0
+                && yearIndex % withdrawalFrequency === 0;
+            if (withdrawalFrequency === -1) {
+                withdrawalRandomSeed = (
+                    withdrawalRandomSeed * 1103515245 + 12345
+                ) & 0x7fffffff;
+                extraWithdrawalApplies = withdrawalRandomSeed / 0x7fffffff < 0.34;
+            }
+
+            for (let iteration = 0; iteration < 40; iteration += 1) {
+                const minimumDrawdown = periodData.reduce((total, row) => total + row.minimumPayment, 0);
+                const shortfall = expenseForYear - (minimumDrawdown + agePension);
+                const availableForTopUp = periodData.reduce((total, row) => total + row.closingMinimum, 0);
+                const additionalDrawdown = shortfall > 0
+                    ? Math.min(shortfall, availableForTopUp)
+                    : 0;
+                const openingTotal = periodData.reduce((total, row) => total + row.opening, 0);
+                let remainingAdditional = additionalDrawdown;
+
+                periodData.forEach((row, index) => {
+                    const share = openingTotal > 0
+                        ? row.opening / openingTotal
+                        : (index === 0 ? 1 : 0);
+                    row.additionalPayment = Math.min(
+                        additionalDrawdown * share,
+                        row.closingMinimum,
+                    );
+                    remainingAdditional -= row.additionalPayment;
+                });
+                if (remainingAdditional > 0.005) {
+                    for (const row of periodData) {
+                        const available = row.closingMinimum - row.additionalPayment;
+                        const extra = Math.min(remainingAdditional, available);
+                        row.additionalPayment += extra;
+                        remainingAdditional -= extra;
+                        if (remainingAdditional <= 0.005) break;
+                    }
+                }
+
+                const closingAfterExpenses = periodData.map((row) => Math.max(
+                    0,
+                    row.closingMinimum - row.additionalPayment,
+                ));
+                const availableAfterExpenses = closingAfterExpenses.reduce(
+                    (total, balance) => total + balance,
+                    0,
+                );
+                const withdrawalTotal = extraWithdrawalApplies
+                    ? Math.min(extraWithdrawal, availableAfterExpenses)
+                    : 0;
+                let remainingWithdrawal = withdrawalTotal;
+
+                periodData.forEach((row, index) => {
+                    const closing = closingAfterExpenses[index];
+                    const share = availableAfterExpenses > 0
+                        ? closing / availableAfterExpenses
+                        : (index === 0 ? 1 : 0);
+                    row.extraWithdrawal = Math.min(withdrawalTotal * share, closing);
+                    remainingWithdrawal -= row.extraWithdrawal;
+                });
+                if (remainingWithdrawal > 0.005) {
+                    for (let index = 0; index < periodData.length; index += 1) {
+                        const available = closingAfterExpenses[index]
+                            - periodData[index].extraWithdrawal;
+                        const extra = Math.min(remainingWithdrawal, available);
+                        periodData[index].extraWithdrawal += extra;
+                        remainingWithdrawal -= extra;
+                        if (remainingWithdrawal <= 0.005) break;
+                    }
+                }
+
+                closingAccountBasedPensions = periodData.reduce(
+                    (total, row, index) => total
+                        + Math.max(0, closingAfterExpenses[index] - row.extraWithdrawal),
+                    0,
+                );
+                totalDrawdown = periodData.reduce(
+                    (total, row) => total + row.minimumPayment
+                        + row.additionalPayment + row.extraWithdrawal,
+                    0,
+                );
+                financialInvestmentDrawdown = expenses > 0 && closingAccountBasedPensions <= 1
+                    ? Math.min(
+                        Math.max(0, expenseForYear - (totalDrawdown + agePension)),
+                        otherFinancialInvestmentsGrown,
+                    )
+                    : 0;
+                financialInvestmentEnd = Math.max(
+                    0,
+                    otherFinancialInvestmentsGrown - financialInvestmentDrawdown,
+                );
+                totalIncome = totalDrawdown + agePension + financialInvestmentDrawdown;
+                surplus = totalIncome - expenseForYear;
+                if (surplus > 0) financialInvestmentEnd += surplus;
+
+                const updatedAgePensionResult = calculateAgePension(
+                    closingAccountBasedPensions + personalAssets + financialInvestmentEnd,
+                    closingAccountBasedPensions + financialInvestmentEnd,
+                    isCouple,
+                    homeowner,
+                    indexation,
+                    eligibleCount,
+                    calculationRates.agePension,
+                );
+                const updatedAgePension = includeAgePension
+                    ? updatedAgePensionResult.pension
+                    : 0;
+                agePensionResult = updatedAgePensionResult;
+                if (Math.abs(updatedAgePension - agePension) < 0.5) {
+                    agePension = updatedAgePension;
+                    break;
+                }
+                agePension = 0.5 * agePension + 0.5 * updatedAgePension;
+            }
+
+            otherFinancialInvestments = financialInvestmentEnd;
+            const clientStartingAge = states[0]?.ageAtStart ?? null;
+            const partnerStartingAge = states[1]?.ageAtStart ?? null;
+            const clientAge = clientStartingAge === null
+                ? null
+                : clientStartingAge + yearIndex;
+            const partnerAge = partnerStartingAge === null
+                ? null
+                : partnerStartingAge + yearIndex;
+            const openingBalance = states.reduce(
+                (total, state) => total + state.startingBalance,
+                0,
+            );
+            const topUp = states.reduce(
+                (total, state) => total
+                    + (year === state.topUpYear ? state.nccTopUp : 0),
+                0,
+            );
+            const oneOffWithdrawal = year === 1 ? totalWithdrawal : 0;
+            const financialYear = firstFinancialYear + year;
+
+            periodData.forEach((row) => {
+                const topUpForYear = year === row.state.topUpYear
+                    ? row.state.nccTopUp
+                    : 0;
+                const oneOffWithdrawalForYear = year === 1
+                    ? row.state.withdrawal
+                    : 0;
+                const closingBalance = Math.max(
+                    0,
+                    row.closingMinimum - row.additionalPayment - row.extraWithdrawal,
+                );
+                row.state.rows.push({
+                    key: String(year),
+                    year,
+                    financialYear,
+                    age: row.age,
+                    openingBalance: year === 1
+                        ? row.state.startingBalance
+                        : row.opening - topUpForYear,
+                    calculatedOpeningBalance: row.opening,
+                    topUp: topUpForYear,
+                    oneOffWithdrawal: oneOffWithdrawalForYear,
+                    earnings: row.earnings,
+                    minimumRate: row.minimumRate,
+                    annualPayment: row.minimumPayment
+                        + row.additionalPayment + row.extraWithdrawal,
+                    closingBalance,
+                });
+                row.state.balance = closingBalance;
+            });
+
+            const agePensionPaid = eligibleCount > 0 ? agePension : null;
+            const yearSurplus = expenses > 0 ? surplus : null;
+            rows.push({
+                key: String(year),
+                year,
+                financialYear,
+                age: isCouple
+                    ? `${clientAge ?? '—'} / ${partnerAge ?? '—'}`
+                    : `${clientAge ?? '—'}`,
+                openingBalance,
+                topUp,
+                oneOffWithdrawal,
+                closingBalance: closingAccountBasedPensions,
+                financialInvestment: otherFinancialInvestments,
+                assessableAssets: closingAccountBasedPensions
+                    + personalAssets + otherFinancialInvestments,
+                deemedIncome: agePensionResult.deemedIncome,
+                agePension: agePensionPaid,
+                annualPayment: totalDrawdown,
+                totalIncome,
+                surplus: yearSurplus,
+                balance: closingAccountBasedPensions,
+                yearLabel: String(financialYear),
+                livingExpenses: expenseForYear,
+                eligible: eligibleCount > 0,
+            });
+        }
+    }
+
+    const firstEligibleRow = rows.find((row) => row.eligible);
+    const firstShortfallRow = expenses > 0
+        ? rows.find((row) => row.surplus < -1)
+        : null;
+    const firstYearPosition = rows[0]?.surplus;
 
     return {
         rows,
+        chartData: rows.map((row) => ({
+            ...row,
+            annualPayment: row.annualPayment,
+            agePension: row.agePension || 0,
+        })),
         metrics: {
-            ...buildMetrics(rows, totalStarting, totalTopUp, totalWithdrawal, 'projection complete'),
-            firstYearPension: firstYearPension !== null ? formatCurrency(firstYearPension) : '—',
+            ...buildMetrics(rows, totalStartingBalance, totalTopUp, totalWithdrawal, 'projection complete'),
+            firstYearPension: firstEligibleRow
+                ? formatCurrency(firstEligibleRow.agePension || 0)
+                : '—',
             firstYearPensionSubtext: 'once Age Pension age',
-            totalPension: formatCurrency(totalPensionSum),
+            totalPension: formatCurrency(rows.reduce(
+                (total, row) => total + (row.agePension || 0),
+                0,
+            )),
             totalPensionSubtext: 'across projection',
-            expensesMet: 'full projection',
-            expensesMetSubtext: 'income covers expenses',
-            firstYearPosition: formatCurrency(firstRowPosition),
+            expensesMet: firstShortfallRow
+                ? `until FY ${firstShortfallRow.financialYear}`
+                : 'full projection',
+            expensesMetSubtext: firstShortfallRow
+                ? 'then a shortfall opens'
+                : 'income covers expenses',
+            firstYearPosition: firstYearPosition === null || firstYearPosition === undefined
+                ? '—'
+                : firstYearPosition < 0
+                    ? `(${formatCurrency(Math.abs(firstYearPosition))})`
+                    : formatCurrency(firstYearPosition),
             positionSubtext: 'surplus / (shortfall)',
             isCouple,
             homeowner,
@@ -721,7 +977,7 @@ function calculateCashflowProjection(
             thresholdIndexation: thresholdIndexation * 100,
             expensesIndexation: expensesIndexation * 100,
         },
-        hasAdjustments: people.some((person) => person.hasAdjustments),
+        hasAdjustments,
     };
 }
 
@@ -740,7 +996,8 @@ const columns = [
 const cashflowColumns = [
     { title: 'Year', dataIndex: 'financialYear', key: 'financialYear', align: 'center' },
     { title: 'Age', dataIndex: 'age', key: 'age', align: 'center' },
-    { title: 'Closing ABP', dataIndex: 'closingBalance', key: 'closingBalance', align: 'right', render: (value) => value > 0 ? formatCurrency(value) : '—' },
+    { title: 'Account Based Pensions', dataIndex: 'closingBalance', key: 'closingBalance', align: 'right', render: (value) => value > 0 ? formatCurrency(value) : '—' },
+    { title: 'Financial Investment', dataIndex: 'financialInvestment', key: 'financialInvestment', align: 'right', render: (value) => value > 0 ? formatCurrency(value) : '—' },
     { title: 'Assessable Assets', dataIndex: 'assessableAssets', key: 'assessableAssets', align: 'right', render: formatCurrency },
     { title: 'Deemed Income', dataIndex: 'deemedIncome', key: 'deemedIncome', align: 'right', render: formatCurrency },
     { title: 'Age Pension (p.a.)', dataIndex: 'agePension', key: 'agePension', align: 'right', render: (value) => value === null ? <Text type="secondary">— pre-{AGE_PENSION_AGE}</Text> : value > 0 ? formatCurrency(value) : '—' },
@@ -779,14 +1036,8 @@ const RetirementAdequacy = () => {
         const section = selectedReviewAllData?.retirementAdequacyDetails || {};
         const startDate = section.pensionStartDate;
         const agePensionProjection = section.agePensionProjection || {};
-        const client = {
-            ...section.client,
-            DOB: section.client?.DOB || selectedReviewAllData?.personalDetails?.client?.DOB,
-        };
-        const partner = {
-            ...section.partner,
-            DOB: section.partner?.DOB || selectedReviewAllData?.personalDetails?.partner?.DOB,
-        };
+        const client = { ...section.client };
+        const partner = { ...section.partner };
         const withdrawalFrequency = getExtraWithdrawalFrequency(agePensionProjection.withdrawalFrequency);
         const extraWithdrawal = parseNumber(agePensionProjection.extraWithdrawal);
         const expensesDriven = parseNumber(agePensionProjection.annualLivingExpenses) > 0
@@ -799,7 +1050,7 @@ const RetirementAdequacy = () => {
             ...agePensionProjection,
             includeAgePension: section.includeAgePension
                 ?? agePensionProjection.includeAgePension
-                ?? false,
+                ?? true,
         };
         let clientExpenseProjection = null;
         let partnerExpenseProjection = null;
@@ -843,14 +1094,16 @@ const RetirementAdequacy = () => {
 
         if (selectedProfile === 'partner') return partnerProjection;
         if (selectedProfile === 'cashflow') {
-            return calculateCashflowProjection([
-                { ...clientProjection, DOB: client.DOB, startingBalance: parseNumber(client.accountBasedPensionTotal), nccTopUp: parseNumber(client.nccTopUp), withdrawal: parseNumber(client.withdrawalAmount) },
-                { ...partnerProjection, DOB: partner.DOB, startingBalance: parseNumber(partner.accountBasedPensionTotal), nccTopUp: parseNumber(partner.nccTopUp), withdrawal: parseNumber(partner.withdrawalAmount) },
-            ], startDate, {
-                ...agePensionProjection,
-                isCouple,
-                includeAgePension: expenseOptions.includeAgePension,
-            }, calculationRates);
+            return calculateCashflowProjection(
+                isCouple ? [client, partner] : [client],
+                startDate,
+                {
+                    ...agePensionProjection,
+                    isCouple,
+                    includeAgePension: expenseOptions.includeAgePension,
+                },
+                calculationRates,
+            );
         }
         return clientProjection;
     }, [calculationRates, selectedProfile, selectedReviewAllData]);
@@ -878,14 +1131,8 @@ const RetirementAdequacy = () => {
         const owners = section.owner || selectedReviewAllData?.personalDetails?.owner || [];
         const hasPartner = owners.includes("partner") || Boolean(section.partner);
 
-        const clientData = {
-            ...section.client,
-            DOB: section.client?.DOB || selectedReviewAllData?.personalDetails?.client?.DOB,
-        };
-        const partnerData = {
-            ...section.partner,
-            DOB: section.partner?.DOB || selectedReviewAllData?.personalDetails?.partner?.DOB,
-        };
+        const clientData = { ...section.client };
+        const partnerData = { ...section.partner };
 
         const clientProjection = calculateProjection(
             clientData,

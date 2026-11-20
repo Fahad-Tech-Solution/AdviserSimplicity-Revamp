@@ -23,7 +23,8 @@ const { Text, Title, Paragraph } = Typography;
 const ENDPOINTS = {
     CHECK_PASSWORD: '/auth/login-v2', // verifies current password (also sends email OTP)
     SEND_EMAIL_OTP: '/auth/login-request-email-otp', // used when MFA is enabled and user picks email
-    VERIFY_EMAIL_OTP: '/auth/login-verify-otp',
+    VERIFY_OTP: '/auth/login-verify-otp',
+    VERIFY_EMAIL_OTP: '/auth/login-verify-email-otp',
     VERIFY_AUTH_APP: '/auth/login-verify-authenticator',
     CHANGE_PASSWORD: '/auth/update-password',
 };
@@ -180,11 +181,13 @@ const PasswordUpdate = ({ onComplete, userEmail = 'user@example.com', user }) =>
         setVerifyLoading(true);
         try {
             const res = await api.post(
-                ENDPOINTS.VERIFY_EMAIL_OTP,
+                (mfaToken ?
+                    ENDPOINTS.VERIFY_EMAIL_OTP :
+                    ENDPOINTS.VERIFY_OTP),
                 { email: userEmail, otp: emailOtpCode, roleName },
                 mfaConfig
             );
-            if (res?.success) {
+            if (res?.action == "dashboard") {
                 setVerifiedRes(res);
                 message.success('Email verified successfully!');
                 setStage('newPassword');
